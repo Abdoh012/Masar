@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Forgot password",
 };
 
-export default function ForgotPasswordPage() {
+export default async function ForgotPasswordPage() {
+  await new Promise((resolve) => setTimeout(resolve, 3000));
   return <ForgetPasswordContainer />;
 }
