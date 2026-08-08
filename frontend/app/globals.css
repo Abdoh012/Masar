@@ -1,0 +1,286 @@
+/* ============================================================================
+   THEME.CSS — Masar design tokens
+   Tailwind v4. Import once from globals.css: @import "./theme.css";
+
+   Structure: raw color scales (1) -> font variables (2) -> semantic
+   aliases for light mode (3) -> dark mode overrides (4). Build UI with
+   the semantic aliases in section 3/4, not the raw scales in section 1.
+
+   Every step marked "exact" was pulled directly from masar-identity.html
+   (light AND dark variants — that file already has a working dark theme
+   built in). Steps marked "generated" fill out a complete, reusable
+   11-step ramp around those real values.
+============================================================================ */
+
+@import "tailwindcss";
+
+/* ----------------------------------------------------------------------
+   1. RAW COLOR SCALES
+------------------------------------------------------------------------- */
+@theme {
+  /* --- PRIMARY — Ink Navy. 500 is the fixed brand navy (masar-identity
+     never redefines it under [data-theme="dark"] — it's the hero bg,
+     primary button, cert border in both themes). Everything else in the
+     ramp is generated, except 50 and 200 which are exact adaptive text
+     colors pulled straight from the source file. */
+  --color-primary-50: #eaeef5; /* exact — light-mode --navy-tint */
+  --color-primary-100: #d2d9ea;
+  --color-primary-200: #b7c6ef; /* exact — dark-mode --ink (brightened for legibility, not a straight tint) */
+  --color-primary-300: #94a3cf;
+  --color-primary-400: #5f719e;
+  --color-primary-500: #1b2a4a; /* exact — --navy, fixed across both themes */
+  --color-primary-600: #17253f;
+  --color-primary-700: #131d33;
+  --color-primary-800: #0e1526;
+  --color-primary-900: #090e19;
+  --color-primary-950: #04070c;
+
+  /* --- SECONDARY — Seal Gold. 500 is fixed across themes, same as
+     primary. 50, 600, and 800 are exact adaptive text/tint colors. */
+  --color-secondary-50: #fbf1e0; /* exact — light-mode --gold-tint */
+  --color-secondary-100: #f6e1bc;
+  --color-secondary-200: #efcb8d;
+  --color-secondary-300: #e8b364;
+  --color-secondary-400: #eaa84a;
+  --color-secondary-500: #e8a33d; /* exact — --gold, fixed across both themes */
+  --color-secondary-600: #f0b65e; /* exact — dark-mode --amber-text */
+  --color-secondary-700: #a26a20;
+  --color-secondary-800: #8a5a17; /* exact — light-mode --amber-text */
+  --color-secondary-900: #573810;
+  --color-secondary-950: #2e1d08;
+
+  /* --- SAGE — reserved brand color, NOT a semantic "success" state.
+     masar-identity uses it only for the hire/verified-adjacent signal;
+     it shifts between themes (unlike primary/secondary, which are
+     fixed), so its ramp needs both light and dark exact anchors. */
+  --color-sage-50: #e9f0ea; /* exact — light-mode --sage-tint */
+  --color-sage-100: #d3e2d6;
+  --color-sage-200: #a7d0ad; /* exact — dark-mode --deep-sage-text */
+  --color-sage-300: #8fbf97; /* exact — dark-mode --sage */
+  --color-sage-400: #7ba382;
+  --color-sage-500: #6b8f71; /* exact — light-mode --sage */
+  --color-sage-600: #587a5e;
+  --color-sage-700: #3f5f45; /* exact — light-mode --deep-sage-text */
+  --color-sage-800: #2f4834;
+  --color-sage-900: #21331f;
+  --color-sage-950: #131e12;
+
+  /* --- NEUTRAL — warm scale built from Paper -> Stone -> Charcoal, not
+     a generic gray. Nine of these eleven steps are exact values lifted
+     straight from the file (light AND dark) — only 500 is generated. */
+  --color-neutral-50: #ffffff; /* exact — --white / light-mode --surface */
+  --color-neutral-100: #faf7f1; /* exact — --paper, fixed, cert-only */
+  --color-neutral-200: #f2eee5; /* exact — light-mode --bg */
+  --color-neutral-300: #e9ecf5; /* exact — dark-mode --charcoal (light text on dark bg) */
+  --color-neutral-400: #d8d2c4; /* exact — --stone / light-mode --border */
+  --color-neutral-500: #b3ac9c;
+  --color-neutral-600: #909ab5; /* exact — dark-mode --mid */
+  --color-neutral-700: #6b7280; /* exact — light-mode --mid */
+  --color-neutral-800: #22283b; /* exact — light-mode --charcoal */
+  --color-neutral-900: #141a2b; /* exact — dark-mode --surface */
+  --color-neutral-950: #0a0e18; /* exact — dark-mode --bg */
+
+  /* --- GRAY — a deliberately un-warm, true-gray pair. masar-identity
+     uses this only for one thing: the inert/neutral badge, kept visibly
+     distinct from the brand-warm neutral scale above on purpose. */
+  --color-gray-100: #eeeeee; /* exact — light-mode --neutral-bg */
+  --color-gray-500: #666666; /* exact — light-mode --neutral-text */
+
+  /* --- SUPPLEMENTARY STATES — not present in masar-identity.html.
+     Added because a real admin/vendor/customer app needs form and
+     alert states, chosen to stay visually distinct from navy/gold/sage
+     so they're never confused with brand color or the sage signal. Kept
+     to 3 steps each (not full ramps) since they're utility, not brand. */
+  --color-success-50: #eaf6ee;
+  --color-success-500: #2f9e52;
+  --color-success-700: #1f6e38;
+
+  --color-warning-50: #fef8ec;
+  --color-warning-500: #e2a626;
+  --color-warning-700: #966d0f;
+
+  --color-error-50: #fdecec;
+  --color-error-500: #dc4a50;
+  --color-error-700: #9e2429;
+
+  --color-info-50: #eaf3fe;
+  --color-info-500: #3b82f6;
+  --color-info-700: #1d4ed8;
+}
+
+/* ----------------------------------------------------------------------
+   2. FONTS
+   ----------------------------------------------------------------------
+   Loaded via next/font/google in src/app/layout.tsx — variable names
+   match that file's existing convention.
+------------------------------------------------------------------------- */
+@theme inline {
+  --font-sans: var(--font-ibm-plex-sans); /* UI / body default */
+  --font-heading: var(--font-ibm-plex-sans); /* h1-h6 — same family, bolder weight */
+  --font-mono: var(--font-ibm-plex-mono); /* certificate IDs, dates, reference numbers */
+  --font-serif: var(--font-ibm-plex-serif); /* certificate template only */
+  --font-arabic: var(--font-ibm-plex-sans-arabic); /* wired for v2, unused in v1 UI */
+}
+
+/* ----------------------------------------------------------------------
+   3. SEMANTIC ALIASES (LIGHT MODE — default)
+------------------------------------------------------------------------- */
+@theme inline {
+  --color-background: var(--color-neutral-200);
+  --color-foreground: var(--color-neutral-800);
+
+  --color-card: var(--color-neutral-50);
+  --color-card-foreground: var(--color-neutral-800);
+
+  --color-paper: var(--color-neutral-100); /* fixed, certificate-only — do not use elsewhere */
+
+  --color-muted-foreground: var(--color-neutral-700);
+  --color-disabled: var(--color-neutral-500);
+
+  --color-border: var(--color-neutral-400);
+  --color-ring: var(--color-primary-500);
+
+  /* Solid fills — fixed across both themes (hero, primary/secondary
+     buttons, cert border). */
+  --color-primary: var(--color-primary-500);
+  --color-primary-foreground: var(--color-neutral-50);
+  --color-secondary: var(--color-secondary-500);
+  --color-secondary-foreground: var(--color-neutral-800);
+
+  /* Adaptive heading/label text used on card/background surfaces — this
+     is masar-identity's --ink, --amber-text, --deep-sage-text. Distinct
+     from the -foreground tokens above, which are for text ON a solid
+     primary/secondary fill. */
+  --color-primary-text: var(--color-primary-500);
+  --color-secondary-text: var(--color-secondary-800);
+  --color-sage: var(--color-sage-500);
+  --color-sage-text: var(--color-sage-700);
+
+  /* Tinted pill/badge backgrounds — masar-identity's --navy-tint,
+     --gold-tint, --sage-tint. Each equals that scale's 50-step in light
+     mode; dark mode swaps to a translucent overlay (section 4). */
+  --color-primary-tint: var(--color-primary-50);
+  --color-secondary-tint: var(--color-secondary-50);
+  --color-sage-tint: var(--color-sage-50);
+
+  --color-success-bg: var(--color-success-50);
+  --color-success-fg: var(--color-success-700);
+  --color-warning-bg: var(--color-warning-50);
+  --color-warning-fg: var(--color-warning-700);
+  --color-error-bg: var(--color-error-50);
+  --color-error-fg: var(--color-error-700);
+  --color-info-bg: var(--color-info-50);
+  --color-info-fg: var(--color-info-700);
+
+  --shadow-card: 0 2px 10px rgba(27, 42, 74, 0.06);
+  --shadow-card-sm: 0 2px 10px rgba(27, 42, 74, 0.08);
+}
+
+/* ----------------------------------------------------------------------
+   4. DARK MODE
+   ----------------------------------------------------------------------
+   Attribute-based, matching masar-identity.html's own toggle
+   (`[data-theme="dark"]` on <html>) rather than a `.dark` class — swap
+   the selector below if your app uses next-themes' class strategy
+   instead.
+------------------------------------------------------------------------- */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+[data-theme="dark"] {
+  --color-background: var(--color-neutral-950);
+  --color-foreground: var(--color-neutral-300);
+
+  --color-card: var(--color-neutral-900);
+  --color-card-foreground: var(--color-neutral-300);
+
+  --color-muted-foreground: var(--color-neutral-600);
+  --color-disabled: var(--color-neutral-600);
+
+  /* No exact hex in the source for dark borders — masar-identity uses a
+     translucent white overlay here rather than a flat scale step, so
+     it reads correctly against any dark surface underneath it. */
+  --color-border: rgba(255, 255, 255, 0.07);
+  --color-ring: var(--color-primary-200);
+
+  /* primary/secondary solids stay fixed — same as light mode, on
+     purpose (see section 1 comments). */
+  --color-primary: var(--color-primary-500);
+  --color-primary-foreground: var(--color-neutral-50);
+  --color-secondary: var(--color-secondary-500);
+  --color-secondary-foreground: var(--color-neutral-800);
+
+  --color-primary-text: var(--color-primary-200);
+  --color-secondary-text: var(--color-secondary-600);
+  --color-sage: var(--color-sage-300);
+  --color-sage-text: var(--color-sage-200);
+
+  --color-primary-tint: color-mix(in oklch, var(--color-primary-200) 14%, transparent);
+  --color-secondary-tint: color-mix(in oklch, var(--color-secondary-500) 16%, transparent);
+  --color-sage-tint: color-mix(in oklch, var(--color-sage-500) 18%, transparent);
+
+  --color-success-bg: color-mix(in oklch, var(--color-success-500) 15%, transparent);
+  --color-success-fg: var(--color-success-50);
+  --color-warning-bg: color-mix(in oklch, var(--color-warning-500) 15%, transparent);
+  --color-warning-fg: var(--color-warning-50);
+  --color-error-bg: color-mix(in oklch, var(--color-error-500) 15%, transparent);
+  --color-error-fg: var(--color-error-50);
+  --color-info-bg: color-mix(in oklch, var(--color-info-500) 15%, transparent);
+  --color-info-fg: var(--color-info-50);
+
+  --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --shadow-card-sm: 0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+
+/* ----------------------------------------------------------------------
+   GRAY BADGE (inert/neutral state) — light + dark, kept separate from
+   the aliases above since it's a single fixed pattern, not a scale.
+------------------------------------------------------------------------- */
+@theme inline {
+  --color-neutral-badge-bg: var(--color-gray-100);
+  --color-neutral-badge-fg: var(--color-gray-500);
+}
+[data-theme="dark"] {
+  --color-neutral-badge-bg: rgba(255, 255, 255, 0.08); /* exact — dark-mode --neutral-bg */
+  --color-neutral-badge-fg: #a5adc4; /* exact — dark-mode --neutral-text */
+}
+
+/* ----------------------------------------------------------------------
+   USAGE NOTES
+   ----------------------------------------------------------------------
+   Raw scale (rarely used directly — prefer aliases):
+     bg-primary-100 text-primary-800
+
+   Structural surfaces (auto-adapt to dark mode):
+     <body class="bg-background text-foreground font-sans">
+     <div class="bg-card text-card-foreground shadow-card rounded-2xl">Card</div>
+     <div class="border border-border rounded-lg">Divider / outline</div>
+
+   Solid buttons — fixed color in both themes:
+     <button class="bg-primary text-primary-foreground">Apply</button>
+     <button class="bg-secondary text-secondary-foreground">Request Certificate</button>
+
+   Headings/labels on a card (adaptive — lightens in dark mode):
+     <h2 class="text-primary-text">Section title</h2>
+     <span class="text-secondary-text">Featured</span>
+
+   Tinted pills/badges (adaptive bg, pairs with the -text tokens above):
+     <span class="bg-primary-tint text-primary-text rounded-full px-3 py-1">Full-time</span>
+     <span class="bg-secondary-tint text-secondary-text rounded-full px-3 py-1">Certified</span>
+
+   Sage — reserved, not a semantic state:
+     <span class="bg-sage-tint text-sage-text">Hire Opportunity Confirmed</span>
+     Never use sage for generic "success" — that's success-bg/success-fg.
+
+   Certificate template — always uses the fixed/raw values directly, not
+   the adaptive aliases, since it must look identical regardless of app
+   theme:
+     <div class="bg-neutral-100 border-primary-500">...</div> <!-- paper variant -->
+     <div class="bg-primary-500 text-neutral-50">...</div>    <!-- navy variant -->
+
+   Inert/neutral badge — the one deliberately un-warm gray pattern:
+     <span class="bg-neutral-badge-bg text-neutral-badge-fg">Archived</span>
+
+   Toggling dark mode (matches masar-identity.html's own toggle):
+     document.documentElement.setAttribute("data-theme", "dark");
+     document.documentElement.removeAttribute("data-theme"); // back to light
+============================================================================ */
