@@ -1,20 +1,33 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+
+import { AuthCard, ResetPasswordForm } from "@/features/auth";
+
+export const metadata: Metadata = {
+  title: "Reset password",
+};
 
 interface PageProps {
   params: Promise<{ token: string }>;
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export default async function ResetPasswordPage({ params }: PageProps) {
   const { token } = await params;
-  return { title: `Reset Password — ${token}` };
-}
 
-export default async function Page({ params }: PageProps) {
-  const { token } = await params;
   return (
-    <div className="p-8">
-      <h1 className="font-sans text-xl font-semibold text-navy">Reset Password</h1>
-      <p className="mt-1 text-sm text-mid">{token}</p>
-    </div>
+    <AuthCard
+      title="Set a new password"
+      description="Choose a strong password to secure your account."
+      footer={
+        <p className="text-sm text-muted-foreground">
+          Changed your mind?{" "}
+          <Link href="/sign-in" className="font-medium text-secondary-text hover:underline">
+            Sign in
+          </Link>
+        </p>
+      }
+    >
+      <ResetPasswordForm token={token} />
+    </AuthCard>
   );
 }

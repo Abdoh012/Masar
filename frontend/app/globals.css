@@ -124,8 +124,13 @@
 
 /* ----------------------------------------------------------------------
    3. SEMANTIC ALIASES (LIGHT MODE — default)
+   ----------------------------------------------------------------------
+   Plain @theme (NOT @theme inline) on purpose: these aliases must be
+   emitted as real CSS variables that section 4 redefines under .dark.
+   @theme inline would inline the light value into every utility, so the
+   .dark overrides would never take effect.
 ------------------------------------------------------------------------- */
-@theme inline {
+@theme {
   --color-background: var(--color-neutral-200);
   --color-foreground: var(--color-neutral-800);
 
@@ -138,7 +143,14 @@
   --color-disabled: var(--color-neutral-500);
 
   --color-border: var(--color-neutral-400);
+  --color-input: var(--color-neutral-400);
   --color-ring: var(--color-primary-500);
+
+  /* Destructive maps to the error state — aliased here so shadcn-style
+     primitives (checkbox, input error states) can use the conventional
+     destructive/input token names without introducing new colors. */
+  --color-destructive: var(--color-error-500);
+  --color-destructive-foreground: var(--color-neutral-50);
 
   /* Solid fills — fixed across both themes (hero, primary/secondary
      buttons, cert border). */
@@ -179,14 +191,13 @@
 /* ----------------------------------------------------------------------
    4. DARK MODE
    ----------------------------------------------------------------------
-   Attribute-based, matching masar-identity.html's own toggle
-   (`[data-theme="dark"]` on <html>) rather than a `.dark` class — swap
-   the selector below if your app uses next-themes' class strategy
-   instead.
+   Class-based (.dark on <html>), matching the @custom-variant below and
+   next-themes' default class strategy. ThemeProvider (shared/components/
+   theme-provider) owns adding/removing the .dark class at runtime.
 ------------------------------------------------------------------------- */
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@custom-variant dark (&:where(.dark, .dark *));
 
-[data-theme="dark"] {
+.dark {
   --color-background: var(--color-neutral-950);
   --color-foreground: var(--color-neutral-300);
 
@@ -200,7 +211,11 @@
      translucent white overlay here rather than a flat scale step, so
      it reads correctly against any dark surface underneath it. */
   --color-border: rgba(255, 255, 255, 0.07);
+  --color-input: rgba(255, 255, 255, 0.16);
   --color-ring: var(--color-primary-200);
+
+  --color-destructive: var(--color-error-500);
+  --color-destructive-foreground: var(--color-neutral-50);
 
   /* primary/secondary solids stay fixed — same as light mode, on
      purpose (see section 1 comments). */
@@ -235,11 +250,11 @@
    GRAY BADGE (inert/neutral state) — light + dark, kept separate from
    the aliases above since it's a single fixed pattern, not a scale.
 ------------------------------------------------------------------------- */
-@theme inline {
+@theme {
   --color-neutral-badge-bg: var(--color-gray-100);
   --color-neutral-badge-fg: var(--color-gray-500);
 }
-[data-theme="dark"] {
+.dark {
   --color-neutral-badge-bg: rgba(255, 255, 255, 0.08); /* exact — dark-mode --neutral-bg */
   --color-neutral-badge-fg: #a5adc4; /* exact — dark-mode --neutral-text */
 }
@@ -280,7 +295,7 @@
    Inert/neutral badge — the one deliberately un-warm gray pattern:
      <span class="bg-neutral-badge-bg text-neutral-badge-fg">Archived</span>
 
-   Toggling dark mode (matches masar-identity.html's own toggle):
-     document.documentElement.setAttribute("data-theme", "dark");
-     document.documentElement.removeAttribute("data-theme"); // back to light
+   Toggling dark mode (handled by ThemeProvider — next-themes' class strategy):
+     next-themes adds/removes `.dark` on <html> and persists the choice in
+     localStorage ("masar-theme" key).
 ============================================================================ */

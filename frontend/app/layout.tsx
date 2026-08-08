@@ -7,6 +7,7 @@ import {
   IBM_Plex_Sans_Arabic,
 } from "next/font/google";
 import { baseMetadata } from "../config/metadata";
+import { ThemeProvider } from "../shared/components/theme-provider/ThemeProvider";
 import "./globals.css";
 
 // UI / body text
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={[
         ibmPlexSans.variable,
         ibmPlexSerif.variable,
@@ -56,7 +58,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         ibmPlexSansArabic.variable,
       ].join(" ")}
     >
-      <body>{children}</body>
+      <body>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }

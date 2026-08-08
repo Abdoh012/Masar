@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 
+import ForgetPasswordContainer from "@/features/auth/components/forget-password/ForgetPasswordContainer";
+
 export const metadata: Metadata = {
-  title: "Forgot Password",
+  title: "Forgot password",
 };
 
-export default function Page() {
-  return (
-    <div className="p-8">
-      <h1 className="font-sans text-xl font-semibold text-navy">Forgot Password</h1>
-    </div>
-  );
+export default function ForgotPasswordPage() {
+  return <ForgetPasswordContainer />;
 }

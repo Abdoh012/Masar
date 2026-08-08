@@ -1,7 +1,14 @@
 // Public surface for the "auth" feature.
-// Sign-up (student/company), sign-in, company approval gate.
-//
-// Only export what other parts of the app (routes, other features via
-// shared/) are meant to consume. Nothing outside this feature should ever
-// import from a deeper path than this file (R8). Features never import
-// from each other directly — promote to top-level shared/ on second use (R7).
+// Sign-up (student/company), sign-in, password reset, company approval
+// gate. Nothing outside this feature should ever import from a deeper
+// path than this file (R8) — routes and the (auth) layout consume the
+// exports below.
+
+export { ThemeToggle } from "./components/theme-toggle/ThemeToggle";
+export { BrandMark } from "./components/shared/BrandMark";
+export { BrandPanel } from "./components/shared/BrandPanel";
+export { AuthCard } from "./components/shared/AuthCard";
+export { SignInForm } from "./components/sign-in/SignInForm";
+export { SignUpForm } from "./components/sign-up/SignUpForm";
+export { ForgotPasswordForm } from "./components/ForgotPasswordForm";
+export { ResetPasswordForm } from "./components/ResetPasswordForm";

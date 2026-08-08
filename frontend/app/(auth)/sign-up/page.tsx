@@ -1,13 +1,10 @@
+import SignUpContainer from "@/features/auth/components/sign-up/SignUpContainer";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Sign Up",
+  title: "Sign up",
 };
 
-export default function Page() {
-  return (
-    <div className="p-8">
-      <h1 className="font-sans text-xl font-semibold text-navy">Sign Up</h1>
-    </div>
-  );
+export default function SignUpPage() {
+  return <SignUpContainer />;
 }
