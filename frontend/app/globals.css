@@ -295,7 +295,25 @@
    Inert/neutral badge — the one deliberately un-warm gray pattern:
      <span class="bg-neutral-badge-bg text-neutral-badge-fg">Archived</span>
 
-   Toggling dark mode (handled by ThemeProvider — next-themes' class strategy):
-     next-themes adds/removes `.dark` on <html> and persists the choice in
-     localStorage ("masar-theme" key).
+Toggling dark mode (handled by ThemeProvider — next-themes' class strategy):
+      next-themes adds/removes `.dark` on <html> and persists the choice in
+      localStorage ("masar-theme" key).
 ============================================================================ */
+
+/* ----------------------------------------------------------------------
+   SIDEBAR (feature 003-app-sidebar)
+   The rail (SidebarClientShell) sets data-variant="expanded"|"collapsed".
+   The server-rendered leaves can't know the variant, so these rules adapt
+   layout details for the collapsed rail (research R-8).
+------------------------------------------------------------------------- */
+/* Collapsed rail hides every label (nav names + logout) — icon rail only. */
+[data-variant="collapsed"] .sidebar-label {
+  display: none;
+}
+
+/* Collapsed rail shows only the seal: hides the wordmark span inside
+   BrandMark's horizontal lockup (seal <svg> is its first child, the
+   wordmark <span> the second) by direct structure. */
+[data-variant="collapsed"] .sidebar-brand > div > span {
+  display: none;
+}
