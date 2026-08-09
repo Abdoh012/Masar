@@ -1,4 +1,5 @@
-import { STATUS_BADGE_CLASSES, type ApplicationStatus } from "./constants";
+import { STATUS_BADGE_CLASSES } from "./constants";
+import type { ApplicationStatus } from "../../types";
 
 export interface StatusCountBadgeProps {
   label: string;

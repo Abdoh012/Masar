@@ -1,6 +1,6 @@
 import { Award, Briefcase, Info, type LucideIcon } from "lucide-react";
 
-import type { AppNotification } from "./constants";
+import type { AppNotification } from "../../types";
 
 const TYPE_ICONS: Record<AppNotification["type"], LucideIcon> = {
   application: Briefcase,

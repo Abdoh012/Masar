@@ -1,4 +1,5 @@
-import { STATUS_BADGE_CLASSES, type RecentApplicationRow } from "./constants";
+import { STATUS_BADGE_CLASSES } from "./constants";
+import type { RecentApplicationRow } from "../../types";
 
 // Leaf: one recent-application row.
 export function RecentApplicationRow({ row }: { row: RecentApplicationRow }) {

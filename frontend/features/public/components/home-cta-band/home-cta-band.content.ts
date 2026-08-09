@@ -1,5 +1,5 @@
 // HomeCtaBand copy (FR-010/011) — closing call-to-action band.
-import type { CtaBandData } from "./types";
+import type { CtaBandData } from "../../types";
 
 export const HOME_CTA_BAND: CtaBandData = {
   title: "Your first opportunity is one training away",

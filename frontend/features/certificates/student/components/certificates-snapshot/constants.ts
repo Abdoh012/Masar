@@ -1,10 +1,6 @@
-import type { CertificateDocument } from "../../../shared/components/certificate-document/constants";
+import type { CertificateSummary } from "../../types";
 
 // Mock certificates-snapshot data (UI-only).
-export interface CertificateSummary {
-  totalCount: number;
-  mostRecent: CertificateDocument | null;
-}
 
 export const CERTIFICATES: CertificateSummary = {
   totalCount: 3,

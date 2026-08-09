@@ -1,5 +1,6 @@
-// Shared certificate-document types. Data always lives in the caller
-// (certificates-snapshot/constants.ts etc.).
+// Shared types for certificates — used across roles within the feature
+// (certificate-document shared component + student certificates-snapshot).
+
 export interface CertificateDocument {
   studentName: string;
   title: string;

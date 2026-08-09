@@ -1,6 +1,5 @@
 // Support page copy (US4) — intro, FAQ entries, contact channels.
-import type { PageIntroData } from "../../types";
-import type { FaqItem, SupportContactData } from "./types";
+import type { FaqItem, PageIntroData, SupportContactData } from "../../types";
 
 export const SUPPORT_INTRO: PageIntroData = {
   eyebrow: "Support",

@@ -1,11 +1,4 @@
-// Mock profile the ProfileHeader section renders (UI-only; real data arrives in a later phase).
-export interface StudentProfile {
-  name: string;
-  field: string;
-  initials: string;
-  isComplete: boolean;
-  studies?: string;
-}
+import type { StudentProfile } from "../../types";
 
 export const PROFILE: StudentProfile = {
   name: "Nour El-Sayed",

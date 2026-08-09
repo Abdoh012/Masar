@@ -1,5 +1,5 @@
 // HomeHero copy (FR-007/011) — static content, no inline strings.
-import type { HomeHeroData } from "./types";
+import type { HomeHeroData } from "../../types";
 
 export const HOME_HERO: HomeHeroData = {
   title: "From training to opportunity",

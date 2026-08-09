@@ -1,4 +1,4 @@
-import type { Listing } from "../../../shared/components/listing-card/constants";
+import type { Listing } from "@/features/listings/shared/types";
 
 // Field-matched mock listings for "Software Engineering" students.
 export const RECOMMENDED_LISTINGS: Listing[] = [

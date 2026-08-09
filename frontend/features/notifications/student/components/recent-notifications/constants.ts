@@ -1,14 +1,6 @@
-// Mock notifications data (UI-only).
-export type NotificationType = "application" | "certificate" | "system";
+import type { AppNotification } from "../../types";
 
-export interface AppNotification {
-  id: string;
-  type: NotificationType;
-  title: string;
-  body: string;
-  timestamp: string;
-  unread: boolean;
-}
+// Mock notifications data (UI-only).
 
 export const RECENT_NOTIFICATIONS: AppNotification[] = [
   {

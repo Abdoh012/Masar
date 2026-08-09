@@ -2,15 +2,9 @@ import Link from "next/link";
 import { ArrowRight, Briefcase, GraduationCap, MapPin } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
+import type { Listing } from "@/features/listings/shared/types";
 
-export interface ListingCardProps {
-  id: string;
-  title: string;
-  companyName: string;
-  field: string;
-  location?: string;
-  mode: string;
-  free?: boolean;
+export interface ListingCardProps extends Listing {
   className?: string;
 }
 

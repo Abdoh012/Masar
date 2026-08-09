@@ -1,21 +1,7 @@
+import type { ApplicationStatus, RecentApplicationRow, StatusCounts } from "../../types";
+
 // Mock applications-snapshot data (UI-only).
-export const APPLICATION_STATUSES = ["Applied", "Accepted", "Rejected", "Withdrawn"] as const;
-export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
-
-export interface StatusCounts {
-  applied: number;
-  accepted: number;
-  rejected: number;
-  withdrawn: number;
-}
-
-export interface RecentApplicationRow {
-  id: string;
-  companyName: string;
-  listingTitle: string;
-  status: ApplicationStatus;
-  appliedOn: string;
-}
+export const APPLICATION_STATUSES: ApplicationStatus[] = ["Applied", "Accepted", "Rejected", "Withdrawn"];
 
 // Single source for status pill classes — keeps badges, rows and the Accepted
 // sage signal in sync (component-contracts.md §3 fixed mapping).

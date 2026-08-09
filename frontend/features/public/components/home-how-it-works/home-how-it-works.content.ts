@@ -1,5 +1,5 @@
 // HomeHowItWorks copy (FR-009/011) — three numbered steps to a first job.
-import type { HowItWorksStep } from "./types";
+import type { HowItWorksStep } from "../../types";
 
 export const HOME_HOW_IT_WORKS: HowItWorksStep[] = [
   {

@@ -8,12 +8,17 @@ import {
   RECENT_APPLICATIONS,
   STATUS_COUNT_KEYS,
   STATUS_COUNTS,
-  type StatusCounts,
 } from "./constants";
+import type { StatusCounts } from "../../types";
 import { RecentApplicationRow } from "./RecentApplicationRow";
 import { StatusCountBadge } from "./StatusCountBadge";
 
-const COUNTS_ZERO: StatusCounts = { applied: 0, accepted: 0, rejected: 0, withdrawn: 0 };
+const COUNTS_ZERO: StatusCounts = {
+  applied: 0,
+  accepted: 0,
+  rejected: 0,
+  withdrawn: 0,
+};
 
 // ApplicationsSnapshot: status-count tiles + up to 3 recent rows, or the empty state.
 export function ApplicationsSnapshot() {
@@ -34,7 +39,12 @@ export function ApplicationsSnapshot() {
       className="flex h-full flex-col rounded-2xl border border-border bg-card p-5 shadow-card"
     >
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-base font-semibold text-primary-text">Applications snapshot</h2>
+        {/* Header */}
+        <h2 className="text-base font-semibold text-primary-text">
+          Applications snapshot
+        </h2>
+
+        {/* If there are applications, show "View all applications" button */}
         {!isEmpty ? (
           <Link
             href="/applications"
@@ -45,16 +55,23 @@ export function ApplicationsSnapshot() {
         ) : null}
       </div>
 
+      {/* If there are no applications, show the empty state */}
       {isEmpty ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-background px-4 py-8 text-center">
-          <FileText aria-hidden="true" className="size-6 text-muted-foreground" />
-          <p className="text-sm font-semibold text-foreground">No applications yet</p>
+          <FileText
+            aria-hidden="true"
+            className="size-6 text-muted-foreground"
+          />
+          <p className="text-sm font-semibold text-foreground">
+            No applications yet
+          </p>
           <p className="text-xs text-muted-foreground">
             Applications you submit will appear here.
           </p>
         </div>
       ) : (
         <>
+          {/* Status count tiles — always 4 columns (2 on mobile) */}
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
             {APPLICATION_STATUSES.map((status) => (
               <StatusCountBadge
@@ -65,6 +82,8 @@ export function ApplicationsSnapshot() {
               />
             ))}
           </div>
+
+          {/* Recent applications list (up to 3 rows) */}
           <ul className="mt-2">
             {RECENT_APPLICATIONS.slice(0, 3).map((row) => (
               <RecentApplicationRow key={row.id} row={row} />

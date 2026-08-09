@@ -1,14 +1,6 @@
 // Mock active-training data (UI-only; the real slice is fetched by this section in a later phase).
-export type TrainingMode = "paid_trial" | "part_time" | "full_time";
 
-export interface ActiveApplication {
-  id: string;
-  company: string;
-  listingTitle: string;
-  mode: TrainingMode;
-  trialDaysRemaining?: number;
-  startedOn: string;
-}
+import type { ActiveApplication, TrainingMode } from "../../types";
 
 // Display labels for the mode pill (single source — no inline mapping in the component).
 export const TRAINING_MODE_LABELS: Record<TrainingMode, string> = {

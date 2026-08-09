@@ -3,8 +3,6 @@ import { fadeInUp } from "@/shared/lib/animations";
 import { PROFILE } from "./constants";
 import { ProfileCompletionPrompt } from "./ProfileCompletionPrompt";
 
-// ProfileHeader: orchestrates the identity row (avatar initials + name/field)
-// and the conditional completion nudge. Rendered full-width above the grid.
 export function ProfileHeader() {
   const { name, field, initials, isComplete, studies } = PROFILE;
 
@@ -18,23 +16,31 @@ export function ProfileHeader() {
       className="flex w-full flex-col gap-4 rounded-2xl border border-border bg-card p-5 shadow-card sm:flex-row sm:items-center sm:justify-between"
     >
       <div className="flex items-center gap-4">
-        <span
-          aria-hidden="true"
-          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-tint font-semibold text-primary-text"
-        >
+        {/* TODO: Change this to a real image */}
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-tint font-semibold text-primary-text">
           {initials}
         </span>
+
         <div className="min-w-0">
+          {/* TODO: Change this to a real name */}
           <h1 className="truncate text-lg font-semibold text-primary-text sm:text-xl">
             {name}
           </h1>
+
+          {/* TODO: Change this to a real field */}
           <p className="truncate text-sm text-muted-foreground">{field}</p>
+
+          {/* TODO: Change this to a real studies */}
           {studies ? (
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">{studies}</p>
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+              {studies}
+            </p>
           ) : null}
         </div>
       </div>
-      {!isComplete ? <ProfileCompletionPrompt /> : null}
+
+      {/* Complete Profile */}
+      {true ? <ProfileCompletionPrompt /> : null}
     </Motion>
   );
 }

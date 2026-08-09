@@ -1,6 +1,6 @@
 // HomeFeatures copy (FR-008/011) — three value props, icon keys resolved
 // to lucide icons in the component (serializable content constants).
-import type { FeatureProp } from "./types";
+import type { FeatureProp } from "../../types";
 
 export const HOME_FEATURES: FeatureProp[] = [
   {

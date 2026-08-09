@@ -1,7 +1,7 @@
 import { cn } from "@/shared/lib/utils";
 
 import { SealMark } from "./SealMark";
-import type { CertificateDocument as CertificateDocumentData } from "./constants";
+import type { CertificateDocument as CertificateDocumentData } from "../../types";
 
 interface CertificateCornerProps {
   position: "tl" | "tr" | "bl" | "br";

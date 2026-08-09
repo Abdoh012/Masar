@@ -5,7 +5,11 @@
 // the actions/ folder is where they'll be swapped for zod or a backend
 // schema once the API contract exists.
 
-export type FieldErrors = Record<string, string[]>;
+import type { ActionState } from "@/types/server-action";
+
+// Per-field error map — same shape as ActionState.fieldErrors, so validators
+// feed straight into useActionState.
+export type FieldErrors = NonNullable<ActionState["fieldErrors"]>;
 
 type Rule = (value: string | undefined) => string | undefined;
 

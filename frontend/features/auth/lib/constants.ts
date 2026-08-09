@@ -1,5 +1,7 @@
 import { Building2, GraduationCap } from "lucide-react";
 
+import type { Role } from "@/types/auth";
+
 export const SIGN_UP_ROLES = [
   {
     value: "student" as RoleType,
@@ -56,4 +58,5 @@ export const FIELD_CONFIG = {
   },
 } as const;
 
-export type RoleType = "student" | "company";
+// Roles selectable at sign-up (subset of the global Role — admin is never an option).
+export type RoleType = Exclude<Role, "admin">;

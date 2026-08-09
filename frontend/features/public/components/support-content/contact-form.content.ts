@@ -1,6 +1,6 @@
 // ContactForm copy (FR-015/025) — client-side field metadata + simulated
 // success message; nothing persists (FR-026).
-import type { ContactFormData } from "./types";
+import type { ContactFormData } from "../../types";
 
 export const CONTACT_FORM: ContactFormData = {
   fields: [

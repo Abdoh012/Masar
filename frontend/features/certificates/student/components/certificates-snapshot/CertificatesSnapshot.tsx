@@ -21,15 +21,15 @@ export function CertificatesSnapshot() {
       className="flex h-full flex-col rounded-2xl border border-border bg-card p-5 shadow-card"
     >
       <div className="flex items-center justify-between gap-2">
+        {/* Header */}
         <h2 className="flex items-center gap-2 text-base font-semibold text-primary-text">
-          <span
-            aria-hidden="true"
-            className="flex size-6 items-center justify-center rounded-full bg-secondary-tint text-secondary-text"
-          >
+          <span className="flex size-6 items-center justify-center rounded-full bg-secondary-tint text-secondary-text">
             <Award className="size-3.5" />
           </span>
           Certificates
         </h2>
+
+        {/* the most recent certificate count badge */}
         {mostRecent ? (
           <span className="shrink-0 rounded-full bg-secondary-tint px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-secondary-text">
             {totalCount} certificates
@@ -37,6 +37,7 @@ export function CertificatesSnapshot() {
         ) : null}
       </div>
 
+      {/* Certificate content (either the recent certificate document or the empty state) */}
       {mostRecent ? (
         <div className="mt-4">
           <Motion
@@ -48,6 +49,8 @@ export function CertificatesSnapshot() {
           >
             <CertificateDocument data={mostRecent} compact />
           </Motion>
+
+          {/* Verified certificate badge */}
           <p className="mt-3 text-center font-mono text-[11px] text-muted-foreground">
             Verified certificate · Issued {mostRecent.issuedOn}
           </p>

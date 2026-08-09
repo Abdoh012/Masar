@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 
-import type { FaqItem } from "./types";
+import type { FaqItem } from "../../types";
 
 interface FaqListProps {
   items: FaqItem[];
