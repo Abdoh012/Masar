@@ -6,6 +6,7 @@ export const AUTH_ROUTES_PREFIX = [
   "/sign-in",
   "/sign-up",
   "/forgot-password",
+  "/verify-otp",
   "/reset-password",
 ];
 

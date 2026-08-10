@@ -12,3 +12,4 @@ export { SignInForm } from "./components/sign-in/SignInForm";
 export { SignUpForm } from "./components/sign-up/SignUpForm";
 export { ForgotPasswordForm } from "./components/forget-password/ForgotPasswordForm";
 export { ResetPasswordForm } from "./components/reset-password/ResetPasswordForm";
+export { OtpForm } from "./components/verify-otp/OtpForm";
