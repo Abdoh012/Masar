@@ -116,10 +116,16 @@
 ------------------------------------------------------------------------- */
 @theme inline {
   --font-sans: var(--font-ibm-plex-sans); /* UI / body default */
-  --font-heading: var(--font-ibm-plex-sans); /* h1-h6 — same family, bolder weight */
-  --font-mono: var(--font-ibm-plex-mono); /* certificate IDs, dates, reference numbers */
+  --font-heading: var(
+    --font-ibm-plex-sans
+  ); /* h1-h6 — same family, bolder weight */
+  --font-mono: var(
+    --font-ibm-plex-mono
+  ); /* certificate IDs, dates, reference numbers */
   --font-serif: var(--font-ibm-plex-serif); /* certificate template only */
-  --font-arabic: var(--font-ibm-plex-sans-arabic); /* wired for v2, unused in v1 UI */
+  --font-arabic: var(
+    --font-ibm-plex-sans-arabic
+  ); /* wired for v2, unused in v1 UI */
 }
 
 /* ----------------------------------------------------------------------
@@ -137,7 +143,9 @@
   --color-card: var(--color-neutral-50);
   --color-card-foreground: var(--color-neutral-800);
 
-  --color-paper: var(--color-neutral-100); /* fixed, certificate-only — do not use elsewhere */
+  --color-paper: var(
+    --color-neutral-100
+  ); /* fixed, certificate-only — do not use elsewhere */
 
   --color-muted-foreground: var(--color-neutral-700);
   --color-disabled: var(--color-neutral-500);
@@ -229,15 +237,39 @@
   --color-sage: var(--color-sage-300);
   --color-sage-text: var(--color-sage-200);
 
-  --color-primary-tint: color-mix(in oklch, var(--color-primary-200) 14%, transparent);
-  --color-secondary-tint: color-mix(in oklch, var(--color-secondary-500) 16%, transparent);
-  --color-sage-tint: color-mix(in oklch, var(--color-sage-500) 18%, transparent);
+  --color-primary-tint: color-mix(
+    in oklch,
+    var(--color-primary-200) 14%,
+    transparent
+  );
+  --color-secondary-tint: color-mix(
+    in oklch,
+    var(--color-secondary-500) 16%,
+    transparent
+  );
+  --color-sage-tint: color-mix(
+    in oklch,
+    var(--color-sage-500) 18%,
+    transparent
+  );
 
-  --color-success-bg: color-mix(in oklch, var(--color-success-500) 15%, transparent);
+  --color-success-bg: color-mix(
+    in oklch,
+    var(--color-success-500) 15%,
+    transparent
+  );
   --color-success-fg: var(--color-success-50);
-  --color-warning-bg: color-mix(in oklch, var(--color-warning-500) 15%, transparent);
+  --color-warning-bg: color-mix(
+    in oklch,
+    var(--color-warning-500) 15%,
+    transparent
+  );
   --color-warning-fg: var(--color-warning-50);
-  --color-error-bg: color-mix(in oklch, var(--color-error-500) 15%, transparent);
+  --color-error-bg: color-mix(
+    in oklch,
+    var(--color-error-500) 15%,
+    transparent
+  );
   --color-error-fg: var(--color-error-50);
   --color-info-bg: color-mix(in oklch, var(--color-info-500) 15%, transparent);
   --color-info-fg: var(--color-info-50);
@@ -255,7 +287,12 @@
   --color-neutral-badge-fg: var(--color-gray-500);
 }
 .dark {
-  --color-neutral-badge-bg: rgba(255, 255, 255, 0.08); /* exact — dark-mode --neutral-bg */
+  --color-neutral-badge-bg: rgba(
+    255,
+    255,
+    255,
+    0.08
+  ); /* exact — dark-mode --neutral-bg */
   --color-neutral-badge-fg: #a5adc4; /* exact — dark-mode --neutral-text */
 }
 
@@ -350,12 +387,13 @@ Toggling dark mode (handled by ThemeProvider — next-themes' class strategy):
    it only repaints the native scrollbar.
 ------------------------------------------------------------------------- */
 :root {
-  --scrollbar-thumb: var(--color-primary-400);
-  --scrollbar-thumb-hover: var(--color-primary-500);
+  --scrollbar-thumb: var(--color-primary-500);
+  --scrollbar-thumb-hover: var(--color-primary-400);
 }
+
 .dark {
-  --scrollbar-thumb: rgba(255, 255, 255, 0.16);
-  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.3);
+  --scrollbar-thumb: var(--color-secondary-500);
+  --scrollbar-thumb-hover: var(--color-secondary-400);
 }
 
 /* Firefox — two-color form: <thumb> <track>. */
