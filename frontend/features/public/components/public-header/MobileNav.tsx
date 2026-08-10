@@ -1,10 +1,12 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/shared/components/ui/button";
+import Motion from "@/shared/components/animation/Motion";
+import { menuPanel } from "@/shared/lib/animations";
 import { headerNavLinks } from "../content/public-nav.content";
 import { PublicNavLink } from "./PublicNavLink";
 
@@ -34,12 +36,13 @@ export function MobileNav() {
       {/* Navigation */}
       <AnimatePresence initial={false}>
         {open ? (
-          <motion.nav
+          <Motion
+            as="nav"
             key="mobile-nav"
-            initial={{ opacity: 0, y: -8, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.98 }}
-            transition={{ duration: 0.22, ease: "easeInOut" }}
+            variants={menuPanel}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
             className="absolute right-0 top-full z-50 mt-2 w-56 flex-col gap-1 rounded-xl border border-border bg-card p-3 shadow-card-sm origin-top-right"
           >
             {headerNavLinks.map((link) => (
@@ -62,7 +65,7 @@ export function MobileNav() {
                 <a href="/sign-up">Start now</a>
               </Button>
             </div>
-          </motion.nav>
+          </Motion>
         ) : null}
       </AnimatePresence>
     </div>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
-import Motion from "@/shared/components/animation/components/Motion";
+import Motion from "@/shared/components/animation/Motion";
 import { fadeInUp } from "@/shared/lib/animations";
 import { ACTIVE_TRAINING, TRAINING_MODE_LABELS } from "./constants";
 import { NoActiveTraining } from "./NoActiveTraining";

@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import Motion from "@/shared/components/animation/components/Motion";
+import Motion from "@/shared/components/animation/Motion";
 import { fadeInUp } from "@/shared/lib/animations";
 import { RECENT_NOTIFICATIONS } from "./constants";
 import NoNotifications from "./NoNotifications";

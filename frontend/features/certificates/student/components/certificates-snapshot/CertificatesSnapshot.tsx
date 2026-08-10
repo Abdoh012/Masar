@@ -1,7 +1,7 @@
 import { Award } from "lucide-react";
 
 import { CertificateDocument } from "@/features/certificates/shared/components/certificate-document/CertificateDocument";
-import Motion from "@/shared/components/animation/components/Motion";
+import Motion from "@/shared/components/animation/Motion";
 import { fadeInUp, scaleIn } from "@/shared/lib/animations";
 import { CERTIFICATES } from "./constants";
 import { NoCertificatesYet } from "./NoCertificatesYet";

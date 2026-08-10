@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, type Variants } from "framer-motion";
-import type { ElementType, ReactNode } from "react";
+import { useMemo, type ElementType, type ReactNode } from "react";
 
 interface MotionProps {
   as?: keyof typeof motion;
@@ -13,13 +13,14 @@ interface MotionProps {
 export default function Motion({
   as = "div",
   variants,
+  children,
   ...props
 }: MotionProps) {
-  const Component = motion[as] as ElementType;
+  const Component = useMemo(() => motion.create(as as ElementType), [as]);
 
   return (
     <Component {...props} variants={variants}>
-      {props.children}
+      {children}
     </Component>
   );
 }

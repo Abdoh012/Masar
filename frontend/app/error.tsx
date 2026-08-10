@@ -5,7 +5,7 @@ import { useEffect } from "react";
 
 import { CircleAlert } from "lucide-react";
 
-import Motion from "@/shared/components/animation/components/Motion";
+import Motion from "@/shared/components/animation/Motion";
 import { Button } from "@/shared/components/ui/button";
 import { fadeInUp } from "@/shared/lib/animations";
 

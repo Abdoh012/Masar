@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 
-import Motion from "@/shared/components/animation/components/Motion";
+import Motion from "@/shared/components/animation/Motion";
 import { fadeInUp } from "@/shared/lib/animations";
 import { ListingCard } from "@/features/listings/shared/components/listing-card/ListingCard";
 import { FALLBACK_LISTINGS, RECOMMENDED_LISTINGS } from "./constants";

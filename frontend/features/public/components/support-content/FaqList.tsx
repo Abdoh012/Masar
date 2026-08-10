@@ -1,9 +1,11 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 
+import Motion from "@/shared/components/animation/Motion";
+import { expandCollapse, rotateToggle } from "@/shared/lib/animations";
 import type { FaqItem } from "../../types";
 
 interface FaqListProps {
@@ -40,9 +42,10 @@ export function FaqList({ items }: FaqListProps) {
               <span>{item.question}</span>
 
               {/* FAQ icon */}
-              <motion.span
-                animate={{ rotate: isOpen ? 180 : 0 }}
-                transition={{ duration: 0.25, ease: "easeInOut" }}
+              <Motion
+                as="span"
+                variants={rotateToggle}
+                animate={isOpen ? "open" : "closed"}
                 className="shrink-0 text-secondary-text"
               >
                 <ChevronDown
@@ -50,26 +53,27 @@ export function FaqList({ items }: FaqListProps) {
                   aria-hidden="true"
                   strokeWidth={2}
                 />
-              </motion.span>
+              </Motion>
             </button>
 
             {/* FAQ answer panel - animates when open/closed */}
             <AnimatePresence initial={false}>
               {isOpen ? (
-                <motion.div
+                <Motion
+                  as="div"
                   id={answerId}
                   key="answer"
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.28, ease: "easeInOut" }}
+                  variants={expandCollapse}
+                  initial="hidden"
+                  animate="visible"
+                  exit="hidden"
                   className="border-t border-border overflow-hidden"
                 >
                   {/* FAQ answer text */}
                   <p className="px-5 py-4 text-sm leading-relaxed text-muted-foreground">
                     {item.answer}
                   </p>
-                </motion.div>
+                </Motion>
               ) : null}
             </AnimatePresence>
           </div>
