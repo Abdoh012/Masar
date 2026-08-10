@@ -1,6 +1,8 @@
 "use client";
 
+import type { FormEvent } from "react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { FormField } from "../shared/FormField";
 import { SubmitButton } from "../shared/SubmitButton";
@@ -9,11 +11,21 @@ import { FIELD_CONFIG } from "../../lib/constants";
 import Footer from "./footer/Footer";
 
 export function SignUpForm() {
+  const router = useRouter();
   const [role, setRole] = useState<"student" | "company">("student");
   const isCompany = role === "company";
 
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    // UI-only handoff to the profile-information step — no account is
+    // created, no API call is made; the flow simply continues to the next
+    // screen of the sign-up journey.
+    router.push("/profile-information");
+  }
+
   return (
-    <form className="space-y-5">
+    <form className="space-y-5" onSubmit={handleSubmit}>
       <RoleSelector value={role} onChange={setRole} />
       <input type="hidden" name="role" value={role} />
 
@@ -56,7 +68,7 @@ export function SignUpForm() {
 
       <Footer />
 
-      <SubmitButton>Create account</SubmitButton>
+      <SubmitButton>Next</SubmitButton>
     </form>
   );
 }

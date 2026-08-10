@@ -5,6 +5,7 @@ export const PUBLIC_ROUTES = ["/", "/about", "/support", "/privacy", "/terms"];
 export const AUTH_ROUTES_PREFIX = [
   "/sign-in",
   "/sign-up",
+  "/profile-information",
   "/forgot-password",
   "/verify-otp",
   "/reset-password",

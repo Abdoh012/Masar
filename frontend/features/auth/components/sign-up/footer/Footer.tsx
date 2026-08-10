@@ -8,7 +8,12 @@ export default function Footer() {
   return (
     <div className="space-y-1.5">
       <div className="flex items-start gap-2.5">
-        <Checkbox id="terms" name="terms" className="mt-0.5 cursor-pointer" />
+        <Checkbox
+          id="terms"
+          name="terms"
+          className="mt-0.5 cursor-pointer"
+          required
+        />
 
         {/* label */}
         <Label

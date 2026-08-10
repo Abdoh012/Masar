@@ -64,5 +64,27 @@ export const OTP_LENGTH = 6;
 // still a UI-only destination with no real token from a verified OTP.
 export const RESET_PASSWORD_PLACEHOLDER_TOKEN = "placeholder";
 
+// Profile-information step of the sign-up flow (UI-only for now): the
+// fields shown after the account basics, before finishing at sign-in.
+export const PROFILE_INFO_FIELDS = {
+  userField: {
+    label: "User Field",
+    placeholder: "e.g. Computer Engineering",
+  },
+  specialist: {
+    label: "Specialist",
+    placeholder: "e.g. Web Development",
+  },
+  university: {
+    label: "University",
+    placeholder: "e.g. Cairo University",
+  },
+  description: {
+    label: "Description",
+    placeholder: "Tell us a bit about yourself",
+    optional: true,
+  },
+} as const;
+
 // Roles selectable at sign-up (subset of the global Role — admin is never an option).
 export type RoleType = Exclude<Role, "admin">;
