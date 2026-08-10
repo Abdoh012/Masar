@@ -1,4 +1,4 @@
-import Motion from "@/shared/components/animation/Motion";
+import Motion from "@/shared/components/animation/components/Motion";
 import { fadeInUp } from "@/shared/lib/animations";
 import { PROFILE } from "./constants";
 import { ProfileCompletionPrompt } from "./ProfileCompletionPrompt";

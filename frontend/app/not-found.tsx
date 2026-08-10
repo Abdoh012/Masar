@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import Motion from "@/shared/components/animation/Motion";
+import Motion from "@/shared/components/animation/components/Motion";
 import { Button } from "@/shared/components/ui/button";
 import { fadeInUp } from "@/shared/lib/animations";
 
@@ -20,8 +20,7 @@ export default function NotFound() {
           Page not found
         </h1>
         <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-          The page you&apos;re looking for doesn&apos;t exist or may have
-          moved.
+          The page you&apos;re looking for doesn&apos;t exist or may have moved.
         </p>
         <Button asChild className="mt-2">
           <Link href="/">Back home</Link>

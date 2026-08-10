@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import Motion from "@/shared/components/animation/Motion";
+import Motion from "@/shared/components/animation/components/Motion";
 import {
   Card,
   CardContent,

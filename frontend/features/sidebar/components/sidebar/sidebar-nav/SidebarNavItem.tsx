@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import Motion from "@/shared/components/animation/Motion";
-import { SidebarMenuButton, SidebarMenuItem } from "@/shared/components/ui/sidebar";
+import Motion from "@/shared/components/animation/components/Motion";
+import {
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/shared/components/ui/sidebar";
 
 import { ICON_MAP } from "../../../lib/icon-map";
 import { SIDEBAR_LABEL_GRID, SIDEBAR_LABEL_TRACK } from "../constants";
