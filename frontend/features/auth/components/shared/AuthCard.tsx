@@ -13,7 +13,7 @@ import { fadeInUp } from "@/shared/lib/animations";
 
 interface AuthCardProps {
   title: string;
-  description?: string;
+  description?: ReactNode;
   footer?: ReactNode;
   children: ReactNode;
 }

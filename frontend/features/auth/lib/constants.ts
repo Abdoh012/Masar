@@ -57,5 +57,12 @@ export const FIELD_CONFIG = {
   },
 } as const;
 
+// OTP verification step in the forgot-password flow (UI-only for now).
+export const OTP_LENGTH = 6;
+
+// Placeholder token the Verify button routes to while reset-password is
+// still a UI-only destination with no real token from a verified OTP.
+export const RESET_PASSWORD_PLACEHOLDER_TOKEN = "placeholder";
+
 // Roles selectable at sign-up (subset of the global Role — admin is never an option).
 export type RoleType = Exclude<Role, "admin">;
