@@ -29,7 +29,6 @@ export const FIELD_CONFIG = {
     type: "email",
     placeholder: "you@example.com",
     autoComplete: "email",
-    hint: "We'll never share your email.",
   },
   password: {
     label: "Password",
