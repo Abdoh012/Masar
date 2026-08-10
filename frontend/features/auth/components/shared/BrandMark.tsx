@@ -7,6 +7,9 @@ interface BrandMarkProps {
   // "lg" — hero lockup (seal over wordmark). "sm" — compact header lockup.
   size?: "sm" | "lg";
   layout?: "vertical" | "horizontal";
+  // Seal-only treatment (no wordmark, no gap) — used by the sidebar's
+  // collapsed rail where only the mark fits.
+  markOnly?: boolean;
   className?: string;
 }
 
@@ -18,6 +21,7 @@ export function BrandMark({
   tone = "navy",
   size = "lg",
   layout = "vertical",
+  markOnly = false,
   className,
 }: BrandMarkProps) {
   const onPaper = tone === "paper";
@@ -48,15 +52,17 @@ export function BrandMark({
           strokeLinejoin="round"
         />
       </svg>
-      <span
-        className={cn(
-          "font-sans font-semibold leading-none tracking-tight",
-          wordmarkColor,
-          size === "lg" ? "text-5xl" : "text-2xl",
-        )}
-      >
-        Mas<span className="text-secondary-500">ar</span>
-      </span>
+      {markOnly ? null : (
+        <span
+          className={cn(
+            "font-sans font-semibold leading-none tracking-tight",
+            wordmarkColor,
+            size === "lg" ? "text-5xl" : "text-2xl",
+          )}
+        >
+          Mas<span className="text-secondary-500">ar</span>
+        </span>
+      )}
     </div>
   );
 }

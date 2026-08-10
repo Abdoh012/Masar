@@ -1,17 +1,27 @@
 import { LogOut } from "lucide-react";
 
-import { Button } from "@/shared/components/ui/button";
+import { SidebarMenuButton } from "@/shared/components/ui/sidebar";
 
-import { SIDEBAR_LABELS } from "../constants";
+import {
+  SIDEBAR_FOOTER_LABEL,
+  SIDEBAR_FOOTER_ROW,
+  SIDEBAR_LABEL_TRACK,
+  SIDEBAR_LABELS,
+} from "../constants";
 
-// SidebarLogoutButton: UI-only logout control (FR-015/FR-025) — a real,
-// visible button with NO handler this phase (no session removal, no
-// redirect). Its label hides in the collapsed rail via data-variant CSS.
 export function SidebarLogoutButton() {
   return (
-    <Button type="button" variant="ghost" size="default" className="w-full justify-start px-3 text-left min-h-11">
-      <LogOut strokeWidth={2} aria-hidden="true" />
-      <span className="sidebar-label truncate">{SIDEBAR_LABELS.logout}</span>
-    </Button>
+    <SidebarMenuButton
+      asChild
+      tooltip={SIDEBAR_LABELS.logout}
+      className={SIDEBAR_FOOTER_ROW}
+    >
+      <button type="button">
+        <LogOut strokeWidth={2} />
+        <span className={SIDEBAR_FOOTER_LABEL}>
+          <span className={SIDEBAR_LABEL_TRACK}>{SIDEBAR_LABELS.logout}</span>
+        </span>
+      </button>
+    </SidebarMenuButton>
   );
 }

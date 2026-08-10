@@ -1,9 +1,3 @@
-// Role-level types for the public feature (structure rules §14).
-// The public feature has no role subfolders, so all its content contracts
-// live in this single feature-level types.ts. See specs/002-public-pages/data-model.md.
-
-// --- Shared across sections -------------------------------------------------
-
 export interface NavLink {
   label: string;
   href: string;

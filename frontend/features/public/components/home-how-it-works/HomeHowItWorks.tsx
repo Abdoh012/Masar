@@ -1,23 +1,28 @@
+import Header from "@/features/public/components/shared/Header";
+import Title from "@/features/public/components/shared/Title";
+
 import { HOME_HOW_IT_WORKS } from "./home-how-it-works.content";
 
-// StepCard: numbered how-it-works step.
-function StepCard({
-  step,
-  title,
-  description,
-}: {
+interface StepCardProps {
   step: number;
   title: string;
   description: string;
-}) {
+}
+
+function StepCard({ step, title, description }: StepCardProps) {
   return (
     <li className="flex flex-col gap-3">
+      {/* Step number */}
       <span className="font-mono text-sm font-semibold text-secondary-text">
         Step {step}
       </span>
+
+      {/* Step title */}
       <h3 className="font-heading text-lg font-semibold tracking-tight text-primary-text">
         {title}
       </h3>
+
+      {/* Step description */}
       <p className="leading-relaxed text-muted-foreground">{description}</p>
     </li>
   );
@@ -27,23 +32,17 @@ function StepCard({
 // carrier MUST carry id="how-it-works" (FR-009) for the hero anchor.
 export function HomeHowItWorks() {
   return (
-    <section
-      id="how-it-works"
-      className="bg-card py-20 sm:py-24"
-      aria-labelledby="how-it-works-title"
-    >
+    <section className="bg-card py-20 sm:py-24">
       <div className="mx-auto w-full max-w-6xl px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-secondary-text">
-            How it works
-          </p>
-          <h2
-            id="how-it-works-title"
-            className="font-heading mt-3 text-2xl font-semibold tracking-tight text-primary-text sm:text-3xl"
-          >
-            Three steps from student to opportunity
-          </h2>
+          {/* Section Heading */}
+          <Header title="How it works" />
+
+          {/* Section Title */}
+          <Title title="Three steps from student to opportunity" />
         </div>
+
+        {/* Steps */}
         <ol className="mt-12 grid gap-10 sm:grid-cols-3 sm:gap-6">
           {HOME_HOW_IT_WORKS.map((step) => (
             <StepCard key={step.step} {...step} />

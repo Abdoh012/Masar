@@ -301,19 +301,39 @@ Toggling dark mode (handled by ThemeProvider — next-themes' class strategy):
 ============================================================================ */
 
 /* ----------------------------------------------------------------------
-   SIDEBAR (feature 003-app-sidebar)
-   The rail (SidebarClientShell) sets data-variant="expanded"|"collapsed".
-   The server-rendered leaves can't know the variant, so these rules adapt
-   layout details for the collapsed rail (research R-8).
+   SIDEBAR (feature 003-app-sidebar) — shadcn sidebar block tokens
+   The rail reuses the shadcn `sidebar` block; these vars restyle it with
+   the Masar tokens. The rail is a primary (ink navy) surface — primary is
+   fixed across both themes (like the hero), so every sidebar token is
+   identical in light and dark on purpose.
+   White on navy throughout: labels, hover/active accent as a translucent
+   white pill, borders as a translucent white divide.
 ------------------------------------------------------------------------- */
-/* Collapsed rail hides every label (nav names + logout) — icon rail only. */
-[data-variant="collapsed"] .sidebar-label {
-  display: none;
+@theme inline {
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/* Collapsed rail shows only the seal: hides the wordmark span inside
-   BrandMark's horizontal lockup (seal <svg> is its first child, the
-   wordmark <span> the second) by direct structure. */
-[data-variant="collapsed"] .sidebar-brand > div > span {
-  display: none;
+:root,
+.dark {
+  --sidebar: var(--color-primary);
+  --sidebar-foreground: var(--color-neutral-50);
+  --sidebar-primary: var(--color-secondary);
+  --sidebar-primary-foreground: var(--color-neutral-800);
+  --sidebar-accent: rgba(255, 255, 255, 0.12);
+  --sidebar-accent-foreground: var(--color-neutral-50);
+  --sidebar-border: rgba(255, 255, 255, 0.14);
+  --sidebar-ring: var(--color-secondary);
+}
+
+/* The rail's right edge (desktop) is a white-tint divide, not the page
+   neutral border the shadcn block defaults to. */
+[data-slot="sidebar-container"] {
+  border-color: var(--sidebar-border) !important;
 }

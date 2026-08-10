@@ -16,15 +16,17 @@ export function SupportContent() {
           summary={SUPPORT_INTRO.summary}
         />
 
+        {/* FAQ section - list of questions */}
         <div className="flex w-full flex-col gap-5">
-          <h2 className="font-heading text-xl font-semibold tracking-tight text-primary-text">
+          <h2 className="font-heading text-xl font-semibold text-primary-text">
             Frequently asked questions
           </h2>
           <FaqList items={SUPPORT_FAQ} />
         </div>
 
+        {/* Contact section - contact info and form */}
         <div className="flex w-full flex-col gap-5">
-          <h2 className="font-heading text-xl font-semibold tracking-tight text-primary-text">
+          <h2 className="font-heading text-xl font-semibold text-primary-text">
             Contact us
           </h2>
           <SupportContactSection />

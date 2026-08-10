@@ -1,8 +1,37 @@
-import { ThemeToggle } from "@/features/auth";
+"use client";
 
-// SidebarThemeButton: server wrapper reusing the auth ThemeToggle — the app's
-// single next-themes mechanism (FR-014). The toggle reads/writes the existing
-// provider so the sidebar stays in sync with any other toggle.
+import { Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+
+import { SidebarMenuButton } from "@/shared/components/ui/sidebar";
+
+import {
+  SIDEBAR_FOOTER_LABEL,
+  SIDEBAR_FOOTER_ROW,
+  SIDEBAR_LABEL_TRACK,
+  SIDEBAR_LABELS,
+} from "../constants";
+
 export function SidebarThemeButton() {
-  return <ThemeToggle className="w-full justify-center sm:justify-center" />;
+  const { theme, setTheme } = useTheme();
+  const isDark = theme === "dark";
+
+  return (
+    <SidebarMenuButton
+      tooltip={SIDEBAR_LABELS.theme}
+      className={SIDEBAR_FOOTER_ROW}
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+    >
+      {isDark ? (
+        <Moon strokeWidth={2} className="text-primary-200" />
+      ) : (
+        <Sun strokeWidth={2} className="text-secondary-500" />
+      )}
+      <span className={SIDEBAR_FOOTER_LABEL}>
+        <span className={SIDEBAR_LABEL_TRACK}>
+          {isDark ? SIDEBAR_LABELS.darkMode : SIDEBAR_LABELS.lightMode}
+        </span>
+      </span>
+    </SidebarMenuButton>
+  );
 }

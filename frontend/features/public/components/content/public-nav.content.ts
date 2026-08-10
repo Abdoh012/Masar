@@ -1,8 +1,5 @@
 import type { FooterColumn, NavLink } from "../../types";
 
-// Public header + footer navigation (FR-004). Landing is the brand mark;
-// the header links to the other four public routes. Footer columns reuse
-// the same five public routes grouped into Product and Legal.
 export const headerNavLinks: NavLink[] = [
   { label: "About", href: "/about" },
   { label: "Support", href: "/support" },
