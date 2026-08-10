@@ -38,6 +38,13 @@ export function SignUpForm() {
         placeholder={FIELD_CONFIG.password.placeholder}
       />
 
+      <FormField
+        name="confirmPassword"
+        type={FIELD_CONFIG.confirmPassword.type}
+        label={FIELD_CONFIG.confirmPassword.label}
+        placeholder={FIELD_CONFIG.confirmPassword.placeholder}
+      />
+
       {isCompany ? (
         <FormField
           name="companyName"
