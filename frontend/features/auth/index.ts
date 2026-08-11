@@ -5,9 +5,9 @@
 // exports below.
 
 export { ThemeToggle } from "./components/theme-toggle/ThemeToggle";
-export { BrandMark } from "./components/shared/BrandMark";
-export { BrandPanel } from "./components/shared/BrandPanel";
-export { AuthCard } from "./components/shared/AuthCard";
+export { BrandMark } from "./shared/components/BrandMark";
+export { BrandPanel } from "./shared/components/BrandPanel";
+export { AuthCard } from "./shared/components/AuthCard";
 export { SignInForm } from "./components/sign-in/SignInForm";
 export { SignUpForm } from "./components/sign-up/SignUpForm";
 export { ProfileInformationForm } from "./components/profile-information/ProfileInformationForm";

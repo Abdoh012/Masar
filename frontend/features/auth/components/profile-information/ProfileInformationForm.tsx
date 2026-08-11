@@ -4,7 +4,7 @@ import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import { PROFILE_INFO_FIELDS } from "../../lib/constants";
-import { SubmitButton } from "../shared/SubmitButton";
+import { SubmitButton } from "../../shared/components/SubmitButton";
 import { ProfileField } from "./ProfileField";
 
 export function ProfileInformationForm() {

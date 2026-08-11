@@ -1,8 +1,8 @@
 "use client";
 
 import { FIELD_CONFIG } from "../../lib/constants";
-import { FormField } from "../shared/FormField";
-import { SubmitButton } from "../shared/SubmitButton";
+import { FormField } from "../../shared/components/FormField";
+import { SubmitButton } from "../../shared/components/SubmitButton";
 
 interface ResetPasswordFormProps {
   token: string;

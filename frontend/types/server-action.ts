@@ -9,3 +9,19 @@ export interface ActionState<T = undefined> {
 export const initialActionState: ActionState = {
   success: false,
 };
+
+export type TryCatchResponse = {
+  success?: boolean;
+  data?: any;
+  error?: string;
+  userData?: object;
+  message?: string;
+};
+
+export type TryCatchRequest = {
+  url: string;
+  method?: string;
+  body?: object;
+  cache?: RequestCache;
+  revalidate?: number;
+};

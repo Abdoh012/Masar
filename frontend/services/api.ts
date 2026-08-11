@@ -1,41 +1,57 @@
-import { getCookie } from "./cookies";
-import { env } from "@/config/env";
+"use server";
 
-interface RequestOptions extends RequestInit {
-  // Set to false for endpoints that don't need the JWT attached
-  auth?: boolean;
-}
+import { cookies } from "next/headers";
+import type { TryCatchRequest, TryCatchResponse } from "@/types/server-action";
 
-// Base fetch wrapper every feature's api/ layer should go through (R9/R10).
-// Handles auth header attachment and empty-body responses (e.g. DELETE)
-// the same way the el-le3ba serverFetch fix does — don't JSON.parse("").
-export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { auth = true, headers, ...rest } = options;
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api/v1";
 
-  const finalHeaders: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(headers as Record<string, string>),
-  };
+export async function serverFetch({
+  url,
+  method = "GET",
+  body,
+  cache = "default",
+  revalidate,
+}: TryCatchRequest): Promise<TryCatchResponse> {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("masarJwt")?.value;
 
-  if (auth) {
-    const token = await getCookie("jwt");
-    if (token) finalHeaders.Authorization = `Bearer ${token}`;
-  }
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
 
-  const res = await fetch(`${env.apiUrl}${path}`, { ...rest, headers: finalHeaders });
-
-  if (!res.ok) {
-    let message = `Request failed with status ${res.status}`;
-    try {
-      const body = await res.json();
-      message = body?.message ?? message;
-    } catch {
-      // body wasn't JSON — keep the default message
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
     }
-    throw new Error(message);
-  }
 
-  const text = await res.text();
-  if (!text) return { success: true } as T;
-  return JSON.parse(text) as T;
+    const fetchOptions: RequestInit & { next?: { revalidate: number } } = {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+      cache,
+    };
+
+    if (cache !== "no-store" && revalidate !== undefined) {
+      fetchOptions.next = { revalidate };
+    }
+
+    const res = await fetch(`${API_URL}/${url}`, fetchOptions);
+
+    if (!res.ok) {
+      const data = await res.json();
+      return {
+        error: data.message || "Invalid data, please try again later",
+        userData: body,
+      };
+    }
+
+    const resData = await res.json();
+    return { success: true, data: resData, message: resData.message };
+  } catch {
+    return {
+      success: false,
+      error: "Unable to reach the server, please try again later",
+    };
+  }
 }

@@ -4,8 +4,8 @@ import type { FormEvent } from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { FormField } from "../shared/FormField";
-import { SubmitButton } from "../shared/SubmitButton";
+import { FormField } from "../../shared/components/FormField";
+import { SubmitButton } from "../../shared/components/SubmitButton";
 import { RoleSelector } from "./role-selector/RoleSelector";
 import { FIELD_CONFIG } from "../../lib/constants";
 import Footer from "./footer/Footer";

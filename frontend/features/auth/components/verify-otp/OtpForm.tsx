@@ -3,8 +3,11 @@
 import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
-import { OTP_LENGTH, RESET_PASSWORD_PLACEHOLDER_TOKEN } from "../../lib/constants";
-import { SubmitButton } from "../shared/SubmitButton";
+import {
+  OTP_LENGTH,
+  RESET_PASSWORD_PLACEHOLDER_TOKEN,
+} from "../../lib/constants";
+import { SubmitButton } from "../../shared/components/SubmitButton";
 import { OtpInput } from "./OtpInput";
 
 // OtpForm: the UI-only verification step. Submitting navigates to the
