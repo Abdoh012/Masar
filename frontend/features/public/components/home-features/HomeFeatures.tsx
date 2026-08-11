@@ -1,5 +1,8 @@
 import { Award, Handshake, Route, type LucideIcon } from "lucide-react";
 
+import Motion from "@/shared/components/animation/Motion";
+import StaggerGroup from "@/shared/components/animation/StaggerGroup";
+import { fadeInUp } from "@/shared/lib/animations";
 import { Card, CardDescription, CardTitle } from "@/shared/components/ui/card";
 import { HOME_FEATURES } from "./home-features.content";
 
@@ -44,15 +47,18 @@ function FeatureCard({ icon, title, description }: FeatureCardProps) {
   );
 }
 
-// HomeFeatures: the landing page value propositions.
+// HomeFeatures: the landing page value propositions — the grid is the
+// stagger container, and each card enters individually in sequence.
 export function HomeFeatures() {
   return (
     <section className="bg-background py-20 sm:py-24">
-      <div className="mx-auto grid w-full max-w-6xl gap-6 px-6 sm:grid-cols-3">
+      <StaggerGroup className="mx-auto grid w-full max-w-6xl gap-6 px-6 sm:grid-cols-3">
         {HOME_FEATURES.map((feature) => (
-          <FeatureCard key={feature.title} {...feature} />
+          <Motion key={feature.title} variants={fadeInUp}>
+            <FeatureCard {...feature} />
+          </Motion>
         ))}
-      </div>
+      </StaggerGroup>
     </section>
   );
 }
