@@ -8,7 +8,7 @@ export function BrandPanel() {
       <div className="pointer-events-none absolute -right-28 -top-36 size-[380px] rounded-full border border-neutral-50/10" />
       <div className="pointer-events-none absolute -bottom-32 -left-20 size-64 rounded-full border border-secondary-500/25" />
       <div className="relative z-10 flex max-w-sm flex-col items-center gap-7">
-        <BrandMark />
+        <BrandMark chip="always" onDark />
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-50/50">
           Students &amp; fresh graduates
         </p>

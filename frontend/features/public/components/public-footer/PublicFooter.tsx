@@ -11,7 +11,7 @@ export function PublicFooter() {
       <div className="mx-auto grid w-full max-w-6xl gap-10 px-6 py-14 sm:grid-cols-2 lg:grid-cols-4">
         {/* Brand and tagline */}
         <div className="flex flex-col gap-3 sm:col-span-2 lg:col-span-2">
-          <BrandMark tone="paper" size="sm" layout="horizontal" />
+          <BrandMark chip="dark" size="sm" layout="horizontal" />
           <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
             {siteConfig.tagline}
           </p>

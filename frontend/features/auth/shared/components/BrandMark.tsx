@@ -1,9 +1,14 @@
 import { cn } from "@/shared/lib/utils";
+import Image from "next/image";
 
 interface BrandMarkProps {
-  // "navy" — the brand mark sits on the navy panel (white wordmark).
-  // "paper" — the brand mark sits on a light surface (navy wordmark).
-  tone?: "navy" | "paper";
+  // White backing behind the seal (the seal itself is always primary
+  // navy — the backing gives it contrast on dark/navy surfaces).
+  // "always" — chip in both themes (auth pages, sidebar rail).
+  // "dark" — chip only in dark mode (public header/footer).
+  chip?: "always" | "dark";
+  // The lockup sits on the navy panel/rail → wordmark renders white.
+  onDark?: boolean;
   // "lg" — hero lockup (seal over wordmark). "sm" — compact header lockup.
   size?: "sm" | "lg";
   layout?: "vertical" | "horizontal";
@@ -13,21 +18,23 @@ interface BrandMarkProps {
   className?: string;
 }
 
-// BrandMark: the Masar seal + wordmark as a single lockup. The seal SVG
-// matches masar-identity.html's hero seal exactly (gold outer ring, ring,
-// and check). Rendered where the brand appears in the auth area; promote
-// to top-level shared/ when a second feature needs it (R7).
+// BrandMark: the Masar seal + wordmark as a single lockup. The seal is
+// logo.png (the original square mark from design/) — never recolored or
+// redrawn. The seal is always primary navy; when a `chip` is requested it
+// sits on a white (bg-neutral-50) backing that is MASKED to the logo's own
+// silhouette (mask-image of the same asset), so the backing hugs the seal
+// shape instead of reading as a white box around the image. The wordmark is
+// primary-navy on background surfaces and white on the navy panel/rail
+// (`onDark`). Rendered where the brand appears in the auth area; promote to
+// top-level shared/ when a second feature needs it (R7).
 export function BrandMark({
-  tone = "navy",
+  chip,
+  onDark = false,
   size = "lg",
   layout = "vertical",
   markOnly = false,
   className,
 }: BrandMarkProps) {
-  const onPaper = tone === "paper";
-  const wordmarkColor = onPaper ? "text-primary-text" : "text-neutral-50";
-  const innerRing = onPaper ? "stroke-primary-500/35" : "stroke-neutral-50/35";
-
   return (
     <div
       className={cn(
@@ -36,31 +43,29 @@ export function BrandMark({
         className,
       )}
     >
-      <svg
-        viewBox="0 0 64 64"
-        fill="none"
-        aria-hidden="true"
-        className={cn("shrink-0", size === "lg" ? "size-14" : "size-9")}
-      >
-        <circle cx="32" cy="32" r="28" stroke="#e8a33d" strokeWidth="2" />
-        <circle cx="32" cy="32" r="21" className={innerRing} strokeWidth="1" />
-        <path
-          d="M22 33l7 7 13-15"
-          stroke="#e8a33d"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
+      <Image
+        src="/logo.png"
+        alt="Masar Logo"
+        width={165}
+        height={165}
+        className={cn(
+          "shrink-0",
+          size === "lg" ? "size-14" : "size-9",
+          chip === "always" && "bg-neutral-50",
+          chip === "dark" && "dark:bg-neutral-50",
+          chip &&
+            "[mask-image:url(/logo.png)] [mask-position:center] [mask-size:contain] [-webkit-mask-image:url(/logo.png)] [-webkit-mask-position:center] [-webkit-mask-size:contain]",
+        )}
+      />
       {markOnly ? null : (
         <span
           className={cn(
             "font-sans font-semibold leading-none tracking-tight",
-            wordmarkColor,
             size === "lg" ? "text-5xl" : "text-2xl",
+            onDark ? "text-neutral-50" : "text-primary-text",
           )}
         >
-          Mas<span className="text-secondary-500">ar</span>
+          Mas<span className="text-secondary">ar</span>
         </span>
       )}
     </div>

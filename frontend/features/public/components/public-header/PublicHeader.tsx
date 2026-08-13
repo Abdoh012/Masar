@@ -11,7 +11,7 @@ export function PublicHeader() {
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-6">
         <Link href="/">
-          <BrandMark tone="paper" size="sm" layout="horizontal" />
+          <BrandMark chip="dark" size="sm" layout="horizontal" />
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
