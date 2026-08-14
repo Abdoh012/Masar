@@ -8,3 +8,4 @@
 
 export { ActiveTraining } from "./student/components/active-training/ActiveTraining";
 export { ApplicationsSnapshot } from "./student/components/applications-snapshot/ApplicationsSnapshot";
+export { MyApplicationsPage } from "./student/components/my-applications/MyApplicationsPage";

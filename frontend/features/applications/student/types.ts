@@ -13,6 +13,27 @@ export interface ActiveApplication {
 
 export type ApplicationStatus = "Applied" | "Accepted" | "Rejected" | "Withdrawn";
 
+// Trial state for an accepted application to a paid listing. Present only for
+// the accepted+paid case (data-model.md presence rules); "Continue past trial"
+// is a display-only note, never an action.
+export interface ApplicationTrial {
+  daysRemaining: number;
+  continuePastTrial?: boolean;
+}
+
+// One application card on the My Applications page (data-model.md).
+export interface MyApplication {
+  id: string;
+  listingId: string;
+  listingTitle: string;
+  companyName: string;
+  status: ApplicationStatus;
+  appliedOn: string;
+  rejectionReason?: string;
+  mayLeadToHire?: boolean;
+  trial?: ApplicationTrial;
+}
+
 export interface StatusCounts {
   applied: number;
   accepted: number;

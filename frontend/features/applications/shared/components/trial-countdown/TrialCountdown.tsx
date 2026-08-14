@@ -1,5 +1,8 @@
 // Static trial countdown — the identity's gold "opportunity clock" ring.
-// Server-rendered, no live ticking.
+// Server-rendered, no live ticking. Shared by the dashboard's ActiveTraining
+// and the My Applications page's ApplicationCard (second consumer → promoted
+// per the promote-on-second-use rule).
+
 export function TrialCountdown({ daysRemaining }: { daysRemaining: number }) {
   return (
     <div className="mt-4 inline-flex items-center gap-3 rounded-xl bg-secondary-tint/50 px-4 py-3">
