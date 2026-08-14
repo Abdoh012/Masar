@@ -1,0 +1,36 @@
+$kind: http-request
+description: "Public. Creates a student account (status `active`). Expected: 201, returns `data.user` and an access `token`. A 409 means the email is already registered. University/faculty/specialization values must match seeded reference data."
+url: "{{base_url}}/api/v1/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+        "email": "{{register_student_email}}",
+        "password": "{{register_student_password}}",
+        "password_confirmation": "{{register_student_password}}",
+        "accept_terms": true,
+        "role": "student",
+        "full_name": "Test Student Register",
+        "university": "Cairo University",
+        "faculty": "Faculty of Engineering",
+        "specialization": "Computer Engineering"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Student registration succeeds or already exists", function () {
+          pm.expect(pm.response.code).to.be.oneOf([200, 201, 409]);
+      });
+      if (pm.response.code === 201) {
+          const json = pm.response.json();
+          pm.expect(json.success).to.eql(true);
+          pm.expect(json.data.user.role).to.eql('student');
+          pm.collectionVariables.set('access_token', json.data.token);
+          pm.collectionVariables.set('user_id', String(json.data.user.id));
+          pm.collectionVariables.set('user_role', json.data.user.role);
+      }
+    language: text/javascript
+order: 1000

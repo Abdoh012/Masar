@@ -1,0 +1,40 @@
+$kind: http-request
+description: Public. Exchanges the Google authorization code for a session. Requires a real `code` (obtained by opening the authorization URL from the Start request in a browser) and the matching single-use `state`. The backend validates and consumes the state server-side, then redirects to the frontend. Redirect following is disabled so the redirect is visible. If the Google email has no account, one is auto-created as a student and a welcome email is sent.
+url: "{{base_url}}/api/v1/auth/google/callback?code={{google_code}}&state={{google_state}}"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  code: "{{google_code}}"
+  state: "{{google_state}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Google callback returns a MASAR auth response", function () {
+          pm.expect(pm.response.code).to.eql(200);
+          const json = pm.response.json();
+          pm.expect(json.success).to.eql(true);
+          pm.expect(json.data).to.have.property('token');
+          pm.expect(json.data).to.have.property('user');
+          pm.expect(json.data.token.length).to.be.above(0);
+      });
+      if (pm.response.code === 200) {
+          const json = pm.response.json();
+          pm.collectionVariables.set('access_token', json.data.token);
+          pm.collectionVariables.set('user_id', String(json.data.user.id));
+          pm.collectionVariables.set('user_role', json.data.user.role);
+          const csrf = pm.cookies.get('csrf_token');
+          if (csrf) {
+              pm.collectionVariables.set('csrf_token', csrf);
+          }
+          pm.response.headers.each(function (header) {
+              if (header.key.toLowerCase() === 'set-cookie') {
+                  const match = header.value.match(/refresh_token=([^;]+)/);
+                  if (match) {
+                      pm.collectionVariables.set('refresh_token', decodeURIComponent(match[1]));
+                  }
+              }
+          });
+      }
+    language: text/javascript
+order: 2000

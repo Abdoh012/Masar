@@ -1,0 +1,2518 @@
+{
+    "info": {
+        "_postman_id": "36622a0a-31cf-4e21-b815-711094fb8581",
+        "name": "MASAR API",
+        "description": "Clean, professional Postman collection for the MASAR backend, built directly from `routes/auth.php`, `routes/users.php`, `routes/api.php`, and the actual controllers/validators.\n\nBase URL variable: `{{base_url}}` (default `http://localhost/masar-backend`).\n\n## Suggested flow\n1. **00 - Environment / Setup -> Health Check** to confirm the backend is reachable.\n2. **01 - Authentication**: Register, then Login. Login captures `access_token`, `user_id`, `user_role`, `csrf_token` and the HttpOnly `refresh_token` cookie automatically.\n3. **02 - Users**: authenticated account endpoints (Bearer token + CSRF header handled by pre-request scripts).\n4. **03 - Auth & Users Security Tests**: run after the happy-path requests to verify error handling.\n\n## Test credentials\nAll credentials are safe development placeholders (`@test.local`). Set them to accounts that actually exist in your environment (for example the seeded dev accounts `admin@masar.test / Admin@123456`, `student@masar.test / Student@123456`, `company@masar.test / Company@123456`) before running the Login requests.\n\n## Authentication notes\n- Protected endpoints use `Authorization: Bearer {{access_token}}`.\n- Token refresh uses the server-issued HttpOnly `refresh_token` cookie (path `/api/v1/auth`) plus the `X-CSRF-Token` header, which must match the `csrf_token` cookie. The collection attaches the CSRF header automatically from the cookie jar.\n- CSRF-protected write endpoints (`PUT /users/me`, `DELETE /users/me`, `POST /auth/refresh`) require a prior successful Login so the CSRF cookie exists.\n- There is currently no routed email-verification endpoint in the backend, so it is intentionally omitted.\n- reCAPTCHA is disabled in the local `.env` (`RECAPTCHA_ENABLED=false`), so `recaptcha_token` is not required. If enabled, add it to the register/login/reset bodies.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost/masar-backend",
+            "type": "string"
+        },
+        {
+            "key": "access_token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "refresh_token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "csrf_token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "user_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "user_role",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "revoked_token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "student_email",
+            "value": "student@test.local",
+            "type": "string"
+        },
+        {
+            "key": "student_password",
+            "value": "TestStudent@123",
+            "type": "string"
+        },
+        {
+            "key": "company_email",
+            "value": "company@test.local",
+            "type": "string"
+        },
+        {
+            "key": "company_password",
+            "value": "TestCompany@123",
+            "type": "string"
+        },
+        {
+            "key": "admin_email",
+            "value": "admin@test.local",
+            "type": "string"
+        },
+        {
+            "key": "admin_password",
+            "value": "TestAdmin@123",
+            "type": "string"
+        },
+        {
+            "key": "register_student_email",
+            "value": "student.register@test.local",
+            "type": "string"
+        },
+        {
+            "key": "register_student_password",
+            "value": "StudentReg@2026!",
+            "type": "string"
+        },
+        {
+            "key": "register_company_email",
+            "value": "company.register@test.local",
+            "type": "string"
+        },
+        {
+            "key": "register_company_password",
+            "value": "CompanyReg@2026!",
+            "type": "string"
+        },
+        {
+            "key": "updated_email",
+            "value": "student.updated@test.local",
+            "type": "string"
+        },
+        {
+            "key": "new_password",
+            "value": "NewPass@2026!",
+            "type": "string"
+        },
+        {
+            "key": "reset_token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "google_state",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "google_code",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "invalid_token",
+            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OTk5OTkiLCJyb2xlIjoiYWRtaW4iLCJ0eXBlIjoiYWNjZXNzIiwiZXhwIjo0NTAwMDAwMDAwfQ.invalid-signature",
+            "type": "string"
+        },
+        {
+            "key": "expired_token",
+            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OTk5OTkiLCJyb2xlIjoiYWRtaW4iLCJ0eXBlIjoiYWNjZXNzIiwiZXhwIjoxMDAwMDAwMDAwfQ.expired-signature",
+            "type": "string"
+        },
+        {
+            "key": "invalid_refresh_token",
+            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OTk5OTkiLCJyb2xlIjoic3R1ZGVudCIsInR5cGUiOiJyZWZyZXNoIiwiZXhwIjo0NTAwMDAwMDAwfQ.invalid-refresh-signature",
+            "type": "string"
+        },
+        {
+            "key": "other_user_id",
+            "value": "1",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "00 - Environment / Setup",
+            "item": [
+                {
+                    "name": "Health Check",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/health",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "health"
+                            ]
+                        },
+                        "description": "Public. Verifies the API is reachable and healthy. No authentication required."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Health check returns ok\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(200);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(true);",
+                                    "    pm.expect(json.data.status).to.eql('ok');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "API Info",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1"
+                            ]
+                        },
+                        "description": "Public. Returns basic API metadata (name, version, documentation)."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"API info returned\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(200);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(true);",
+                                    "    pm.expect(json.data.name).to.eql('MASAR API');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                }
+            ],
+            "description": "Connectivity and environment checks. All requests in this folder are public and require no authentication."
+        },
+        {
+            "name": "01 - Authentication",
+            "item": [
+                {
+                    "name": "Register",
+                    "item": [
+                        {
+                            "name": "Register Student",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"email\": \"{{register_student_email}}\",\n    \"password\": \"{{register_student_password}}\",\n    \"password_confirmation\": \"{{register_student_password}}\",\n    \"accept_terms\": true,\n    \"role\": \"student\",\n    \"full_name\": \"Test Student Register\",\n    \"university\": \"Cairo University\",\n    \"faculty\": \"Faculty of Engineering\",\n    \"specialization\": \"Computer Engineering\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/auth/register",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "register"
+                                    ]
+                                },
+                                "description": "Public. Creates a student account (status `active`). Expected: 201, returns `data.user` and an access `token`. A 409 means the email is already registered. University/faculty/specialization values must match seeded reference data."
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Student registration succeeds or already exists\", function () {",
+                                            "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 409]);",
+                                            "});",
+                                            "if (pm.response.code === 201) {",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "    pm.expect(json.data.user.role).to.eql('student');",
+                                            "    pm.collectionVariables.set('access_token', json.data.token);",
+                                            "    pm.collectionVariables.set('user_id', String(json.data.user.id));",
+                                            "    pm.collectionVariables.set('user_role', json.data.user.role);",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Register Company",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"email\": \"{{register_company_email}}\",\n    \"password\": \"{{register_company_password}}\",\n    \"password_confirmation\": \"{{register_company_password}}\",\n    \"accept_terms\": true,\n    \"role\": \"company\",\n    \"company_name\": \"MASAR Test Solutions\",\n    \"industry\": \"Information Technology\",\n    \"description\": \"A test company used to verify company registration.\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/auth/register",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "register"
+                                    ]
+                                },
+                                "description": "Public. Creates a company account (status `pending` until admin approval). Expected: 201. No token is returned for company registrations. A 409 means the email is already registered."
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Company registration succeeds or already exists\", function () {",
+                                            "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 409]);",
+                                            "});",
+                                            "if (pm.response.code === 201) {",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "    pm.expect(json.data.user.role).to.eql('company');",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    "description": "Account creation. Both roles use the same `POST /api/v1/auth/register` endpoint; the required fields differ by role."
+                },
+                {
+                    "name": "Login & Session",
+                    "item": [
+                        {
+                            "name": "Login",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"email\": \"{{student_email}}\",\n    \"password\": \"{{student_password}}\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/auth/login",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "login"
+                                    ]
+                                },
+                                "description": "Public. Authenticates a user. On 200 the response returns `data.token` (access token) and the server sets an HttpOnly `refresh_token` cookie plus a readable `csrf_token` cookie. The test stores all of these in collection variables. Set `{{student_email}}`/`{{student_password}}` to an account that exists in your environment."
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Login succeeds\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "    pm.expect(json.data).to.have.property('token');",
+                                            "    pm.expect(json.data).to.have.property('user');",
+                                            "});",
+                                            "if (pm.response.code === 200) {",
+                                            "    const json = pm.response.json();",
+                                            "    pm.collectionVariables.set('access_token', json.data.token);",
+                                            "    pm.collectionVariables.set('user_id', String(json.data.user.id));",
+                                            "    pm.collectionVariables.set('user_role', json.data.user.role);",
+                                            "    const csrf = pm.cookies.get('csrf_token');",
+                                            "    if (csrf) {",
+                                            "        pm.collectionVariables.set('csrf_token', csrf);",
+                                            "    }",
+                                            "    pm.response.headers.each(function (header) {",
+                                            "        if (header.key.toLowerCase() === 'set-cookie') {",
+                                            "            const match = header.value.match(/refresh_token=([^;]+)/);",
+                                            "            if (match) {",
+                                            "                pm.collectionVariables.set('refresh_token', decodeURIComponent(match[1]));",
+                                            "            }",
+                                            "        }",
+                                            "    });",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Login (Company)",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"email\": \"{{company_email}}\",\n    \"password\": \"{{company_password}}\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/auth/login",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "login"
+                                    ]
+                                },
+                                "description": "Public. Logs in a company account. Expected: 200 when approved, 403 when the company registration is pending/rejected."
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Company login succeeds or reports pending approval\", function () {",
+                                            "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                                            "});",
+                                            "if (pm.response.code === 200) {",
+                                            "    const json = pm.response.json();",
+                                            "    pm.collectionVariables.set('access_token', json.data.token);",
+                                            "    pm.collectionVariables.set('user_id', String(json.data.user.id));",
+                                            "    pm.collectionVariables.set('user_role', json.data.user.role);",
+                                            "    const csrf = pm.cookies.get('csrf_token');",
+                                            "    if (csrf) {",
+                                            "        pm.collectionVariables.set('csrf_token', csrf);",
+                                            "    }",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Login (Admin)",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"email\": \"{{admin_email}}\",\n    \"password\": \"{{admin_password}}\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/auth/login",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "login"
+                                    ]
+                                },
+                                "description": "Public. Logs in an admin account. Expected: 200."
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Admin login succeeds\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "    pm.collectionVariables.set('access_token', json.data.token);",
+                                            "    pm.collectionVariables.set('user_id', String(json.data.user.id));",
+                                            "    pm.collectionVariables.set('user_role', json.data.user.role);",
+                                            "});",
+                                            "if (pm.response.code === 200) {",
+                                            "    const csrf = pm.cookies.get('csrf_token');",
+                                            "    if (csrf) {",
+                                            "        pm.collectionVariables.set('csrf_token', csrf);",
+                                            "    }",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Current User",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{access_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/auth/me",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "me"
+                                    ]
+                                },
+                                "description": "Requires Bearer token. Returns the currently authenticated user from the token identity."
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Current user returned\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "    pm.expect(json.data).to.have.property('email');",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Refresh Token",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/auth/refresh",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "refresh"
+                                    ]
+                                },
+                                "description": "Requires the HttpOnly `refresh_token` cookie and a matching `X-CSRF-Token` header (attached automatically by the pre-request script). Run after Login. On 200 the server returns a new access token and rotates the refresh/CSRF cookies.",
+                                "event": [
+                                    {
+                                        "listen": "prerequest",
+                                        "script": {
+                                            "exec": [
+                                                "let csrf = pm.cookies.get('csrf_token');",
+                                                "if (!csrf) {",
+                                                "    csrf = pm.collectionVariables.get('csrf_token');",
+                                                "}",
+                                                "if (csrf) {",
+                                                "    pm.request.headers.upsert({ key: 'X-CSRF-Token', value: csrf });",
+                                                "}"
+                                            ],
+                                            "type": "text/javascript"
+                                        }
+                                    },
+                                    {
+                                        "listen": "test",
+                                        "script": {
+                                            "exec": [
+                                                "pm.test(\"Refresh succeeds and returns a new access token\", function () {",
+                                                "    pm.expect(pm.response.code).to.eql(200);",
+                                                "    const json = pm.response.json();",
+                                                "    pm.expect(json.success).to.eql(true);",
+                                                "    pm.expect(json.data).to.have.property('token');",
+                                                "});",
+                                                "if (pm.response.code === 200) {",
+                                                "    const json = pm.response.json();",
+                                                "    pm.collectionVariables.set('access_token', json.data.token);",
+                                                "    const csrf = pm.cookies.get('csrf_token');",
+                                                "    if (csrf) {",
+                                                "        pm.collectionVariables.set('csrf_token', csrf);",
+                                                "    }",
+                                                "    pm.response.headers.each(function (header) {",
+                                                "        if (header.key.toLowerCase() === 'set-cookie') {",
+                                                "            const match = header.value.match(/refresh_token=([^;]+)/);",
+                                                "            if (match) {",
+                                                "                pm.collectionVariables.set('refresh_token', decodeURIComponent(match[1]));",
+                                                "            }",
+                                                "        }",
+                                                "    });",
+                                                "}"
+                                            ],
+                                            "type": "text/javascript"
+                                        }
+                                    }
+                                ]
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Change Password",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{access_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"current_password\": \"{{student_password}}\",\n    \"new_password\": \"{{new_password}}\",\n    \"new_password_confirmation\": \"{{new_password}}\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/auth/change-password",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "change-password"
+                                    ]
+                                },
+                                "description": "Requires Bearer token. Changes the authenticated user's password. On success all tokens are revoked and cookies cleared, so re-login is required afterwards."
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Password change succeeds\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Logout",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{access_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/auth/logout",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "logout"
+                                    ]
+                                },
+                                "description": "Requires Bearer token. Revokes the current session tokens and clears the refresh cookie. The test saves the used access token into `revoked_token` so the security tests can verify a revoked token is rejected."
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Logout succeeds\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "});",
+                                            "const current = pm.collectionVariables.get('access_token');",
+                                            "if (current) {",
+                                            "    pm.collectionVariables.set('revoked_token', current);",
+                                            "}",
+                                            "pm.collectionVariables.set('access_token', '');"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    "description": "Login and session lifecycle. Login captures tokens; Refresh rotates them; Logout revokes them."
+                },
+                {
+                    "name": "Password Reset",
+                    "item": [
+                        {
+                            "name": "Forgot Password",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"email\": \"{{student_email}}\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/auth/forgot-password",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "forgot-password"
+                                    ]
+                                },
+                                "description": "Public. Requests a 6-digit password reset OTP for the email. The OTP is delivered by email (never in the response); paste it into the `reset_token` collection variable. The response is generic so account existence is not revealed."
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Password reset OTP request succeeds\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Resend Reset OTP",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/auth/resend-reset-otp?email={{student_email}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "resend-reset-otp"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "email",
+                                            "value": "{{student_email}}"
+                                        }
+                                    ]
+                                },
+                                "description": "Public. Resends the password reset OTP for the given email (query parameter)."
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Reset OTP resend succeeds\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Verify Reset OTP",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"email\": \"{{student_email}}\",\n    \"token\": \"{{reset_token}}\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/auth/verify-reset-otp",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "verify-reset-otp"
+                                    ]
+                                },
+                                "description": "Public. Verifies the reset OTP for the given email before allowing the password reset. Expected: 200 when the OTP is valid."
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Reset OTP is verified\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Reset Password",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"email\": \"{{student_email}}\",\n    \"token\": \"{{reset_token}}\",\n    \"password\": \"{{new_password}}\",\n    \"password_confirmation\": \"{{new_password}}\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/auth/reset-password",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "reset-password"
+                                    ]
+                                },
+                                "description": "Public. Resets the password using the verified OTP. The account password becomes `{{new_password}}` and all tokens are revoked."
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Password reset succeeds\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Login After Password Reset",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"email\": \"{{student_email}}\",\n    \"password\": \"{{new_password}}\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/auth/login",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "login"
+                                    ]
+                                },
+                                "description": "Public. Verifies that the account can log in with the new password after a password reset. On success `student_password` is updated to the new password so subsequent requests stay consistent."
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Login with new password succeeds\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "});",
+                                            "if (pm.response.code === 200) {",
+                                            "    const json = pm.response.json();",
+                                            "    pm.collectionVariables.set('access_token', json.data.token);",
+                                            "    pm.collectionVariables.set('user_id', String(json.data.user.id));",
+                                            "    pm.collectionVariables.set('user_role', json.data.user.role);",
+                                            "    pm.collectionVariables.set('student_password', pm.collectionVariables.get('new_password'));",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    "description": "Complete password reset flow: request OTP -> verify OTP -> reset password -> verify login with the new password."
+                },
+                {
+                    "name": "Google OAuth",
+                    "item": [
+                        {
+                            "name": "Google OAuth - Start",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/auth/google",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "google"
+                                    ]
+                                },
+                                "description": "Public. Generates a Google authorization URL. The backend creates a single-use server-side state (expires in 600s) and embeds it in the URL. The test stores the returned URL and extracts `state` into `google_state`. Open the URL in a real browser to obtain the authorization `code`."
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Google authorization URL generated\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "    pm.expect(json.data.authorization_url).to.be.a('string');",
+                                            "});",
+                                            "if (pm.response.code === 200) {",
+                                            "    const json = pm.response.json();",
+                                            "    const match = (json.data.authorization_url || '').match(/[?&]state=([^&]+)/);",
+                                            "    if (match) {",
+                                            "        pm.collectionVariables.set('google_state', decodeURIComponent(match[1]));",
+                                            "    }",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Google OAuth - Callback",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/auth/google/callback?code={{google_code}}&state={{google_state}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "google",
+                                        "callback"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "code",
+                                            "value": "{{google_code}}"
+                                        },
+                                        {
+                                            "key": "state",
+                                            "value": "{{google_state}}"
+                                        }
+                                    ]
+                                },
+                                "description": "Public. Exchanges the Google authorization code for a session. Requires a real `code` (obtained by opening the authorization URL from the Start request in a browser) and the matching single-use `state`. The backend validates and consumes the state server-side, then redirects to the frontend. Redirect following is disabled so the redirect is visible. If the Google email has no account, one is auto-created as a student and a welcome email is sent.",
+                                "protocolProfileBehavior": {
+                                    "followRedirects": false
+                                }
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                "exec": [
+                                    "pm.test(\"Google callback returns a MASAR auth response\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(200);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(true);",
+                                    "    pm.expect(json.data).to.have.property('token');",
+                                    "    pm.expect(json.data).to.have.property('user');",
+                                    "    pm.expect(json.data.token.length).to.be.above(0);",
+                                    "});",
+                                    "if (pm.response.code === 200) {",
+                                    "    const json = pm.response.json();",
+                                    "    pm.collectionVariables.set('access_token', json.data.token);",
+                                    "    pm.collectionVariables.set('user_id', String(json.data.user.id));",
+                                    "    pm.collectionVariables.set('user_role', json.data.user.role);",
+                                    "    const csrf = pm.cookies.get('csrf_token');",
+                                    "    if (csrf) {",
+                                    "        pm.collectionVariables.set('csrf_token', csrf);",
+                                    "    }",
+                                    "    pm.response.headers.each(function (header) {",
+                                    "        if (header.key.toLowerCase() === 'set-cookie') {",
+                                    "            const match = header.value.match(/refresh_token=([^;]+)/);",
+                                    "            if (match) {",
+                                    "                pm.collectionVariables.set('refresh_token', decodeURIComponent(match[1]));",
+                                    "            }",
+                                    "        }",
+                                    "    });",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    "description": "Google OAuth. The Start request is fully scriptable; the Callback requires a real browser step (the Google authorization `code`)."
+                }
+            ],
+            "description": "Every authentication endpoint implemented in `routes/auth.php`. Protected requests carry `Authorization: Bearer {{access_token}}`; the refresh flow uses the HttpOnly refresh cookie plus the CSRF header."
+        },
+        {
+            "name": "02 - Users",
+            "item": [
+                {
+                    "name": "Get Current User",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/users/me",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "users",
+                                "me"
+                            ]
+                        },
+                        "description": "Requires Bearer token. Returns the authenticated user's basic account information from the token identity."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Current user (users) returned\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(200);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(true);",
+                                    "    pm.expect(json.data).to.have.property('id');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Update Current User",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"{{updated_email}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/users/me",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "users",
+                                "me"
+                            ]
+                        },
+                        "description": "Requires Bearer token + CSRF header (attached automatically). Only `email` is accepted by this endpoint; all other fields are rejected. After a successful email change, `student_email` is updated to keep subsequent logins consistent.",
+                        "event": [
+                            {
+                                "listen": "prerequest",
+                                "script": {
+                                    "exec": [
+                                        "let csrf = pm.cookies.get('csrf_token');",
+                                        "if (!csrf) {",
+                                        "    csrf = pm.collectionVariables.get('csrf_token');",
+                                        "}",
+                                        "if (csrf) {",
+                                        "    pm.request.headers.upsert({ key: 'X-CSRF-Token', value: csrf });",
+                                        "}"
+                                    ],
+                                    "type": "text/javascript"
+                                }
+                            },
+                            {
+                                "listen": "test",
+                                "script": {
+                                    "exec": [
+                                        "pm.test(\"Update current user succeeds\", function () {",
+                                        "    pm.expect(pm.response.code).to.eql(200);",
+                                        "    const json = pm.response.json();",
+                                        "    pm.expect(json.success).to.eql(true);",
+                                        "});",
+                                        "if (pm.response.code === 200) {",
+                                        "    const json = pm.response.json();",
+                                        "    if (json.data && json.data.user && json.data.user.email) {",
+                                        "        pm.collectionVariables.set('student_email', json.data.user.email);",
+                                        "    }",
+                                        "}"
+                                    ],
+                                    "type": "text/javascript"
+                                }
+                            }
+                        ]
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get User By ID",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/users/{{user_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "users",
+                                "{{user_id}}"
+                            ]
+                        },
+                        "description": "Requires Bearer token. Returns a public user profile. Only the requesting user (or an admin) may view the target profile; otherwise 403."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"User profile returned\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(200);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(true);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Delete Current User",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"confirm_deletion\": \"delete-my-account\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/users/me",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "users",
+                                "me"
+                            ]
+                        },
+                        "description": "Requires Bearer token + CSRF header (attached automatically) + a `confirm_deletion` token (any non-empty string). Deactivates the account. DESTRUCTIVE - only run against disposable test accounts.",
+                        "event": [
+                            {
+                                "listen": "prerequest",
+                                "script": {
+                                    "exec": [
+                                        "let csrf = pm.cookies.get('csrf_token');",
+                                        "if (!csrf) {",
+                                        "    csrf = pm.collectionVariables.get('csrf_token');",
+                                        "}",
+                                        "if (csrf) {",
+                                        "    pm.request.headers.upsert({ key: 'X-CSRF-Token', value: csrf });",
+                                        "}"
+                                    ],
+                                    "type": "text/javascript"
+                                }
+                            },
+                            {
+                                "listen": "test",
+                                "script": {
+                                    "exec": [
+                                        "pm.test(\"Delete current user succeeds\", function () {",
+                                        "    pm.expect(pm.response.code).to.eql(200);",
+                                        "    const json = pm.response.json();",
+                                        "    pm.expect(json.success).to.eql(true);",
+                                        "    pm.expect(json.data.message).to.eql('Account deleted successfully.');",
+                                        "});"
+                                    ],
+                                    "type": "text/javascript"
+                                }
+                            }
+                        ]
+                    },
+                    "response": []
+                }
+            ],
+            "description": "Every user endpoint implemented in `routes/users.php`. All require authentication. Update/Delete also enforce CSRF."
+        },
+        {
+            "name": "03 - Auth & Users Security Tests",
+            "item": [
+                {
+                    "name": "Login with invalid password",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"{{student_email}}\",\n    \"password\": \"WrongPass@2026!\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "login"
+                            ]
+                        },
+                        "description": "Security test. Verifies invalid credentials are rejected with 401 (generic error, no account-enumeration detail)."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Invalid password rejected\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(401);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(false);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Login with nonexistent email",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"nobody@test.local\",\n    \"password\": \"{{student_password}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "login"
+                            ]
+                        },
+                        "description": "Security test. Verifies a nonexistent email returns 401 with the same generic message as a wrong password."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Nonexistent email rejected\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(401);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(false);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Register with duplicate email",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"{{register_student_email}}\",\n    \"password\": \"{{register_student_password}}\",\n    \"password_confirmation\": \"{{register_student_password}}\",\n    \"accept_terms\": true,\n    \"role\": \"student\",\n    \"full_name\": \"Test Student Register\",\n    \"university\": \"Cairo University\",\n    \"faculty\": \"Faculty of Engineering\",\n    \"specialization\": \"Computer Engineering\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/register",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "register"
+                            ]
+                        },
+                        "description": "Security test. Run after a successful Register Student. Verifies re-registering the same email is rejected with 409."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Duplicate registration rejected with 409\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(409);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(false);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Access protected endpoint without token",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/me",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "me"
+                            ]
+                        },
+                        "description": "Security test. Verifies that a protected endpoint with no access token returns 401."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Missing authentication rejected\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(401);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(false);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Access protected endpoint with malformed JWT",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer not-a-jwt-token"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/me",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "me"
+                            ]
+                        },
+                        "description": "Security test. Sends a malformed Bearer token (not 3 segments). Verifies 401."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Malformed JWT rejected\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(401);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(false);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Access with invalid JWT",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{invalid_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/me",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "me"
+                            ]
+                        },
+                        "description": "Security test. Sends a well-formed 3-segment JWT with a bogus signature. Verifies signature validation rejects it with 401."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Invalid JWT rejected\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(401);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(false);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Access with expired JWT",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{expired_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/me",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "me"
+                            ]
+                        },
+                        "description": "Security test. Sends a JWT whose `exp` claim is in the past. Verifies expired tokens are rejected with 401."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Expired JWT rejected\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(401);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(false);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Access with revoked JWT",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{revoked_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/me",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "me"
+                            ]
+                        },
+                        "description": "Security test. Run after Logout (which stores the used token in `revoked_token`). Verifies a server-side revoked access token is rejected with 401."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Revoked JWT rejected\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(401);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(false);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Override user identity via header",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-User-Id",
+                                "value": "99999"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/users/me",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "users",
+                                "me"
+                            ]
+                        },
+                        "description": "Security test. Attempts to override the authenticated identity with an `X-User-Id` header. The backend derives identity from the JWT only, so the header is ignored and the real user is returned."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"User identity override via header is ignored\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(200);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(true);",
+                                    "    pm.expect(String(json.data.id)).to.not.eql('99999');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Override role via query parameter",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/me?role=admin",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "me"
+                            ],
+                            "query": [
+                                {
+                                    "key": "role",
+                                    "value": "admin"
+                                }
+                            ]
+                        },
+                        "description": "Security test. Attempts to escalate role via a `role` query parameter. The role comes from the JWT, so the parameter is ignored."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Role override via query is ignored\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(200);",
+                                    "    const json = pm.response.json();",
+                                    "    const expectedRole = pm.collectionVariables.get('user_role');",
+                                    "    if (expectedRole) {",
+                                    "        pm.expect(json.data.role).to.eql(expectedRole);",
+                                    "    }",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Override role via header",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-User-Role",
+                                "value": "admin"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/me",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "me"
+                            ]
+                        },
+                        "description": "Security test. Attempts to escalate role via an `X-User-Role` header. The role comes from the JWT, so the header is ignored."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Role override via header is ignored\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(200);",
+                                    "    const json = pm.response.json();",
+                                    "    const expectedRole = pm.collectionVariables.get('user_role');",
+                                    "    if (expectedRole) {",
+                                    "        pm.expect(json.data.role).to.eql(expectedRole);",
+                                    "    }",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Update current user without CSRF token",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"{{updated_email}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/users/me",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "users",
+                                "me"
+                            ]
+                        },
+                        "description": "Security test. Sends no `X-CSRF-Token` header. Run after Login (so the CSRF cookie exists). Verifies the write is rejected with 403 (or 401 if not logged in)."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Missing CSRF token rejected\", function () {",
+                                    "    pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(false);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Update current user with invalid CSRF token",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-CSRF-Token",
+                                "value": "invalid-csrf-value"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"{{updated_email}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/users/me",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "users",
+                                "me"
+                            ]
+                        },
+                        "description": "Security test. Sends an `X-CSRF-Token` header that does not match the `csrf_token` cookie. Verifies 403 (or 401 if not logged in)."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Invalid CSRF token rejected\", function () {",
+                                    "    pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(false);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Refresh with invalid refresh cookie",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/refresh",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "refresh"
+                            ]
+                        },
+                        "description": "Security test. Overrides the refresh cookie with an invalid JWT refresh token and sends a valid CSRF header. Run after Login. Verifies the invalid refresh token is rejected with 401.",
+                        "event": [
+                            {
+                                "listen": "prerequest",
+                                "script": {
+                                    "exec": [
+                                        "pm.cookies.set('refresh_token', pm.collectionVariables.get('invalid_refresh_token'));",
+                                        "let csrf = pm.cookies.get('csrf_token');",
+                                        "if (!csrf) {",
+                                        "    csrf = pm.collectionVariables.get('csrf_token');",
+                                        "}",
+                                        "if (csrf) {",
+                                        "    pm.request.headers.upsert({ key: 'X-CSRF-Token', value: csrf });",
+                                        "}"
+                                    ],
+                                    "type": "text/javascript"
+                                }
+                            },
+                            {
+                                "listen": "test",
+                                "script": {
+                                    "exec": [
+                                        "pm.test(\"Invalid refresh cookie rejected\", function () {",
+                                        "    pm.expect(pm.response.code).to.eql(401);",
+                                        "    const json = pm.response.json();",
+                                        "    pm.expect(json.success).to.eql(false);",
+                                        "});"
+                                    ],
+                                    "type": "text/javascript"
+                                }
+                            }
+                        ]
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Refresh with CSRF token mismatch",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "X-CSRF-Token",
+                                "value": "wrong-csrf-value"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/refresh",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "refresh"
+                            ]
+                        },
+                        "description": "Security test. Sends a valid refresh cookie (from the jar) but a mismatched `X-CSRF-Token` header. Run after Login. Verifies the mismatch is rejected with 403."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Refresh with CSRF mismatch rejected\", function () {",
+                                    "    pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(false);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Update current user with protected field",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"role\": \"admin\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/users/me",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "users",
+                                "me"
+                            ]
+                        },
+                        "description": "Security test. Attempts to escalate role through the update body. The backend rejects protected fields with 422. Requires login first (for the CSRF header).",
+                        "event": [
+                            {
+                                "listen": "prerequest",
+                                "script": {
+                                    "exec": [
+                                        "let csrf = pm.cookies.get('csrf_token');",
+                                        "if (!csrf) {",
+                                        "    csrf = pm.collectionVariables.get('csrf_token');",
+                                        "}",
+                                        "if (csrf) {",
+                                        "    pm.request.headers.upsert({ key: 'X-CSRF-Token', value: csrf });",
+                                        "}"
+                                    ],
+                                    "type": "text/javascript"
+                                }
+                            },
+                            {
+                                "listen": "test",
+                                "script": {
+                                    "exec": [
+                                        "pm.test(\"Protected field update rejected with 422\", function () {",
+                                        "    pm.expect(pm.response.code).to.eql(422);",
+                                        "    const json = pm.response.json();",
+                                        "    pm.expect(json.success).to.eql(false);",
+                                        "    pm.expect(json.errors).to.have.property('role');",
+                                        "});"
+                                    ],
+                                    "type": "text/javascript"
+                                }
+                            }
+                        ]
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update current user with invalid email",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"not-an-email\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/users/me",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "users",
+                                "me"
+                            ]
+                        },
+                        "description": "Security test. Sends invalid email data to the update endpoint. Verifies validation rejects it with 422. Requires login first (for the CSRF header).",
+                        "event": [
+                            {
+                                "listen": "prerequest",
+                                "script": {
+                                    "exec": [
+                                        "let csrf = pm.cookies.get('csrf_token');",
+                                        "if (!csrf) {",
+                                        "    csrf = pm.collectionVariables.get('csrf_token');",
+                                        "}",
+                                        "if (csrf) {",
+                                        "    pm.request.headers.upsert({ key: 'X-CSRF-Token', value: csrf });",
+                                        "}"
+                                    ],
+                                    "type": "text/javascript"
+                                }
+                            },
+                            {
+                                "listen": "test",
+                                "script": {
+                                    "exec": [
+                                        "pm.test(\"Invalid email update rejected with 422\", function () {",
+                                        "    pm.expect(pm.response.code).to.eql(422);",
+                                        "    const json = pm.response.json();",
+                                        "    pm.expect(json.success).to.eql(false);",
+                                        "});"
+                                    ],
+                                    "type": "text/javascript"
+                                }
+                            }
+                        ]
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Register with oversized field",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"oversize@test.local\",\n    \"password\": \"{{register_student_password}}\",\n    \"password_confirmation\": \"{{register_student_password}}\",\n    \"accept_terms\": true,\n    \"role\": \"student\",\n    \"full_name\": \"This is an extremely long full name that far exceeds the maximum allowed length of two hundred and fifty five characters for the student registration full name field and must therefore be rejected by the backend validation logic before any account is created. This is an extremely long full name that far exceeds the maximum allowed length of two hundred and fifty five characters and must therefore be rejected.\",\n    \"university\": \"Cairo University\",\n    \"faculty\": \"Faculty of Engineering\",\n    \"specialization\": \"Computer Engineering\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/register",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "register"
+                            ]
+                        },
+                        "description": "Security test. Sends a `full_name` longer than 255 characters. Verifies length validation rejects registration with 422."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Oversized field rejected with 422\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(422);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(false);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Sensitive fields are not returned",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/users/me",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "users",
+                                "me"
+                            ]
+                        },
+                        "description": "Security test. Verifies the response never exposes `password_hash`, `remember_token`, `verification_token` or a plaintext `password`."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Sensitive fields are not returned\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(200);",
+                                    "    const raw = JSON.stringify(pm.response.json());",
+                                    "    pm.expect(raw).to.not.include('password_hash');",
+                                    "    pm.expect(raw).to.not.include('remember_token');",
+                                    "    pm.expect(raw).to.not.include('verification_token');",
+                                    "    pm.expect(raw).to.not.include('\"password\"');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "View another user's profile",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/users/{{other_user_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "users",
+                                "{{other_user_id}}"
+                            ]
+                        },
+                        "description": "Security test. Verifies a non-admin user cannot view another user's profile (403). Set `other_user_id` to a user different from the logged-in one (default 1)."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Other user's profile is forbidden\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(403);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(false);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get user with invalid id",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/users/0",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "users",
+                                "0"
+                            ]
+                        },
+                        "description": "Security test. Verifies a non-positive user ID is rejected with 422."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Invalid user id rejected with 422\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(422);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(false);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get non-existent user",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/users/99999999",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "users",
+                                "99999999"
+                            ]
+                        },
+                        "description": "Security test. Verifies a non-existent user ID returns 404."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Non-existent user returns 404\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(404);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(false);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                }
+            ],
+            "description": "Security and negative tests mapped to real backend behavior (status codes and error shapes verified against the controllers). Run after the happy-path requests. Several tests require a prior Login (for the CSRF/refresh cookies) or Register (duplicate email, oversized field)."
+        }
+    ]
+}

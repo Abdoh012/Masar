@@ -1,0 +1,3 @@
+$kind: collection
+description: Security and negative tests mapped to real backend behavior (status codes and error shapes verified against the controllers). Run after the happy-path requests. Several tests require a prior Login (for the CSRF/refresh cookies) or Register (duplicate email, oversized field).
+order: 4000

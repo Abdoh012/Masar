@@ -1,0 +1,18 @@
+$kind: http-request
+description: Requires Bearer token + CSRF header (attached automatically). Only `email` is accepted by this endpoint; all other fields are rejected. After a successful email change, `student_email` is updated to keep subsequent logins consistent.
+url: "{{base_url}}/api/v1/users/me"
+method: PUT
+headers:
+  Content-Type: application/json
+  X-CSRF-Token: "{{csrf_token}}"
+body:
+  type: json
+  content: |-
+    {
+        "email": "{{updated_email}}"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+order: 2000

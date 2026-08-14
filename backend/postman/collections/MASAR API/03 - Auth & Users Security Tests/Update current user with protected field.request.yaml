@@ -1,0 +1,17 @@
+$kind: http-request
+description: Security test. Attempts to escalate role through the update body. The backend rejects protected fields with 422. Requires login first (for the CSRF header).
+url: "{{base_url}}/api/v1/users/me"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+        "role": "admin"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+order: 16000

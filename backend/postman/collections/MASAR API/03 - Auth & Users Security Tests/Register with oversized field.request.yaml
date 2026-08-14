@@ -1,0 +1,30 @@
+$kind: http-request
+description: Security test. Sends a `full_name` longer than 255 characters. Verifies length validation rejects registration with 422.
+url: "{{base_url}}/api/v1/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+        "email": "oversize@test.local",
+        "password": "{{register_student_password}}",
+        "password_confirmation": "{{register_student_password}}",
+        "accept_terms": true,
+        "role": "student",
+        "full_name": "This is an extremely long full name that far exceeds the maximum allowed length of two hundred and fifty five characters for the student registration full name field and must therefore be rejected by the backend validation logic before any account is created. This is an extremely long full name that far exceeds the maximum allowed length of two hundred and fifty five characters and must therefore be rejected.",
+        "university": "Cairo University",
+        "faculty": "Faculty of Engineering",
+        "specialization": "Computer Engineering"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Oversized field rejected with 422", function () {
+          pm.expect(pm.response.code).to.eql(422);
+          const json = pm.response.json();
+          pm.expect(json.success).to.eql(false);
+      });
+    language: text/javascript
+order: 18000

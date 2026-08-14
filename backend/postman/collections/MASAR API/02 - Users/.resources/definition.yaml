@@ -1,0 +1,3 @@
+$kind: collection
+description: Every user endpoint implemented in `routes/users.php`. All require authentication. Update/Delete also enforce CSRF.
+order: 3000
