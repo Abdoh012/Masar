@@ -1,0 +1,18 @@
+$kind: http-request
+description: Security test. Verifies a non-admin user cannot view another user's profile (403). Set `other_user_id` to a user different from the logged-in one (default 1).
+url: "{{base_url}}/api/v1/users/{{other_user_id}}"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Other user's profile is forbidden", function () {
+          pm.expect(pm.response.code).to.eql(403);
+          const json = pm.response.json();
+          pm.expect(json.success).to.eql(false);
+      });
+    language: text/javascript
+order: 20000

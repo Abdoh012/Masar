@@ -1,0 +1,23 @@
+# ============================================================================
+# MASAR - Storage Git Ignore
+# ============================================================================
+
+# Logs
+logs/*
+!logs/.gitkeep
+
+# Cache
+cache/*
+!cache/.gitkeep
+
+# Uploaded CVs
+uploads/cvs/*
+!uploads/cvs/.gitkeep
+
+# Temporary uploads
+uploads/temp/*
+!uploads/temp/.gitkeep
+
+# Generated certificates
+certificates/*
+!certificates/.gitkeep
