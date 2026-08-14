@@ -5,7 +5,7 @@ import Motion from "@/shared/components/animation/Motion";
 import { fadeInUp } from "@/shared/lib/animations";
 import { ACTIVE_TRAINING, TRAINING_MODE_LABELS } from "./constants";
 import { NoActiveTraining } from "./NoActiveTraining";
-import { TrialCountdown } from "./TrialCountdown";
+import { TrialCountdown } from "../../../shared/components/trial-countdown/TrialCountdown";
 import type { ActiveApplication } from "../../types";
 import ActiveTrainingCard from "./ActiveTrainingCard";
 
