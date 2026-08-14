@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { BrowseListings } from "@/features/listings";
+
 export const metadata: Metadata = {
   title: "Browse Trainings",
 };
@@ -7,7 +9,10 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <div className="p-8">
-      <h1 className="font-sans text-xl font-semibold text-navy">Browse Trainings</h1>
+      <h1 className="font-sans text-xl font-semibold text-foreground">Browse Trainings</h1>
+      <div className="mt-6">
+        <BrowseListings />
+      </div>
     </div>
   );
 }

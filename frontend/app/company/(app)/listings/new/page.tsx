@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { ListingForm } from "@/features/listings";
+
 export const metadata: Metadata = {
   title: "New Listing",
 };
@@ -7,7 +9,10 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <div className="p-8">
-      <h1 className="font-sans text-xl font-semibold text-navy">New Listing</h1>
+      <h1 className="font-sans text-xl font-semibold text-foreground">New Listing</h1>
+      <div className="mt-6 max-w-2xl">
+        <ListingForm mode="create" />
+      </div>
     </div>
   );
 }

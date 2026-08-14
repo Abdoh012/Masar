@@ -1,14 +1,16 @@
-import type { ListingCardData } from "@/features/listings/shared/types";
+import type { ListingStatus } from "../../../shared/types";
+import type { AdminListingRow } from "../../types";
 
-// Field-matched mock listings for "Software Engineering" students, reshaped
-// to the shared ListingCardData (FR-022 dashboard consumer migration, R-9).
-// companyName is a UI-only display field resolved from companyId later.
+// Admin moderation constants (R-8; structure rules §14 — no inline data).
+// Platform-wide mock rows across companies for the UI-only phase (FR-018).
+// company/status filter option lists and disable copy live here too.
 
-export const RECOMMENDED_LISTINGS: ListingCardData[] = [
+export const MOCK_ADMIN_LISTINGS: AdminListingRow[] = [
   {
     id: "36",
     companyId: "c-sawari",
     companyName: "Sawari Digital",
+    companyDisplay: "Sawari Digital",
     field: "Software Engineering",
     specialization: "Spring Boot Engineer Trainee",
     mode: "hands_on",
@@ -20,11 +22,13 @@ export const RECOMMENDED_LISTINGS: ListingCardData[] = [
     status: "published",
     createdAt: "2026-08-01",
     updatedAt: "2026-08-01",
+    disabled: false,
   },
   {
     id: "41",
     companyId: "c-mobica",
     companyName: "Mobica Alexandria",
+    companyDisplay: "Mobica Alexandria",
     field: "Software Engineering",
     specialization: "React Frontend Intern",
     mode: "observer",
@@ -34,25 +38,29 @@ export const RECOMMENDED_LISTINGS: ListingCardData[] = [
     status: "published",
     createdAt: "2026-08-04",
     updatedAt: "2026-08-04",
+    disabled: false,
   },
   {
     id: "52",
     companyId: "c-startapp",
     companyName: "StartApp Hub",
+    companyDisplay: "StartApp Hub",
     field: "Software Engineering",
     specialization: "Quality & Test Engineer Program",
     mode: "hands_on",
     format: "remote",
     hireIntent: true,
     isPaid: false,
-    status: "published",
+    status: "closed",
     createdAt: "2026-08-06",
     updatedAt: "2026-08-06",
+    disabled: false,
   },
   {
     id: "63",
     companyId: "c-clouditech",
     companyName: "CloudiTech",
+    companyDisplay: "CloudiTech",
     field: "Software Engineering",
     specialization: "DevOps Apprentice",
     mode: "project_based",
@@ -64,15 +72,13 @@ export const RECOMMENDED_LISTINGS: ListingCardData[] = [
     status: "published",
     createdAt: "2026-08-08",
     updatedAt: "2026-08-08",
+    disabled: false,
   },
-];
-
-// Fallback (general/newest) used when the student's field has no listings.
-export const FALLBACK_LISTINGS: ListingCardData[] = [
   {
     id: "70",
     companyId: "c-brightlocal",
     companyName: "BrightLocal Media",
+    companyDisplay: "BrightLocal Media",
     field: "Marketing",
     specialization: "Digital Marketing Trainee",
     mode: "observer",
@@ -82,51 +88,29 @@ export const FALLBACK_LISTINGS: ListingCardData[] = [
     status: "published",
     createdAt: "2026-08-02",
     updatedAt: "2026-08-02",
-  },
-  {
-    id: "71",
-    companyId: "c-meridian",
-    companyName: "Meridian Analytics",
-    field: "Data Science",
-    specialization: "Data Analyst Intern",
-    mode: "hands_on",
-    format: "hybrid",
-    hireIntent: true,
-    isPaid: true,
-    price: 150,
-    trialDays: 7,
-    status: "published",
-    createdAt: "2026-08-03",
-    updatedAt: "2026-08-03",
-  },
-  {
-    id: "72",
-    companyId: "c-palette",
-    companyName: "Palette Studio",
-    field: "Design",
-    specialization: "UI/UX Design Apprentice",
-    mode: "project_based",
-    format: "in_person",
-    hireIntent: true,
-    isPaid: false,
-    status: "published",
-    createdAt: "2026-08-05",
-    updatedAt: "2026-08-05",
-  },
-  {
-    id: "73",
-    companyId: "c-orbit",
-    companyName: "Orbit Software",
-    field: "Software Engineering",
-    specialization: "Frontend Developer Program",
-    mode: "hands_on",
-    format: "remote",
-    hireIntent: true,
-    isPaid: true,
-    price: 200,
-    trialDays: 7,
-    status: "published",
-    createdAt: "2026-08-07",
-    updatedAt: "2026-08-07",
+    disabled: true,
   },
 ];
+
+// Company + status filter option lists (FR-018). Derived from the mock rows
+// so a filter can never reference a company that doesn't exist. Shared
+// { value, label } shape so both feed FilterSelect directly.
+export const ADMIN_FILTER_LISTS = {
+  company: [...new Set(MOCK_ADMIN_LISTINGS.map((row) => row.companyDisplay))].map(
+    (company) => ({ value: company, label: company }),
+  ),
+  status: [
+    { value: "published", label: "Published" },
+    { value: "closed", label: "Closed" },
+  ] as { value: ListingStatus; label: string }[],
+};
+
+export const MODERATION_LABELS = {
+  companyFilter: "Company",
+  statusFilter: "Status",
+  reset: "Reset filters",
+  disable: "Disable",
+  disabled: "Disabled",
+  emptyTitle: "No listings match your filters",
+  emptyMessage: "Try adjusting the company or status filter.",
+};

@@ -1,17 +1,29 @@
 import Link from "next/link";
 
+import Motion from "@/shared/components/animation/Motion";
+import { Button } from "@/shared/components/ui/button";
+import { fadeInUp } from "@/shared/lib/animations";
+
 export default function NotFound() {
   return (
-    <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 px-6 text-center">
-      <h2 className="font-sans text-base font-semibold text-navy">
-        Listing not found
-      </h2>
-      <p className="max-w-sm text-sm text-mid">
-        This listing doesn&apos;t exist or may have been removed.
-      </p>
-      <Link href="/" className="text-sm font-medium text-gold">
-        Back home
-      </Link>
-    </div>
+    <section className="flex min-h-[40vh] flex-col items-center justify-center gap-4 bg-background px-6 font-sans text-center text-foreground">
+      <Motion
+        variants={fadeInUp}
+        initial="hidden"
+        animate="visible"
+        className="flex flex-col items-center gap-4"
+      >
+        <span className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-secondary-text">
+          404
+        </span>
+        <h1 className="text-2xl font-semibold text-primary-text">Listing not found</h1>
+        <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+          This listing doesn&apos;t exist or may have been removed.
+        </p>
+        <Button asChild className="mt-2">
+          <Link href="/company/listings">Back to My Listings</Link>
+        </Button>
+      </Motion>
+    </section>
   );
 }
