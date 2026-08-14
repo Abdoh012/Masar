@@ -1,25 +1,19 @@
 import Link from "next/link";
-import { ArrowRight, Briefcase, GraduationCap, MapPin } from "lucide-react";
+import { ArrowRight, Briefcase, GraduationCap } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
-import type { Listing } from "@/features/listings/shared/types";
+import type { ListingCardData } from "@/features/listings/shared/types";
+import { ModeBadge } from "@/features/listings/shared/components/mode-badge/ModeBadge";
+import { PaidBadge } from "@/features/listings/shared/components/paid-badge/PaidBadge";
+import { CARD_ACTION_LABEL } from "./constants";
 
-export interface ListingCardProps extends Listing {
-  className?: string;
-}
+// ListingCard: the one shared listing card, reused by student browse and the
+// dashboard's Recommended Listings (FR-022 — no second card definition).
+// Consumes ListingCardData (UI-only display fields). Pure leaf: narrow props,
+// no fetching, no state.
+export function ListingCard({ ...listing }: ListingCardData & { className?: string }) {
+  const { id, specialization, companyName, field, mode, isPaid, trialDays, className } = listing;
 
-// Shared listing card — reused by Recommended Trainings and the future
-// browse-listings page. Pure leaf: narrow props, no fetching, no state.
-export function ListingCard({
-  id,
-  title,
-  companyName,
-  field,
-  location,
-  mode,
-  free,
-  className,
-}: ListingCardProps) {
   return (
     <article
       className={cn(
@@ -28,17 +22,11 @@ export function ListingCard({
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="rounded-full bg-secondary-tint px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-secondary-text">
-          {mode}
-        </span>
-        {free ? (
-          <span className="rounded-full bg-primary-tint px-2.5 py-1 text-[11px] font-semibold text-primary-text">
-            Free
-          </span>
-        ) : null}
+        <ModeBadge mode={mode} />
+        <PaidBadge isPaid={isPaid} trialDays={trialDays} />
       </div>
 
-      <h3 className="line-clamp-2 text-base font-semibold text-primary-text">{title}</h3>
+      <h3 className="line-clamp-2 text-base font-semibold text-primary-text">{specialization}</h3>
 
       <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
         <Briefcase aria-hidden="true" className="size-4 shrink-0" />
@@ -50,18 +38,11 @@ export function ListingCard({
         <span className="truncate">{field}</span>
       </p>
 
-      {location ? (
-        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
-          <span className="truncate">{location}</span>
-        </p>
-      ) : null}
-
       <Link
         href={`/listings/${id}`}
         className="group mt-auto inline-flex items-center gap-1.5 pt-2 text-sm font-medium text-primary transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        View training
+        {CARD_ACTION_LABEL}
         <ArrowRight aria-hidden="true" className="size-4 transition-transform group-hover:translate-x-0.5" />
       </Link>
     </article>
