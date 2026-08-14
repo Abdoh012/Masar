@@ -8,6 +8,7 @@ export { ThemeToggle } from "./components/theme-toggle/ThemeToggle";
 export { BrandMark } from "./shared/components/BrandMark";
 export { BrandPanel } from "./shared/components/BrandPanel";
 export { AuthCard } from "./shared/components/AuthCard";
+export { AuthPageShell } from "./shared/components/AuthPageShell";
 export { SignInForm } from "./components/sign-in/SignInForm";
 export { SignUpForm } from "./components/sign-up/SignUpForm";
 export { ProfileInformationForm } from "./components/profile-information/ProfileInformationForm";
