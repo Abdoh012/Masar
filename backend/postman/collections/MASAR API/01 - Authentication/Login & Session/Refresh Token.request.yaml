@@ -1,7 +1,0 @@
-$kind: http-request
-description: Requires the HttpOnly `refresh_token` cookie and a matching `X-CSRF-Token` header (attached automatically by the pre-request script). Run after Login. On 200 the server returns a new access token and rotates the refresh/CSRF cookies.
-url: "{{base_url}}/api/v1/auth/refresh"
-method: POST
-headers:
-  X-CSRF-Token: "{{csrf_token}}"
-order: 5000
