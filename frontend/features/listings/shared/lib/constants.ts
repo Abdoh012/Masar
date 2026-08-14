@@ -25,6 +25,12 @@ export const MODE_LABELS: Record<ListingMode, string> = {
   project_based: "Project-based",
 };
 
+export const FORMAT_LABELS: Record<"in_person" | "remote" | "hybrid", string> = {
+  in_person: "In-person",
+  remote: "Remote",
+  hybrid: "Hybrid",
+};
+
 export const STATUS_LABELS: Record<ListingStatus, string> = {
   draft: "Draft",
   published: "Published",

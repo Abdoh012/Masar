@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { ListingForm } from "@/features/listings";
+import { ListingFormContainer } from "@/features/listings";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -17,7 +17,7 @@ export default async function Page({ params }: PageProps) {
     <div className="p-8">
       <h1 className="font-sans text-xl font-semibold text-foreground">Edit Listing</h1>
       <div className="mt-6 max-w-2xl">
-        <ListingForm mode="edit" listingId={id} />
+        <ListingFormContainer mode="edit" listingId={id} />
       </div>
     </div>
   );

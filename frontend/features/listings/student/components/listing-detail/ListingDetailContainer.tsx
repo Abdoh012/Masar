@@ -3,18 +3,21 @@ import { notFound } from "next/navigation";
 
 import { Briefcase, Building2, CalendarDays, GraduationCap } from "lucide-react";
 
+import { FORMAT_LABELS } from "../../../shared/lib/constants";
 import { ModeBadge } from "../../../shared/components/mode-badge/ModeBadge";
 import { PaidBadge } from "../../../shared/components/paid-badge/PaidBadge";
 import { Button } from "@/shared/components/ui/button";
 
 import { ApplyCta } from "./ApplyCta";
+import { DetailMetaRow } from "./DetailMetaRow";
 import {
   DETAIL_COPY,
+  DETAIL_META,
   MOCK_APPLIED_LISTING_IDS,
   MOCK_DETAIL_LISTINGS,
 } from "./constants";
 
-interface ListingDetailProps {
+interface ListingDetailContainerProps {
   id: string;
 }
 
@@ -25,7 +28,7 @@ interface ListingDetailProps {
 // already-applied status (FR-017). UI-only; unknown ids hit the route
 // shell's not-found sibling via notFound().
 
-export function ListingDetail({ id }: ListingDetailProps) {
+export function ListingDetailContainer({ id }: ListingDetailContainerProps) {
   const listing = MOCK_DETAIL_LISTINGS[id];
 
   if (!listing) {
@@ -47,26 +50,18 @@ export function ListingDetail({ id }: ListingDetailProps) {
         </h2>
 
         <dl className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
-          <div className="flex items-center gap-2">
-            <Building2 aria-hidden="true" className="size-4 shrink-0 text-primary-text" />
-            <dt className="sr-only">Company</dt>
-            <dd>{listing.companyName}</dd>
-          </div>
-          <div className="flex items-center gap-2">
-            <Briefcase aria-hidden="true" className="size-4 shrink-0 text-primary-text" />
-            <dt className="sr-only">Field</dt>
-            <dd>{listing.field}</dd>
-          </div>
-          <div className="flex items-center gap-2">
-            <GraduationCap aria-hidden="true" className="size-4 shrink-0 text-primary-text" />
-            <dt className="sr-only">Format</dt>
-            <dd className="capitalize">{listing.format.replace("_", " ")}</dd>
-          </div>
-          <div className="flex items-center gap-2">
-            <CalendarDays aria-hidden="true" className="size-4 shrink-0 text-primary-text" />
-            <dt className="sr-only">Posted</dt>
-            <dd>Posted {listing.createdAt}</dd>
-          </div>
+          <DetailMetaRow icon={Building2} label={DETAIL_META.company}>
+            {listing.companyName}
+          </DetailMetaRow>
+          <DetailMetaRow icon={Briefcase} label={DETAIL_META.field}>
+            {listing.field}
+          </DetailMetaRow>
+          <DetailMetaRow icon={GraduationCap} label={DETAIL_META.format}>
+            {FORMAT_LABELS[listing.format]}
+          </DetailMetaRow>
+          <DetailMetaRow icon={CalendarDays} label={DETAIL_META.posted}>
+            Posted {listing.createdAt}
+          </DetailMetaRow>
         </dl>
 
         <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">

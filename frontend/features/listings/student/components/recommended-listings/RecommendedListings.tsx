@@ -4,7 +4,11 @@ import { Sparkles } from "lucide-react";
 import Motion from "@/shared/components/animation/Motion";
 import { fadeInUp } from "@/shared/lib/animations";
 import { ListingCard } from "@/features/listings/shared/components/listing-card/ListingCard";
-import { FALLBACK_LISTINGS, RECOMMENDED_LISTINGS } from "./constants";
+import {
+  FALLBACK_LISTINGS,
+  RECOMMENDED_LABELS,
+  RECOMMENDED_LISTINGS,
+} from "./constants";
 
 // RecommendedListings: maps mock listings through the one shared ListingCard.
 // Empty field → falls back to the general/newest set (never a blank section).
@@ -25,7 +29,7 @@ export function RecommendedListings() {
         {/* Header */}
         <h2 className="flex items-center gap-2 text-base font-semibold text-primary-text">
           <Sparkles aria-hidden="true" className="size-4 text-secondary-text" />
-          Recommended trainings
+          {RECOMMENDED_LABELS.title}
         </h2>
 
         {/* View all */}
@@ -33,7 +37,7 @@ export function RecommendedListings() {
           href="/listings"
           className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          View all
+          {RECOMMENDED_LABELS.viewAll}
         </Link>
       </div>
 

@@ -1,5 +1,11 @@
 import type { ListingCardData } from "@/features/listings/shared/types";
 
+// Dashboard "Recommended trainings" section copy (FR-022 consumer).
+export const RECOMMENDED_LABELS = {
+  title: "Recommended trainings",
+  viewAll: "View all",
+};
+
 // Field-matched mock listings for "Software Engineering" students, reshaped
 // to the shared ListingCardData (FR-022 dashboard consumer migration, R-9).
 // companyName is a UI-only display field resolved from companyId later.

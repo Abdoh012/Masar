@@ -108,6 +108,13 @@ export const APPLY_COPY = {
   successMessage: "Your application was recorded for this session.",
 };
 
+export const DETAIL_META = {
+  company: "Company",
+  field: "Field",
+  format: "Format",
+  posted: "Posted",
+};
+
 export const DETAIL_COPY = {
   backToBrowse: "Back to browse",
 };

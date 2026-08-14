@@ -1,6 +1,6 @@
 import { LISTING_FORMATS, LISTING_MODES } from "../../../shared/lib/constants";
 import type { ListingMode } from "../../../shared/types";
-import type { BrowseListing } from "../../types";
+import type { BrowseListing, ListingFiltersState } from "../../types";
 
 // Student browse constants (R-8; structure rules §14 — no inline data).
 // MOCK_BROWSE_LISTINGS is pre-scoped to the student's field ("Software
@@ -91,6 +91,17 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
   },
 ];
 
+export const FILTER_LABELS = {
+  mode: "Mode",
+  format: "Format",
+  paid: "Price",
+  reset: "Reset filters",
+  title: "Filters",
+  allModes: "All modes",
+  allFormats: "All formats",
+  any: "Any",
+};
+
 // Filter option lists (FR-013). Reused directly so the form and filters can
 // never drift from each other (R-1). "paid" is a ternary control with a
 // neutral "Any" state.
@@ -98,19 +109,14 @@ export const FILTER_LISTS = {
   mode: [...LISTING_MODES] as { value: ListingMode; label: string }[],
   format: [...LISTING_FORMATS] as { value: "in_person" | "remote" | "hybrid"; label: string }[],
   paid: [
-    { value: "any", label: "Any" },
+    { value: "any", label: FILTER_LABELS.any },
     { value: "free", label: "Free" },
     { value: "paid", label: "Paid" },
   ] as { value: "any" | "free" | "paid"; label: string }[],
 };
 
-export const FILTER_LABELS = {
-  mode: "Mode",
-  format: "Format",
-  paid: "Price",
-  reset: "Reset filters",
-  title: "Filters",
-};
+// No-filter default state (FR-013).
+export const DEFAULT_FILTERS: ListingFiltersState = { mode: "", format: "", paid: "any" };
 
 export const BROWSE_EMPTY_STATE = {
   title: "No trainings match your filters",

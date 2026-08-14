@@ -3,6 +3,8 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 
+import { CheckCircle2 } from "lucide-react";
+
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
@@ -32,7 +34,7 @@ export function ApplyCta({ listingId, appliedByDefault = false }: ApplyCtaProps)
     return (
       <div role="status" className="rounded-xl border border-primary-tint bg-primary-tint/50 p-5">
         <p className="flex items-center gap-2 text-sm font-semibold text-primary-text">
-          <span aria-hidden="true" className="text-base leading-none">✓</span>
+          <CheckCircle2 aria-hidden="true" className="size-5 text-primary" />
           {APPLY_COPY.applied}
         </p>
         <p className="mt-1 text-sm text-muted-foreground">{APPLY_COPY.appliedMessage}</p>

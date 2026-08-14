@@ -7,6 +7,15 @@ import type { ListingCardData } from "../shared/types";
 
 export type BrowseListing = ListingCardData;
 
+// Student browse filter state (FR-013), used by the browse orchestrator and
+// the ListingFilters leaf. The paid control is a ternary with a neutral "any"
+// state; mode/format are "no filter" when empty.
+export interface ListingFiltersState {
+  mode: string;
+  format: string;
+  paid: "any" | "free" | "paid";
+}
+
 export interface AlreadyAppliedMarker {
   listingId: string;
   alreadyApplied: true;

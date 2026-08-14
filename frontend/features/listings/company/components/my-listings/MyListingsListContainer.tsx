@@ -26,7 +26,7 @@ function mergeSessionOverMock(session: MyListingRow[]): MyListingRow[] {
   return [...byId.values()];
 }
 
-export function MyListingsList() {
+export function MyListingsListContainer() {
   const session = useSessionListings();
   const [activeTab, setActiveTab] = useState<TabValue>("all");
 

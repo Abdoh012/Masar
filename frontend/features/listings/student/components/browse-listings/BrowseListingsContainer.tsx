@@ -4,20 +4,17 @@ import { useState } from "react";
 
 import { ListingCard } from "../../../shared/components/listing-card/ListingCard";
 import { EmptyState } from "../../../shared/components/empty-state/EmptyState";
-import type { BrowseListing } from "../../types";
+import type { BrowseListing, ListingFiltersState } from "../../types";
 
 import { ListingFilters } from "./ListingFilters";
-import type { ListingFiltersState } from "./ListingFilters";
-import { BROWSE_EMPTY_STATE, MOCK_BROWSE_LISTINGS } from "./constants";
-
-const DEFAULT_FILTERS: ListingFiltersState = { mode: "", format: "", paid: "any" };
+import { BROWSE_EMPTY_STATE, DEFAULT_FILTERS, MOCK_BROWSE_LISTINGS } from "./constants";
 
 // Student browse orchestrator (FR-012/013/014). "use client" because it owns
 // the filter state. Renders the shared ListingCard grid from the field-scoped
 // mock constants, AND-combines mode/format/paid filters, and shows the empty
 // state when nothing matches. No fetching, no backend (R-8).
 
-export function BrowseListings() {
+export function BrowseListingsContainer() {
   const [filters, setFilters] = useState<ListingFiltersState>(DEFAULT_FILTERS);
 
   const visibleListings = MOCK_BROWSE_LISTINGS.filter((listing: BrowseListing) => {

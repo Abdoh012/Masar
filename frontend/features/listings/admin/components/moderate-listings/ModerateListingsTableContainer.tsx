@@ -23,7 +23,7 @@ import {
 // individual listings (architecture §1). Platform-wide rows render through the
 // ListingTableRow leaf.
 
-export function ModerateListingsTable() {
+export function ModerateListingsTableContainer() {
   const [disabledById, setDisabledById] = useState<Record<string, boolean>>(
     () =>
       Object.fromEntries(
@@ -55,7 +55,7 @@ export function ModerateListingsTable() {
             label={MODERATION_LABELS.companyFilter}
             value={companyFilter}
             onValueChange={setCompanyFilter}
-            allLabel="All companies"
+            allLabel={MODERATION_LABELS.allCompanies}
             options={ADMIN_FILTER_LISTS.company}
             triggerClassName="w-48"
           />
@@ -64,7 +64,7 @@ export function ModerateListingsTable() {
             label={MODERATION_LABELS.statusFilter}
             value={statusFilter}
             onValueChange={setStatusFilter}
-            allLabel="All statuses"
+            allLabel={MODERATION_LABELS.allStatuses}
             options={ADMIN_FILTER_LISTS.status}
             triggerClassName="w-40"
           />
@@ -87,19 +87,19 @@ export function ModerateListingsTable() {
             <thead>
               <tr className="border-b border-border">
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Company
+                  {MODERATION_LABELS.columnCompany}
                 </th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Listing
+                  {MODERATION_LABELS.columnListing}
                 </th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Mode
+                  {MODERATION_LABELS.columnMode}
                 </th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Status
+                  {MODERATION_LABELS.columnStatus}
                 </th>
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Action
+                  {MODERATION_LABELS.columnAction}
                 </th>
               </tr>
             </thead>
