@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 
+import PendingApprovalContainer from "@/features/auth/components/pending-approval/PendingApprovalContainer";
+
 export const metadata: Metadata = {
   title: "Pending Approval",
 };
 
-export default function Page() {
-  return (
-    <div className="p-8">
-      <h1 className="font-sans text-xl font-semibold text-navy">Pending Approval</h1>
-    </div>
-  );
+export default function PendingApprovalPage() {
+  return <PendingApprovalContainer />;
 }
