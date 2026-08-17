@@ -126,6 +126,23 @@ function notification_controller_input(): array
 function notification_controller_user_id(): int
 {
     /*
+     * JWT-based authentication used by the application.
+     */
+
+    if (function_exists('auth_user')) {
+        $user = auth_user();
+
+        if (
+            is_array($user)
+            &&
+            !empty($user['id'])
+        ) {
+
+            return (int) $user['id'];
+        }
+    }
+
+    /*
      * Support the common authentication
      * locations used by the application.
      */

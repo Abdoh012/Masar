@@ -57,6 +57,21 @@ class NotificationRepository
     protected function db(): mixed
     {
         /*
+         * Database accessor used by the application.
+         */
+
+        if (
+            function_exists('get_database_connection')
+        ) {
+
+            $connection = get_database_connection();
+
+            if ($connection instanceof PDO) {
+                return $connection;
+            }
+        }
+
+        /*
          * PDO connection exposed by the application.
          */
 

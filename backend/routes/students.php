@@ -29,4 +29,64 @@ if ($path === '/api/v1/students/profile' && $method === 'PUT') {
     return;
 }
 
+if ($path === '/api/v1/students/profile/status' && $method === 'GET') {
+    middleware_student();
+    student_profile_status();
+    return;
+}
+
+if ($path === '/api/v1/students/profile/complete' && $method === 'POST') {
+    middleware_student();
+    student_complete_profile();
+    return;
+}
+
+if ($path === '/api/v1/students/me/skills' && $method === 'GET') {
+    middleware_student();
+    student_skills_index();
+    return;
+}
+
+if ($path === '/api/v1/students/me/skills' && $method === 'POST') {
+    middleware_student();
+    student_skill_add();
+    return;
+}
+
+if ($path === '/api/v1/students/me/skills' && $method === 'PUT') {
+    middleware_student();
+    student_skills_update();
+    return;
+}
+
+if ($path === '/api/v1/students/me/skills' && $method === 'DELETE') {
+    middleware_student();
+    student_skill_remove();
+    return;
+}
+
+if ($path === '/api/v1/students/me/cv' && $method === 'GET') {
+    middleware_student();
+    student_cv_show();
+    return;
+}
+
+if ($path === '/api/v1/students/me/cv' && $method === 'POST') {
+    middleware_student();
+    student_cv_set();
+    return;
+}
+
+if ($path === '/api/v1/students/me/cv' && $method === 'DELETE') {
+    middleware_student();
+    student_cv_remove();
+    return;
+}
+
+if (preg_match('#^/api/v1/students/([0-9]+)$#', $path, $matches) && $method === 'GET') {
+    middleware_auth();
+    student_show((int) $matches[1]);
+    return;
+}
+
 response_not_found('Student endpoint not found.');

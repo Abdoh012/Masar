@@ -16,66 +16,44 @@
  * Profile-specific operations belong to student_profile_service.php.
  */
 
-
-/*
-|--------------------------------------------------------------------------
-| Dependencies
-|--------------------------------------------------------------------------
-*/
-
 require_once __DIR__ . '/../repositories/student_repository.php';
 require_once __DIR__ . '/../repositories/student_profile_repository.php';
+require_once __DIR__ . '/../../files/repositories/file_repository.php';
 
+/**
+ * Verifies that a client-supplied CV file ID belongs to the authenticated user.
+ *
+ * Returns ['cv_file_id' => int] on success, or an error result otherwise.
+ * The authenticated user is derived from the request context, so a
+ * client-supplied file ID is never trusted.
+ */
+function student_service_validate_cv_file_ownership( int $user_id, mixed $cv_file_id ): array {
+    $cv_file_id = (int) $cv_file_id;
 
-/*
-|--------------------------------------------------------------------------
-| Create Student Profile
-|--------------------------------------------------------------------------
-*/
+    if ( $cv_file_id <= 0 ) {
+        return [ 'error' => true, 'status' => 422, 'message' => 'Invalid CV file ID.', ];
+    }
 
-function student_service_create_profile(
-    int $user_id,
-    array $data
-): array {
+    $file = file_repository_find_for_user( $cv_file_id, $user_id );
+
+    if (!$file) {
+        return [ 'error' => true, 'status' => 422, 'message' => 'The selected CV file does not belong to your account.', ];
+    }
+
+    return [ 'cv_file_id' => $cv_file_id, ];
+}
+
+function student_service_create_profile( int $user_id, array $data ): array {
 
     if ($user_id <= 0) {
-
-        return [
-            'error' => true,
-            'status' => 422,
-            'message' => 'Invalid user ID.'
-        ];
+        return [ 'error' => true, 'status' => 422, 'message' => 'Invalid user ID.' ];
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Check Existing Profile
-    |--------------------------------------------------------------------------
-    */
-
-    $existing =
-        student_repository_find_by_user_id(
-            $user_id
-        );
-
+    $existing = student_repository_find_by_user_id( $user_id );
 
     if ($existing) {
-
-        return [
-            'error' => true,
-            'status' => 409,
-            'message' =>
-                'Student profile already exists.'
-        ];
+        return [ 'error' => true, 'status' => 409, 'message' => 'Student profile already exists.' ];
     }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Prepare Data
-    |--------------------------------------------------------------------------
-    */
 
     $academic_data = student_repository_resolve_academic_data(
         trim((string) ($data['university'] ?? '')),
@@ -84,102 +62,85 @@ function student_service_create_profile(
     );
 
     if ($academic_data === null) {
-        return [
-            'error' => true,
-            'status' => 422,
-            'message' => 'University, faculty, or specialization is incorrect.'
-        ];
+        return [ 'error' => true, 'status' => 422, 'message' => 'University, faculty, or specialization is incorrect.' ];
     }
 
     $student_data = [
-
-        'user_id' =>
-            $user_id,
-
-        'full_name' =>
-            trim(
-                $data['full_name']
-                    ?? ''
-            ),
-
+        'user_id' => $user_id,
+        'full_name' => trim( $data['full_name'] ?? '' ),
         'university_id' => $academic_data['university_id'],
         'faculty_id' => $academic_data['faculty_id'],
         'specialization_id' => $academic_data['specialization_id'],
 
     ];
 
-    if (!student_repository_academic_data_exists(
-        $student_data['university_id'],
-        $student_data['faculty_id'],
-        $student_data['specialization_id']
-    )) {
-        return [
-            'error' => true,
-            'status' => 422,
-            'message' => 'University, faculty, or specialization is incorrect.'
-        ];
+    if (!empty($data['degree'] ?? null)) {
+        $degree_id = student_repository_resolve_degree_id( trim((string) $data['degree']) );
+        if ($degree_id === null) {
+            return [ 'error' => true, 'status' => 422, 'message' => 'Degree is not recognized.' ];
+        }
+        $student_data['degree_id'] = $degree_id;
     }
 
+    foreach ( [ 'bio', 'phone', 'city', ] as $field ) {
+        if ( array_key_exists( $field, $data ) ) {
+            $student_data[$field] = trim( (string) $data[$field] );
+        }
+    }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Create Student
-    |--------------------------------------------------------------------------
-    */
+    if ( array_key_exists( 'graduation_year', $data ) && (int) $data['graduation_year'] > 0 ) {
+        $student_data['graduation_year'] = (int) $data['graduation_year'];
+    }
 
-    $student_id =
-        student_repository_create(
-            $student_data
-        );
+    if ( array_key_exists( 'cv_file_id', $data ) && (int) $data['cv_file_id'] > 0 ) {
+        $cv_result = student_service_validate_cv_file_ownership( $user_id, $data['cv_file_id'] );
+        if ( !empty( $cv_result['error'] ) ) {
+            return $cv_result;
+        }
+        $student_data['cv_file_id'] = $cv_result['cv_file_id'];
+    }
 
+    if (!student_repository_academic_data_exists( $student_data['university_id'], $student_data['faculty_id'], $student_data['specialization_id'] )) {
+        return [ 'error' => true, 'status' => 422, 'message' => 'University, faculty, or specialization is incorrect.' ];
+    }
+
+    $student_id = student_repository_create( $student_data );
 
     if (!$student_id) {
-
-        return [
-            'error' => true,
-            'status' => 500,
-            'message' =>
-                'Unable to create student profile.'
-        ];
+        return [ 'error' => true, 'status' => 500, 'message' => 'Unable to create student profile.' ];
     }
 
+    if ( array_key_exists( 'skills', $data ) && is_array( $data['skills'] ) ) {
+        student_profile_repository_update( (int) $student_id, [ 'skills' => $data['skills'] ] );
+    }
 
     $student = student_repository_find_by_id($student_id);
 
-    return [
-        'data' => [
-            'student' => $student,
-        ],
-    ];
+    return [ 'data' => [ 'student' => $student, ], ];
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| Get Student Profile
-|--------------------------------------------------------------------------
-*/
-
-function student_get_profile(
-    int $user_id
-): array {
+function student_get_profile( int $user_id ): array {
 
     if ($user_id <= 0) {
-
-        return [
-            'error' => true,
-            'status' => 422,
-            'message' =>
-                'Invalid user ID.'
-        ];
+        return [ 'error' => true, 'status' => 422, 'message' => 'Invalid user ID.' ];
     }
 
+    $student = student_repository_find_by_user_id( $user_id );
 
-    /*
-    |--------------------------------------------------------------------------
-    | Find Student
-    |--------------------------------------------------------------------------
-    */
+    if (!$student) {
+        return [ 'error' => true, 'status' => 404, 'message' => 'Student profile not found.' ];
+    }
+
+    $profile = student_profile_repository_find_by_student_id( (int) $student['id'] );
+
+    return ['data' => [ 'student' => $student, 'profile' => $profile, ], ];
+}
+
+function student_service_update_profile( int $user_id, array $data ): array {
+
+    if ($user_id <= 0) {
+        return [ 'error' => true, 'status' => 422, 'message' => 'Invalid user ID.' ];
+    }
 
     $student =
         student_repository_find_by_user_id(
@@ -188,790 +149,246 @@ function student_get_profile(
 
 
     if (!$student) {
-
-        return [
-            'error' => true,
-            'status' => 404,
-            'message' =>
-                'Student profile not found.'
-        ];
+        return [ 'error' => true, 'status' => 404, 'message' => 'Student profile not found.' ];
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Get Profile Data
-    |--------------------------------------------------------------------------
-    */
-
-    $profile =
-        student_profile_repository_find_by_student_id(
-            (int) $student['id']
-        );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Merge Profile
-    |--------------------------------------------------------------------------
-    */
-
-    return [
-
-        'data' => [
-
-            'student' =>
-                $student,
-
-            'profile' =>
-                $profile,
-
-        ],
-
-    ];
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| Update Student Profile
-|--------------------------------------------------------------------------
-*/
-
-function student_service_update_profile(
-    int $user_id,
-    array $data
-): array {
-
-    if ($user_id <= 0) {
-
-        return [
-            'error' => true,
-            'status' => 422,
-            'message' =>
-                'Invalid user ID.'
-        ];
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Find Student
-    |--------------------------------------------------------------------------
-    */
-
-    $student =
-        student_repository_find_by_user_id(
-            $user_id
-        );
-
-
-    if (!$student) {
-
-        return [
-            'error' => true,
-            'status' => 404,
-            'message' =>
-                'Student profile not found.'
-        ];
-    }
-
-
-    $student_id =
-        (int) $student['id'];
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Allowed Student Fields
-    |--------------------------------------------------------------------------
-    */
-
+    $student_id = (int) $student['id'];
     $student_data = [];
 
+    if ( array_key_exists( 'university', $data ) || array_key_exists( 'faculty', $data ) || array_key_exists( 'specialization', $data ) ) {
+        $academic_data = student_repository_resolve_academic_data(
+            trim((string) ($data['university'] ?? '')),
+            trim((string) ($data['faculty'] ?? '')),
+            trim((string) ($data['specialization'] ?? ''))
+        );
 
-    if (
-        array_key_exists(
-            'university',
-            $data
-        )
-    ) {
+        if ($academic_data === null) {
+            return [ 'error' => true, 'status' => 422, 'message' => 'University, faculty, and specialization must be provided together and are incorrect.' ];
+        }
 
-        $student_data['university'] =
-            trim(
-                $data['university']
-            );
+        $student_data['university_id'] = $academic_data['university_id'];
+        $student_data['faculty_id'] = $academic_data['faculty_id'];
+        $student_data['specialization_id'] = $academic_data['specialization_id'];
     }
 
+    if ( array_key_exists( 'degree', $data ) ) {
+        $degree = trim( (string) $data['degree'] );
 
-    if (
-        array_key_exists(
-            'degree',
-            $data
-        )
-    ) {
+        if ($degree === '') {
+            $student_data['degree_id'] = null;
+        } else {
+            $degree_id = student_repository_resolve_degree_id( $degree );
 
-        $student_data['degree'] =
-            trim(
-                $data['degree']
-            );
-    }
+            if ($degree_id === null) {
+                return [ 'error' => true, 'status' => 422, 'message' => 'Degree is not recognized.' ];
+            }
 
-
-    if (
-        array_key_exists(
-            'field',
-            $data
-        )
-    ) {
-
-        $student_data['field'] =
-            trim(
-                $data['field']
-            );
-    }
-
-
-    if (
-        array_key_exists(
-            'specialization',
-            $data
-        )
-    ) {
-
-        $student_data['specialization'] =
-            trim(
-                $data['specialization']
-            );
-    }
-
-
-    if (
-        array_key_exists(
-            'bio',
-            $data
-        )
-    ) {
-
-        $student_data['bio'] =
-            trim(
-                $data['bio']
-            );
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Update Student Table
-    |--------------------------------------------------------------------------
-    */
-
-    if (!empty($student_data)) {
-
-        $updated =
-            student_repository_update(
-                $student_id,
-                $student_data
-            );
-
-
-        if (!$updated) {
-
-            return [
-                'error' => true,
-                'status' => 500,
-                'message' =>
-                    'Unable to update student profile.'
-            ];
+            $student_data['degree_id'] = $degree_id;
         }
     }
 
+    foreach ( [ 'full_name', 'phone', 'bio', 'city', ] as $field ) {
+        if ( array_key_exists( $field, $data ) ) {
+            $student_data[$field] = trim( (string) $data[$field] );
+        }
+    }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Update Profile Data
-    |--------------------------------------------------------------------------
-    */
+    if ( array_key_exists( 'graduation_year', $data ) ) {
+        $student_data['graduation_year'] = (int) $data['graduation_year'];
+    }
+
+    if ( array_key_exists( 'cv_file_id', $data ) ) {
+        $cv_file_id = (int) $data['cv_file_id'];
+
+        if ( $cv_file_id > 0 ) {
+            $cv_result = student_service_validate_cv_file_ownership( $user_id, $cv_file_id );
+            if ( !empty( $cv_result['error'] ) ) {
+                return $cv_result;
+            }
+            $student_data['cv_file_id'] = $cv_result['cv_file_id'];
+        } else {
+            $student_data['cv_file_id'] = null;
+        }
+    }
+
+    if (!empty($student_data)) {
+        $updated = student_repository_update( $student_id, $student_data );
+        if (!$updated) {
+            return [ 'error' => true, 'status' => 500, 'message' => 'Unable to update student profile.' ];
+        }
+    }
 
     $profile_data = [];
 
-
-    if (
-        array_key_exists(
-            'skills',
-            $data
-        )
-    ) {
-
-        $profile_data['skills'] =
-            $data['skills'];
+    if ( array_key_exists( 'skills', $data ) ) {
+        $profile_data['skills'] = $data['skills'];
     }
-
 
     if (!empty($profile_data)) {
-
-        $profile_updated =
-            student_profile_repository_update(
-                $student_id,
-                $profile_data
-            );
-
-
+        $profile_updated = student_profile_repository_update( $student_id, $profile_data );
         if (!$profile_updated) {
-
-            return [
-                'error' => true,
-                'status' => 500,
-                'message' =>
-                    'Unable to update student profile data.'
-            ];
+            return [ 'error' => true, 'status' => 500, 'message' => 'Unable to update student profile data.' ];
         }
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Return Updated Profile
-    |--------------------------------------------------------------------------
-    */
-
-    return student_get_profile(
-        $user_id
-    );
+    return student_get_profile( $user_id );
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| Complete Student Profile
-|--------------------------------------------------------------------------
-|
-| Used when the student submits all required
-| profile information for the first time.
-|
-*/
-
-function student_complete_profile_data(
-    int $user_id,
-    array $data
-): array {
+function student_complete_profile_data( int $user_id, array $data ): array {
 
     if ($user_id <= 0) {
-
-        return [
-            'error' => true,
-            'status' => 422,
-            'message' =>
-                'Invalid user ID.'
-        ];
+        return [ 'error' => true, 'status' => 422, 'message' => 'Invalid user ID.' ];
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Find Student
-    |--------------------------------------------------------------------------
-    */
-
-    $student =
-        student_repository_find_by_user_id(
-            $user_id
-        );
-
+    $student = student_repository_find_by_user_id( $user_id );
 
     if (!$student) {
-
-        return [
-            'error' => true,
-            'status' => 404,
-            'message' =>
-                'Student profile not found.'
-        ];
+        return [ 'error' => true, 'status' => 404, 'message' => 'Student profile not found.' ];
     }
 
+    $academic_data = student_repository_resolve_academic_data(
+        trim((string) ($data['university'] ?? '')),
+        trim((string) ($data['faculty'] ?? '')),
+        trim((string) ($data['specialization'] ?? ''))
+    );
 
-    /*
-    |--------------------------------------------------------------------------
-    | Update Main Student Data
-    |--------------------------------------------------------------------------
-    */
+    if ($academic_data === null) {
+        return [ 'error' => true, 'status' => 422, 'message' => 'University, faculty, or specialization is incorrect.' ];
+    }
 
     $student_data = [
-
-        'university' =>
-            trim(
-                $data['university']
-            ),
-
-        'degree' =>
-            trim(
-                $data['degree']
-            ),
-
-        'field' =>
-            trim(
-                $data['field']
-            ),
-
-        'specialization' =>
-            trim(
-                $data['specialization']
-            ),
-
-        'bio' =>
-            trim(
-                $data['bio']
-            ),
-
+        'university_id' => $academic_data['university_id'],
+        'faculty_id' => $academic_data['faculty_id'],
+        'specialization_id' => $academic_data['specialization_id'],
+        'is_profile_complete' => 1,
     ];
 
+    if ( array_key_exists( 'degree', $data ) && trim( (string) $data['degree'] ) !== '' ) {
+        $degree_id = student_repository_resolve_degree_id( trim( (string) $data['degree'] ) );
 
-    $updated =
-        student_repository_update(
-            (int) $student['id'],
-            $student_data
-        );
+        if ($degree_id === null) {
+            return [ 'error' => true, 'status' => 422, 'message' => 'Degree is not recognized.' ];
+        }
 
+        $student_data['degree_id'] = $degree_id;
+    }
+
+    if ( array_key_exists( 'bio', $data ) ) {
+        $student_data['bio'] = trim( (string) $data['bio'] );
+    }
+
+    if ( array_key_exists( 'cv_file_id', $data ) && (int) $data['cv_file_id'] > 0 ) {
+        $cv_result = student_service_validate_cv_file_ownership( $user_id, $data['cv_file_id'] );
+        if ( !empty( $cv_result['error'] ) ) {
+            return $cv_result;
+        }
+        $student_data['cv_file_id'] = $cv_result['cv_file_id'];
+    }
+
+    $updated = student_repository_update( (int) $student['id'], $student_data );
 
     if (!$updated) {
-
-        return [
-            'error' => true,
-            'status' => 500,
-            'message' =>
-                'Unable to update student information.'
-        ];
+        return [ 'error' => true, 'status' => 500, 'message' => 'Unable to update student information.' ];
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Update Profile Data
-    |--------------------------------------------------------------------------
-    */
-
-    $profile_data = [
-
-        'skills' =>
-            $data['skills']
-                ?? [],
-
-    ];
-
-
-    $profile_updated =
-        student_profile_repository_update(
-            (int) $student['id'],
-            $profile_data
-        );
-
+    $profile_data = [ 'skills' => $data['skills'] ?? [], ];
+    $profile_updated = student_profile_repository_update( (int) $student['id'], $profile_data );
 
     if (!$profile_updated) {
-
-        return [
-            'error' => true,
-            'status' => 500,
-            'message' =>
-                'Unable to update student profile data.'
-        ];
+        return [ 'error' => true, 'status' => 500, 'message' => 'Unable to update student profile data.' ];
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Return Updated Profile
-    |--------------------------------------------------------------------------
-    */
-
-    return student_get_profile(
-        $user_id
-    );
+    return student_get_profile( $user_id );
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| Get Public Student Profile
-|--------------------------------------------------------------------------
-|
-| Companies can use this when searching for students.
-|
-*/
-
-function student_get_public_profile(
-    int $student_id,
-    array $current_user
-): array {
+function student_get_public_profile( int $student_id, array $current_user ): array {
 
     if ($student_id <= 0) {
-
-        return [
-            'error' => true,
-            'status' => 422,
-            'message' =>
-                'Invalid student ID.'
-        ];
+        return [ 'error' => true, 'status' => 422, 'message' => 'Invalid student ID.' ];
     }
 
+    $role = $current_user['role'] ?? '';
+    $allowed_roles = [ 'student', 'company', 'admin', ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Check Current User
-    |--------------------------------------------------------------------------
-    */
-
-    $role =
-        $current_user['role']
-            ?? '';
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Allowed Roles
-    |--------------------------------------------------------------------------
-    */
-
-    $allowed_roles = [
-        'student',
-        'company',
-        'admin',
-    ];
-
-
-    if (
-        !in_array(
-            $role,
-            $allowed_roles,
-            true
-        )
-    ) {
-
-        return [
-            'error' => true,
-            'status' => 403,
-            'message' =>
-                'You are not allowed to view student profiles.'
-        ];
+    if ( !in_array( $role, $allowed_roles, true ) ) {
+        return [ 'error' => true, 'status' => 403, 'message' => 'You are not allowed to view student profiles.' ];
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Find Student
-    |--------------------------------------------------------------------------
-    */
-
-    $student =
-        student_repository_find_by_id(
-            $student_id
-        );
-
+    $student = student_repository_find_by_id( $student_id );
 
     if (!$student) {
-
-        return [
-            'error' => true,
-            'status' => 404,
-            'message' =>
-                'Student not found.'
-        ];
+        return [ 'error' => true, 'status' => 404, 'message' => 'Student not found.' ];
     }
 
+    $profile = student_profile_repository_find_by_student_id( $student_id );
+    unset( $student['user_id'] );
 
-    /*
-    |--------------------------------------------------------------------------
-    | Get Public Profile
-    |--------------------------------------------------------------------------
-    */
+    if ( is_array($profile) ) {
+        unset( $profile['user_id'] );
+        unset( $profile['phone'] );
+        unset( $profile['cv_file_id'] );
+        unset( $profile['profile_image_file_id'] );
+    }
 
-    $profile =
-        student_profile_repository_find_by_student_id(
-            $student_id
-        );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Remove Private Data
-    |--------------------------------------------------------------------------
-    */
-
-    unset(
-        $student['user_id']
-    );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Return Public Data
-    |--------------------------------------------------------------------------
-    */
-
-    return [
-
-        'data' => [
-
-            'student' =>
-                $student,
-
-            'profile' =>
-                $profile,
-
-        ],
-
-    ];
+    return [ 'data' => [ 'student' => $student, 'profile' => $profile, ], ];
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| Get Profile Completion Status
-|--------------------------------------------------------------------------
-*/
-
-function student_get_profile_status(
-    int $user_id
-): array {
+function student_get_profile_status( int $user_id ): array {
 
     if ($user_id <= 0) {
-
-        return [
-            'error' => true,
-            'status' => 422,
-            'message' =>
-                'Invalid user ID.'
-        ];
+        return [ 'error' => true, 'status' => 422, 'message' => 'Invalid user ID.' ];
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Find Student
-    |--------------------------------------------------------------------------
-    */
-
-    $student =
-        student_repository_find_by_user_id(
-            $user_id
-        );
-
+    $student = student_repository_find_by_user_id( $user_id );
 
     if (!$student) {
-
-        return [
-            'error' => true,
-            'status' => 404,
-            'message' =>
-                'Student profile not found.'
-        ];
+        return [ 'error' => true, 'status' => 404, 'message' => 'Student profile not found.'];
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Required Fields
-    |--------------------------------------------------------------------------
-    */
-
-    $required_fields = [
-
-        'university' =>
-            $student['university']
-                ?? null,
-
-        'degree' =>
-            $student['degree']
-                ?? null,
-
-        'field' =>
-            $student['field']
-                ?? null,
-
-        'specialization' =>
-            $student['specialization']
-                ?? null,
-
-    ];
-
-
+    $required_fields = [ 'university_id' => $student['university_id'] ?? null, 'faculty_id' => $student['faculty_id'] ?? null, 'specialization_id' => $student['specialization_id'] ?? null ];
     $missing_fields = [];
 
-
-    foreach (
-        $required_fields
-        as $field => $value
-    ) {
-
-        if (
-            $value === null
-            ||
-            trim(
-                (string) $value
-            ) === ''
-        ) {
-
-            $missing_fields[] =
-                $field;
+    foreach ( $required_fields as $field => $value ) {
+        if ( empty( $value ) ) {
+            $missing_fields[] = $field;
         }
     }
 
+    $profile = student_profile_repository_find_by_student_id( (int) $student['id'] );
+    $skills = is_array( $profile['skills'] ?? null ) ? $profile['skills'] : [];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Profile Data
-    |--------------------------------------------------------------------------
-    */
-
-    $profile =
-        student_profile_repository_find_by_student_id(
-            (int) $student['id']
-        );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Skills
-    |--------------------------------------------------------------------------
-    */
-
-    $skills =
-        $profile['skills']
-            ?? [];
-
-
-    if (
-        is_string($skills)
-    ) {
-
-        $decoded =
-            json_decode(
-                $skills,
-                true
-            );
-
-
-        if (
-            is_array($decoded)
-        ) {
-
-            $skills =
-                $decoded;
-        }
+    if ( empty($skills) ) {
+        $missing_fields[] = 'skills';
     }
 
-
-    if (
-        empty($skills)
-    ) {
-
-        $missing_fields[] =
-            'skills';
+    if ( empty( $profile['cv_file_id'] ?? null ) ) {
+        $missing_fields[] = 'cv';
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Completion
-    |--------------------------------------------------------------------------
-    */
-
-    $completed =
-        empty($missing_fields);
-
-
-    return [
-
-        'data' => [
-
-            'completed' =>
-                $completed,
-
-            'missing_fields' =>
-                $missing_fields,
-
-            'completion_percentage' =>
-                student_calculate_completion_percentage(
-                    $student,
-                    $profile
-                ),
-
-        ],
-
-    ];
+    $completed = empty($missing_fields);
+    return [ 'data' => [ 'completed' => $completed, 'missing_fields' => $missing_fields, 'completion_percentage' => student_calculate_completion_percentage( $student, $profile ), ], ];
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| Calculate Completion Percentage
-|--------------------------------------------------------------------------
-*/
-
-function student_calculate_completion_percentage(
-    array $student,
-    ?array $profile
-): int {
-
+function student_calculate_completion_percentage( array $student, ?array $profile ): int {
     $total = 5;
     $completed = 0;
+    $fields = [ 'university_id', 'faculty_id', 'specialization_id',];
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Main Student Fields
-    |--------------------------------------------------------------------------
-    */
-
-    $fields = [
-
-        'university',
-        'degree',
-        'field',
-        'specialization',
-    ];
-
-
-    foreach (
-        $fields
-        as $field
-    ) {
-
-        if (
-            isset(
-                $student[$field]
-            )
-            &&
-            trim(
-                (string) $student[$field]
-            ) !== ''
-        ) {
-
+    foreach ( $fields as $field ) {
+        if ( !empty( $student[$field] ?? null ) ) {
             $completed++;
         }
     }
 
+    $skills = is_array( $profile['skills'] ?? null ) ? $profile['skills'] : [];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Skills
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-        !empty(
-            $profile['skills']
-                ?? null
-        )
-    ) {
-
+    if ( !empty( $skills ) ) {
         $completed++;
     }
 
+    if ( !empty( $profile['cv_file_id'] ?? null ) ) {
+        $completed++;
+    }
 
-    return (int) round(
-        (
-            $completed /
-            $total
-        ) * 100
-    );
+    return (int) round( ( $completed / $total ) * 100 );
 }

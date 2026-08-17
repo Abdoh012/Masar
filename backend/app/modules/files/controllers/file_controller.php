@@ -256,7 +256,9 @@ class FileController
 
 
             return $this->success(
-                $result,
+                is_array($result)
+                    ? $this->sanitizeFile($result)
+                    : $result,
                 'File uploaded successfully.'
             );
 
@@ -442,9 +444,34 @@ class FileController
                     ? 'Files uploaded successfully.'
                     : 'Some files could not be uploaded.',
 
-            'data' =>
-                $results
+'data' =>
+                $this->sanitizeFileList(
+                    $results
+                )
         ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sanitize File List
+    |--------------------------------------------------------------------------
+    */
+
+    protected function sanitizeFileList(
+        array $items
+    ): array {
+
+        $sanitized = [];
+
+        foreach ($items as $item) {
+            $sanitized[] =
+                is_array($item)
+                    ? $this->sanitizeFile($item)
+                    : $item;
+        }
+
+        return $sanitized;
     }
 
 
@@ -540,7 +567,7 @@ class FileController
 
 
             return $this->success(
-                $file
+                $this->sanitizeFile($file)
             );
 
         } catch (Throwable $e) {
@@ -662,7 +689,11 @@ class FileController
 
 
             return $this->success(
-                $files
+                array_map(
+                    fn ($item) =>
+                        $this->sanitizeFile($item),
+                    $files
+                )
             );
 
         } catch (Throwable $e) {
@@ -1105,6 +1136,72 @@ class FileController
         }
 
         return $result;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Public File URL
+    |--------------------------------------------------------------------------
+    |
+    | Builds the public API download URL for a file. The absolute filesystem
+    | path is never exposed to clients.
+    */
+
+    protected function publicFileUrl(
+        int $file_id
+    ): string {
+
+        $base =
+            rtrim(
+                (string) (
+                    getenv('APP_URL')
+                    ?: 'http://localhost/Masar/backend'
+                ),
+                '/'
+            );
+
+        return
+            $base .
+            '/api/v1/files/' .
+            $file_id .
+            '?download=true';
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sanitize File
+    |--------------------------------------------------------------------------
+    |
+    | Removes internal filesystem fields from a file record before it is
+    | returned to a client and attaches a public download URL.
+    */
+
+    protected function sanitizeFile(
+        array $file
+    ): array {
+
+        unset(
+            $file['path'],
+            $file['storage_path']
+        );
+
+        $file_id =
+            (int) (
+                $file['id']
+                ?? 0
+            );
+
+        if ($file_id > 0) {
+
+            $file['url'] =
+                $this->publicFileUrl(
+                    $file_id
+                );
+        }
+
+        return $file;
     }
 
 
