@@ -8,7 +8,8 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../app/config/database.php';
+require_once __DIR__ . '/../../app/core/database/connection.php';
 
 function seed_skills(PDO $pdo): void
 {
@@ -307,18 +308,13 @@ function seed_skills(PDO $pdo): void
 
     $sql = "
         INSERT INTO skills (
-            name,
-            name_ar,
-            category
+            name
         )
         VALUES (
-            :name,
-            :name_ar,
-            :category
+            :name
         )
         ON DUPLICATE KEY UPDATE
-            name_ar = VALUES(name_ar),
-            category = VALUES(category)
+            is_active = 1
     ";
 
     $statement = $pdo->prepare($sql);
@@ -326,8 +322,6 @@ function seed_skills(PDO $pdo): void
     foreach ($skills as $skill) {
         $statement->execute([
             ':name' => $skill['name'],
-            ':name_ar' => $skill['name_ar'],
-            ':category' => $skill['category'],
         ]);
     }
 }
@@ -340,6 +334,7 @@ function seed_skills(PDO $pdo): void
 
 if (PHP_SAPI === 'cli') {
     try {
+        $pdo = get_database_connection();
         $pdo->beginTransaction();
 
         seed_skills($pdo);

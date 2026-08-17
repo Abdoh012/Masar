@@ -11,12 +11,12 @@ $path = request_path();
 $method = request_method();
 
 if ($path === '/api/v1/notifications' && $method === 'GET') {
-    notification_controller_index();
+    notification_controller_send( notification_controller_index() );
     return;
 }
 
 if (preg_match('#^/api/v1/notifications/([0-9]+)$#', $path, $matches) && $method === 'GET') {
-    notification_controller_show((int) $matches[1]);
+    notification_controller_send( notification_controller_show((int) $matches[1]) );
     return;
 }
 

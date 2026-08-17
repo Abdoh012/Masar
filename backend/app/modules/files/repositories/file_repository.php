@@ -29,6 +29,15 @@ class FileRepository
 
         if (
             function_exists(
+                'get_database_connection'
+            )
+        ) {
+
+            return get_database_connection();
+        }
+
+        if (
+            function_exists(
                 'db'
             )
         ) {
@@ -628,8 +637,7 @@ class FileRepository
                 ) {
 
                     $conditions[] =
-                        '(original_name LIKE :search
-                          OR filename LIKE :search)';
+                        'original_name LIKE :search';
 
                     $parameters['search'] =
                         '%' .
@@ -1367,40 +1375,38 @@ class FileRepository
         array $data
     ): array {
 
-        $allowed = [
-            'user_id',
-            'original_name',
-            'filename',
-            'path',
-            'storage_path',
-            'mime_type',
-            'extension',
-            'size',
-            'category',
-            'type',
-            'visibility',
-            'status',
-            'metadata'
-        ];
+        /*
+         * Map service-level fields to the actual
+         * files table columns.
+         */
 
+        $column_map = [
+            'user_id' => 'user_id',
+            'original_name' => 'original_name',
+            'filename' => 'stored_name',
+            'path' => 'path',
+            'mime_type' => 'mime_type',
+            'size' => 'size_bytes',
+            'type' => 'type'
+        ];
 
         $result = [];
 
 
         foreach (
-            $allowed
-            as $column
+            $column_map
+            as $source => $column
         ) {
 
             if (
                 array_key_exists(
-                    $column,
+                    $source,
                     $data
                 )
             ) {
 
                 $result[$column] =
-                    $data[$column];
+                    $data[$source];
             }
         }
 

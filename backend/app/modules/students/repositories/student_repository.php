@@ -18,28 +18,12 @@
 
 require_once __DIR__ . '/../../../core/database/query.php';
 
-
-/*
-|--------------------------------------------------------------------------
-| Find Student By ID
-|--------------------------------------------------------------------------
-*/
-
 function student_repository_find_by_id( int $student_id ): ?array {
     $sql = " SELECT id, user_id, full_name, phone, bio, university_id, faculty_id, degree_id, specialization_id, graduation_year, city, profile_image_file_id, cv_file_id, is_profile_complete, created_at, updated_at FROM students WHERE id = ? LIMIT 1 ";
     $student = db_fetch_one($sql, [$student_id]);
 
     return is_array($student) ? $student : null;
 }
-
-/*
-|--------------------------------------------------------------------------
-| Find Student By User ID
-|--------------------------------------------------------------------------
-|
-| Every student belongs to exactly one user account.
-|
-*/
 
 function student_repository_find_by_user_id( int $user_id ): ?array {
     $sql = " SELECT id, user_id, full_name, phone, bio, university_id, faculty_id, degree_id, specialization_id, graduation_year, city, profile_image_file_id, cv_file_id, is_profile_complete, created_at, updated_at FROM students WHERE user_id = ? LIMIT 1 ";
@@ -48,20 +32,20 @@ function student_repository_find_by_user_id( int $user_id ): ?array {
     return is_array($student) ? $student : null;
 }
 
-/*
-|--------------------------------------------------------------------------
-| Create Student
-|--------------------------------------------------------------------------
-*/
-
 function student_repository_create( array $data ): int|false {
-    $sql = " INSERT INTO students ( user_id, full_name, university_id, faculty_id, specialization_id, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, NOW(), NOW() ) ";
+    $sql = " INSERT INTO students ( user_id, full_name, university_id, faculty_id, specialization_id, degree_id, bio, phone, city, graduation_year, cv_file_id, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW() ) ";
     $success = db_execute( $sql, [
         $data['user_id'] ?? null,
         $data['full_name'] ?? null,
         $data['university_id'] ?? null,
         $data['faculty_id'] ?? null,
         $data['specialization_id'] ?? null,
+        $data['degree_id'] ?? null,
+        $data['bio'] ?? null,
+        $data['phone'] ?? null,
+        $data['city'] ?? null,
+        $data['graduation_year'] ?? null,
+        $data['cv_file_id'] ?? null,
     ] );
 
     if (!$success) {
@@ -71,11 +55,7 @@ function student_repository_create( array $data ): int|false {
     return db_last_insert_id();
 }
 
-function student_repository_academic_data_exists(
-    int $university_id,
-    int $faculty_id,
-    int $specialization_id
-): bool {
+function student_repository_academic_data_exists( int $university_id, int $faculty_id, int $specialization_id ): bool {
     $sql = "
         SELECT
             u.id AS university_id,
@@ -94,17 +74,10 @@ function student_repository_academic_data_exists(
         LIMIT 1
     ";
 
-    return db_fetch_one(
-        $sql,
-        [$specialization_id, $university_id, $faculty_id]
-    ) !== false;
+    return db_fetch_one( $sql, [$specialization_id, $university_id, $faculty_id] ) !== false;
 }
 
-function student_repository_resolve_academic_data(
-    string $university,
-    string $faculty,
-    string $specialization
-): ?array {
+function student_repository_resolve_academic_data( string $university, string $faculty, string $specialization ): ?array {
     $sql = "
         SELECT
             u.id AS university_id,
@@ -123,29 +96,22 @@ function student_repository_resolve_academic_data(
         LIMIT 1
     ";
 
-    $row = db_fetch_one(
-        $sql,
-        [$faculty, $specialization, $university]
-    );
+    $row = db_fetch_one( $sql, [$faculty, $specialization, $university] );
 
-    return is_array($row)
-        ? [
+    return is_array($row) ? [
             'university_id' => (int) $row['university_id'],
             'faculty_id' => (int) $row['faculty_id'],
-            'specialization_id' => (int) $row['specialization_id'],
-        ]
-        : null;
+            'specialization_id' => (int) $row['specialization_id'], ] : null;
 }
 
+function student_repository_resolve_degree_id( string $degree ): ?int {
+    $sql = " SELECT id FROM degrees WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) AND is_active = 1 LIMIT 1 ";
+    $row = db_fetch_one( $sql, [$degree] );
 
-/*
-|--------------------------------------------------------------------------
-| Update Student
-|--------------------------------------------------------------------------
-*/
+    return is_array($row) ? (int) $row['id'] : null;
+}
 
 function student_repository_update( int $student_id, array $data ): bool{
-
     if (empty($data)) {
         return false;
     }
@@ -171,20 +137,8 @@ function student_repository_update( int $student_id, array $data ): bool{
     $sql = " UPDATE students SET " . implode( ', ', $fields ) . " WHERE id = ? LIMIT 1 ";
 
     $statement = db_execute( $sql, $values );
-    return $statement->rowCount() > 0;
+    return true;
 }
-
-/*
-|--------------------------------------------------------------------------
-| Delete Student
-|--------------------------------------------------------------------------
-|
-| This is mainly intended for rollback operations.
-|
-| Normal account deletion should be handled
-| through the user/account lifecycle.
-|
-*/
 
 function student_repository_delete( int $student_id ): bool {
     $sql = " DELETE FROM students WHERE id = ? LIMIT 1 ";
@@ -192,23 +146,11 @@ function student_repository_delete( int $student_id ): bool {
     return $statement->rowCount() > 0;
 }
 
-/*
-|--------------------------------------------------------------------------
-| Check Student Exists
-|--------------------------------------------------------------------------
-*/
-
 function student_repository_exists( int $student_id ): bool {
     $sql = " SELECT id FROM students WHERE id = ? LIMIT 1 ";
     $student = db_fetch_one( $sql, [$student_id] );
     return $student !== null;
 }
-
-/*
-|--------------------------------------------------------------------------
-| Check User Has Student Profile
-|--------------------------------------------------------------------------
-*/
 
 function student_repository_user_has_profile( int $user_id ): bool {
     $sql = " SELECT id FROM students WHERE user_id = ? LIMIT 1 ";
@@ -216,30 +158,10 @@ function student_repository_user_has_profile( int $user_id ): bool {
     return $student !== null;
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| Get Students
-|--------------------------------------------------------------------------
-|
-| Used later by:
-| - Search
-| - Company discovery
-| - Admin
-|
-*/
-
 function student_repository_get_many( int $limit, int $offset ): array {
     $sql = " SELECT id, user_id, full_name, university_id, faculty_id, degree_id, specialization_id, bio, created_at, updated_at FROM students ORDER BY id DESC LIMIT " . (int) $limit . " OFFSET " . (int) $offset;
     return db_fetch_all( $sql );
 }
-
-
-/*
-|--------------------------------------------------------------------------
-| Count Students
-|--------------------------------------------------------------------------
-*/
 
 function student_repository_count(): int
 {
@@ -247,19 +169,6 @@ function student_repository_count(): int
     $result = db_fetch_one( $sql );
     return (int) ( $result['total'] ?? 0 );
 }
-
-
-/*
-|--------------------------------------------------------------------------
-| Search Students By Field
-|--------------------------------------------------------------------------
-|
-| Basic search.
-|
-| Advanced student/company discovery will later
-| be handled by the search module.
-|
-*/
 
 function student_repository_search_by_field( string $field, int $limit = 20, int $offset = 0 ): array {
     $field = trim($field);
@@ -269,15 +178,8 @@ function student_repository_search_by_field( string $field, int $limit = 20, int
     }
 
     $sql = " SELECT id, user_id, full_name, university_id, faculty_id, degree_id, specialization_id, bio, created_at, updated_at FROM students WHERE full_name LIKE ? OR bio LIKE ? ORDER BY id DESC LIMIT " . (int) $limit . " OFFSET " . (int) $offset;
-
     return db_fetch_all( $sql, [ '%' . $field . '%', '%' . $field . '%' ] );
 }
-
-/*
-|--------------------------------------------------------------------------
-| Search Students By Specialization
-|--------------------------------------------------------------------------
-*/
 
 function student_repository_search_by_specialization( string $specialization, int $limit = 20, int $offset = 0 ): array {
     $specialization = trim($specialization);

@@ -8,7 +8,8 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../app/config/database.php';
+require_once __DIR__ . '/../../app/core/database/connection.php';
 
 function seed_degrees(PDO $pdo): void
 {
@@ -117,18 +118,13 @@ function seed_degrees(PDO $pdo): void
 
     $sql = "
         INSERT INTO degrees (
-            name,
-            name_ar,
-            code
+            name
         )
         VALUES (
-            :name,
-            :name_ar,
-            :code
+            :name
         )
         ON DUPLICATE KEY UPDATE
-            name = VALUES(name),
-            name_ar = VALUES(name_ar)
+            is_active = 1
     ";
 
     $statement = $pdo->prepare($sql);
@@ -136,8 +132,6 @@ function seed_degrees(PDO $pdo): void
     foreach ($degrees as $degree) {
         $statement->execute([
             ':name' => $degree['name'],
-            ':name_ar' => $degree['name_ar'],
-            ':code' => $degree['code'],
         ]);
     }
 }
@@ -150,6 +144,7 @@ function seed_degrees(PDO $pdo): void
 
 if (PHP_SAPI === 'cli') {
     try {
+        $pdo = get_database_connection();
         $pdo->beginTransaction();
 
         seed_degrees($pdo);

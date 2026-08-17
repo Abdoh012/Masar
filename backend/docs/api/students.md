@@ -2,50 +2,262 @@
 
 ## Overview
 
-The Students API manages student profiles, academic information, skills, training applications, saved trainings, and student-related data.
+The Students API manages the authenticated student's profile, academic information, skills, and CV.
 
 Base URL:
 
 ```text
-/api/students
+http://localhost/Masar/backend/api/v1
 ```
 
-All endpoints require authentication unless explicitly stated otherwise.
-
----
-
-# Authentication
-
-Protected endpoints require:
+All endpoints require a Bearer token unless stated otherwise.
 
 ```http
 Authorization: Bearer ACCESS_TOKEN
 Accept: application/json
+Content-Type: application/json
+```
+
+All endpoints below require the authenticated user role `student`, except `GET /students/{id}` which also allows `company` and `admin`.
+
+---
+
+## 1. Get Current Student Profile
+
+```http
+GET /api/v1/students/me
+```
+
+Returns the authenticated student's full profile including the attached CV file ID.
+
+### Response
+
+```json
+{
+    "success": true,
+    "data": {
+        "student": {
+            "id": 1,
+            "user_id": 25,
+            "full_name": "Test Student",
+            "phone": null,
+            "bio": null,
+            "university_id": 1,
+            "faculty_id": 2,
+            "degree_id": 3,
+            "specialization_id": 5,
+            "graduation_year": 2027,
+            "city": null,
+            "profile_image_file_id": null,
+            "cv_file_id": 9,
+            "is_profile_complete": 1,
+            "created_at": "2026-08-01 12:00:00",
+            "updated_at": "2026-08-01 12:00:00"
+        },
+        "profile": {
+            "student_id": 1,
+            "skills": ["PHP", "MySQL"],
+            "cv_file_id": 9
+        }
+    }
+}
 ```
 
 ---
 
-# 1. Get Current Student Profile
-
-Returns the complete student profile of the authenticated user.
-
-### Endpoint
+## 2. Create Student Profile
 
 ```http
-GET /api/students/me
+POST /api/v1/students/profile
 ```
+
+Creates the student profile for the authenticated user. Academic fields are name-based and resolved to internal IDs.
+
+### Request
+
+```json
+{
+    "full_name": "Test Student",
+    "university": "Cairo University",
+    "faculty": "Faculty of Computers and Artificial Intelligence",
+    "specialization": "Artificial Intelligence",
+    "degree": "Bachelor of Computer Science",
+    "graduation_year": 2027,
+    "bio": "Backend developer",
+    "phone": "01000000002",
+    "city": "Cairo",
+    "skills": ["PHP", "MySQL"],
+    "cv_file_id": 9
+}
+```
+
+### Notes
+
+- `university`, `faculty`, and `specialization` are required and must match seeded lookup data.
+- `degree`, `graduation_year`, `bio`, `phone`, `city`, `skills`, and `cv_file_id` are optional.
+- If `cv_file_id` is supplied, the file must belong to the authenticated user.
+
+### Response
+
+`201 Created`
+
+```json
+{
+    "success": true,
+    "data": {
+        "student": {
+            "id": 1,
+            "full_name": "Test Student",
+            "university_id": 1,
+            "faculty_id": 2,
+            "degree_id": 3,
+            "specialization_id": 5,
+            "graduation_year": 2027,
+            "is_profile_complete": 0
+        }
+    }
+}
+```
+
+---
+
+## 3. Update Student Profile
+
+```http
+PUT /api/v1/students/profile
+```
+
+Updates any subset of the authenticated student's profile fields.
+
+### Request
+
+```json
+{
+    "university": "Cairo University",
+    "faculty": "Faculty of Computers and Artificial Intelligence",
+    "specialization": "Software Engineering",
+    "degree": "Bachelor of Computer Science",
+    "graduation_year": 2028,
+    "bio": "Updated bio",
+    "phone": "01000000002",
+    "city": "Giza",
+    "skills": ["PHP", "Laravel", "MySQL"],
+    "cv_file_id": 9
+}
+```
+
+### Notes
+
+- `university`, `faculty`, and `specialization` must be provided together when any of them is updated.
+- Pass an empty string for `degree`, or `0`/`null` for `cv_file_id`, to clear that field.
+- `cv_file_id` is only accepted when the file belongs to the authenticated user. Otherwise the request is rejected with `422`.
+
+### Response
+
+```json
+{
+    "success": true,
+    "data": {
+        "student": {
+            "id": 1,
+            "full_name": "Test Student",
+            "university_id": 1,
+            "faculty_id": 2,
+            "degree_id": 3,
+            "specialization_id": 7,
+            "graduation_year": 2028,
+            "cv_file_id": 9
+        }
+    }
+}
+```
+
+---
+
+## 4. Get Profile Completion Status
+
+```http
+GET /api/v1/students/profile/status
+```
+
+Reports whether the profile is complete and which fields are still missing.
+
+### Response
+
+```json
+{
+    "success": true,
+    "data": {
+        "completed": false,
+        "missing_fields": ["skills", "cv"],
+        "completion_percentage": 60
+    }
+}
+```
+
+Completion is based on `university_id`, `faculty_id`, `specialization_id`, skills, and an attached CV.
+
+---
+
+## 5. Complete Student Profile
+
+```http
+POST /api/v1/students/profile/complete
+```
+
+Completes the profile in one request and sets `is_profile_complete = 1`.
+
+### Request
+
+```json
+{
+    "full_name": "Test Student",
+    "university": "Cairo University",
+    "faculty": "Faculty of Computers and Artificial Intelligence",
+    "specialization": "Artificial Intelligence",
+    "degree": "Bachelor of Computer Science",
+    "bio": "Backend developer",
+    "skills": ["PHP", "Laravel", "MySQL"],
+    "cv_file_id": 9
+}
+```
+
+### Notes
+
+- `full_name`, `skills` and `cv_file_id` are required.
+- `cv_file_id` must belong to the authenticated user.
+
+### Response
+
+```json
+{
+    "success": true,
+    "data": {
+        "student": {
+            "id": 1,
+            "is_profile_complete": 1,
+            "cv_file_id": 9
+        },
+        "profile": {
+            "skills": ["PHP", "Laravel", "MySQL"]
+        }
+    }
+}
+```
+
+---
+
+## 6. Get Public Student Profile
+
+```http
+GET /api/v1/students/{id}
+```
+
+Returns a sanitized public profile. `phone`, `user_id`, `cv_file_id`, and `profile_image_file_id` are removed.
 
 ### Authentication
 
-Required.
-
-### Authorization
-
-Required role:
-
-```text
-student
-```
+Allowed roles: `student`, `company`, `admin`.
 
 ### Response
 
@@ -53,64 +265,91 @@ student
 {
     "success": true,
     "data": {
-        "id": 1,
-        "user_id": 25,
-        "name": "Ahmed Mohamed",
-        "email": "ahmed@example.com",
-        "university": {
+        "student": {
             "id": 1,
-            "name": "Cairo University"
+            "full_name": "Test Student",
+            "bio": "Backend developer",
+            "university_id": 1,
+            "faculty_id": 2,
+            "degree_id": 3,
+            "specialization_id": 5,
+            "graduation_year": 2027,
+            "city": "Cairo"
         },
-        "faculty": {
-            "id": 2,
-            "name": "Faculty of Computers and Artificial Intelligence"
-        },
-        "degree": {
-            "id": 3,
-            "name": "Bachelor"
-        },
-        "specialization": {
-            "id": 5,
-            "name": "Computer Science"
-        },
-        "graduation_year": 2027
+        "profile": {
+            "skills": ["PHP", "MySQL"]
+        }
     }
 }
 ```
 
 ---
 
-# 2. Create Student Profile
-
-Creates the student profile for the authenticated user.
-
-### Endpoint
+## 7. Get My Skills
 
 ```http
-POST /api/students
+GET /api/v1/students/me/skills
 ```
 
-### Authentication
+Returns the skill names attached to the authenticated student.
 
-Required.
+### Response
 
-### Authorization
+```json
+{
+    "success": true,
+    "data": {
+        "skills": ["PHP", "MySQL"]
+    }
+}
+```
 
-Required role:
+---
 
-```text
-student
+## 8. Add a Skill
+
+```http
+POST /api/v1/students/me/skills
 ```
 
 ### Request
 
 ```json
 {
-    "university_id": 1,
-    "faculty_id": 2,
-    "degree_id": 3,
-    "specialization_id": 5,
-    "graduation_year": 2027
+    "skill": "Laravel"
+}
+```
+
+The skill must exist in the `skills` lookup table. Duplicate skills are ignored.
+
+### Response
+
+`201 Created`
+
+```json
+{
+    "success": true,
+    "data": {
+        "skills": ["PHP", "MySQL", "Laravel"]
+    }
+}
+```
+
+---
+
+## 9. Replace All Skills
+
+```http
+PUT /api/v1/students/me/skills
+```
+
+Replaces the student's full skill list.
+
+### Request
+
+```json
+{
+    "skills": ["PHP", "Laravel", "MySQL"]
 }
 ```
 
@@ -119,46 +358,26 @@ student
 ```json
 {
     "success": true,
-    "message": "Student profile created successfully.",
     "data": {
-        "id": 1,
-        "user_id": 25,
-        "university_id": 1,
-        "faculty_id": 2,
-        "degree_id": 3,
-        "specialization_id": 5,
-        "graduation_year": 2027
+        "student_id": 1,
+        "skills": ["PHP", "Laravel", "MySQL"]
     }
 }
 ```
 
 ---
 
-# 3. Update Student Profile
-
-Updates the authenticated student's academic information.
-
-### Endpoint
+## 10. Remove a Skill
 
 ```http
-PUT /api/students/me
-```
-
-or:
-
-```http
-PATCH /api/students/me
+DELETE /api/v1/students/me/skills
 ```
 
 ### Request
 
 ```json
 {
-    "university_id": 1,
-    "faculty_id": 2,
-    "degree_id": 3,
-    "specialization_id": 5,
-    "graduation_year": 2028
+    "skill": "Laravel"
 }
 ```
 
@@ -167,177 +386,52 @@ PATCH /api/students/me
 ```json
 {
     "success": true,
-    "message": "Student profile updated successfully.",
     "data": {
-        "id": 1,
-        "university_id": 1,
-        "faculty_id": 2,
-        "degree_id": 3,
-        "specialization_id": 5,
-        "graduation_year": 2028
+        "skills": ["PHP", "MySQL"]
     }
 }
 ```
 
 ---
 
-# 4. Get Student Skills
-
-Returns all skills associated with the authenticated student.
-
-### Endpoint
+## 11. Get My CV
 
 ```http
-GET /api/students/me/skills
+GET /api/v1/students/me/cv
 ```
+
+Returns the file ID of the attached CV, or `null` if none is attached.
 
 ### Response
 
 ```json
 {
     "success": true,
-    "data": [
-        {
-            "id": 1,
-            "name": "PHP"
-        },
-        {
-            "id": 2,
-            "name": "MySQL"
-        },
-        {
-            "id": 3,
-            "name": "Laravel"
-        }
-    ]
+    "data": {
+        "cv_file_id": 9
+    }
 }
 ```
 
 ---
 
-# 5. Add Student Skill
-
-Adds a skill to the student's profile.
-
-### Endpoint
+## 12. Attach CV
 
 ```http
-POST /api/students/me/skills
+POST /api/v1/students/me/cv
 ```
+
+Attaches an uploaded file as the student's CV.
 
 ### Request
 
 ```json
 {
-    "skill_id": 3
+    "file_id": 9
 }
 ```
 
-### Response
-
-```json
-{
-    "success": true,
-    "message": "Skill added successfully.",
-    "data": {
-        "skill_id": 3
-    }
-}
-```
-
-A student cannot add the same skill more than once.
-
----
-
-# 6. Remove Student Skill
-
-Removes a skill from the student's profile.
-
-### Endpoint
-
-```http
-DELETE /api/students/me/skills/{skillId}
-```
-
-### Example
-
-```http
-DELETE /api/students/me/skills/3
-```
-
-### Response
-
-```json
-{
-    "success": true,
-    "message": "Skill removed successfully."
-}
-```
-
----
-
-# 7. Get Student Applications
-
-Returns the authenticated student's training applications.
-
-### Endpoint
-
-```http
-GET /api/students/me/applications
-```
-
-### Query Parameters
-
-```text
-page
-per_page
-status
-```
-
-Example:
-
-```http
-GET /api/students/me/applications?page=1&per_page=20&status=pending
-```
-
-### Response
-
-```json
-{
-    "success": true,
-    "data": [
-        {
-            "id": 15,
-            "training_id": 10,
-            "training_title": "Backend PHP Internship",
-            "company": {
-                "id": 4,
-                "name": "Example Company"
-            },
-            "status": "pending",
-            "applied_at": "2026-08-01 12:00:00"
-        }
-    ],
-    "meta": {
-        "current_page": 1,
-        "per_page": 20,
-        "total": 1,
-        "last_page": 1
-    }
-}
-```
-
----
-
-# 8. Get Student Application
-
-Returns a specific application belonging to the authenticated student.
-
-### Endpoint
-
-```http
-GET /api/students/me/applications/{applicationId}
-```
+The file must belong to the authenticated user. Otherwise the request is rejected with `422`.
 
 ### Response
 
@@ -345,101 +439,21 @@ GET /api/students/me/applications/{applicationId}
 {
     "success": true,
     "data": {
-        "id": 15,
-        "training_id": 10,
-        "training_title": "Backend PHP Internship",
-        "status": "pending",
-        "applied_at": "2026-08-01 12:00:00"
+        "message": "CV attached successfully.",
+        "cv_file_id": 9
     }
 }
 ```
 
-The API must verify that the requested application belongs to the authenticated student.
-
 ---
 
-# 9. Get Saved Trainings
-
-Returns training opportunities saved by the authenticated student.
-
-### Endpoint
+## 13. Remove CV
 
 ```http
-GET /api/students/me/saved-trainings
+DELETE /api/v1/students/me/cv
 ```
 
-### Response
-
-```json
-{
-    "success": true,
-    "data": [
-        {
-            "id": 10,
-            "title": "Backend PHP Internship",
-            "company": {
-                "id": 4,
-                "name": "Example Company"
-            },
-            "status": "published"
-        }
-    ]
-}
-```
-
----
-
-# 10. Save Training
-
-Saves a training opportunity for later.
-
-### Endpoint
-
-```http
-POST /api/students/me/saved-trainings/{trainingId}
-```
-
-### Response
-
-```json
-{
-    "success": true,
-    "message": "Training saved successfully."
-}
-```
-
----
-
-# 11. Remove Saved Training
-
-Removes a training opportunity from the student's saved list.
-
-### Endpoint
-
-```http
-DELETE /api/students/me/saved-trainings/{trainingId}
-```
-
-### Response
-
-```json
-{
-    "success": true,
-    "message": "Training removed from saved list."
-}
-```
-
----
-
-# 12. Student Dashboard
-
-Returns summarized information required by the student dashboard.
-
-### Endpoint
-
-```http
-GET /api/students/me/dashboard
-```
+Detaches the CV. The physical file is not deleted.
 
 ### Response
 
@@ -447,201 +461,37 @@ GET /api/students/me/dashboard
 {
     "success": true,
     "data": {
-        "applications": {
-            "total": 12,
-            "pending": 4,
-            "accepted": 3,
-            "rejected": 5
-        },
-        "saved_trainings": 7,
-        "active_sessions": 1,
-        "certificates": 2,
-        "unread_notifications": 4
+        "message": "CV removed successfully.",
+        "cv_file_id": null
     }
 }
 ```
 
 ---
 
-# 13. Student Training Sessions
+## Related: Uploading the CV File
 
-Returns the student's active and completed training sessions.
-
-### Endpoint
+The CV endpoints above accept a `file_id`. To create the file, upload it first:
 
 ```http
-GET /api/students/me/sessions
+POST /api/v1/files
+Content-Type: multipart/form-data
+
+type=cv
+file=<file>
 ```
 
-### Query Parameters
-
-```text
-status
-page
-per_page
-```
-
-Example:
+The response contains the new file `id`, `url`, and safe metadata only. No filesystem paths are exposed. Download the file with:
 
 ```http
-GET /api/students/me/sessions?status=active
-```
-
-### Response
-
-```json
-{
-    "success": true,
-    "data": [
-        {
-            "id": 20,
-            "training_id": 10,
-            "training_title": "Backend PHP Internship",
-            "status": "active",
-            "start_date": "2026-08-01",
-            "end_date": "2026-10-01"
-        }
-    ]
-}
+GET /api/v1/files/{id}?download=true
 ```
 
 ---
 
-# 14. Student Certificates
+## Standard Errors
 
-Returns certificates issued to the authenticated student.
-
-### Endpoint
-
-```http
-GET /api/students/me/certificates
-```
-
-### Response
-
-```json
-{
-    "success": true,
-    "data": [
-        {
-            "id": 7,
-            "training_id": 10,
-            "title": "Backend PHP Internship",
-            "status": "issued",
-            "issued_at": "2026-10-05"
-        }
-    ]
-}
-```
-
----
-
-# Academic Validation
-
-When creating or updating academic information, the API should validate relationships between:
-
-```text
-University
-    ↓
-Faculty
-    ↓
-Degree
-    ↓
-Specialization
-```
-
-For example, a specialization belonging to one faculty must not be assigned to a student enrolled in an unrelated faculty.
-
----
-
-# Graduation Year
-
-`graduation_year` must:
-
-* Be numeric.
-* Represent a valid academic year.
-* Not be unreasonably far in the past.
-* Not exceed configured future limits.
-
-Example:
-
-```json
-{
-    "graduation_year": 2027
-}
-```
-
----
-
-# Skills Rules
-
-Students may have multiple skills.
-
-The relationship is represented by:
-
-```text
-students
-    ↓
-student_skills
-    ↓
-skills
-```
-
-The same `(student_id, skill_id)` pair must not be duplicated.
-
----
-
-# Application Rules
-
-A student:
-
-1. Can apply only to published training opportunities.
-2. Cannot apply after the application deadline.
-3. Cannot submit duplicate applications for the same training.
-4. Can withdraw an eligible application.
-5. Can view only their own applications.
-6. Must satisfy any required training constraints.
-7. Must not bypass application status transitions.
-
-Typical application lifecycle:
-
-```text
-pending
-   ↓
-accepted
-   ↓
-completed
-```
-
-or:
-
-```text
-pending
-   ↓
-rejected
-```
-
----
-
-# Student Authorization
-
-Student endpoints must verify:
-
-```text
-Authenticated
-    +
-Role = student
-    +
-Resource belongs to authenticated student
-```
-
-A student must never be able to access or modify another student's private data by changing an ID in the URL.
-
----
-
-# Standard Errors
-
-## 401 Unauthorized
+### 401 Unauthorized
 
 ```json
 {
@@ -650,16 +500,16 @@ A student must never be able to access or modify another student's private data 
 }
 ```
 
-## 403 Forbidden
+### 403 Forbidden
 
 ```json
 {
     "success": false,
-    "message": "Student access is required."
+    "message": "Only students can access this resource."
 }
 ```
 
-## 404 Not Found
+### 404 Not Found
 
 ```json
 {
@@ -668,37 +518,36 @@ A student must never be able to access or modify another student's private data 
 }
 ```
 
-## 422 Validation Error
+### 422 Validation Error
 
 ```json
 {
     "success": false,
     "message": "Validation failed.",
-    "errors": {}
+    "errors": {
+        "full_name": "Full name is required."
+    }
 }
 ```
 
 ---
 
-# Related Endpoints
+## Endpoint Summary
 
 ```text
-GET    /api/students/me
-POST   /api/students
-PUT    /api/students/me
-PATCH  /api/students/me
+GET    /api/v1/students/me
+POST   /api/v1/students/profile
+PUT    /api/v1/students/profile
+GET    /api/v1/students/profile/status
+POST   /api/v1/students/profile/complete
+GET    /api/v1/students/{id}
 
-GET    /api/students/me/skills
-POST   /api/students/me/skills
-DELETE /api/students/me/skills/{skillId}
+GET    /api/v1/students/me/skills
+POST   /api/v1/students/me/skills
+PUT    /api/v1/students/me/skills
+DELETE /api/v1/students/me/skills
 
-GET    /api/students/me/applications
-GET    /api/students/me/applications/{applicationId}
-
-GET    /api/students/me/saved-trainings
-POST   /api/students/me/saved-trainings/{trainingId}
-DELETE /api/students/me/saved-trainings/{trainingId}
-
-GET    /api/students/me/dashboard
-GET    /api/students/me/sessions
-GET    /api/students/me/certificates
+GET    /api/v1/students/me/cv
+POST   /api/v1/students/me/cv
+DELETE /api/v1/students/me/cv
+```
