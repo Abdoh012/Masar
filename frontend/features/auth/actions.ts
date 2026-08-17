@@ -1,6 +1,5 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { serverFetch } from "@/services/api";
@@ -224,17 +223,6 @@ export async function resetPassword(
   if (!result.success) {
     return { success: false, error: result.error, data: result.userData };
   }
-
-  redirect("/sign-in");
-}
-
-export async function logout() {
-  await serverFetch({ url: "auth/logout", method: "POST", body: {} });
-
-  const cookieStore = await cookies();
-  cookieStore.delete("masarJwt");
-  cookieStore.delete("masarRole");
-  cookieStore.delete("companyStatus");
 
   redirect("/sign-in");
 }
