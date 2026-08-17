@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 import { serverFetch } from "@/services/api";
 import { ActionState } from "@/types/server-action";
-import { COMPANY_PENDING_ROUTE } from "@/config/routes";
+import { COMPANY_PENDING_ROUTE, PASSWORD_UPDATED_ROUTE } from "@/config/routes";
 import { authenticate } from "./services";
 import {
   validateSignupPassword,
@@ -96,8 +96,10 @@ export async function signup(
     };
   }
 
-  // Companies get no token on register — they're pending approval.
-  if (result.role === "company") {
+  // Companies register with status "pending" — no token yet, locked to the
+  // waiting page until an admin approves. Key the redirect off the backend's
+  // reported status, not the role.
+  if (result.userStatus === "pending") {
     redirect(COMPANY_PENDING_ROUTE);
   }
 
@@ -221,8 +223,15 @@ export async function resetPassword(
   });
 
   if (!result.success) {
-    return { success: false, error: result.error, data: result.userData };
+    return {
+      success: false,
+      error: result.error,
+      data: result.userData,
+      fieldErrors: result.errors,
+    };
   }
 
-  redirect("/sign-in");
+  // Land on the post-reset confirmation page, which auto-redirects to
+  // /sign-in after a few seconds.
+  redirect(PASSWORD_UPDATED_ROUTE);
 }

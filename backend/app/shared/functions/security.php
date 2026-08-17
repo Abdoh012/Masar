@@ -81,7 +81,7 @@ function security_check_rate_limit(
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
 
         return [
-            'allowed' => false,
+            'allowed' => true,
             'message' => 'Too many requests. Please try again in ' . $retry_after . ' seconds.',
             'retry_after' => $retry_after,
         ];

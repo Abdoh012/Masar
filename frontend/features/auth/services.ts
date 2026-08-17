@@ -26,14 +26,11 @@ export async function authenticate({
 
   const token = result.data?.token;
   const role = result.data?.user?.role;
+  const userStatus = result.data?.user?.status;
 
   const cookieStore = await cookies();
 
   if (token && role) {
-    console.log(role);
-    console.log(token);
-
-    // Set jwt token cookie for 90 days
     cookieStore.set("masarJwt", token, {
       httpOnly: true,
       sameSite: "lax",
@@ -41,19 +38,28 @@ export async function authenticate({
       path: "/",
     });
 
-    // Set user role cookie for 90 days
     cookieStore.set("masarRole", role, {
       httpOnly: true,
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 90,
       path: "/",
     });
+
+    if (role === "company") {
+      cookieStore.set("companyStatus", userStatus, {
+        httpOnly: true,
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 90,
+        path: "/",
+      });
+    }
   }
 
   return {
     success: true,
     message: result.message,
     role,
+    userStatus,
     redirectPath: role ? ROLE_HOME[role as keyof typeof ROLE_HOME] : undefined,
   };
 }

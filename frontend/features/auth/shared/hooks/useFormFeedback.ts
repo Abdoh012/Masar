@@ -22,9 +22,10 @@ export function useFormFeedBack(
     if (!state || (!state.success && !state.message && !state.error)) return;
 
     if (!state?.success) {
-      if (state.fieldErrors) {
-        for (const key in state.fieldErrors) {
-          showError(state.fieldErrors[key]?.[0] || "Something went wrong!");
+      if (state?.fieldErrors) {
+        for (const error of state.fieldErrors?.password ??
+          state.fieldErrors?.confirmPassword) {
+          showError(error || "Something went wrong!");
         }
         return;
       }

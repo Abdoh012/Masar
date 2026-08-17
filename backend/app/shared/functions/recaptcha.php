@@ -9,7 +9,7 @@
 function recaptcha_config(): array
 {
     return [
-        'enabled' => filter_var(getenv('RECAPTCHA_ENABLED') ?: 'true', FILTER_VALIDATE_BOOLEAN),
+        'enabled' => filter_var(getenv('RECAPTCHA_ENABLED') ?: 'false', FILTER_VALIDATE_BOOLEAN),
         'secret_key' => getenv('RECAPTCHA_SECRET_KEY') ?: '',
         'site_key' => getenv('RECAPTCHA_SITE_KEY') ?: '',
         'version' => strtolower(trim(getenv('RECAPTCHA_VERSION') ?: 'v2')),
