@@ -1,4 +1,4 @@
-import { RoleType } from "@/features/auth/lib/constants";
+import { RoleType } from "@/features/auth/shared/lib/constants";
 import { LucideIcon } from "lucide-react";
 
 interface RoleProps {

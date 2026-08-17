@@ -21,7 +21,7 @@ export function middleware(request: NextRequest) {
     const res = NextResponse.redirect(
       new URL(isPublic || isAuthRoute ? pathname : "/sign-in", request.url),
     );
-    res.cookies.delete("role");
+    res.cookies.delete("masarRole");
     res.cookies.delete("companyStatus");
     return res;
   }

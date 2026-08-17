@@ -57,16 +57,14 @@ export const FIELD_CONFIG = {
   },
 } as const;
 
-// OTP verification step in the forgot-password flow (UI-only for now).
+// OTP verification step in the forgot-password flow.
 export const OTP_LENGTH = 6;
 
-// Placeholder token the Verify button routes to while reset-password is
-// still a UI-only destination with no real token from a verified OTP.
-export const RESET_PASSWORD_PLACEHOLDER_TOKEN = "placeholder";
-
-// Profile-information step of the sign-up flow (UI-only for now): the
-// fields shown after the account basics, before finishing at sign-in.
-export const PROFILE_INFO_FIELDS = {
+// Profile-information step of the sign-up flow: the fields shown after the
+// account basics. Split by role so each side only collects what the backend
+// register contract requires (students: university/faculty/specialization;
+// companies: industry/description).
+export const STUDENT_PROFILE_FIELDS = {
   userField: {
     label: "User Field",
     placeholder: "e.g. Computer Engineering",
@@ -79,9 +77,16 @@ export const PROFILE_INFO_FIELDS = {
     label: "University",
     placeholder: "e.g. Cairo University",
   },
+} as const;
+
+export const COMPANY_PROFILE_FIELDS = {
+  industry: {
+    label: "Industry",
+    placeholder: "e.g. Software Development",
+  },
   description: {
     label: "Description",
-    placeholder: "Tell us a bit about yourself",
+    placeholder: "Tell companies about your training program",
     optional: true,
   },
 } as const;

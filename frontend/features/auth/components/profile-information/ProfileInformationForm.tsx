@@ -1,49 +1,106 @@
 "use client";
 
-import type { FormEvent } from "react";
-import { useRouter } from "next/navigation";
-
-import { PROFILE_INFO_FIELDS } from "../../lib/constants";
+import type { SignupDraft, SignupStepTwoValues } from "../../types";
+import {
+  COMPANY_PROFILE_FIELDS,
+  STUDENT_PROFILE_FIELDS,
+} from "../../shared/lib/constants";
 import { SubmitButton } from "../../shared/components/SubmitButton";
 import { ProfileField } from "./ProfileField";
+import { FieldErrorList } from "../../shared/components/FieldErrorList";
+import { signup } from "../../actions";
+import { useFormFeedBack } from "../../shared/hooks/useFormFeedback";
 
-export function ProfileInformationForm() {
-  const router = useRouter();
+interface ProfileInformationFormProps {
+  draft: SignupDraft;
+}
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+export function ProfileInformationForm({ draft }: ProfileInformationFormProps) {
+  const { formAction, state } = useFormFeedBack(signup, null);
+  const isCompany = draft.role === "company";
 
-    // UI-only handoff to sign-in — no account is created, no API call is
-    // made; the flow simply finishes at the existing auth screen.
-    router.push("/sign-in");
-  }
+  // Profile values the signup action echoes back when the register call
+  // rejects. React 19 resets uncontrolled inputs after a form action, so the
+  // fields are re-seeded from these; passwords are never echoed.
+  const restoredValues =
+    state && !state.success
+      ? (state.data as SignupStepTwoValues | undefined)
+      : undefined;
+
+  // Backend field errors from the rejected register call (keyed by the
+  // register payload field names). Password errors render in their own block
+  // below, since the password itself is a hidden step-1 input on this step.
+  const fieldErrors = state?.fieldErrors ?? {};
 
   return (
-    <form className="space-y-5" onSubmit={handleSubmit}>
-      <ProfileField
-        name="userField"
-        label={PROFILE_INFO_FIELDS.userField.label}
-        placeholder={PROFILE_INFO_FIELDS.userField.placeholder}
+    <form className="space-y-5" action={formAction}>
+      <input type="hidden" name="role" value={draft.role} />
+      <input type="hidden" name="email" value={draft.email} />
+      <input type="hidden" name="password" value={draft.password} />
+      <input
+        type="hidden"
+        name="acceptTerms"
+        value={draft.acceptTerms ? "on" : ""}
+      />
+      <input
+        type="hidden"
+        name={isCompany ? "companyName" : "fullName"}
+        value={isCompany ? (draft.companyName ?? "") : (draft.fullName ?? "")}
       />
 
-      <ProfileField
-        name="specialist"
-        label={PROFILE_INFO_FIELDS.specialist.label}
-        placeholder={PROFILE_INFO_FIELDS.specialist.placeholder}
-      />
+      {fieldErrors.password?.length ? (
+        <div className="space-y-1.5 rounded-md bg-error-bg p-3">
+          <p className="text-sm font-medium text-error-fg">Password</p>
+          <FieldErrorList errors={fieldErrors.password} />
+        </div>
+      ) : null}
 
-      <ProfileField
-        name="university"
-        label={PROFILE_INFO_FIELDS.university.label}
-        placeholder={PROFILE_INFO_FIELDS.university.placeholder}
-      />
+      {isCompany ? (
+        <>
+          <ProfileField
+            name="industry"
+            label={COMPANY_PROFILE_FIELDS.industry.label}
+            placeholder={COMPANY_PROFILE_FIELDS.industry.placeholder}
+            defaultValue={restoredValues?.industry}
+            errors={fieldErrors.industry}
+          />
 
-      <ProfileField
-        name="description"
-        label={PROFILE_INFO_FIELDS.description.label}
-        placeholder={PROFILE_INFO_FIELDS.description.placeholder}
-        optional
-      />
+          <ProfileField
+            name="description"
+            label={COMPANY_PROFILE_FIELDS.description.label}
+            placeholder={COMPANY_PROFILE_FIELDS.description.placeholder}
+            optional
+            defaultValue={restoredValues?.description}
+            errors={fieldErrors.description}
+          />
+        </>
+      ) : (
+        <>
+          <ProfileField
+            name="userField"
+            label={STUDENT_PROFILE_FIELDS.userField.label}
+            placeholder={STUDENT_PROFILE_FIELDS.userField.placeholder}
+            defaultValue={restoredValues?.userField}
+            errors={fieldErrors.faculty}
+          />
+
+          <ProfileField
+            name="specialist"
+            label={STUDENT_PROFILE_FIELDS.specialist.label}
+            placeholder={STUDENT_PROFILE_FIELDS.specialist.placeholder}
+            defaultValue={restoredValues?.specialist}
+            errors={fieldErrors.specialization}
+          />
+
+          <ProfileField
+            name="university"
+            label={STUDENT_PROFILE_FIELDS.university.label}
+            placeholder={STUDENT_PROFILE_FIELDS.university.placeholder}
+            defaultValue={restoredValues?.university}
+            errors={fieldErrors.university}
+          />
+        </>
+      )}
 
       <SubmitButton>Register</SubmitButton>
     </form>

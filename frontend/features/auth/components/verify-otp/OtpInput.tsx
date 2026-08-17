@@ -6,13 +6,12 @@ import type { ClipboardEvent, KeyboardEvent } from "react";
 import { Input } from "@/shared/components/ui/input";
 import { cn } from "@/shared/lib/utils";
 
-import { OTP_LENGTH } from "../../lib/constants";
+import { OTP_LENGTH } from "../../shared/lib/constants";
 
-// OtpInput: segmented single-character boxes with auto-advance, backspace
-// to previous box, and paste support. Pure UI — values live in local state
-// only, no submission logic.
 export function OtpInput() {
-  const [digits, setDigits] = useState<string[]>(() => Array(OTP_LENGTH).fill(""));
+  const [digits, setDigits] = useState<string[]>(() =>
+    Array(OTP_LENGTH).fill(""),
+  );
   const refs = useRef<Array<HTMLInputElement | null>>([]);
 
   const inputClass = cn(
@@ -36,7 +35,10 @@ export function OtpInput() {
     }
   }
 
-  function handleKeyDown(index: number, event: KeyboardEvent<HTMLInputElement>) {
+  function handleKeyDown(
+    index: number,
+    event: KeyboardEvent<HTMLInputElement>,
+  ) {
     if (event.key === "Backspace" && !digits[index] && index > 0) {
       focusIndex(index - 1);
     }
@@ -57,7 +59,12 @@ export function OtpInput() {
   }
 
   return (
-    <div className="flex justify-center gap-2 sm:gap-3" role="group" aria-label="Verification code">
+    <div
+      className="flex justify-center gap-2 sm:gap-3"
+      role="group"
+      aria-label="Verification code"
+    >
+      <input type="hidden" name="token" value={digits.join("")} />
       {Array.from({ length: OTP_LENGTH }, (_, index) => (
         <Input
           key={index}

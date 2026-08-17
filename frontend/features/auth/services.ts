@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 
 import { serverFetch } from "@/services/api";
+import { ROLE_HOME } from "@/config/routes";
 
 import { AuthResponse } from "./types";
 
@@ -16,33 +17,43 @@ export async function authenticate({
   const result = await serverFetch({ url, method: "POST", body });
 
   if (!result.success) {
-    return { error: result.error, userData: result.userData };
+    return {
+      error: result.error,
+      fieldErrors: result.errors,
+      userData: result.userData,
+    };
   }
 
-  const token = result.data.auth?.token;
-  const role = result.data.auth?.user?.role;
+  const token = result.data?.token;
+  const role = result.data?.user?.role;
 
   const cookieStore = await cookies();
 
-  // Set jwt token cookie for 90 days
-  cookieStore.set("masarJwt", token, {
-    httpOnly: true,
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 90,
-    path: "/",
-  });
+  if (token && role) {
+    console.log(role);
+    console.log(token);
 
-  // Set user role cookie for 90 days
-  cookieStore.set("masarRole", role, {
-    httpOnly: true,
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 90,
-    path: "/",
-  });
+    // Set jwt token cookie for 90 days
+    cookieStore.set("masarJwt", token, {
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 90,
+      path: "/",
+    });
+
+    // Set user role cookie for 90 days
+    cookieStore.set("masarRole", role, {
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 90,
+      path: "/",
+    });
+  }
 
   return {
     success: true,
     message: result.message,
-    redirectPath: role === "admin" ? "/admin/dashboard" : "/dashboard",
+    role,
+    redirectPath: role ? ROLE_HOME[role as keyof typeof ROLE_HOME] : undefined,
   };
 }

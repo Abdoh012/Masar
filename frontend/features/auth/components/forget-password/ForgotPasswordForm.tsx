@@ -1,29 +1,16 @@
 "use client";
 
-import type { FormEvent } from "react";
-import { useRouter } from "next/navigation";
-
-import { FIELD_CONFIG } from "../../lib/constants";
+import { FIELD_CONFIG } from "../../shared/lib/constants";
 import { FormField } from "../../shared/components/FormField";
 import { SubmitButton } from "../../shared/components/SubmitButton";
+import { forgotPassword } from "../../actions";
+import { useFormFeedBack } from "../../shared/hooks/useFormFeedback";
 
 export function ForgotPasswordForm() {
-  const router = useRouter();
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const formData = new FormData(event.currentTarget);
-    const email = String(formData.get("email") ?? "").trim();
-
-    // UI-only handoff to the verification step — no email is sent, no API
-    // call is made; the address is just forwarded so the OTP page can
-    // display it.
-    router.push(`/verify-otp?email=${encodeURIComponent(email)}`);
-  }
+  const { formAction } = useFormFeedBack(forgotPassword, null);
 
   return (
-    <form className="space-y-5" onSubmit={handleSubmit}>
+    <form className="space-y-5" action={formAction}>
       <FormField
         name="email"
         label={FIELD_CONFIG.email.label}

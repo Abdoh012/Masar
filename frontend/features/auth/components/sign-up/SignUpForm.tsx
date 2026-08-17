@@ -2,30 +2,50 @@
 
 import type { FormEvent } from "react";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 import { FormField } from "../../shared/components/FormField";
 import { SubmitButton } from "../../shared/components/SubmitButton";
 import { RoleSelector } from "./role-selector/RoleSelector";
-import { FIELD_CONFIG } from "../../lib/constants";
+import { FIELD_CONFIG } from "../../shared/lib/constants";
 import Footer from "./footer/Footer";
+import { stageSignup } from "../../actions";
+import { useFormFeedBack } from "../../shared/hooks/useFormFeedback";
+import { useSignupDraft } from "../../shared/hooks/useSignupDraft";
+import type { SignupStepOneValues } from "../../types";
 
 export function SignUpForm() {
-  const router = useRouter();
   const [role, setRole] = useState<"student" | "company">("student");
   const isCompany = role === "company";
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  const { formAction, state } = useFormFeedBack(stageSignup, null);
 
-    // UI-only handoff to the profile-information step — no account is
-    // created, no API call is made; the flow simply continues to the next
-    // screen of the sign-up journey.
-    router.push("/profile-information");
+  const { saveDraft } = useSignupDraft();
+
+  const restoredValues =
+    state && !state.success
+      ? (state.data as SignupStepOneValues | undefined)
+      : undefined;
+
+  // Mirror the step-1 basics into the in-memory draft so the step-2 form
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    const data = new FormData(event.currentTarget);
+    saveDraft({
+      role:
+        String(data.get("role") ?? "student") === "company"
+          ? "company"
+          : "student",
+      fullName: isCompany ? undefined : String(data.get("fullName") ?? ""),
+      companyName: isCompany
+        ? String(data.get("companyName") ?? "")
+        : undefined,
+      email: String(data.get("email") ?? ""),
+      password: String(data.get("password") ?? ""),
+      acceptTerms: data.get("terms") === "on",
+    });
   }
 
   return (
-    <form className="space-y-5" onSubmit={handleSubmit}>
+    <form className="space-y-5" action={formAction} onSubmit={handleSubmit}>
       <RoleSelector value={role} onChange={setRole} />
       <input type="hidden" name="role" value={role} />
 
@@ -34,6 +54,7 @@ export function SignUpForm() {
         label={FIELD_CONFIG.fullName.label}
         type={FIELD_CONFIG.fullName.type}
         placeholder={FIELD_CONFIG.fullName.placeholder}
+        defaultValue={restoredValues?.fullName}
       />
 
       <FormField
@@ -41,6 +62,7 @@ export function SignUpForm() {
         label={FIELD_CONFIG.email.label}
         type={FIELD_CONFIG.email.type}
         placeholder={FIELD_CONFIG.email.placeholder}
+        defaultValue={restoredValues?.email}
       />
 
       <FormField
@@ -63,6 +85,7 @@ export function SignUpForm() {
           label={FIELD_CONFIG.companyName.label}
           type={FIELD_CONFIG.companyName.type}
           placeholder={FIELD_CONFIG.companyName.placeholder}
+          defaultValue={restoredValues?.companyName}
         />
       ) : null}
 

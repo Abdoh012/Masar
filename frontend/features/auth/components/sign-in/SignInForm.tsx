@@ -2,18 +2,29 @@
 
 import Link from "next/link";
 
-import { FIELD_CONFIG } from "../../lib/constants";
+import { FIELD_CONFIG } from "../../shared/lib/constants";
 import { FormField } from "../../shared/components/FormField";
 import { SubmitButton } from "../../shared/components/SubmitButton";
+import { signIn } from "../../actions";
+import { useFormFeedBack } from "../../shared/hooks/useFormFeedback";
+import { SignInValues } from "../../types";
 
 export function SignInForm() {
+  const { formAction, state } = useFormFeedBack(signIn, null);
+
+  const restoredValues =
+    state && !state.success
+      ? (state.data as SignInValues | undefined)
+      : undefined;
+
   return (
-    <form>
+    <form action={formAction}>
       <FormField
         name="email"
         label={FIELD_CONFIG.email.label}
         placeholder={FIELD_CONFIG.email.placeholder}
         type={FIELD_CONFIG.email.type}
+        defaultValue={restoredValues?.email}
       />
 
       <FormField

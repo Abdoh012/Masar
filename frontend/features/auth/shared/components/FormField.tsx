@@ -12,9 +12,16 @@ interface FormFieldProps {
   label: string;
   type: string;
   placeholder: string;
+  defaultValue?: string;
 }
 
-export function FormField({ name, label, type, placeholder }: FormFieldProps) {
+export function FormField({
+  name,
+  label,
+  type,
+  placeholder,
+  defaultValue,
+}: FormFieldProps) {
   const [visible, setVisible] = useState(false);
 
   return (
@@ -29,6 +36,7 @@ export function FormField({ name, label, type, placeholder }: FormFieldProps) {
           type={type === "password" && visible ? "text" : type}
           placeholder={placeholder}
           required
+          defaultValue={defaultValue}
         />
 
         {type === "password" ? (

@@ -2,12 +2,15 @@
 
 import { Label } from "@/shared/components/ui/label";
 import { Input } from "@/shared/components/ui/input";
+import { FieldErrorList } from "../../shared/components/FieldErrorList";
 
 interface ProfileFieldProps {
   name: string;
   label: string;
   placeholder: string;
   optional?: boolean;
+  defaultValue?: string;
+  errors?: string[];
 }
 
 export function ProfileField({
@@ -15,6 +18,8 @@ export function ProfileField({
   label,
   placeholder,
   optional = false,
+  defaultValue,
+  errors,
 }: ProfileFieldProps) {
   return (
     <div className="space-y-1.5">
@@ -25,7 +30,15 @@ export function ProfileField({
         ) : null}
       </div>
 
-      <Input name={name} type="text" placeholder={placeholder} required={!optional} />
+      <Input
+        name={name}
+        type="text"
+        placeholder={placeholder}
+        required={!optional}
+        defaultValue={defaultValue}
+      />
+
+      <FieldErrorList errors={errors} />
     </div>
   );
 }

@@ -4,7 +4,8 @@ import { cookies } from "next/headers";
 import type { TryCatchRequest, TryCatchResponse } from "@/types/server-action";
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api/v1";
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+  
 
 export async function serverFetch({
   url,
@@ -42,12 +43,17 @@ export async function serverFetch({
       const data = await res.json();
       return {
         error: data.message || "Invalid data, please try again later",
+        errors: data.errors || undefined,
         userData: body,
       };
     }
 
     const resData = await res.json();
-    return { success: true, data: resData, message: resData.message };
+    return {
+      success: true,
+      data: resData.data,
+      message: resData.message,
+    };
   } catch {
     return {
       success: false,

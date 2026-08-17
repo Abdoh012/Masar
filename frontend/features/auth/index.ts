@@ -4,6 +4,7 @@
 // path than this file (R8) — routes and the (auth) layout consume the
 // exports below.
 
+export { SignupDraftProvider } from "./shared/hooks/useSignupDraft";
 export { ThemeToggle } from "./components/theme-toggle/ThemeToggle";
 export { BrandMark } from "./shared/components/BrandMark";
 export { BrandPanel } from "./shared/components/BrandPanel";

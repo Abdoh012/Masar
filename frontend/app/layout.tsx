@@ -9,6 +9,7 @@ import {
 import { baseMetadata } from "../config/metadata";
 import { ThemeProvider } from "../shared/components/theme-provider/ThemeProvider";
 import "./globals.css";
+import { Toaster } from "sonner";
 
 // UI / body text
 const ibmPlexSans = IBM_Plex_Sans({
@@ -59,6 +60,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       ].join(" ")}
     >
       <body>
+        <Toaster />
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

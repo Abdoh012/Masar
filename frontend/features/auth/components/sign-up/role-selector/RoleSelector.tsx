@@ -1,9 +1,9 @@
 "use client";
 
-import { SIGN_UP_ROLES } from "../../../lib/constants";
+import { SIGN_UP_ROLES } from "../../../shared/lib/constants";
 
 import Role from "./Role";
-import { RoleType } from "@/features/auth/lib/constants";
+import { RoleType } from "@/features/auth/shared/lib/constants";
 
 interface RoleSelectorProps {
   value: RoleType;

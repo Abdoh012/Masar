@@ -8,10 +8,15 @@ export const metadata: Metadata = {
 
 interface PageProps {
   params: Promise<{ token: string }>;
+  searchParams: Promise<{ email?: string }>;
 }
 
-export default async function ResetPasswordPage({ params }: PageProps) {
+export default async function ResetPasswordPage({
+  params,
+  searchParams,
+}: PageProps) {
   const { token } = await params;
+  const { email } = await searchParams;
 
-  return <ResetPasswordContainer token={token} />;
+  return <ResetPasswordContainer token={token} email={email ?? ""} />;
 }

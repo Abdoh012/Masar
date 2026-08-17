@@ -4,10 +4,12 @@ import { AuthCard, ResetPasswordForm } from "@/features/auth";
 
 interface ResetPasswordContainerProps {
   token: string;
+  email: string;
 }
 
 export default function ResetPasswordContainer({
   token,
+  email,
 }: ResetPasswordContainerProps) {
   return (
     <AuthCard
@@ -25,7 +27,7 @@ export default function ResetPasswordContainer({
         </p>
       }
     >
-      <ResetPasswordForm token={token} />
+      <ResetPasswordForm token={token} email={email} />
     </AuthCard>
   );
 }
