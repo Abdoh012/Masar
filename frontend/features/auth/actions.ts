@@ -8,6 +8,7 @@ import { ActionState } from "@/types/server-action";
 import { COMPANY_PENDING_ROUTE } from "@/config/routes";
 import { authenticate } from "./services";
 import {
+  validateSignupPassword,
   validatePasswordConfirmation,
   firstPasswordError,
 } from "./shared/lib/validation";
@@ -18,7 +19,7 @@ export async function stageSignup(
   prevState: ActionState | null,
   formData: FormData,
 ): Promise<ActionState | undefined> {
-  const { errors } = validatePasswordConfirmation(formData);
+  const { errors } = validateSignupPassword(formData);
   if (Object.keys(errors).length > 0) {
     return {
       success: false,
@@ -121,8 +122,6 @@ export async function signIn(
       success: false,
       error: result.error,
       fieldErrors: result.fieldErrors,
-      // Only the email is echoed back (SignInValues) so SignInForm can
-      // re-seed it — the password is never echoed.
       data: { email },
     };
   }
