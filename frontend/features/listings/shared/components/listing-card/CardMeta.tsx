@@ -11,30 +11,30 @@ interface CardMetaProps {
 }
 
 function formatPostedDate(iso: string): string {
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(
-    new Date(iso),
-  );
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(iso));
 }
 
-// CardMeta: the duration / mode / posted strip at the bottom of the shared
-// ListingCard. Pure leaf — trivial display derivation only.
 export function CardMeta({ duration, format, createdAt }: CardMetaProps) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
       {duration ? (
         <span className="flex items-center gap-1.5">
-          <Clock aria-hidden="true" className="size-3.5" />
+          <Clock className="size-3.5" />
           {duration}
         </span>
       ) : null}
 
       <span className="flex items-center gap-1.5">
-        <MapPin aria-hidden="true" className="size-3.5" />
+        <MapPin className="size-3.5" />
         {FORMAT_LABELS[format]}
       </span>
 
       <span className="flex items-center gap-1.5">
-        <CalendarDays aria-hidden="true" className="size-3.5" />
+        <CalendarDays className="size-3.5" />
         {CARD_META_POSTED_PREFIX} {formatPostedDate(createdAt)}
       </span>
     </div>

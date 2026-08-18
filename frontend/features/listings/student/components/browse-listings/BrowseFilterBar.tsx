@@ -5,46 +5,27 @@ import { ResetFiltersButton } from "../../../shared/components/filter-controls/R
 
 import { FILTER_LABELS, FILTER_LISTS } from "./constants";
 
-// BrowseFilterBar: the horizontal filter strip below the search/toolbar row
-// (Category / Training Type / Mode / Price dropdowns + Clear All).
-// Presentational for now — static values, no wiring; filtering returns with
-// the backend. Reuses the shared FilterSelect (same pattern as the admin
-// moderation bar).
 export function BrowseFilterBar() {
   return (
-    <div className="flex flex-wrap items-end gap-4 rounded-2xl border border-border bg-card p-4 shadow-card">
-      <FilterSelect
-        label={FILTER_LABELS.category}
-        value=""
-        onValueChange={() => {}}
-        allLabel={FILTER_LABELS.allCategories}
-        options={FILTER_LISTS.category}
-      />
+    <div className="grid grid-cols-1 md:grid-cols-4 flex-wrap items-end gap-4 rounded-2xl border border-border bg-card p-4 shadow-card">
+      {/* <FilterSelect placeholder="" options={FILTER_LISTS.category} /> */}
 
       <FilterSelect
-        label={FILTER_LABELS.trainingType}
-        value=""
-        onValueChange={() => {}}
-        allLabel={FILTER_LABELS.allTypes}
+        placeholder={FILTER_LABELS.trainingType}
         options={FILTER_LISTS.trainingType}
       />
 
       <FilterSelect
-        label={FILTER_LABELS.mode}
-        value=""
-        onValueChange={() => {}}
-        allLabel={FILTER_LABELS.allModes}
+        placeholder={FILTER_LABELS.mode}
         options={FILTER_LISTS.mode}
       />
 
       <FilterSelect
-        label={FILTER_LABELS.price}
-        value="any"
-        onValueChange={() => {}}
+        placeholder={FILTER_LABELS.price}
         options={FILTER_LISTS.price}
       />
 
-      <ResetFiltersButton onClick={() => {}} label={FILTER_LABELS.clear} />
+      <ResetFiltersButton label={FILTER_LABELS.clear} />
     </div>
   );
 }

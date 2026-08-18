@@ -1,23 +1,17 @@
+import { Button } from "@/shared/components/ui/button";
 import { RotateCcw } from "lucide-react";
 
 interface ResetFiltersButtonProps {
-  onClick: () => void;
   label: string;
 }
 
-// ResetFiltersButton: the shared "reset filters" text button with the
-// circular-arrow icon, used by the student browse filter bar and the admin
-// moderation filters when an active filter is set. Pure leaf — onClick and
-// label come from the parent.
-export function ResetFiltersButton({ onClick, label }: ResetFiltersButtonProps) {
+export function ResetFiltersButton({ label }: ResetFiltersButtonProps) {
   return (
-    <button
+    <Button
       type="button"
-      onClick={onClick}
-      className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-primary-text transition-colors hover:underline"
+      className="cursor-pointer font-medium text-white transition-all duration-300 hover:bg-red-400 bg-red-500 rounded-md h-full"
     >
-      <RotateCcw aria-hidden="true" className="size-3.5" />
       {label}
-    </button>
+    </Button>
   );
 }

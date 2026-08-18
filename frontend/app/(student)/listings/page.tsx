@@ -7,9 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return (
-    <div className="min-h-[calc(100dvh-3.5rem)] bg-[#FAF7F1]">
-      <BrowseListingsContainer />
-    </div>
-  );
+  return <BrowseListingsContainer />;
 }
