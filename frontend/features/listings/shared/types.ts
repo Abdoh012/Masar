@@ -29,7 +29,12 @@ export interface Listing {
 
 // UI-only display extension used by the shared ListingCard and role rows:
 // companyName is resolved from companyId by the data layer once the backend
-// exists. NOT a backend contract — do not treat it as part of the TBD shape.
+// exists; skills/duration/saved are display-only card content (skills tags,
+// duration line, saved-bookmark state). NOT a backend contract — do not
+// treat any of it as part of the TBD shape.
 export interface ListingCardData extends Listing {
   companyName: string;
+  skills?: string[];
+  duration?: string;
+  saved?: boolean;
 }
