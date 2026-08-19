@@ -160,7 +160,7 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
 // Browse hero copy (reference header band).
 export const BROWSE_HERO = {
   eyebrow: "Explore Opportunities",
-  title: "Listings",
+  title: "Trainings",
   subtitle:
     "Explore training opportunities provided by companies and apply to grow your skills and career.",
 };
