@@ -1,13 +1,8 @@
-"use client";
-
-import { useState } from "react";
-import type { FormEvent } from "react";
+import Link from "next/link";
 
 import { CheckCircle2 } from "lucide-react";
 
 import { Button } from "@/shared/components/ui/button";
-import { Input } from "@/shared/components/ui/input";
-import { Label } from "@/shared/components/ui/label";
 
 import { APPLY_COPY } from "./constants";
 
@@ -16,21 +11,13 @@ interface ApplyCtaProps {
   appliedByDefault?: boolean;
 }
 
-// Student apply CTA (FR-016). "use client": produces a local success/applied
-// state only — no real submission, no network call (R-6/R-8). If the mock
-// student already applied, the CTA renders the already-applied status
-// instead (FR-017).
-
+// Student apply CTA (FR-016). Server leaf: the already-applied marker renders
+// the status panel (FR-017); otherwise it's a link into the application wizard
+// route (features/applications), which owns the real apply flow. The wizard is
+// UI-only too, so the link is a plain client navigation — no form, no state
+// here (structure rules §4/§8).
 export function ApplyCta({ listingId, appliedByDefault = false }: ApplyCtaProps) {
-  const [submitted, setSubmitted] = useState(false);
-  const alreadyApplied = appliedByDefault || submitted;
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSubmitted(true);
-  }
-
-  if (alreadyApplied) {
+  if (appliedByDefault) {
     return (
       <div role="status" className="rounded-xl border border-primary-tint bg-primary-tint/50 p-5">
         <p className="flex items-center gap-2 text-sm font-semibold text-primary-text">
@@ -43,17 +30,8 @@ export function ApplyCta({ listingId, appliedByDefault = false }: ApplyCtaProps)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="font-sans text-base font-semibold text-foreground">{APPLY_COPY.title}</h2>
-      <div className="space-y-1.5">
-        <Label htmlFor={`apply-note-${listingId}`}>{APPLY_COPY.noteLabel}</Label>
-        <Input
-          id={`apply-note-${listingId}`}
-          name="note"
-          placeholder={APPLY_COPY.notePlaceholder}
-        />
-      </div>
-      <Button type="submit">{APPLY_COPY.button}</Button>
-    </form>
+    <Button asChild size="lg" className="w-full">
+      <Link href={`/listings/${listingId}/apply`}>{APPLY_COPY.button}</Link>
+    </Button>
   );
 }

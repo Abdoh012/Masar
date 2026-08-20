@@ -3,14 +3,21 @@ import { RotateCcw } from "lucide-react";
 
 interface ResetFiltersButtonProps {
   label: string;
+  onClick: () => void;
 }
 
-export function ResetFiltersButton({ label }: ResetFiltersButtonProps) {
+// ResetFiltersButton: the shared "reset filters" control (AGENTS.md). A plain
+// outlined button that calls back to the owning container to clear its filter
+// state. Pure leaf — no state of its own.
+export function ResetFiltersButton({ label, onClick }: ResetFiltersButtonProps) {
   return (
     <Button
       type="button"
-      className="cursor-pointer font-medium text-white transition-all duration-300 hover:bg-red-400 bg-red-500 rounded-md h-full"
+      onClick={onClick}
+      variant="outline"
+      className="cursor-pointer font-medium"
     >
+      <RotateCcw className="size-4" />
       {label}
     </Button>
   );
