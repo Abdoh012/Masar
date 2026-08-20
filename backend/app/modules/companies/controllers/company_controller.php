@@ -55,7 +55,7 @@ function company_controller_get_my_profile(): void
     */
 
     $user =
-        request_authenticated_user();
+        auth_user();
 
 
     if (
@@ -230,7 +230,7 @@ function company_controller_create(): void
     */
 
     $user =
-        request_authenticated_user();
+        auth_user();
 
 
     if (
@@ -340,7 +340,7 @@ function company_controller_update_my_profile(): void
     */
 
     $user =
-        request_authenticated_user();
+        auth_user();
 
 
     if (
@@ -702,7 +702,7 @@ function company_controller_delete_my_profile(): void
     */
 
     $user =
-        request_authenticated_user();
+        auth_user();
 
 
     if (

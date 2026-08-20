@@ -79,38 +79,66 @@ function company_validator_create(
 
     /*
     |--------------------------------------------------------------------------
-    | Industry
+    | Work Fields (Industry)
     |--------------------------------------------------------------------------
+    |
+    | Work fields must reference the study_fields lookup table. The endpoint
+    | accepts study field IDs (work_field_ids) or the legacy industry name.
+    |
     */
 
-    if (
-        !isset($data['industry'])
+    $has_work_fields =
+        array_key_exists('work_field_ids', $data)
         ||
-        trim(
-            (string) $data['industry']
-        ) === ''
-    ) {
+        (
+            isset($data['industry'])
+            &&
+            trim((string) $data['industry']) !== ''
+        );
 
-        $errors['industry'] =
-            'Industry is required.';
+    if (!$has_work_fields) {
+
+        $errors['work_field_ids'] =
+            'At least one work field is required.';
 
     } else {
 
-        $industry =
-            trim(
-                (string) $data['industry']
-            );
+        if (array_key_exists('work_field_ids', $data)) {
 
+            if (
+                !is_array($data['work_field_ids'])
+                ||
+                empty($data['work_field_ids'])
+            ) {
+
+                $errors['work_field_ids'] =
+                    'Work fields must be a non-empty array of study field IDs.';
+
+            } else {
+
+                foreach ($data['work_field_ids'] as $field_id) {
+
+                    if (
+                        !is_numeric($field_id)
+                        ||
+                        (int) $field_id <= 0
+                    ) {
+
+                        $errors['work_field_ids'] =
+                            'Each work field must be a positive study field ID.';
+
+                        break;
+                    }
+                }
+            }
+        }
 
         if (
-            strlen($industry) < 2
-        ) {
-
-            $errors['industry'] =
-                'Industry must be at least 2 characters.';
-
-        } elseif (
-            strlen($industry) > 255
+            isset($data['industry'])
+            &&
+            trim((string) $data['industry']) !== ''
+            &&
+            strlen(trim((string) $data['industry'])) > 255
         ) {
 
             $errors['industry'] =
@@ -182,9 +210,49 @@ function company_validator_update(
     $errors = [];
 
 
+/*
+    |--------------------------------------------------------------------------
+    | Work Field IDs
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        array_key_exists(
+            'work_field_ids',
+            $data
+        )
+    ) {
+
+        if (
+            !is_array($data['work_field_ids'])
+        ) {
+
+            $errors['work_field_ids'] =
+                'Work fields must be an array of study field IDs.';
+
+        } else {
+
+            foreach ($data['work_field_ids'] as $field_id) {
+
+                if (
+                    !is_numeric($field_id)
+                    ||
+                    (int) $field_id <= 0
+                ) {
+
+                    $errors['work_field_ids'] =
+                        'Each work field must be a positive study field ID.';
+
+                    break;
+                }
+            }
+        }
+    }
+
+
     /*
     |--------------------------------------------------------------------------
-    | Check At Least One Field
+    | Description
     |--------------------------------------------------------------------------
     */
 
@@ -195,6 +263,8 @@ function company_validator_update(
         'description',
 
         'industry',
+
+        'work_field_ids',
 
     ];
 

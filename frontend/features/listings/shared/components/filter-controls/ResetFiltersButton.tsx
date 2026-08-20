@@ -6,7 +6,7 @@ interface ResetFiltersButtonProps {
 }
 
 // ResetFiltersButton: the shared "reset filters" text button with the
-// circular-arrow icon, used by both the student browse filters and the admin
+// circular-arrow icon, used by the student browse filter bar and the admin
 // moderation filters when an active filter is set. Pure leaf — onClick and
 // label come from the parent.
 export function ResetFiltersButton({ onClick, label }: ResetFiltersButtonProps) {

@@ -1,13 +1,13 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { serverFetch } from "@/services/api";
 import { ActionState } from "@/types/server-action";
-import { COMPANY_PENDING_ROUTE } from "@/config/routes";
+import { COMPANY_PENDING_ROUTE, PASSWORD_UPDATED_ROUTE } from "@/config/routes";
 import { authenticate } from "./services";
 import {
+  validateSignupPassword,
   validatePasswordConfirmation,
   firstPasswordError,
 } from "./shared/lib/validation";
@@ -18,7 +18,7 @@ export async function stageSignup(
   prevState: ActionState | null,
   formData: FormData,
 ): Promise<ActionState | undefined> {
-  const { errors } = validatePasswordConfirmation(formData);
+  const { errors } = validateSignupPassword(formData);
   if (Object.keys(errors).length > 0) {
     return {
       success: false,
@@ -96,8 +96,10 @@ export async function signup(
     };
   }
 
-  // Companies get no token on register — they're pending approval.
-  if (result.role === "company") {
+  // Companies register with status "pending" — no token yet, locked to the
+  // waiting page until an admin approves. Key the redirect off the backend's
+  // reported status, not the role.
+  if (result.userStatus === "pending") {
     redirect(COMPANY_PENDING_ROUTE);
   }
 
@@ -121,8 +123,6 @@ export async function signIn(
       success: false,
       error: result.error,
       fieldErrors: result.fieldErrors,
-      // Only the email is echoed back (SignInValues) so SignInForm can
-      // re-seed it — the password is never echoed.
       data: { email },
     };
   }
@@ -223,19 +223,15 @@ export async function resetPassword(
   });
 
   if (!result.success) {
-    return { success: false, error: result.error, data: result.userData };
+    return {
+      success: false,
+      error: result.error,
+      data: result.userData,
+      fieldErrors: result.errors,
+    };
   }
 
-  redirect("/sign-in");
-}
-
-export async function logout() {
-  await serverFetch({ url: "auth/logout", method: "POST", body: {} });
-
-  const cookieStore = await cookies();
-  cookieStore.delete("masarJwt");
-  cookieStore.delete("masarRole");
-  cookieStore.delete("companyStatus");
-
-  redirect("/sign-in");
+  // Land on the post-reset confirmation page, which auto-redirects to
+  // /sign-in after a few seconds.
+  redirect(PASSWORD_UPDATED_ROUTE);
 }

@@ -338,6 +338,123 @@ function application_service_create(
 
     /*
     |--------------------------------------------------------------------------
+    | Validate University / Faculty
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        !empty($data['university_id'])
+    ) {
+
+        $university =
+            application_repository_find_university_by_id(
+                (int) $data['university_id']
+            );
+
+        if (!$university) {
+
+            return [
+
+                'success' => false,
+
+                'message' =>
+                    'Selected university was not found.',
+
+                'errors' => [
+
+                    'university_id' =>
+                        'Selected university was not found.'
+
+                ],
+
+                'status_code' => 422
+
+            ];
+        }
+    }
+
+    if (
+        !empty($data['faculty_id'])
+    ) {
+
+        $faculty =
+            application_repository_find_faculty_by_id(
+                (int) $data['faculty_id']
+            );
+
+        if (!$faculty) {
+
+            return [
+
+                'success' => false,
+
+                'message' =>
+                    'Selected faculty was not found.',
+
+                'errors' => [
+
+                    'faculty_id' =>
+                        'Selected faculty was not found.'
+
+                ],
+
+                'status_code' => 422
+
+            ];
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validate Answers Against Training Questions
+    |--------------------------------------------------------------------------
+    */
+
+    $questions =
+        training_repository_get_questions(
+            $training_id
+        );
+
+    $answers =
+        $data['answers']
+        ?? [];
+
+    if (
+        !is_array($answers)
+    ) {
+
+        $answers = [];
+    }
+
+    $answers_validation =
+        application_validator_answers(
+            $answers,
+            $questions
+        );
+
+    if (
+        !$answers_validation['valid']
+    ) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Application answers are invalid.',
+
+            'errors' =>
+                $answers_validation['errors'],
+
+            'status_code' => 422
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
     | Prepare Application
     |--------------------------------------------------------------------------
     */
@@ -357,9 +474,47 @@ function application_service_create(
                 )
                 : null,
 
+        'motivation' =>
+            isset($data['motivation'])
+                ? trim(
+                    $data['motivation']
+                )
+                : null,
+
         'cv_file_id' =>
             isset($data['cv_file_id'])
                 ? (int) $data['cv_file_id']
+                : null,
+
+        'university_id' =>
+            isset($data['university_id'])
+                ? (int) $data['university_id']
+                : null,
+
+        'faculty_id' =>
+            isset($data['faculty_id'])
+                ? (int) $data['faculty_id']
+                : null,
+
+        'applicant_type' =>
+            isset($data['applicant_type'])
+                ? strtolower(
+                    trim(
+                        (string) $data['applicant_type']
+                    )
+                )
+                : 'student',
+
+        'academic_year' =>
+            isset($data['academic_year'])
+                ? trim(
+                    (string) $data['academic_year']
+                )
+                : null,
+
+        'graduation_year' =>
+            isset($data['graduation_year'])
+                ? (int) $data['graduation_year']
                 : null,
 
         'status' =>
@@ -370,19 +525,71 @@ function application_service_create(
 
     /*
     |--------------------------------------------------------------------------
-    | Create Application
+    | Create Application (Transactional)
     |--------------------------------------------------------------------------
     */
 
-    $application_id =
-        application_repository_create(
-            $application_data
-        );
+    try {
 
+        db_begin_transaction();
 
-    if (
-        !$application_id
-    ) {
+        $application_id =
+            application_repository_create(
+                $application_data
+            );
+
+        if (!$application_id) {
+
+            db_rollback();
+
+            return [
+
+                'success' => false,
+
+                'message' =>
+                    'Unable to submit application.',
+
+                'errors' => [],
+
+                'status_code' => 500
+
+            ];
+        }
+
+        if (!empty($answers)) {
+
+            $answers_saved =
+                application_repository_save_answers(
+                    (int) $application_id,
+                    $answers
+                );
+
+            if (!$answers_saved) {
+
+                db_rollback();
+
+                return [
+
+                    'success' => false,
+
+                    'message' =>
+                        'Unable to save application answers.',
+
+                    'errors' => [],
+
+                    'status_code' => 500
+
+                ];
+            }
+        }
+
+        db_commit();
+
+    } catch (Throwable $exception) {
+
+        if (db_in_transaction()) {
+            db_rollback();
+        }
 
         return [
 
@@ -417,7 +624,7 @@ function application_service_create(
     */
 
     $notificationService =
-        new \MASAR\Modules\Notifications\Services\NotificationService();
+        new \NotificationService();
 
 
     $notificationService->notifyUser(
@@ -446,6 +653,67 @@ function application_service_create(
         'status_code' => 201
 
     ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Enrich Application
+|--------------------------------------------------------------------------
+|
+| Adds answers, university/faculty names and a normalized status
+| to an application record for API responses.
+|
+*/
+
+function application_service_enrich_application(
+    array $application
+): array {
+
+    $application['status'] =
+        ($application['status'] ?? '') === 'submitted'
+            ? 'pending'
+            : ($application['status'] ?? null);
+
+    $application['answers'] =
+        application_repository_get_answers(
+            (int) $application['id']
+        );
+
+    $application['university_name'] = null;
+    $application['faculty_name'] = null;
+
+    if (
+        !empty($application['university_id'])
+    ) {
+
+        $university =
+            application_repository_find_university_by_id(
+                (int) $application['university_id']
+            );
+
+        if ($university) {
+            $application['university_name'] =
+                $university['name'];
+        }
+    }
+
+    if (
+        !empty($application['faculty_id'])
+    ) {
+
+        $faculty =
+            application_repository_find_faculty_by_id(
+                (int) $application['faculty_id']
+            );
+
+        if ($faculty) {
+            $application['faculty_name'] =
+                $faculty['name'];
+        }
+    }
+
+    return $application;
 }
 
 
@@ -507,6 +775,21 @@ function application_service_find(
 
         ];
     }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Enrich Application
+    |--------------------------------------------------------------------------
+    |
+    | Attach answers, university/faculty names and normalize
+    | the status for the response.
+    |
+    */
+
+    $application = application_service_enrich_application(
+        $application
+    );
 
 
     /*
@@ -1313,7 +1596,7 @@ function application_service_accept(
     */
 
     $notificationService =
-        new \MASAR\Modules\Notifications\Services\NotificationService();
+        new \NotificationService();
 
 
     $notificationService->notifyUser(
@@ -1598,7 +1881,7 @@ $updated =
     */
 
     $notificationService =
-        new \MASAR\Modules\Notifications\Services\NotificationService();
+        new \NotificationService();
 
 
     $notificationService->notifyUser(
@@ -1807,7 +2090,7 @@ $updated =
     */
 
     $notificationService =
-        new \MASAR\Modules\Notifications\Services\NotificationService();
+        new \NotificationService();
 
 
     $notificationService->notifyUser(

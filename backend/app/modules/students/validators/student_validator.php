@@ -18,27 +18,26 @@ function student_validator_create(array $data): array
 {
     $errors = [];
 
-    if (! isset($data['university']) || trim((string) $data['university']) === '') {
-        $errors['university'] = 'University is required.';
-    } elseif (strlen(trim((string) $data['university'])) > 255) {
-        $errors['university'] = 'University must not exceed 255 characters.';
+    $user_field_key = array_key_exists( 'field', $data ) ? 'field' : 'faculty';
+    $user_field = trim( (string) ( $data[$user_field_key] ?? '' ) );
+
+    if ($user_field === '') {
+        $errors[$user_field_key] = 'User field is required.';
+    } elseif (strlen($user_field) > 255) {
+        $errors[$user_field_key] = 'User field must not exceed 255 characters.';
     }
 
-    if (! isset($data['degree']) || trim((string) $data['degree']) === '') {
-        $errors['degree'] = 'Degree is required.';
-    } elseif (strlen(trim((string) $data['degree'])) > 255) {
-        $errors['degree'] = 'Degree must not exceed 255 characters.';
+    if (array_key_exists('degree', $data) && trim((string) $data['degree']) !== '') {
+        if (strlen(trim((string) $data['degree'])) > 255) {
+            $errors['degree'] = 'Degree must not exceed 255 characters.';
+        }
     }
 
-    if (! isset($data['field']) || trim((string) $data['field']) === '') {
-        $errors['field'] = 'Field is required.';
-    } elseif (strlen(trim((string) $data['field'])) > 255) {
-        $errors['field'] = 'Field must not exceed 255 characters.';
-    }
+    $specialization = trim( (string) ( $data['specialization'] ?? '' ) );
 
-    if (! isset($data['specialization']) || trim((string) $data['specialization']) === '') {
+    if ($specialization === '') {
         $errors['specialization'] = 'Specialization is required.';
-    } elseif (strlen(trim((string) $data['specialization'])) > 25) {
+    } elseif (strlen($specialization) > 255) {
         $errors['specialization'] = 'Specialization must not exceed 255 characters.';
     }
 
@@ -57,31 +56,14 @@ function student_validator_update(array $data): array
         return ['valid' => false, 'errors' => ['general' => 'No data was provided for update.']];
     }
 
-    if (array_key_exists('university', $data)) {
-        $university = trim((string) $data['university']);
-        if ($university === '') {
-            $errors['university'] = 'University cannot be empty.';
-        } elseif (strlen($university) > 255) {
-            $errors['university'] = 'University must not exceed 255 characters.';
-        }
-    }
+    $user_field_key = array_key_exists( 'field', $data ) ? 'field' : 'faculty';
 
-    if (array_key_exists('degree', $data)) {
-        $degree = trim((string) $data['degree']);
-        if ($degree === '') {
-            $errors['degree'] = 'Degree cannot be empty.';
-        } elseif (strlen($degree) > 255) {
-            $errors['degree'] = 'Degree must not exceed 255 characters.';
-        }
-    }
-
-    if (array_key_exists('field', $data)) {
-        $field = trim((string) $data['field']);
-        if ($field === '') {
-            $errors['field'] = 'Field cannot be empty.';
-
-        } elseif (strlen($field) > 255) {
-            $errors['field'] = 'Field must not exceed 255 characters.';
+    if (array_key_exists($user_field_key, $data)) {
+        $user_field = trim((string) $data[$user_field_key]);
+        if ($user_field === '') {
+            $errors[$user_field_key] = 'User field cannot be empty.';
+        } elseif (strlen($user_field) > 255) {
+            $errors[$user_field_key] = 'User field must not exceed 255 characters.';
         }
     }
 
@@ -231,12 +213,21 @@ function student_validate_profile( array $data ): array {
         $errors['full_name'] = 'Full name must not exceed 255 characters.';
     }
 
-    foreach ( [ 'university', 'faculty', 'specialization', ] as $field ) {
-        if ( !isset( $data[$field] ) || trim( (string) $data[$field] ) === '' ) {
-            $errors[$field] = ucfirst( $field ) . ' is required.';
-        } elseif ( strlen( trim( (string) $data[$field] ) ) > 255 ) {
-            $errors[$field] = ucfirst( $field ) . ' must not exceed 255 characters.';
-        }
+    $user_field_key = array_key_exists( 'field', $data ) ? 'field' : 'faculty';
+    $user_field = trim( (string) ( $data[$user_field_key] ?? '' ) );
+
+    if ( $user_field === '' ) {
+        $errors[$user_field_key] = 'User field is required.';
+    } elseif ( strlen( $user_field ) > 255 ) {
+        $errors[$user_field_key] = 'User field must not exceed 255 characters.';
+    }
+
+    $specialization = trim( (string) ( $data['specialization'] ?? '' ) );
+
+    if ( $specialization === '' ) {
+        $errors['specialization'] = 'Specialization is required.';
+    } elseif ( strlen( $specialization ) > 255 ) {
+        $errors['specialization'] = 'Specialization must not exceed 255 characters.';
     }
 
     if ( array_key_exists( 'degree', $data ) && trim( (string) $data['degree'] ) !== '' ) {
@@ -287,14 +278,23 @@ function student_validate_profile_update( array $data ): array {
         }
     }
 
-    foreach ( [ 'university', 'faculty', 'specialization', ] as $field ) {
-        if ( array_key_exists( $field, $data ) ) {
-            $value = trim( (string) $data[$field] );
-            if ( $value === '' ) {
-                $errors[$field] = ucfirst( $field ) . ' cannot be empty.';
-            } elseif ( strlen( $value ) > 255 ) {
-                $errors[$field] = ucfirst( $field ) . ' must not exceed 255 characters.';
-            }
+    $user_field_key = array_key_exists( 'field', $data ) ? 'field' : 'faculty';
+
+    if ( array_key_exists( $user_field_key, $data ) ) {
+        $user_field = trim( (string) $data[$user_field_key] );
+        if ( $user_field === '' ) {
+            $errors[$user_field_key] = 'User field cannot be empty.';
+        } elseif ( strlen( $user_field ) > 255 ) {
+            $errors[$user_field_key] = 'User field must not exceed 255 characters.';
+        }
+    }
+
+    if ( array_key_exists( 'specialization', $data ) ) {
+        $specialization = trim( (string) $data['specialization'] );
+        if ( $specialization === '' ) {
+            $errors['specialization'] = 'Specialization cannot be empty.';
+        } elseif ( strlen( $specialization ) > 255 ) {
+            $errors['specialization'] = 'Specialization must not exceed 255 characters.';
         }
     }
 

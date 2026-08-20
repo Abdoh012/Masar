@@ -18,7 +18,8 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `masar`
+create Database `masar`;
+use `masar`;
 --
 
 -- --------------------------------------------------------
@@ -271,7 +272,7 @@ CREATE TABLE `company_specializations` (
 CREATE TABLE `company_work_fields` (
   `id` bigint UNSIGNED NOT NULL,
   `company_id` bigint UNSIGNED NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `field_id` bigint UNSIGNED NOT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -696,6 +697,7 @@ CREATE TABLE `students` (
   `bio` text COLLATE utf8mb4_unicode_ci,
   `university_id` bigint UNSIGNED DEFAULT NULL,
   `faculty_id` bigint UNSIGNED DEFAULT NULL,
+  `field_id` bigint UNSIGNED DEFAULT NULL,
   `degree_id` bigint UNSIGNED DEFAULT NULL,
   `specialization_id` bigint UNSIGNED DEFAULT NULL,
   `graduation_year` year DEFAULT NULL,
@@ -730,6 +732,30 @@ CREATE TABLE `student_skills` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `study_fields`
+--
+
+CREATE TABLE `study_fields` (
+  `id` bigint UNSIGNED NOT NULL,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `study_fields`
+--
+
+INSERT INTO `study_fields` (`id`, `name`, `is_active`, `created_at`, `updated_at`) VALUES
+(1, 'Engineering', 1, '2026-08-19 00:00:00', '2026-08-19 00:00:00'),
+(2, 'Computer Science', 1, '2026-08-19 00:00:00', '2026-08-19 00:00:00'),
+(3, 'Business', 1, '2026-08-19 00:00:00', '2026-08-19 00:00:00'),
+(4, 'Medicine', 1, '2026-08-19 00:00:00', '2026-08-19 00:00:00');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `training_applications`
 --
 
@@ -738,6 +764,13 @@ CREATE TABLE `training_applications` (
   `training_id` bigint UNSIGNED NOT NULL,
   `student_id` bigint UNSIGNED NOT NULL,
   `message` text COLLATE utf8mb4_unicode_ci,
+  `cv_file_id` bigint UNSIGNED DEFAULT NULL,
+  `university_id` bigint UNSIGNED DEFAULT NULL,
+  `faculty_id` bigint UNSIGNED DEFAULT NULL,
+  `applicant_type` enum('student','graduated') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `academic_year` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `graduation_year` year DEFAULT NULL,
+  `motivation` text COLLATE utf8mb4_unicode_ci,
   `status` enum('submitted','accepted','rejected','withdrawn') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'submitted',
   `rejection_reason` enum('position_filled','candidate_not_suitable','requirements_not_met','training_closed','other') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `rejection_note` text COLLATE utf8mb4_unicode_ci,
@@ -771,6 +804,7 @@ CREATE TABLE `training_listings` (
   `published_at` datetime DEFAULT NULL,
   `starts_at` datetime DEFAULT NULL,
   `ends_at` datetime DEFAULT NULL,
+  `application_deadline` datetime DEFAULT NULL,
   `closed_at` datetime DEFAULT NULL,
   `location` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -820,6 +854,50 @@ CREATE TABLE `training_skills` (
 CREATE TABLE `training_specializations` (
   `training_id` bigint UNSIGNED NOT NULL,
   `specialization_id` bigint UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `saved_trainings`
+--
+
+CREATE TABLE `saved_trainings` (
+  `id` bigint UNSIGNED NOT NULL,
+  `student_id` bigint UNSIGNED NOT NULL,
+  `training_id` bigint UNSIGNED NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `training_questions`
+--
+
+CREATE TABLE `training_questions` (
+  `id` bigint UNSIGNED NOT NULL,
+  `training_id` bigint UNSIGNED NOT NULL,
+  `question` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `question_type` enum('text','textarea','select','radio') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'text',
+  `required` tinyint(1) NOT NULL DEFAULT '0',
+  `options` text COLLATE utf8mb4_unicode_ci,
+  `sort_order` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `application_answers`
+--
+
+CREATE TABLE `application_answers` (
+  `id` bigint UNSIGNED NOT NULL,
+  `application_id` bigint UNSIGNED NOT NULL,
+  `question_id` bigint UNSIGNED NOT NULL,
+  `answer` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -986,8 +1064,8 @@ ALTER TABLE `company_specializations`
 --
 ALTER TABLE `company_work_fields`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `uq_company_work_field` (`company_id`,`name`),
-  ADD KEY `idx_company_work_fields_name` (`name`);
+  ADD UNIQUE KEY `uq_company_work_field` (`company_id`,`field_id`),
+  ADD KEY `idx_company_work_fields_field` (`field_id`);
 
 --
 -- Indexes for table `conversations`
@@ -1112,6 +1190,7 @@ ALTER TABLE `students`
   ADD UNIQUE KEY `user_id` (`user_id`),
   ADD KEY `idx_students_university` (`university_id`),
   ADD KEY `idx_students_faculty` (`faculty_id`),
+  ADD KEY `idx_students_field` (`field_id`),
   ADD KEY `idx_students_degree` (`degree_id`),
   ADD KEY `idx_students_specialization` (`specialization_id`),
   ADD KEY `idx_students_city` (`city`),
@@ -1125,6 +1204,14 @@ ALTER TABLE `students`
 ALTER TABLE `student_skills`
   ADD PRIMARY KEY (`student_id`,`skill_id`),
   ADD KEY `fk_student_skills_skill` (`skill_id`);
+
+--
+-- Indexes for table `study_fields`
+--
+ALTER TABLE `study_fields`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_study_field_name` (`name`),
+  ADD KEY `idx_study_fields_name` (`name`);
 
 --
 -- Indexes for table `training_applications`
@@ -1176,6 +1263,29 @@ ALTER TABLE `training_skills`
 ALTER TABLE `training_specializations`
   ADD PRIMARY KEY (`training_id`,`specialization_id`),
   ADD KEY `idx_training_specializations_specialization` (`specialization_id`);
+
+--
+-- Indexes for table `saved_trainings`
+--
+ALTER TABLE `saved_trainings`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_saved_student_training` (`student_id`,`training_id`),
+  ADD KEY `idx_saved_trainings_training` (`training_id`);
+
+--
+-- Indexes for table `training_questions`
+--
+ALTER TABLE `training_questions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_training_questions_training` (`training_id`);
+
+--
+-- Indexes for table `application_answers`
+--
+ALTER TABLE `application_answers`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_application_answers_application` (`application_id`),
+  ADD KEY `idx_application_answers_question` (`question_id`);
 
 --
 -- Indexes for table `universities`
@@ -1329,6 +1439,12 @@ ALTER TABLE `students`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=86;
 
 --
+-- AUTO_INCREMENT for table `study_fields`
+--
+ALTER TABLE `study_fields`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
 -- AUTO_INCREMENT for table `training_applications`
 --
 ALTER TABLE `training_applications`
@@ -1338,6 +1454,24 @@ ALTER TABLE `training_applications`
 -- AUTO_INCREMENT for table `training_listings`
 --
 ALTER TABLE `training_listings`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `saved_trainings`
+--
+ALTER TABLE `saved_trainings`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `training_questions`
+--
+ALTER TABLE `training_questions`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `application_answers`
+--
+ALTER TABLE `application_answers`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
@@ -1416,7 +1550,8 @@ ALTER TABLE `company_specializations`
 -- Constraints for table `company_work_fields`
 --
 ALTER TABLE `company_work_fields`
-  ADD CONSTRAINT `fk_company_work_fields_company` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `fk_company_work_fields_company` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_company_work_fields_field` FOREIGN KEY (`field_id`) REFERENCES `study_fields` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `conversations`
@@ -1485,6 +1620,7 @@ ALTER TABLE `students`
   ADD CONSTRAINT `fk_students_cv_file` FOREIGN KEY (`cv_file_id`) REFERENCES `files` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `fk_students_degree` FOREIGN KEY (`degree_id`) REFERENCES `degrees` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `fk_students_faculty` FOREIGN KEY (`faculty_id`) REFERENCES `faculties` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_students_field` FOREIGN KEY (`field_id`) REFERENCES `study_fields` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `fk_students_profile_image_file` FOREIGN KEY (`profile_image_file_id`) REFERENCES `files` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `fk_students_specialization` FOREIGN KEY (`specialization_id`) REFERENCES `specializations` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `fk_students_university` FOREIGN KEY (`university_id`) REFERENCES `universities` (`id`) ON DELETE SET NULL,
@@ -1503,7 +1639,10 @@ ALTER TABLE `student_skills`
 ALTER TABLE `training_applications`
   ADD CONSTRAINT `fk_applications_reviewer` FOREIGN KEY (`reviewed_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `fk_applications_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_applications_training` FOREIGN KEY (`training_id`) REFERENCES `training_listings` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `fk_applications_training` FOREIGN KEY (`training_id`) REFERENCES `training_listings` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_applications_cv_file` FOREIGN KEY (`cv_file_id`) REFERENCES `files` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_applications_university` FOREIGN KEY (`university_id`) REFERENCES `universities` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_applications_faculty` FOREIGN KEY (`faculty_id`) REFERENCES `faculties` (`id`) ON DELETE SET NULL;
 
 --
 -- Constraints for table `training_listings`
@@ -1533,6 +1672,26 @@ ALTER TABLE `training_skills`
 ALTER TABLE `training_specializations`
   ADD CONSTRAINT `fk_training_specializations_specialization` FOREIGN KEY (`specialization_id`) REFERENCES `specializations` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_training_specializations_training` FOREIGN KEY (`training_id`) REFERENCES `training_listings` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `saved_trainings`
+--
+ALTER TABLE `saved_trainings`
+  ADD CONSTRAINT `fk_saved_trainings_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_saved_trainings_training` FOREIGN KEY (`training_id`) REFERENCES `training_listings` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `training_questions`
+--
+ALTER TABLE `training_questions`
+  ADD CONSTRAINT `fk_training_questions_training` FOREIGN KEY (`training_id`) REFERENCES `training_listings` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `application_answers`
+--
+ALTER TABLE `application_answers`
+  ADD CONSTRAINT `fk_application_answers_application` FOREIGN KEY (`application_id`) REFERENCES `training_applications` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_application_answers_question` FOREIGN KEY (`question_id`) REFERENCES `training_questions` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `verification_tokens`

@@ -9,6 +9,7 @@ require_once __DIR__ . '/../app/core/middleware/admin.php';
 require_once __DIR__ . '/../app/modules/admin/controllers/user_admin_controller.php';
 require_once __DIR__ . '/../app/modules/admin/controllers/company_admin_controller.php';
 require_once __DIR__ . '/../app/modules/admin/controllers/training_admin_controller.php';
+require_once __DIR__ . '/../app/modules/students/controllers/student_admin_controller.php';
 
 $path = request_path();
 $method = request_method();
@@ -20,6 +21,11 @@ if ($path === '/api/v1/admin/dashboard' && $method === 'GET') {
         'message' => 'Admin dashboard is ready.',
         'available_sections' => ['users', 'companies', 'trainings']
     ]);
+    return;
+}
+
+if (preg_match('#^/api/v1/admin/students/([0-9]+)/delete$#', $path, $matches) && $method === 'DELETE') {
+    student_admin_controller_delete((int) $matches[1]);
     return;
 }
 

@@ -24,7 +24,10 @@ function file_route_respond( array $result, int $success_status = 200 ): void {
         response_json( $result['data'] ?? null, $success_status, $result['message'] ?? 'Success.' );
     }
 
-    response_error( $result['message'] ?? 'Unable to process request.', 400 );
+    response_error(
+        $result['message'] ?? 'Unable to process request.',
+        (int) ( $result['status'] ?? 400 )
+    );
 }
 
 /*
@@ -42,6 +45,25 @@ if ($path === '/api/v1/files' && $method === 'POST') {
     }
     $result = file_controller_upload( $request_data, $files );
     file_route_respond( $result, 201 );
+    return;
+}
+
+if ($path === '/api/v1/files/multiple' && $method === 'POST') {
+    middleware_auth();
+    $request_data = request_input();
+    $files = request_files();
+    if ( empty( $request_data['type'] ) ) {
+        $request_data['type'] = 'other';
+    }
+    $result = file_controller_upload_multiple( $request_data, $files );
+    file_route_respond( $result, 201 );
+    return;
+}
+
+if (preg_match('#^/api/v1/files/([0-9]+)/download$#', $path, $matches) && $method === 'GET') {
+    middleware_auth();
+    $result = file_controller_download((int) $matches[1]);
+    file_route_respond($result);
     return;
 }
 

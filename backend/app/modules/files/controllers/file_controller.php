@@ -8,188 +8,80 @@
  *
  * Controller
  *     ↓
- * FileUploadService
+ * file_upload_service_*()
  *     ↓
- * FileRepository
+ * file_repository_*()
  */
 
-
-/*
-|--------------------------------------------------------------------------
-| Dependencies
-|--------------------------------------------------------------------------
-*/
-
-$service_file =
-    __DIR__ .
-    '/../services/file_upload_service.php';
-
-
-if (file_exists($service_file)) {
-    require_once $service_file;
-}
-
-
-$repository_file =
-    __DIR__ .
-    '/../repositories/file_repository.php';
-
-
-if (file_exists($repository_file)) {
-    require_once $repository_file;
-}
+require_once __DIR__ . '/../services/file_upload_service.php';
+require_once __DIR__ . '/../repositories/file_repository.php';
 
 
 /*
 |--------------------------------------------------------------------------
-| File Controller
+| Get Authenticated User ID
 |--------------------------------------------------------------------------
 */
 
-class FileController
+function file_controller_auth_user_id(): int
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Service
-    |--------------------------------------------------------------------------
-    */
-
-    protected function service(): mixed
-    {
-        if (
-            class_exists(
-                'FileUploadService'
-            )
-        ) {
-
-            return new FileUploadService();
-        }
+    $user = auth_user();
+    return max( 0, (int) ( $user['id'] ?? 0 ) );
+}
 
 
-        return null;
+/*
+|--------------------------------------------------------------------------
+| Upload
+|--------------------------------------------------------------------------
+*/
+
+function file_controller_upload( array $request = [], array $files = [] ): array {
+    $user_id = file_controller_auth_user_id();
+    if ($user_id <= 0) {
+        return [ 'success' => false, 'message' => 'Unauthorized.'];
     }
 
+    $file = file_controller_resolve_uploaded_file( $files, $request );
 
-    /*
-    |--------------------------------------------------------------------------
-    | Repository
-    |--------------------------------------------------------------------------
-    */
-
-    protected function repository(): mixed
-    {
-        if (
-            class_exists(
-                'FileRepository'
-            )
-        ) {
-
-            return new FileRepository();
-        }
-
-
-        return null;
+    if ( $file === null ) {
+        return [ 'success' => false, 'message' => 'No file was provided.'];
     }
 
+    $options = [ 'user_id' => $user_id, 'directory' => $request['directory'] ?? null, 'folder' => $request['folder'] ?? null, 'type' => $request['type'] ?? null, 'category' => $request['category'] ?? null, 'visibility' => $request['visibility'] ?? 'private'];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Get Authenticated User ID
-    |--------------------------------------------------------------------------
-    */
+    try { $result = file_upload_service_upload( $file, $options );
+        return file_controller_success( is_array($result) ? file_controller_sanitize_file($result) : $result, 'File uploaded successfully.');
+    } catch (Throwable $e) {
+        return file_controller_error( 'Unable to upload file.');
+    }
+}
 
-    protected function getAuthenticatedUserId(): int
-    {
 
-        $user = auth_user();
+/*
+|--------------------------------------------------------------------------
+| Upload Multiple Files
+|--------------------------------------------------------------------------
+*/
 
-        return max(
-            0,
-            (int) (
-                $user['id'] ?? 0
-            )
-        );
+function file_controller_upload_multiple( array $request = [], array $files = [] ): array {
+    $user_id = file_controller_auth_user_id();
+
+    if ($user_id <= 0) {
+        return  ['success' => false, 'message' => 'Unauthorized.' ];
     }
 
+    $uploaded_files = file_controller_normalize_multiple_files( $files );
 
-    /*
-    |--------------------------------------------------------------------------
-    | Upload
-    |--------------------------------------------------------------------------
-    */
+    if ( empty( $uploaded_files ) ) {
+        return  ['success' => false, 'message' => 'No files were provided.'];
+    }
 
-    public function upload(
-        array $request = [],
-        array $files = []
-    ): array {
+    $results = [];
+    $success = true;
 
-        /*
-         * Get authenticated user ID from authentication context.
-         * Never trust client-supplied user_id.
-         */
-        $user_id = $this->getAuthenticatedUserId();
-
-        if ($user_id <= 0) {
-
-            return [
-                'success' =>
-                    false,
-
-                'message' =>
-                    'Unauthorized.'
-            ];
-        }
-
-
-        /*
-         * Resolve uploaded file.
-         */
-
-        $file =
-            $this->resolveUploadedFile(
-                $files,
-                $request
-            );
-
-
-        if (
-            $file === null
-        ) {
-
-            return [
-                'success' =>
-                    false,
-
-                'message' =>
-                    'No file was provided.'
-            ];
-        }
-
-
-        $service =
-            $this->service();
-
-
-        if (
-            $service === null
-        ) {
-
-            return [
-                'success' =>
-                    false,
-
-                'message' =>
-                    'File upload service is unavailable.'
-            ];
-        }
-
-
-        /*
-         * Build upload options.
-         */
-
+    foreach ( $uploaded_files as $file ) {
         $options = [
-
             'user_id' =>
                 $user_id,
 
@@ -214,1124 +106,406 @@ class FileController
                 ?? 'private'
         ];
 
-
         try {
+            $result = file_upload_service_upload( $file, $options );
+            $results[] = $result;
 
-            if (
-                method_exists(
-                    $service,
-                    'upload'
-                )
-            ) {
-
-                $result =
-                    $service->upload(
-                        $file,
-                        $options
-                    );
-
-            } elseif (
-                method_exists(
-                    $service,
-                    'store'
-                )
-            ) {
-
-                $result =
-                    $service->store(
-                        $file,
-                        $options
-                    );
-
-            } else {
-
-                return [
-                    'success' =>
-                        false,
-
-                    'message' =>
-                        'Upload method is unavailable.'
-                ];
-            }
-
-
-            return $this->success(
-                is_array($result)
-                    ? $this->sanitizeFile($result)
-                    : $result,
-                'File uploaded successfully.'
-            );
-
-        } catch (Throwable $e) {
-
-            return $this->error(
-                'Unable to upload file.'
-            );
-        }
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Upload Multiple Files
-    |--------------------------------------------------------------------------
-    */
-
-    public function uploadMultiple(
-        array $request = [],
-        array $files = []
-    ): array {
-
-        /*
-         * Get authenticated user ID from authentication context.
-         * Never trust client-supplied user_id.
-         */
-        $user_id = $this->getAuthenticatedUserId();
-
-        if ($user_id <= 0) {
-
-            return [
-                'success' =>
-                    false,
-
-                'message' =>
-                    'Unauthorized.'
-            ];
-        }
-
-
-        $service =
-            $this->service();
-
-
-        if (
-            $service === null
-        ) {
-
-            return [
-                'success' =>
-                    false,
-
-                'message' =>
-                    'File upload service is unavailable.'
-            ];
-        }
-
-
-        /*
-         * Collect files.
-         */
-
-        $uploaded_files =
-            $this->normalizeMultipleFiles(
-                $files
-            );
-
-
-        if (
-            empty(
-                $uploaded_files
-            )
-        ) {
-
-            return [
-                'success' =>
-                    false,
-
-                'message' =>
-                    'No files were provided.'
-            ];
-        }
-
-
-        $results = [];
-        $success = true;
-
-
-        foreach (
-            $uploaded_files
-            as $file
-        ) {
-
-            $options = [
-
-                'user_id' =>
-                    $user_id,
-
-                'directory' =>
-                    $request['directory']
-                    ?? null,
-
-                'folder' =>
-                    $request['folder']
-                    ?? null,
-
-                'type' =>
-                    $request['type']
-                    ?? null,
-
-                'category' =>
-                    $request['category']
-                    ?? null,
-
-                'visibility' =>
-                    $request['visibility']
-                    ?? 'private'
-            ];
-
-
-            try {
-
-                if (
-                    method_exists(
-                        $service,
-                        'upload'
-                    )
-                ) {
-
-                    $result =
-                        $service->upload(
-                            $file,
-                            $options
-                        );
-
-                } elseif (
-                    method_exists(
-                        $service,
-                        'store'
-                    )
-                ) {
-
-                    $result =
-                        $service->store(
-                            $file,
-                            $options
-                        );
-
-                } else {
-
-                    $result = false;
-                }
-
-
-                $results[] =
-                    $result;
-
-
-                if (
-                    $result === false
-                ) {
-
-                    $success = false;
-                }
-
-            } catch (Throwable $e) {
-
-                $results[] =
-                    false;
-
+            if ( $result === false ) {
                 $success = false;
             }
-        }
-
-
-        return [
-            'success' =>
-                $success,
-
-            'message' =>
-                $success
-                    ? 'Files uploaded successfully.'
-                    : 'Some files could not be uploaded.',
-
-'data' =>
-                $this->sanitizeFileList(
-                    $results
-                )
-        ];
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Sanitize File List
-    |--------------------------------------------------------------------------
-    */
-
-    protected function sanitizeFileList(
-        array $items
-    ): array {
-
-        $sanitized = [];
-
-        foreach ($items as $item) {
-            $sanitized[] =
-                is_array($item)
-                    ? $this->sanitizeFile($item)
-                    : $item;
-        }
-
-        return $sanitized;
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Get File
-    |--------------------------------------------------------------------------
-    */
-
-    public function show(
-        int $file_id
-    ): array {
-
-        /*
-         * Get authenticated user ID from authentication context.
-         * Never trust client-supplied user_id.
-         */
-        $user_id = $this->getAuthenticatedUserId();
-
-        if ($user_id <= 0) {
-
-            return $this->error(
-                'Unauthorized.'
-            );
-        }
-
-
-        $repository =
-            $this->repository();
-
-
-        if (
-            $repository === null
-        ) {
-
-            return $this->error(
-                'File repository is unavailable.'
-            );
-        }
-
-
-        try {
-
-            if (
-                method_exists(
-                    $repository,
-                    'findForUser'
-                )
-            ) {
-
-                $file =
-                    $repository->findForUser(
-                        $file_id,
-                        $user_id
-                    );
-
-            } elseif (
-                method_exists(
-                    $repository,
-                    'find'
-                )
-            ) {
-
-                $file =
-                    $repository->find(
-                        $file_id
-                    );
-
-
-                if (
-                    $file &&
-                    (int) (
-                        $file['user_id']
-                        ?? 0
-                    ) !== $user_id
-                ) {
-
-                    $file = null;
-                }
-
-            } else {
-
-                $file = null;
-            }
-
-
-            if (!$file) {
-
-                return $this->error(
-                    'File not found.'
-                );
-            }
-
-
-            return $this->success(
-                $this->sanitizeFile($file)
-            );
 
         } catch (Throwable $e) {
-
-            return $this->error(
-                'Unable to retrieve file.'
-            );
+            $results[] = false;
+            $success = false;
         }
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | List User Files
-    |--------------------------------------------------------------------------
-    */
+    return [
+        'success' =>
+            $success,
 
-    public function index(
-        array $request = []
-    ): array {
+        'message' =>
+            $success
+                ? 'Files uploaded successfully.'
+                : 'Some files could not be uploaded.',
 
-        /*
-         * Get authenticated user ID from authentication context.
-         * Never trust client-supplied user_id.
-         */
-        $user_id = $this->getAuthenticatedUserId();
-
-        if ($user_id <= 0) {
-
-            return $this->error(
-                'Unauthorized.'
-            );
-        }
-
-
-        $repository =
-            $this->repository();
-
-
-        if (
-            $repository === null
-        ) {
-
-            return $this->error(
-                'File repository is unavailable.'
-            );
-        }
-
-
-        $filters = [
-
-            'page' =>
-                max(
-                    1,
-                    (int) (
-                        $request['page']
-                        ?? 1
-                    )
-                ),
-
-            'limit' =>
-                max(
-                    1,
-                    min(
-                        100,
-                        (int) (
-                            $request['limit']
-                            ?? 20
-                        )
-                    )
-                ),
-
-            'category' =>
-                $request['category']
-                ?? null,
-
-            'type' =>
-                $request['type']
-                ?? null,
-
-            'search' =>
-                $request['search']
-                ?? null
-        ];
-
-
-        try {
-
-            if (
-                method_exists(
-                    $repository,
-                    'listForUser'
-                )
-            ) {
-
-                $files =
-                    $repository->listForUser(
-                        $user_id,
-                        $filters
-                    );
-
-            } elseif (
-                method_exists(
-                    $repository,
-                    'list'
-                )
-            ) {
-
-                $files =
-                    $repository->list(
-                        $user_id,
-                        $filters
-                    );
-
-            } else {
-
-                $files = [];
-            }
-
-
-            return $this->success(
-                array_map(
-                    fn ($item) =>
-                        $this->sanitizeFile($item),
-                    $files
-                )
-            );
-
-        } catch (Throwable $e) {
-
-            return $this->error(
-                'Unable to retrieve files.'
-            );
-        }
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Delete
-    |--------------------------------------------------------------------------
-    */
-
-    public function delete(
-        int $file_id
-    ): array {
-
-        /*
-         * Get authenticated user ID from authentication context.
-         * Never trust client-supplied user_id.
-         */
-        $user_id = $this->getAuthenticatedUserId();
-
-        if ($user_id <= 0) {
-
-            return $this->error(
-                'Unauthorized.'
-            );
-        }
-
-
-        $service =
-            $this->service();
-
-
-        $repository =
-            $this->repository();
-
-
-        /*
-         * Prefer service-level deletion.
-         */
-
-        if (
-            $service !== null &&
-            method_exists(
-                $service,
-                'delete'
+        'data' =>
+            file_controller_sanitize_file_list(
+                $results
             )
-        ) {
-
-            try {
-
-                $result =
-                    $service->delete(
-                        $file_id,
-                        $user_id
-                    );
+    ];
+}
 
 
-                return $this->success(
-                    $result,
-                    'File deleted successfully.'
-                );
+/*
+|--------------------------------------------------------------------------
+| Sanitize File List
+|--------------------------------------------------------------------------
+*/
 
-            } catch (Throwable $e) {
+function file_controller_sanitize_file_list( array $items ): array {
 
-                return $this->error(
-                    'Unable to delete file.'
-                );
-            }
-        }
+    $sanitized = [];
 
+    foreach ($items as $item) {
+        $sanitized[] = is_array($item) ? file_controller_sanitize_file($item) : $item;
+    }
 
-        /*
-         * Repository fallback.
-         */
-
-        if (
-            $repository !== null &&
-            method_exists(
-                $repository,
-                'delete'
-            )
-        ) {
-
-            try {
-
-                $result =
-                    $repository->delete(
-                        $file_id,
-                        $user_id
-                    );
+    return $sanitized;
+}
 
 
-                if (!$result) {
+/*
+|--------------------------------------------------------------------------
+| Get File
+|--------------------------------------------------------------------------
+*/
 
-                    return $this->error(
-                        'File could not be deleted.'
-                    );
-                }
+function file_controller_show( int $file_id ): array {
 
+    $user_id = file_controller_auth_user_id();
 
-                return $this->success(
-                    true,
-                    'File deleted successfully.'
-                );
-
-            } catch (Throwable $e) {
-
-                return $this->error(
-                    'Unable to delete file.'
-                );
-            }
-        }
-
-        return $this->error(
-            'File deletion is unavailable.'
-        );
+    if ($user_id <= 0) {
+        return file_controller_error( 'Unauthorized.' );
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Download
-    |--------------------------------------------------------------------------
-    */
+    try {
+        $file = file_repository_find_for_user( $file_id, $user_id );
 
-    public function download(
-        int $file_id
-    ): array {
-
-        /*
-         * Get authenticated user ID from authentication context.
-         * Never trust client-supplied user_id.
-         */
-        $user_id = $this->getAuthenticatedUserId();
-
-        if ($user_id <= 0) {
-
-            return $this->error(
-                'Unauthorized.'
-            );
+        if (!$file) {
+            return file_controller_error( 'File not found.' );
         }
 
+        return file_controller_success( file_controller_sanitize_file($file) );
 
-        $repository =
-            $this->repository();
+    } catch (Throwable $e) {
 
-
-        if (
-            $repository === null
-        ) {
-
-            return $this->error(
-                'File repository is unavailable.'
-            );
-        }
-
-
-        try {
-
-            if (
-                method_exists(
-                    $repository,
-                    'findForUser'
-                )
-            ) {
-
-                $file =
-                    $repository->findForUser(
-                        $file_id,
-                        $user_id
-                    );
-
-            } elseif (
-                method_exists(
-                    $repository,
-                    'find'
-                )
-            ) {
-
-                $file =
-                    $repository->find(
-                        $file_id
-                    );
-
-
-                if (
-                    $file &&
-                    (int) (
-                        $file['user_id']
-                        ?? 0
-                    ) !== $user_id
-                ) {
-
-                    $file = null;
-                }
-
-            } else {
-
-                $file = null;
-            }
-
-
-            if (!$file) {
-
-                return $this->error(
-                    'File not found.'
-                );
-            }
-
-
-            $path =
-                $file['path']
-                ?? $file['storage_path']
-                ?? $file['file_path']
-                ?? null;
-
-
-            if (
-                !$path ||
-                !is_file(
-                    $path
-                )
-            ) {
-
-                return $this->error(
-                    'Physical file not found.'
-                );
-            }
-
-
-            return [
-                'success' =>
-                    true,
-
-                'download' =>
-                    true,
-
-                'path' =>
-                    $path,
-
-                'filename' =>
-                    $file['original_name']
-                    ?? $file['filename']
-                    ?? basename($path),
-
-                'mime_type' =>
-                    $file['mime_type']
-                    ?? 'application/octet-stream',
-
-                'size' =>
-                    (int) (
-                        $file['size']
-                        ?? filesize($path)
-                    )
-            ];
-
-        } catch (Throwable $e) {
-
-            return $this->error(
-                'Unable to download file.'
-            );
-        }
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Resolve Uploaded File
-    |--------------------------------------------------------------------------
-    */
-
-    protected function resolveUploadedFile(
-        array $files,
-        array $request = []
-    ): ?array {
-
-        /*
-         * Explicit file key.
-         */
-
-        if (
-            isset(
-                $files['file']
-            )
-        ) {
-
-            $file =
-                $files['file'];
-
-
-            if (
-                is_array($file) &&
-                isset(
-                    $file['tmp_name']
-                )
-            ) {
-
-                return $file;
-            }
-        }
-
-
-        /*
-         * Request may already contain a
-         * normalized file object/array.
-         */
-
-        if (
-            isset(
-                $request['file']
-            ) &&
-            is_array(
-                $request['file']
-            )
-        ) {
-
-            if (
-                isset(
-                    $request['file']['tmp_name']
-                )
-            ) {
-
-                return
-                    $request['file'];
-            }
-        }
-
-
-        /*
-         * First uploaded file fallback.
-         */
-
-        foreach (
-            $files
-            as $file
-        ) {
-
-            if (
-                is_array($file) &&
-                isset(
-                    $file['tmp_name']
-                )
-            ) {
-
-                return $file;
-            }
-        }
-
-
-        return null;
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Normalize Multiple Files
-    |--------------------------------------------------------------------------
-    */
-
-    protected function normalizeMultipleFiles(
-        array $files
-    ): array {
-
-        $result = [];
-
-        foreach (
-            $files
-            as $key => $value
-        ) {
-
-            /*
-             * Standard single upload.
-             */
-
-            if (
-                is_array($value) &&
-                isset(
-                    $value['tmp_name']
-                )
-            ) {
-
-                /*
-                 * Multiple upload format.
-                 */
-
-                if (
-                    is_array(
-                        $value['tmp_name']
-                    )
-                ) {
-
-                    $count =
-                        count(
-                            $value['tmp_name']
-                        );
-
-
-                    for (
-                        $i = 0;
-                        $i < $count;
-                        $i++
-                    ) {
-
-                        $result[] = [
-
-                            'name' =>
-                                $value['name'][$i]
-                                ?? '',
-
-                            'type' =>
-                                $value['type'][$i]
-                                ?? '',
-
-                            'tmp_name' =>
-                                $value['tmp_name'][$i]
-                                ?? '',
-
-                            'error' =>
-                                $value['error'][$i]
-                                ?? UPLOAD_ERR_NO_FILE,
-
-                            'size' =>
-                                $value['size'][$i]
-                                ?? 0
-                        ];
-                    }
-                } else {
-
-                    $result[] =
-                        $value;
-                }
-            }
-        }
-
-        return $result;
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Public File URL
-    |--------------------------------------------------------------------------
-    |
-    | Builds the public API download URL for a file. The absolute filesystem
-    | path is never exposed to clients.
-    */
-
-    protected function publicFileUrl(
-        int $file_id
-    ): string {
-
-        $base =
-            rtrim(
-                (string) (
-                    getenv('APP_URL')
-                    ?: 'http://localhost/Masar/backend'
-                ),
-                '/'
-            );
-
-        return
-            $base .
-            '/api/v1/files/' .
-            $file_id .
-            '?download=true';
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Sanitize File
-    |--------------------------------------------------------------------------
-    |
-    | Removes internal filesystem fields from a file record before it is
-    | returned to a client and attaches a public download URL.
-    */
-
-    protected function sanitizeFile(
-        array $file
-    ): array {
-
-        unset(
-            $file['path'],
-            $file['storage_path']
-        );
-
-        $file_id =
-            (int) (
-                $file['id']
-                ?? 0
-            );
-
-        if ($file_id > 0) {
-
-            $file['url'] =
-                $this->publicFileUrl(
-                    $file_id
-                );
-        }
-
-        return $file;
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Success Response
-    |--------------------------------------------------------------------------
-    */
-
-    protected function success(
-        mixed $data = null,
-        string $message = 'Success.'
-    ): array {
-
-        return [
-
-            'success' =>
-                true,
-
-            'message' =>
-                $message,
-
-            'data' =>
-                $data
-        ];
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Error Response
-    |--------------------------------------------------------------------------
-    */
-
-    protected function error(
-        string $message
-    ): array {
-
-        return [
-
-            'success' =>
-                false,
-
-            'message' =>
-                $message,
-
-            'data' =>
-                null
-        ];
+        return file_controller_error( 'Unable to retrieve file.' );
     }
 }
 
 
 /*
 |--------------------------------------------------------------------------
-| Function-Based Compatibility API
+| List User Files
 |--------------------------------------------------------------------------
 */
 
-function file_controller_upload(
-    array $request = [],
-    array $files = []
-): array {
+function file_controller_index( array $request = [] ): array {
 
-    return
-        (new FileController())
-            ->upload(
-                $request,
+    $user_id = file_controller_auth_user_id();
+
+    if ($user_id <= 0) {
+        return file_controller_error( 'Unauthorized.' );
+    }
+
+    $filters = [
+        'page' =>
+            max( 1, (int) ( $request['page'] ?? 1 ) ),
+
+        'limit' =>
+            max( 1, min( 100, (int) ( $request['limit'] ?? 20 ) ) ),
+
+        'category' =>
+            $request['category']
+            ?? null,
+
+        'type' =>
+            $request['type']
+            ?? null,
+
+        'search' =>
+            $request['search']
+            ?? null
+    ];
+
+
+    try {
+        $files =
+            file_repository_list_for_user(
+                $user_id,
+                $filters
+            );
+
+
+        return file_controller_success(
+            array_map(
+                fn ($item) =>
+                    file_controller_sanitize_file($item),
                 $files
-            );
+            )
+        );
+
+    } catch (Throwable $e) {
+
+        return file_controller_error(
+            'Unable to retrieve files.'
+        );
+    }
 }
 
 
-function file_controller_upload_multiple(
-    array $request = [],
-    array $files = []
-): array {
+/*
+|--------------------------------------------------------------------------
+| Delete
+|--------------------------------------------------------------------------
+*/
 
-    return
-        (new FileController())
-            ->uploadMultiple(
-                $request,
-                $files
-            );
+function file_controller_delete( int $file_id): array {
+
+    $user_id = file_controller_auth_user_id();
+
+    if ($user_id <= 0) {
+        return file_controller_error( 'Unauthorized.');
+    }
+
+    try {
+        $file = file_repository_find_for_user( $file_id, $user_id );
+
+        if (!$file) {
+            return file_controller_error( 'File not found.', 404 );
+        }
+
+        $result = file_upload_service_delete( $file_id, $user_id );
+
+        return file_controller_success( $result, 'File deleted successfully.' );
+
+    } catch (Throwable $e) {
+        return file_controller_error( 'Unable to delete file.' );
+    }
 }
 
 
-function file_controller_index(
-    array $request = []
-): array {
+/*
+|--------------------------------------------------------------------------
+| Download
+|--------------------------------------------------------------------------
+*/
 
-    return
-        (new FileController())
-            ->index(
-                $request
-            );
+function file_controller_download( int $file_id ): array {
+
+    $user_id = file_controller_auth_user_id();
+
+    if ($user_id <= 0) {
+        return file_controller_error( 'Unauthorized.' );
+    }
+
+    try {
+        $file = file_repository_find_for_user( $file_id, $user_id );
+
+        if (!$file) {
+            return file_controller_error( 'File not found.' );
+        }
+
+        $path = $file['path'] ?? $file['storage_path'] ?? $file['file_path'] ?? null;
+
+        if ( !$path || !is_file( $path ) ) {
+            return file_controller_error( 'Physical file not found.' );
+        }
+
+        return [
+            'success' =>
+                true,
+
+            'download' =>
+                true,
+
+            'path' =>
+                $path,
+
+            'filename' =>
+                $file['original_name']
+                ?? $file['filename']
+                ?? basename($path),
+
+            'mime_type' =>
+                $file['mime_type']
+                ?? 'application/octet-stream',
+
+            'size' =>
+                (int) ( $file['size'] ?? filesize($path) )
+        ];
+
+    } catch (Throwable $e) {
+        return file_controller_error( 'Unable to download file.' );
+    }
 }
 
 
-function file_controller_show(
-    int $file_id
-): array {
+/*
+|--------------------------------------------------------------------------
+| Resolve Uploaded File
+|--------------------------------------------------------------------------
+*/
 
-    return
-        (new FileController())
-            ->show(
-                $file_id
-            );
+function file_controller_resolve_uploaded_file( array $files, array $request = [] ): ?array {
+
+    if ( isset( $files['file'] ) ) {
+
+        $file = $files['file'];
+
+        if ( is_array($file) && isset( $file['tmp_name'] ) ) {
+            return $file;
+        }
+    }
+
+    if ( isset( $request['file'] ) && is_array( $request['file'] ) ) {
+
+        if ( isset( $request['file']['tmp_name'] ) ) {
+            return $request['file'];
+        }
+    }
+
+    foreach ( $files as $file ) {
+
+        if ( is_array($file) && isset( $file['tmp_name'] ) ) {
+            return $file;
+        }
+    }
+    
+    return null;
 }
 
 
-function file_controller_delete(
-    int $file_id
-): array {
+/*
+|--------------------------------------------------------------------------
+| Normalize Multiple Files
+|--------------------------------------------------------------------------
+*/
 
-    return
-        (new FileController())
-            ->delete(
-                $file_id
-            );
+function file_controller_normalize_multiple_files( array $files ): array {
+
+    $result = [];
+
+    foreach ( $files as $key => $value ) {
+
+        if ( is_array($value) && isset( $value['tmp_name'] ) ) {
+
+            if ( is_array( $value['tmp_name'] ) ) {
+
+                $count = count( $value['tmp_name'] );
+
+                for ( $i = 0; $i < $count; $i++ ) {
+
+                    $result[] = [
+
+                        'name' =>
+                            $value['name'][$i]
+                            ?? '',
+
+                        'type' =>
+                            $value['type'][$i]
+                            ?? '',
+
+                        'tmp_name' =>
+                            $value['tmp_name'][$i]
+                            ?? '',
+
+                        'error' =>
+                            $value['error'][$i]
+                            ?? UPLOAD_ERR_NO_FILE,
+
+                        'size' =>
+                            $value['size'][$i]
+                            ?? 0
+                    ];
+                }
+            } else {
+                $result[] = $value;
+            }
+        }
+    }
+
+    return $result;
 }
 
 
-function file_controller_download(
-    int $file_id
-): array {
+/*
+|--------------------------------------------------------------------------
+| Public File URL
+|--------------------------------------------------------------------------
+|
+| Builds the public API download URL for a file. The absolute filesystem
+| path is never exposed to clients.
+|
+*/
 
-    return
-        (new FileController())
-            ->download(
-                $file_id
-            );
+function file_controller_public_file_url( int $file_id ): string {
+
+    $base = rtrim( (string) ( getenv('APP_URL') ?: request_base_url() ), '/' );
+
+    return $base . '/api/v1/files/' . $file_id . '?download=true';
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Sanitize File
+|--------------------------------------------------------------------------
+|
+| Removes internal filesystem fields from a file record before it is
+| returned to a client and attaches a public download URL.
+|
+*/
+
+function file_controller_sanitize_file( array $file ): array {
+
+    unset( $file['path'], $file['storage_path'] );
+
+    $file_id = (int) ( $file['id'] ?? 0 );
+
+    if ($file_id > 0) {
+        $file['url'] = file_controller_public_file_url( $file_id );
+    }
+
+    return $file;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Success Response
+|--------------------------------------------------------------------------
+*/
+
+function file_controller_success( mixed $data = null, string $message = 'Success.' ): array {
+
+    return [
+
+        'success' =>
+            true,
+
+        'message' =>
+            $message,
+
+        'data' =>
+            $data
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Error Response
+|--------------------------------------------------------------------------
+*/
+
+function file_controller_error( string $message, int $status_code = 400 ): array {
+
+    return [
+
+        'success' =>
+            false,
+
+        'message' =>
+            $message,
+
+        'data' =>
+            null,
+
+        'status' =>
+            $status_code
+    ];
 }

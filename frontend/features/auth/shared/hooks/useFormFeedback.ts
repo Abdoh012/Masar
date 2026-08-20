@@ -22,6 +22,14 @@ export function useFormFeedBack(
     if (!state || (!state.success && !state.message && !state.error)) return;
 
     if (!state?.success) {
+      if (state?.fieldErrors) {
+        for (const error of state.fieldErrors?.password ??
+          state.fieldErrors?.confirmPassword) {
+          showError(error || "Something went wrong!");
+        }
+        return;
+      }
+
       showError(state.message || state.error || "Something went wrong!");
     } else if (state?.success) {
       showSuccess(state.message || "Operation completed successfully!");

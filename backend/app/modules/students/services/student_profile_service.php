@@ -21,6 +21,11 @@
 require_once __DIR__ . '/../repositories/student_profile_repository.php';
 require_once __DIR__ . '/../repositories/student_repository.php';
 
+require_once __DIR__ . '/../../../core/database/transaction.php';
+
+require_once __DIR__ . '/../../files/repositories/file_repository.php';
+require_once __DIR__ . '/../../files/services/file_upload_service.php';
+
 function student_profile_get( int $student_id ): array {
 
     if ($student_id <= 0) {
@@ -178,16 +183,83 @@ function student_profile_remove_cv( int $student_id ): array {
         return [ 'error' => true, 'status' => 422, 'message' => 'Invalid student ID.' ];
     }
 
-    $profile = student_profile_repository_find_by_student_id( $student_id );
+    $student = student_repository_find_by_id( $student_id );
 
-    if (!$profile) {
-        return [ 'error' => true, 'status' => 404, 'message' => 'Student profile not found.' ];
+    if (!$student) {
+        return [ 'error' => true, 'status' => 404, 'message' => 'Student not found.' ];
     }
 
-    $updated = student_profile_repository_update( $student_id, [ 'cv_file_id' => null ] );
+    $file_id = student_profile_repository_get_cv_file_id( $student_id );
 
-    if (!$updated) {
-        return [ 'error' => true, 'status' => 500, 'message' => 'Unable to remove CV.' ];
+    if (!$file_id) {
+        return [ 'error' => true, 'status' => 404, 'message' => 'No CV found.' ];
+    }
+
+    $user_id = (int) ( $student['user_id'] ?? 0 );
+
+    /*
+     * The file record is resolved from the student's stored CV reference and is
+     * scoped to the authenticated user, so a student can never touch another
+     * user's file and the path is never taken from the client.
+     */
+
+    $file = file_repository_find_for_user( $file_id, $user_id );
+
+    /*
+     * Stale reference: the file row is missing or does not belong to this user.
+     * Clear the reference so the profile no longer points at a phantom file.
+     * Nothing is deleted because we cannot attribute the file to this user.
+     */
+
+    if (!$file) {
+        student_profile_repository_remove_cv( $student_id );
+        return [ 'data' => [ 'message' => 'CV removed successfully.', ], ];
+    }
+
+    /*
+     * Security: never unlink a path that is not stored inside the application's
+     * upload/storage directory. An unsafe (relative, traversal or otherwise
+     * out-of-tree) stored path is logged and left untouched.
+     */
+
+    $path = (string) ( $file['path'] ?? '' );
+    $safe = file_upload_service_is_safe_storage_path( $path );
+
+    if (!$safe) {
+        error_log( 'MASAR CV removal: refusing to delete unsafe stored path: ' . $path );
+    } elseif (is_file( $path )) {
+
+        if (!@unlink( $path )) {
+            return [ 'error' => true, 'status' => 500, 'message' => 'Unable to delete the CV file.' ];
+        }
+    }
+
+    /*
+     * If the physical file is already missing, continue and clean the metadata.
+     * The filesystem and the database cannot be rolled back together, so the two
+     * database writes (delete the file record, clear the CV reference) run inside
+     * one transaction after the physical file is removed. If the database part
+     * fails we do not silently report success.
+     */
+
+    db_begin_transaction();
+
+    try {
+
+        $cv_cleared = student_profile_repository_remove_cv( $student_id );
+        $file_deleted = file_repository_delete( $file_id, $user_id );
+
+        if ( !$cv_cleared || !$file_deleted ) {
+            db_rollback();
+            return [ 'error' => true, 'status' => 500, 'message' => 'Unable to remove CV metadata.' ];
+        }
+
+        db_commit();
+
+    } catch (Throwable $e) {
+
+        db_rollback();
+        return [ 'error' => true, 'status' => 500, 'message' => 'Unable to remove CV metadata.' ];
     }
 
     return [ 'data' => [ 'message' => 'CV removed successfully.', ], ];
@@ -212,7 +284,7 @@ function student_profile_is_complete( int $student_id ): array {
     }
 
     $missing = [];
-    $required_student_fields = [ 'university_id', 'faculty_id', 'specialization_id',];
+    $required_student_fields = [ 'field_id', 'specialization_id',];
 
     foreach ( $required_student_fields as $field ) {
         if ( empty( $student[$field] ?? null ) ) {

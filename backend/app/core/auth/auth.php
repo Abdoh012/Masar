@@ -84,7 +84,7 @@ function auth_is_admin(): bool
 
 function auth_find_user_by_id(int $user_id): ?array
 {
-    return db_fetch_one('SELECT id, email, role, status, created_at, updated_at FROM users WHERE id = :id LIMIT 1 ', ['id' => $user_id]);
+    return db_fetch_one('SELECT id, email, role, status, password_hash, created_at, updated_at FROM users WHERE id = :id LIMIT 1 ', ['id' => $user_id]);
 }
 
 function auth_find_user_by_email(string $email): ?array

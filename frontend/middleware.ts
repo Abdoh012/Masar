@@ -15,6 +15,7 @@ export function middleware(request: NextRequest) {
 
   const isPublic = PUBLIC_ROUTES.includes(pathname);
   const isAuthRoute = AUTH_ROUTES_PREFIX.some((p) => pathname.startsWith(p));
+  const isPendingRoute = pathname === COMPANY_PENDING_ROUTE;
 
   // Stale role cookie with no valid token — clear it, don't loop
   if (!token && role) {
@@ -28,7 +29,10 @@ export function middleware(request: NextRequest) {
 
   // Not logged in
   if (!token) {
-    if (isPublic || isAuthRoute) return NextResponse.next();
+    // The pending-approval page is the company-registration landing: a fresh
+    // company has no token by design (login is blocked until approval), so it
+    // must render without a session.
+    if (isPublic || isAuthRoute || isPendingRoute) return NextResponse.next();
     return NextResponse.redirect(new URL("/sign-in", request.url));
   }
 
@@ -50,9 +54,12 @@ export function middleware(request: NextRequest) {
     if (!pathname.startsWith("/company")) {
       return NextResponse.redirect(new URL(ROLE_HOME.company, request.url));
     }
-    // Pending companies are locked to the waiting page until Admin approves
-    if (companyStatus !== "approved" && pathname !== COMPANY_PENDING_ROUTE) {
-      return NextResponse.redirect(new URL(COMPANY_PENDING_ROUTE, request.url));
+    // Approval status never gates company-area access — it only controls
+    // features/actions that require approval. The one status rule kept here
+    // is steering approved companies off the pending-approval waiting page
+    // (the registration landing for token-less fresh companies).
+    if (companyStatus !== "pending" && pathname === COMPANY_PENDING_ROUTE) {
+      return NextResponse.redirect(new URL(ROLE_HOME.company, request.url));
     }
   }
 

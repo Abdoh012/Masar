@@ -3,6 +3,7 @@ export type AuthResponse = {
   message?: string;
   redirectPath?: string;
   role?: string;
+  userStatus?: string;
   error?: string;
   fieldErrors?: Record<string, string[]>;
   userData?: object | null;

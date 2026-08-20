@@ -3,8 +3,8 @@
 /**
  * MASAR - Close Expired Trainings
  *
- * Closes training listings whose application deadline
- * or training end date has passed.
+ * Closes published training listings whose training end date
+ * (ends_at) has passed.
  */
 
 declare(strict_types=1);
@@ -17,13 +17,12 @@ function close_expired_trainings(PDO $pdo): int
         UPDATE training_listings
         SET
             status = 'closed',
+            closed_at = COALESCE(closed_at, CURRENT_TIMESTAMP),
             updated_at = CURRENT_TIMESTAMP
         WHERE
             status = 'published'
-            AND (
-                application_deadline < CURRENT_TIMESTAMP
-                OR end_date < CURRENT_DATE
-            )
+            AND ends_at IS NOT NULL
+            AND ends_at < CURRENT_TIMESTAMP
     ";
 
     $statement = $pdo->prepare($sql);

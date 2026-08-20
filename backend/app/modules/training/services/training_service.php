@@ -24,6 +24,7 @@
 */
 
 require_once __DIR__ . '/../repositories/training_repository.php';
+require_once __DIR__ . '/../repositories/application_repository.php';
 require_once __DIR__ . '/../validators/training_validator.php';
 
 require_once __DIR__ . '/../../../core/database/transaction.php';
@@ -272,7 +273,8 @@ function training_service_create(
 */
 
 function training_service_find(
-    int $training_id
+    int $training_id,
+    ?int $student_id = null
 ): array {
 
     if (
@@ -369,6 +371,97 @@ function training_service_find(
     }
 
 
+    /*
+    |--------------------------------------------------------------------------
+    | Get Enriched Details
+    |--------------------------------------------------------------------------
+    */
+
+    $details =
+        training_repository_find_with_company(
+            $training_id
+        );
+
+    $training_ids = [
+        $training_id
+    ];
+
+    $skills =
+        training_repository_get_skills_by_training_ids(
+            $training_ids
+        );
+
+    $specializations =
+        training_repository_get_specializations_by_training_ids(
+            $training_ids
+        );
+
+    $details['skills'] =
+        $skills[$training_id] ?? [];
+
+    $details['specializations'] =
+        $specializations[$training_id] ?? [];
+
+    $details['questions'] =
+        training_repository_get_questions(
+            $training_id
+        );
+
+    $details['has_applied'] = false;
+    $details['application'] = null;
+    $details['is_saved'] = false;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Student Context
+    |--------------------------------------------------------------------------
+    |
+    | When a student views the training, include their saved
+    | state and any existing application status.
+    |
+    */
+
+    if (
+        $student_id !== null
+        &&
+        $student_id > 0
+    ) {
+
+        $details['is_saved'] =
+            training_repository_is_saved(
+                $student_id,
+                $training_id
+            );
+
+        $application =
+            application_repository_find_student_application(
+                $student_id,
+                $training_id
+            );
+
+        if ($application) {
+
+            $details['has_applied'] = true;
+
+            $details['application'] = [
+
+                'id' =>
+                    (int) $application['id'],
+
+                'status' =>
+                    $application['status'] === 'submitted'
+                        ? 'pending'
+                        : $application['status'],
+
+                'applied_at' =>
+                    $application['applied_at']
+
+            ];
+        }
+    }
+
+
     return [
 
         'success' => true,
@@ -377,7 +470,7 @@ function training_service_find(
             'Training opportunity retrieved successfully.',
 
         'data' =>
-            $training,
+            $details,
 
         'status_code' => 200
 
@@ -392,7 +485,8 @@ function training_service_find(
 */
 
 function training_service_list(
-    array $filters = []
+    array $filters = [],
+    ?int $student_id = null
 ): array {
 
     /*
@@ -455,11 +549,28 @@ function training_service_list(
 
     $normalized_filters = [
 
+        'field' =>
+            !empty($filters['field'])
+                ? trim(
+                    $filters['field']
+                )
+                : null,
+
         'specialization' =>
             !empty($filters['specialization'])
                 ? trim(
                     $filters['specialization']
                 )
+                : null,
+
+        'specialization_id' =>
+            !empty($filters['specialization_id'])
+                ? (int) $filters['specialization_id']
+                : null,
+
+        'skill_id' =>
+            !empty($filters['skill_id'])
+                ? (int) $filters['skill_id']
                 : null,
 
         'training_type' =>
@@ -495,7 +606,111 @@ function training_service_list(
                 ? (int) $filters['company_id']
                 : null,
 
+        'city' =>
+            !empty($filters['city'])
+                ? trim(
+                    $filters['city']
+                )
+                : null,
+
+        'keyword' =>
+            !empty($filters['keyword'])
+                ? trim(
+                    $filters['keyword']
+                )
+                : null,
+
     ];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Resolve Field ID To Name
+    |--------------------------------------------------------------------------
+    |
+    | The training listing stores the study field as a name,
+    | so a field_id filter must be mapped to the matching name.
+    |
+    */
+
+    if (
+        !empty($filters['field_id'])
+    ) {
+
+        $field_id =
+            (int) $filters['field_id'];
+
+        $study_fields =
+            training_repository_get_study_fields();
+
+        foreach ($study_fields as $study_field) {
+
+            if (
+                (int) $study_field['id']
+                ===
+                $field_id
+            ) {
+
+                $normalized_filters['field'] =
+                    $study_field['name'];
+
+                break;
+            }
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Student Context
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        $student_id !== null
+        &&
+        $student_id > 0
+    ) {
+
+        $normalized_filters['student_id'] =
+            $student_id;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sort
+    |--------------------------------------------------------------------------
+    */
+
+    $allowed_sorts = [
+        'newest',
+        'oldest',
+        'title',
+        'name',
+        'deadline',
+        'relevance'
+    ];
+
+    $sort =
+        isset($filters['sort'])
+            ? strtolower(
+                trim(
+                    (string) $filters['sort']
+                )
+            )
+            : 'newest';
+
+    if (
+        !in_array(
+            $sort,
+            $allowed_sorts,
+            true
+        )
+    ) {
+
+        $sort = 'newest';
+    }
 
 
     /*
@@ -508,8 +723,48 @@ function training_service_list(
         training_repository_get_public_list(
             $normalized_filters,
             $limit,
-            $offset
+            $offset,
+            $sort
         );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Enrich Items
+    |--------------------------------------------------------------------------
+    */
+
+    if (!empty($items)) {
+
+        $training_ids = array_map(
+            function ($item) {
+                return (int) $item['id'];
+            },
+            $items
+        );
+
+        $skills_by_training =
+            training_repository_get_skills_by_training_ids(
+                $training_ids
+            );
+
+        $specializations_by_training =
+            training_repository_get_specializations_by_training_ids(
+                $training_ids
+            );
+
+        foreach ($items as $index => $item) {
+
+            $item_id =
+                (int) $item['id'];
+
+            $items[$index]['skills'] =
+                $skills_by_training[$item_id] ?? [];
+
+            $items[$index]['specializations'] =
+                $specializations_by_training[$item_id] ?? [];
+        }
+    }
 
 
     /*
@@ -1570,6 +1825,551 @@ function training_service_delete(
             'Training opportunity deleted successfully.',
 
         'data' => null,
+
+        'status_code' => 200
+
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Save Training For Student
+|--------------------------------------------------------------------------
+*/
+
+function training_service_save(
+    int $user_id,
+    int $training_id
+): array {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validate Training ID
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        $training_id <= 0
+    ) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Invalid training ID.',
+
+            'errors' => [],
+
+            'status_code' => 422
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get Student Profile
+    |--------------------------------------------------------------------------
+    */
+
+    $student =
+        application_repository_find_student_by_user_id(
+            $user_id
+        );
+
+    if (!$student) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Student profile was not found.',
+
+            'errors' => [],
+
+            'status_code' => 404
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Training Must Exist And Be Published
+    |--------------------------------------------------------------------------
+    */
+
+    $training =
+        training_repository_find_by_id(
+            $training_id
+        );
+
+    if (!$training) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Training opportunity not found.',
+
+            'errors' => [],
+
+            'status_code' => 404
+
+        ];
+    }
+
+    if (
+        ($training['status'] ?? null)
+        !==
+        'published'
+    ) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Training opportunity is not available.',
+
+            'errors' => [],
+
+            'status_code' => 409
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Save
+    |--------------------------------------------------------------------------
+    */
+
+    $saved =
+        training_repository_saved_add(
+            (int) $student['student_id'],
+            $training_id
+        );
+
+    if (!$saved) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Unable to save training opportunity.',
+
+            'errors' => [],
+
+            'status_code' => 500
+
+        ];
+    }
+
+
+    return [
+
+        'success' => true,
+
+        'message' =>
+            'Training opportunity saved successfully.',
+
+        'data' => [
+
+            'training_id' =>
+                $training_id,
+
+            'is_saved' => true
+
+        ],
+
+        'status_code' => 200
+
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Unsave Training For Student
+|--------------------------------------------------------------------------
+*/
+
+function training_service_unsave(
+    int $user_id,
+    int $training_id
+): array {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validate Training ID
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        $training_id <= 0
+    ) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Invalid training ID.',
+
+            'errors' => [],
+
+            'status_code' => 422
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get Student Profile
+    |--------------------------------------------------------------------------
+    */
+
+    $student =
+        application_repository_find_student_by_user_id(
+            $user_id
+        );
+
+    if (!$student) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Student profile was not found.',
+
+            'errors' => [],
+
+            'status_code' => 404
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Unsave
+    |--------------------------------------------------------------------------
+    */
+
+    $removed =
+        training_repository_saved_remove(
+            (int) $student['student_id'],
+            $training_id
+        );
+
+
+    return [
+
+        'success' => true,
+
+        'message' =>
+            $removed
+                ? 'Training opportunity removed from saved list.'
+                : 'Training opportunity was not in the saved list.',
+
+        'data' => [
+
+            'training_id' =>
+                $training_id,
+
+            'is_saved' => false
+
+        ],
+
+        'status_code' => 200
+
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Get Student Saved Trainings
+|--------------------------------------------------------------------------
+*/
+
+function training_service_saved_list(
+    int $user_id,
+    array $filters = []
+): array {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get Student Profile
+    |--------------------------------------------------------------------------
+    */
+
+    $student =
+        application_repository_find_student_by_user_id(
+            $user_id
+        );
+
+    if (!$student) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Student profile was not found.',
+
+            'errors' => [],
+
+            'status_code' => 404
+
+        ];
+    }
+
+    $student_id =
+        (int) $student['student_id'];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pagination
+    |--------------------------------------------------------------------------
+    */
+
+    $page =
+        isset($filters['page'])
+            ? (int) $filters['page']
+            : 1;
+
+    $limit =
+        isset($filters['limit'])
+            ? (int) $filters['limit']
+            : 20;
+
+    if ($page < 1) {
+        $page = 1;
+    }
+
+    if ($limit < 1) {
+        $limit = 20;
+    }
+
+    if ($limit > 100) {
+        $limit = 100;
+    }
+
+    $offset =
+        ($page - 1) * $limit;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Filters
+    |--------------------------------------------------------------------------
+    */
+
+    $normalized_filters = [
+
+        'student_id' =>
+            $student_id,
+
+        'saved_only' => true,
+
+        'company_id' =>
+            !empty($filters['company_id'])
+                ? (int) $filters['company_id']
+                : null,
+
+        'training_type' =>
+            !empty($filters['training_type'])
+                ? trim(
+                    $filters['training_type']
+                )
+                : null,
+
+        'work_mode' =>
+            !empty($filters['work_mode'])
+                ? trim(
+                    $filters['work_mode']
+                )
+                : null,
+
+        'paid' =>
+            isset($filters['paid'])
+            &&
+            $filters['paid'] !== ''
+                ? (int) $filters['paid']
+                : null,
+
+        'keyword' =>
+            !empty($filters['keyword'])
+                ? trim(
+                    $filters['keyword']
+                )
+                : null,
+
+    ];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sort
+    |--------------------------------------------------------------------------
+    */
+
+    $allowed_sorts = [
+        'newest',
+        'oldest',
+        'title',
+        'name',
+        'deadline',
+        'relevance'
+    ];
+
+    $sort =
+        isset($filters['sort'])
+            ? strtolower(
+                trim(
+                    (string) $filters['sort']
+                )
+            )
+            : 'newest';
+
+    if (
+        !in_array(
+            $sort,
+            $allowed_sorts,
+            true
+        )
+    ) {
+
+        $sort = 'newest';
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get Saved Trainings
+    |--------------------------------------------------------------------------
+    */
+
+    $items =
+        training_repository_get_public_list(
+            $normalized_filters,
+            $limit,
+            $offset,
+            $sort
+        );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Enrich Items
+    |--------------------------------------------------------------------------
+    */
+
+    if (!empty($items)) {
+
+        $training_ids = array_map(
+            function ($item) {
+                return (int) $item['id'];
+            },
+            $items
+        );
+
+        $skills_by_training =
+            training_repository_get_skills_by_training_ids(
+                $training_ids
+            );
+
+        $specializations_by_training =
+            training_repository_get_specializations_by_training_ids(
+                $training_ids
+            );
+
+        foreach ($items as $index => $item) {
+
+            $item_id =
+                (int) $item['id'];
+
+            $items[$index]['skills'] =
+                $skills_by_training[$item_id] ?? [];
+
+            $items[$index]['specializations'] =
+                $specializations_by_training[$item_id] ?? [];
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Count
+    |--------------------------------------------------------------------------
+    */
+
+    $total =
+        training_repository_count_public(
+            $normalized_filters
+        );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pagination
+    |--------------------------------------------------------------------------
+    */
+
+    $total_pages =
+        $limit > 0
+            ? (int) ceil(
+                $total / $limit
+            )
+            : 0;
+
+
+    return [
+
+        'success' => true,
+
+        'message' =>
+            'Saved training opportunities retrieved successfully.',
+
+        'data' => [
+
+            'items' =>
+                $items,
+
+            'pagination' => [
+
+                'current_page' =>
+                    $page,
+
+                'per_page' =>
+                    $limit,
+
+                'total' =>
+                    $total,
+
+                'total_pages' =>
+                    $total_pages,
+
+                'has_next_page' =>
+                    $page < $total_pages,
+
+                'has_previous_page' =>
+                    $page > 1
+
+            ]
+
+        ],
 
         'status_code' => 200
 

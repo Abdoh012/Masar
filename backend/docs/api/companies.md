@@ -51,22 +51,71 @@ company
 {
     "success": true,
     "data": {
-        "id": 4,
-        "user_id": 25,
-        "name": "Example Company",
-        "email": "contact@example.com",
-        "phone": "+201000000000",
-        "status": "approved",
-        "description": "Software development company."
+        "id": 45,
+        "user_id": 203,
+        "company_name": "Test Company",
+        "description": "Test company account for MASAR development.",
+        "approval_status": "pending",
+        "work_fields": [
+            { "field_id": 1, "field_name": "Engineering" }
+        ]
+    }
+}
+```
+
+`work_fields` lists the company's work fields. Each entry references the `study_fields` lookup table (`field_id` → `study_fields.id`); `study_fields` is the single source of truth for work field names shared with students.
+
+---
+
+# 2. Create Company
+
+Creates a company profile for the authenticated user.
+
+### Endpoint
+
+```http
+POST /api/companies
+```
+
+### Request
+
+```json
+{
+    "company_name": "Test Company",
+    "work_field_ids": [1, 2],
+    "description": "Works across engineering and computer science."
+}
+```
+
+Work fields are study field IDs from the `study_fields` lookup table (`1` = Engineering, `2` = Computer Science, `3` = Business, `4` = Medicine). The legacy `industry` name is also accepted and resolved against `study_fields`. Invalid or non-existent study fields are rejected with `422`.
+
+### Response
+
+`201 Created`
+
+```json
+{
+    "success": true,
+    "message": "Company profile created successfully.",
+    "data": {
+        "id": 50,
+        "user_id": 220,
+        "company_name": "Test Company",
+        "description": "Works across engineering and computer science.",
+        "approval_status": "pending",
+        "work_fields": [
+            { "field_id": 1, "field_name": "Engineering" },
+            { "field_id": 2, "field_name": "Computer Science" }
+        ]
     }
 }
 ```
 
 ---
 
-# 2. Update Company
+# 3. Update Company
 
-Updates the authenticated company's basic information.
+Updates the authenticated company's basic information and work fields.
 
 ### Endpoint
 
@@ -74,40 +123,44 @@ Updates the authenticated company's basic information.
 PUT /api/companies/me
 ```
 
-or:
-
-```http
-PATCH /api/companies/me
-```
-
 ### Request
 
 ```json
 {
-    "name": "Example Technology",
-    "phone": "+201000000001",
-    "description": "Technology and software development company."
+    "company_name": "Test Company",
+    "work_field_ids": [1, 2],
+    "description": "Works across engineering and computer science."
 }
 ```
+
+### Notes
+
+- `work_field_ids` is an array of study field IDs that replaces the company's work fields. Pass an empty array to clear them.
+- The legacy `industry` name is accepted and resolved against `study_fields`. Invalid or non-existent study fields are rejected with `422`.
 
 ### Response
 
 ```json
 {
     "success": true,
-    "message": "Company updated successfully.",
+    "message": "Company profile updated successfully.",
     "data": {
-        "id": 4,
-        "name": "Example Technology",
-        "phone": "+201000000001",
-        "description": "Technology and software development company."
+        "id": 50,
+        "user_id": 220,
+        "company_name": "Test Company",
+        "description": "Works across engineering and computer science.",
+        "approval_status": "pending",
+        "work_fields": [
+            { "field_id": 1, "field_name": "Engineering" },
+            { "field_id": 2, "field_name": "Computer Science" }
+        ]
     }
 }
 ```
 
 ---
 
-# 3. Get Company Profile
+# 4. Get Company Profile
 
 Returns the detailed profile of the authenticated company.
 
@@ -136,7 +189,7 @@ GET /api/companies/me/profile
 
 ---
 
-# 4. Update Company Profile
+# 5. Update Company Profile
 
 ### Endpoint
 
@@ -176,7 +229,7 @@ PATCH /api/companies/me/profile
 
 ---
 
-# 5. Get Company Specializations
+# 6. Get Company Specializations
 
 Returns the specializations associated with the company.
 
@@ -206,7 +259,7 @@ GET /api/companies/me/specializations
 
 ---
 
-# 6. Add Company Specialization
+# 7. Add Company Specialization
 
 Associates a specialization with the authenticated company.
 
@@ -237,7 +290,7 @@ A specialization must not be associated with the same company more than once.
 
 ---
 
-# 7. Remove Company Specialization
+# 8. Remove Company Specialization
 
 Removes a specialization from the company.
 
@@ -264,7 +317,7 @@ DELETE /api/companies/me/specializations/2
 
 ---
 
-# 8. Get Company Trainings
+# 9. Get Company Trainings
 
 Returns training opportunities created by the authenticated company.
 
@@ -316,7 +369,7 @@ GET /api/companies/me/trainings?page=1&per_page=20&status=published
 
 ---
 
-# 9. Create Training
+# 10. Create Training
 
 Creates a new training opportunity.
 
@@ -360,7 +413,7 @@ New training listings may require administrative approval before becoming `publi
 
 ---
 
-# 10. Get Company Training
+# 11. Get Company Training
 
 Returns a training opportunity owned by the authenticated company.
 
@@ -388,7 +441,7 @@ The API must verify that the training belongs to the authenticated company.
 
 ---
 
-# 11. Update Company Training
+# 12. Update Company Training
 
 ### Endpoint
 
@@ -427,7 +480,7 @@ PATCH /api/companies/me/trainings/{trainingId}
 
 ---
 
-# 12. Delete Company Training
+# 13. Delete Company Training
 
 Deletes a training opportunity owned by the company.
 
@@ -450,7 +503,7 @@ A training that already has active sessions or legally relevant records may inst
 
 ---
 
-# 13. Get Training Applications
+# 14. Get Training Applications
 
 Returns applications submitted to a company's training opportunity.
 
@@ -495,7 +548,7 @@ status
 
 ---
 
-# 14. Get Application
+# 15. Get Application
 
 Returns a specific application submitted to the company's training.
 
@@ -526,7 +579,7 @@ The company can access only applications belonging to its own training listings.
 
 ---
 
-# 15. Accept Application
+# 16. Accept Application
 
 Accepts a student's application.
 
@@ -553,7 +606,7 @@ Accepting an application may create a training session according to the applicat
 
 ---
 
-# 16. Reject Application
+# 17. Reject Application
 
 Rejects a student's application.
 
@@ -589,7 +642,7 @@ The rejection reason should correspond to a valid configured rejection reason.
 
 ---
 
-# 17. Get Company Sessions
+# 18. Get Company Sessions
 
 Returns training sessions belonging to the authenticated company.
 
@@ -627,7 +680,7 @@ status
 
 ---
 
-# 18. Get Training Session
+# 19. Get Training Session
 
 Returns a specific session belonging to the company.
 
@@ -658,7 +711,7 @@ GET /api/companies/me/sessions/{sessionId}
 
 ---
 
-# 19. Update Training Session
+# 20. Update Training Session
 
 ### Endpoint
 
@@ -691,7 +744,7 @@ PATCH /api/companies/me/sessions/{sessionId}
 
 ---
 
-# 20. Start Training Session
+# 21. Start Training Session
 
 Marks an eligible training session as started.
 
@@ -716,7 +769,7 @@ POST /api/companies/me/sessions/{sessionId}/start
 
 ---
 
-# 21. Complete Training Session
+# 22. Complete Training Session
 
 Marks a training session as completed.
 
@@ -743,7 +796,7 @@ A completed session may become eligible for certificate issuance.
 
 ---
 
-# 22. Cancel Training Session
+# 23. Cancel Training Session
 
 Cancels an eligible training session.
 
@@ -776,7 +829,7 @@ POST /api/companies/me/sessions/{sessionId}/cancel
 
 ---
 
-# 23. Get Company Certificates
+# 24. Get Company Certificates
 
 Returns certificates issued by the authenticated company.
 
@@ -805,7 +858,7 @@ GET /api/companies/me/certificates
 
 ---
 
-# 24. Public Company Profile
+# 25. Public Company Profile
 
 Returns publicly available company information.
 

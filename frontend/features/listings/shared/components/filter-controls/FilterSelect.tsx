@@ -26,11 +26,12 @@ interface FilterSelectProps {
 // convention the browse and moderation filters each duplicated before.
 const ALL_FILTER_VALUE = "all";
 
-// FilterSelect: the shared labeled filter dropdown used by the student browse
-// filters and the admin moderation filters. When `allLabel` is provided it
-// renders the "All <x>" sentinel item and maps "" <-> sentinel for the parent;
-// without it (e.g. a ternary "Any/Free/Paid" control) the value passes
-// through unchanged. Pure leaf: no state, no fetching.
+// FilterSelect: the shared labeled filter dropdown used by the admin
+// moderation filters and the browse filter bar / sort control. When
+// `allLabel` is provided it renders the "All <x>" sentinel item and maps
+// "" <-> sentinel for the parent; without it (e.g. a ternary "Any/Free/Paid"
+// control) the value passes through unchanged. Pure leaf: no state, no
+// fetching — the parent owns the value and re-renders on change.
 export function FilterSelect({
   label,
   value,

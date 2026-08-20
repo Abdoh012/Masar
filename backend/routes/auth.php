@@ -56,7 +56,7 @@ if ($path === '/api/v1/auth/forgot-password' && $method === 'POST') {
     return;
 }
 
-if ($path === '/api/v1/auth/resend-reset-otp' && $method === 'GET') {
+if ($path === '/api/v1/auth/resend-reset-otp' && ($method === 'GET' || $method === 'POST')) {
     auth_handle_resend_reset_otp();
     return;
 }

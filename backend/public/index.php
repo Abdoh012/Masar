@@ -57,12 +57,11 @@ token_authenticate_request();
 
 $path = request_path();
 
-if ($path !== '/' && $path !== '' && $path !== '/masar-backend' && $path !== '/masar-backend/') {
+if ($path !== '/' && $path !== '') {
     $requested_file = ltrim($path, '/');
     $candidate_paths = [];
 
     if ($requested_file !== '') {
-        $candidate_paths[] = dirname(__DIR__) . '/' . $requested_file;
         $candidate_paths[] = __DIR__ . '/' . $requested_file;
     }
 
@@ -90,7 +89,7 @@ if ($path !== '/' && $path !== '' && $path !== '/masar-backend' && $path !== '/m
     }
 }
 
-if ($path === '/' || $path === '' || $path === '/masar-backend' || $path === '/masar-backend/') {
+if ($path === '/' || $path === '') {
     header('Content-Type: text/html; charset=UTF-8');
     echo <<<HTML
 <!DOCTYPE html>
@@ -371,11 +370,11 @@ HTML;
     exit;
 }
 
-if ($path === '/health' || $path === '/masar-backend/health' || $path === '/masar-backend/health/') {
+if ($path === '/health') {
     response_success(['status' => 'ok'], 'Service is healthy.');
 }
 
-if ($path === '/cron' || $path === '/cron/run' || $path === '/masar-backend/cron' || $path === '/masar-backend/cron/run') {
+if ($path === '/cron' || $path === '/cron/run') {
     require_once __DIR__ . '/../routes/cron.php';
     return;
 }

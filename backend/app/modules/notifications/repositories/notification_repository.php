@@ -289,18 +289,26 @@ class NotificationRepository
 
             $conditions[] =
                 '(
-                    title LIKE :search
-                    OR body LIKE :search
+                    title LIKE :search_title
+                    OR body LIKE :search_body
                 )';
 
 
-            $params[':search'] =
+            $search_value =
                 '%' .
                 trim(
                     (string)
                     $filters['search']
                 ) .
                 '%';
+
+
+            $params[':search_title'] =
+                $search_value;
+
+
+            $params[':search_body'] =
+                $search_value;
         }
 
 
@@ -676,48 +684,38 @@ class NotificationRepository
             );
 
 
-        $metadata =
-            $data['data']
-            ?? null;
-
-
         /*
-         * Store metadata as JSON when it
-         * is supplied as an array/object.
+         * The canonical notifications table stores
+         * structured metadata through the
+         * entity_type/entity_id columns. Map the
+         * supplied metadata onto those columns.
          */
 
-        if (
-            is_array(
-                $metadata
-            )
-        ) {
-
-            $metadata =
-                json_encode(
-                    $metadata,
-                    JSON_UNESCAPED_UNICODE |
-                    JSON_UNESCAPED_SLASHES
-                );
-        }
+        $entity =
+            $this->resolveEntity(
+                $data
+            );
 
 
         $sql = "
             INSERT INTO {$this->table()}
             (
                 user_id,
+                type,
                 title,
                 body,
-                type,
-                data,
+                entity_type,
+                entity_id,
                 created_at
             )
             VALUES
             (
                 :user_id,
+                :type,
                 :title,
                 :body,
-                :type,
-                :data,
+                :entity_type,
+                :entity_id,
                 CURRENT_TIMESTAMP
             )
         ";
@@ -739,6 +737,12 @@ class NotificationRepository
 
 
             $statement->bindValue(
+                ':type',
+                $type
+            );
+
+
+            $statement->bindValue(
                 ':title',
                 $title
             );
@@ -750,18 +754,12 @@ class NotificationRepository
             );
 
 
-            $statement->bindValue(
-                ':type',
-                $type
-            );
-
-
             if (
-                $metadata === null
+                $entity['entity_type'] === null
             ) {
 
                 $statement->bindValue(
-                    ':data',
+                    ':entity_type',
                     null,
                     PDO::PARAM_NULL
                 );
@@ -769,9 +767,28 @@ class NotificationRepository
             } else {
 
                 $statement->bindValue(
-                    ':data',
-                    (string)
-                    $metadata
+                    ':entity_type',
+                    $entity['entity_type']
+                );
+            }
+
+
+            if (
+                $entity['entity_id'] === null
+            ) {
+
+                $statement->bindValue(
+                    ':entity_id',
+                    null,
+                    PDO::PARAM_NULL
+                );
+
+            } else {
+
+                $statement->bindValue(
+                    ':entity_id',
+                    $entity['entity_id'],
+                    PDO::PARAM_INT
                 );
             }
 
@@ -798,6 +815,157 @@ class NotificationRepository
 
             return false;
         }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Resolve Entity Reference
+    |--------------------------------------------------------------------------
+    |
+    | Maps structured notification metadata onto the
+    | canonical entity_type/entity_id columns.
+    |
+    | Callers may supply an explicit entity_type/
+    | entity_id pair or a metadata array containing
+    | recognized entity identifier keys.
+    |
+    */
+
+    protected function resolveEntity(
+        array $data
+    ): array {
+
+        /*
+         * Explicit entity reference.
+         */
+
+        if (
+            isset(
+                $data['entity_type']
+            ) &&
+            isset(
+                $data['entity_id']
+            )
+        ) {
+
+            return [
+                'entity_type' =>
+                    (string)
+                    $data['entity_type'],
+
+                'entity_id' =>
+                    (int)
+                    $data['entity_id']
+            ];
+        }
+
+
+        /*
+         * Metadata array supplied by callers.
+         */
+
+        $metadata =
+            $data['data']
+            ?? null;
+
+
+        if (
+            is_string($metadata)
+        ) {
+
+            $decoded =
+                json_decode(
+                    $metadata,
+                    true
+                );
+
+
+            if (
+                json_last_error() === JSON_ERROR_NONE &&
+                is_array($decoded)
+            ) {
+
+                $metadata =
+                    $decoded;
+            }
+        }
+
+
+        if (
+            !is_array($metadata)
+        ) {
+
+            return [
+                'entity_type' =>
+                    null,
+
+                'entity_id' =>
+                    null
+            ];
+        }
+
+
+        /*
+         * Recognized entity identifier keys in
+         * priority order.
+         */
+
+        $entity_keys = [
+
+            'application_id' =>
+                'application',
+
+            'appeal_id' =>
+                'appeal',
+
+            'certificate_id' =>
+                'certificate',
+
+            'training_session_id' =>
+                'session',
+
+            'training_id' =>
+                'training',
+
+            'conversation_id' =>
+                'conversation',
+
+            'message_id' =>
+                'message'
+        ];
+
+
+        foreach (
+            $entity_keys
+            as $key => $entity_type
+        ) {
+
+            if (
+                isset(
+                    $metadata[$key]
+                )
+            ) {
+
+                return [
+                    'entity_type' =>
+                        $entity_type,
+
+                    'entity_id' =>
+                        (int)
+                        $metadata[$key]
+                ];
+            }
+        }
+
+
+        return [
+            'entity_type' =>
+                null,
+
+            'entity_id' =>
+                null
+        ];
     }
 
 

@@ -35,7 +35,7 @@ export const FIELD_CONFIG = {
     type: "password",
     placeholder: "Enter your password",
     autoComplete: "current-password",
-    hint: "At least 8 characters.",
+    hint: "At least 12 characters with uppercase, lowercase, and a special character.",
   },
   newPassword: {
     label: "New password",
@@ -56,6 +56,15 @@ export const FIELD_CONFIG = {
     autoComplete: "organization",
   },
 } as const;
+
+// Password rules for the sign-up step-1 pre-request check. These mirror the
+// backend register rules (security.php) so the user is told before the request
+// is sent; the backend remains the source of truth. The reset-password flow is
+// intentionally left out — its backend rule differs (min 8) and stays backend-only.
+export const PASSWORD_MIN_LENGTH = 12;
+export const PASSWORD_UPPERCASE_REGEX = /[A-Z]/;
+export const PASSWORD_LOWERCASE_REGEX = /[a-z]/;
+export const PASSWORD_SPECIAL_CHAR_REGEX = /[^A-Za-z0-9]/;
 
 // OTP verification step in the forgot-password flow.
 export const OTP_LENGTH = 6;

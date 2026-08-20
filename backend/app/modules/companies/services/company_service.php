@@ -82,6 +82,12 @@ function company_service_get_by_id(
     }
 
 
+    $company['work_fields'] =
+        company_repository_get_work_fields(
+            (int) $company['id']
+        );
+
+
     /*
     |--------------------------------------------------------------------------
     | Return
@@ -152,6 +158,12 @@ function company_service_get_by_user_id(
     }
 
 
+    $company['work_fields'] =
+        company_repository_get_work_fields(
+            (int) $company['id']
+        );
+
+
     return [
 
         'success' => true,
@@ -161,6 +173,57 @@ function company_service_get_by_user_id(
         'data' => $company,
 
     ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Resolve Work Field IDs
+|--------------------------------------------------------------------------
+|
+| Collects work field inputs (study field IDs from `work_field_ids` and/or
+| the legacy `industry` name) and resolves them against the study_fields
+| lookup table. Returns null when any input does not match an active
+| study field. study_fields is the single source of truth for work fields.
+|
+*/
+
+function company_service_resolve_work_field_ids(
+    array $data
+): ?array {
+
+    $inputs = [];
+
+    if (
+        isset($data['work_field_ids'])
+        &&
+        is_array($data['work_field_ids'])
+    ) {
+
+        $inputs =
+            array_merge(
+                $inputs,
+                $data['work_field_ids']
+            );
+    }
+
+
+    if (
+        isset($data['industry'])
+        &&
+        trim((string) $data['industry']) !== ''
+    ) {
+
+        $inputs[] =
+            trim(
+                (string) $data['industry']
+            );
+    }
+
+
+    return company_repository_resolve_work_field_ids(
+        $inputs
+    );
 }
 
 
@@ -283,15 +346,72 @@ function company_service_create(
                 )
                 : null,
 
-        'industry' =>
-            trim(
-                $data['industry']
-            ),
-
         'approval_status' =>
             'pending',
 
     ];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Resolve Work Fields
+    |--------------------------------------------------------------------------
+    |
+    | Work fields are referenced from the study_fields lookup table and must
+    | match an active study field. The endpoint accepts study field IDs
+    | (work_field_ids) or the legacy industry name, resolved against
+    | study_fields.
+    |
+    */
+
+    $work_field_ids =
+        company_service_resolve_work_field_ids(
+            $data
+        );
+
+
+    if ($work_field_ids === null) {
+
+        return [
+
+            'success' => false,
+
+            'status' => 422,
+
+            'message' =>
+                'One or more work fields are not recognized.',
+
+            'errors' => [
+
+                'work_field_ids' =>
+                    'One or more work fields are not recognized.',
+
+            ],
+
+        ];
+    }
+
+
+    if (empty($work_field_ids)) {
+
+        return [
+
+            'success' => false,
+
+            'status' => 422,
+
+            'message' =>
+                'At least one work field is required.',
+
+            'errors' => [
+
+                'work_field_ids' =>
+                    'At least one work field is required.',
+
+            ],
+
+        ];
+    }
 
 
     /*
@@ -325,12 +445,46 @@ function company_service_create(
 
     /*
     |--------------------------------------------------------------------------
+    | Attach Work Fields
+    |--------------------------------------------------------------------------
+    */
+
+    $work_fields_replaced =
+        company_repository_replace_work_fields(
+            (int) $company_id,
+            $work_field_ids
+        );
+
+
+    if (!$work_fields_replaced) {
+
+        return [
+
+            'success' => false,
+
+            'status' => 500,
+
+            'message' =>
+                'Unable to create company profile.',
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
     | Get Created Company
     |--------------------------------------------------------------------------
     */
 
     $company =
         company_repository_find_by_id(
+            (int) $company_id
+        );
+
+
+    $company['work_fields'] =
+        company_repository_get_work_fields(
             (int) $company_id
         );
 
@@ -479,17 +633,62 @@ function company_service_update_by_user_id(
     }
 
 
+    /*
+    |--------------------------------------------------------------------------
+    | Resolve Work Fields
+    |--------------------------------------------------------------------------
+    |
+    | When work_field_ids (study field IDs) or the legacy industry name are
+    | provided they are resolved against study_fields. An empty array clears
+    | the company's work fields.
+    |
+    */
+
+    $update_work_fields = false;
+    $work_field_ids = [];
+
     if (
+        array_key_exists(
+            'work_field_ids',
+            $data
+        )
+        ||
         array_key_exists(
             'industry',
             $data
         )
     ) {
 
-        $update_data['industry'] =
-            trim(
-                $data['industry']
+        $resolved_work_field_ids =
+            company_service_resolve_work_field_ids(
+                $data
             );
+
+        if ($resolved_work_field_ids === null) {
+
+            return [
+
+                'success' => false,
+
+                'status' => 422,
+
+                'message' =>
+                    'One or more work fields are not recognized.',
+
+                'errors' => [
+
+                    'work_field_ids' =>
+                        'One or more work fields are not recognized.',
+
+                ],
+
+            ];
+        }
+
+        $work_field_ids =
+            $resolved_work_field_ids;
+
+        $update_work_fields = true;
     }
 
 
@@ -501,6 +700,8 @@ function company_service_update_by_user_id(
 
     if (
         empty($update_data)
+        &&
+        !$update_work_fields
     ) {
 
         return [
@@ -522,25 +723,53 @@ function company_service_update_by_user_id(
     |--------------------------------------------------------------------------
     */
 
-    $updated =
-        company_repository_update(
-            (int) $company['id'],
-            $update_data
-        );
+    if (!empty($update_data)) {
+
+        $updated =
+            company_repository_update(
+                (int) $company['id'],
+                $update_data
+            );
 
 
-    if (!$updated) {
+        if (!$updated) {
 
-        return [
+            return [
 
-            'success' => false,
+                'success' => false,
 
-            'status' => 500,
+                'status' => 500,
 
-            'message' =>
-                'Unable to update company profile.',
+                'message' =>
+                    'Unable to update company profile.',
 
-        ];
+            ];
+        }
+    }
+
+
+    if ($update_work_fields) {
+
+        $work_fields_replaced =
+            company_repository_replace_work_fields(
+                (int) $company['id'],
+                $work_field_ids
+            );
+
+
+        if (!$work_fields_replaced) {
+
+            return [
+
+                'success' => false,
+
+                'status' => 500,
+
+                'message' =>
+                    'Unable to update company work fields.',
+
+            ];
+        }
     }
 
 
@@ -552,6 +781,12 @@ function company_service_update_by_user_id(
 
     $updated_company =
         company_repository_find_by_id(
+            (int) $company['id']
+        );
+
+
+    $updated_company['work_fields'] =
+        company_repository_get_work_fields(
             (int) $company['id']
         );
 

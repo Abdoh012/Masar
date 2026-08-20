@@ -40,6 +40,58 @@ The server determines the authenticated user from the access token.
 
 ---
 
+# 0. Implemented Endpoints
+
+The routes currently implemented and verified (base URL `/api/v1`):
+
+```text
+GET /api/v1/search               Global search (type can restrict the resource)
+GET /api/v1/search/trainings     Searches training_listings
+GET /api/v1/search/companies     Searches companies (uses legal_name)
+GET /api/v1/search/students      Searches students (uses full_name)
+GET /api/v1/search/users         Searches users (uses email)
+GET /api/v1/search/certificates  Searches certificates (uses certificate_code/title)
+GET /api/v1/search/suggestions   Lightweight suggestion endpoint
+GET /api/v1/search/recent        Authenticated user's recent searches
+DELETE /api/v1/search/recent     Clears the authenticated user's recent searches
+```
+
+### Parameters
+
+```text
+q        search term (required for search/suggestions; 2-255 chars after trimming)
+type     for global search: trainings | companies | students | users | certificates
+page     default 1
+limit    default 20, max 100 (suggestions default 10, max 20)
+sort     relevance | date | created_at | updated_at | name | title (default relevance)
+order    ASC | DESC (default DESC)
+```
+
+### Response shape
+
+All search endpoints return the `{ success, message, data }` envelope. The `data` for
+search endpoints is:
+
+```json
+{
+    "items": [ { "id": 2, "title": "Frontend Engineering Internship" } ],
+    "total": 1,
+    "page": 1,
+    "limit": 20,
+    "query": "frontend"
+}
+```
+
+A request without `q`, or with a query shorter than 2 characters, returns an empty result
+set rather than an error. `/api/v1/search/recent` requires authentication and returns the
+user's saved search history; `DELETE /api/v1/search/recent` clears it.
+
+Note: `/api/v1/search/trainings` searches the `training_listings` table on the columns
+`title`, `description`, `location`, `field`. Companies use `legal_name` (there is no `name`
+column) and students use `full_name`.
+
+---
+
 # 1. Global Search
 
 Searches across resources that the current user is allowed to discover.

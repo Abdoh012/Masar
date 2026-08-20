@@ -1,11 +1,11 @@
 import { LISTING_FORMATS, LISTING_MODES } from "../../../shared/lib/constants";
 import type { ListingMode } from "../../../shared/types";
-import type { BrowseListing, ListingFiltersState } from "../../types";
+import type { BrowseListing, BrowseSort, ListingFiltersState } from "../../types";
 
 // Student browse constants (R-8; structure rules §14 — no inline data).
-// MOCK_BROWSE_LISTINGS is pre-scoped to the student's field ("Software
-// Engineering") — the server-side auto-scope (architecture §1) is deferred to
-// backend integration; this mock stands in for that scoped result. UI-only.
+// MOCK_BROWSE_LISTINGS is static/UI-only; the Category filter + card pills
+// read fields straight from it, so the list stays the single source for the
+// browse grid (backend scoping is deferred to backend integration).
 
 export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
   {
@@ -15,6 +15,8 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
     field: "Software Engineering",
     specialization: "Spring Boot Engineer Trainee",
     description: "Hands-on backend training on real production Java services.",
+    skills: ["Java", "Spring Boot"],
+    duration: "3 Months",
     mode: "hands_on",
     format: "hybrid",
     hireIntent: true,
@@ -32,6 +34,9 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
     field: "Software Engineering",
     specialization: "React Frontend Intern",
     description: "Learn the React stack while shadowing the product team.",
+    skills: ["React", "TypeScript"],
+    duration: "2 Months",
+    saved: true,
     mode: "observer",
     format: "in_person",
     hireIntent: false,
@@ -47,6 +52,8 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
     field: "Software Engineering",
     specialization: "Quality & Test Engineer Program",
     description: "Project-based QA training across web and mobile products.",
+    skills: ["QA", "Test Automation"],
+    duration: "4 Months",
     mode: "hands_on",
     format: "remote",
     hireIntent: true,
@@ -62,6 +69,8 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
     field: "Software Engineering",
     specialization: "DevOps Apprentice",
     description: "Build CI/CD pipelines and infrastructure as code.",
+    skills: ["CI/CD", "Docker", "Linux"],
+    duration: "6 Months",
     mode: "project_based",
     format: "hybrid",
     hireIntent: true,
@@ -79,6 +88,9 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
     field: "Software Engineering",
     specialization: "Frontend Developer Program",
     description: "Ship accessible interfaces with a senior mentor.",
+    skills: ["React", "Accessibility"],
+    duration: "2 Months",
+    saved: true,
     mode: "hands_on",
     format: "remote",
     hireIntent: true,
@@ -89,34 +101,121 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
     createdAt: "2026-08-07",
     updatedAt: "2026-08-07",
   },
+  {
+    id: "81",
+    companyId: "c-greentech",
+    companyName: "GreenTech Solutions",
+    field: "Data & Analytics",
+    specialization: "Data Analysis Training Program",
+    description: "Turn raw company data into decisions with dashboards and reports.",
+    skills: ["Excel", "SQL"],
+    duration: "2 Months",
+    saved: true,
+    mode: "hands_on",
+    format: "hybrid",
+    hireIntent: true,
+    isPaid: false,
+    status: "published",
+    createdAt: "2026-08-09",
+    updatedAt: "2026-08-09",
+  },
+  {
+    id: "92",
+    companyId: "c-creativemind",
+    companyName: "Creative Mind Studio",
+    field: "Design",
+    specialization: "UI/UX Design Workshop",
+    description: "A hands-on workshop covering research, wireframes, and design systems.",
+    skills: ["Figma", "Prototyping"],
+    duration: "1 Month",
+    mode: "observer",
+    format: "in_person",
+    hireIntent: false,
+    isPaid: true,
+    price: 150,
+    trialDays: 7,
+    status: "published",
+    createdAt: "2026-08-10",
+    updatedAt: "2026-08-10",
+  },
+  {
+    id: "104",
+    companyId: "c-marketly",
+    companyName: "Marketly",
+    field: "Marketing",
+    specialization: "Digital Marketing Internship",
+    description: "Plan and run campaigns across search, social, and email.",
+    skills: ["SEO", "Social Media"],
+    duration: "3 Months",
+    mode: "hands_on",
+    format: "remote",
+    hireIntent: true,
+    isPaid: false,
+    status: "published",
+    createdAt: "2026-08-11",
+    updatedAt: "2026-08-11",
+  },
 ];
 
-export const FILTER_LABELS = {
-  mode: "Mode",
-  format: "Format",
-  paid: "Price",
-  reset: "Reset filters",
-  title: "Filters",
-  allModes: "All modes",
-  allFormats: "All formats",
-  any: "Any",
+// Browse hero copy (reference header band).
+export const BROWSE_HERO = {
+  eyebrow: "Explore Opportunities",
+  title: "Listings",
+  subtitle:
+    "Explore training opportunities provided by companies and apply to grow your skills and career.",
 };
 
-// Filter option lists (FR-013). Reused directly so the form and filters can
-// never drift from each other (R-1). "paid" is a ternary control with a
-// neutral "Any" state.
+export const FILTER_LABELS = {
+  title: "Filters",
+  category: "Category",
+  searchPlaceholder: "Search by training title, company, skill, or keyword...",
+  clear: "Clear All",
+  allCategories: "All Categories",
+  trainingType: "Training Type",
+  allTypes: "All Types",
+  mode: "Mode",
+  allModes: "All Modes",
+  price: "Price",
+};
+
+// Filter option lists (FR-013). Category is derived from the mock data so the
+// pills and options can never drift from the grid; mode/format reuse the
+// shared lists (R-1); paid is a ternary with a neutral "any" state.
 export const FILTER_LISTS = {
-  mode: [...LISTING_MODES] as { value: ListingMode; label: string }[],
-  format: [...LISTING_FORMATS] as { value: "in_person" | "remote" | "hybrid"; label: string }[],
-  paid: [
-    { value: "any", label: FILTER_LABELS.any },
+  category: [...new Set(MOCK_BROWSE_LISTINGS.map((listing) => listing.field))].map((field) => ({
+    value: field,
+    label: field,
+  })),
+  trainingType: [...LISTING_MODES] as { value: ListingMode; label: string }[],
+  mode: [...LISTING_FORMATS] as { value: "in_person" | "remote" | "hybrid"; label: string }[],
+  price: [
+    { value: "any", label: "Any" },
     { value: "free", label: "Free" },
     { value: "paid", label: "Paid" },
   ] as { value: "any" | "free" | "paid"; label: string }[],
 };
 
 // No-filter default state (FR-013).
-export const DEFAULT_FILTERS: ListingFiltersState = { mode: "", format: "", paid: "any" };
+export const DEFAULT_FILTERS: ListingFiltersState = {
+  mode: "",
+  format: "",
+  paid: "any",
+  category: "",
+  query: "",
+  savedOnly: false,
+};
+
+export const TOOLBAR_LABELS = {
+  countSingular: "training found",
+  countPlural: "trainings found",
+  savedOnly: "Saved Only",
+  sort: "Sort",
+};
+
+export const SORT_OPTIONS: { value: BrowseSort; label: string }[] = [
+  { value: "newest", label: "Newest First" },
+  { value: "oldest", label: "Oldest First" },
+];
 
 export const BROWSE_EMPTY_STATE = {
   title: "No trainings match your filters",
