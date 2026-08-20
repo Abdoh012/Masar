@@ -71,7 +71,7 @@ function student_profile_repository_get_skills_ids( PDO $db, int $student_id ): 
 }
 
 function student_profile_repository_find_by_student_id( int $student_id ): ?array {
-    $sql = " SELECT id, id AS student_id, user_id, full_name, phone, bio, university_id, faculty_id, degree_id, specialization_id, graduation_year, city, profile_image_file_id, cv_file_id, is_profile_complete, created_at, updated_at
+    $sql = " SELECT id, id AS student_id, user_id, full_name, phone, bio, university_id, faculty_id, field_id, degree_id, specialization_id, graduation_year, city, profile_image_file_id, cv_file_id, is_profile_complete, created_at, updated_at
         FROM students WHERE id = ? LIMIT 1 ";
     $row = db_fetch_one( $sql, [$student_id] );
 
@@ -145,7 +145,7 @@ function student_profile_repository_update( int $student_id, array $data ): bool
         }
     }
 
-    $allowed_fields = [ 'full_name', 'phone', 'bio', 'university_id', 'faculty_id', 'degree_id', 'specialization_id', 'graduation_year', 'city', 'profile_image_file_id', 'cv_file_id', ];
+    $allowed_fields = [ 'full_name', 'phone', 'bio', 'university_id', 'faculty_id', 'field_id', 'degree_id', 'specialization_id', 'graduation_year', 'city', 'profile_image_file_id', 'cv_file_id', ];
     $fields = [];
     $values = [];
 

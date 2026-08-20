@@ -194,21 +194,32 @@ function application_validator_create(
     |--------------------------------------------------------------------------
     | Student ID
     |--------------------------------------------------------------------------
+    |
+    | The authenticated student is resolved server-side, so student_id
+    | is only validated for format when it is provided in the payload.
+    |
     */
 
     if (
-        !isset($data['student_id'])
-        ||
-        filter_var(
-            $data['student_id'],
-            FILTER_VALIDATE_INT
-        ) === false
-        ||
-        (int) $data['student_id'] <= 0
+        isset($data['student_id'])
+        &&
+        $data['student_id'] !== null
+        &&
+        $data['student_id'] !== ''
     ) {
 
-        $errors['student_id'] =
-            'Valid student_id is required.';
+        if (
+            filter_var(
+                $data['student_id'],
+                FILTER_VALIDATE_INT
+            ) === false
+            ||
+            (int) $data['student_id'] <= 0
+        ) {
+
+            $errors['student_id'] =
+                'Valid student_id is required.';
+        }
     }
 
 
@@ -216,21 +227,32 @@ function application_validator_create(
     |--------------------------------------------------------------------------
     | Training ID
     |--------------------------------------------------------------------------
+    |
+    | training_id is also passed explicitly to the service, so it is
+    | only validated for format when provided in the payload.
+    |
     */
 
     if (
-        !isset($data['training_id'])
-        ||
-        filter_var(
-            $data['training_id'],
-            FILTER_VALIDATE_INT
-        ) === false
-        ||
-        (int) $data['training_id'] <= 0
+        isset($data['training_id'])
+        &&
+        $data['training_id'] !== null
+        &&
+        $data['training_id'] !== ''
     ) {
 
-        $errors['training_id'] =
-            'Valid training_id is required.';
+        if (
+            filter_var(
+                $data['training_id'],
+                FILTER_VALIDATE_INT
+            ) === false
+            ||
+            (int) $data['training_id'] <= 0
+        ) {
+
+            $errors['training_id'] =
+                'Valid training_id is required.';
+        }
     }
 
 
@@ -326,6 +348,234 @@ function application_validator_create(
 
             $errors['notes'] =
                 'Notes must not exceed 5000 characters.';
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CV File ID
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        isset($data['cv_file_id'])
+        &&
+        $data['cv_file_id'] !== null
+        &&
+        $data['cv_file_id'] !== ''
+    ) {
+
+        if (
+            filter_var(
+                $data['cv_file_id'],
+                FILTER_VALIDATE_INT
+            ) === false
+            ||
+            (int) $data['cv_file_id'] <= 0
+        ) {
+
+            $errors['cv_file_id'] =
+                'Valid cv_file_id is required.';
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Applicant Type
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        isset($data['applicant_type'])
+        &&
+        $data['applicant_type'] !== null
+        &&
+        $data['applicant_type'] !== ''
+    ) {
+
+        $applicant_type =
+            strtolower(
+                trim(
+                    (string) $data['applicant_type']
+                )
+            );
+
+        if (
+            !in_array(
+                $applicant_type,
+                ['student', 'graduated'],
+                true
+            )
+        ) {
+
+            $errors['applicant_type'] =
+                'Applicant type must be student or graduated.';
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | University ID
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        isset($data['university_id'])
+        &&
+        $data['university_id'] !== null
+        &&
+        $data['university_id'] !== ''
+    ) {
+
+        if (
+            filter_var(
+                $data['university_id'],
+                FILTER_VALIDATE_INT
+            ) === false
+            ||
+            (int) $data['university_id'] <= 0
+        ) {
+
+            $errors['university_id'] =
+                'Valid university_id is required.';
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Faculty ID
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        isset($data['faculty_id'])
+        &&
+        $data['faculty_id'] !== null
+        &&
+        $data['faculty_id'] !== ''
+    ) {
+
+        if (
+            filter_var(
+                $data['faculty_id'],
+                FILTER_VALIDATE_INT
+            ) === false
+            ||
+            (int) $data['faculty_id'] <= 0
+        ) {
+
+            $errors['faculty_id'] =
+                'Valid faculty_id is required.';
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Academic Year
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        isset($data['academic_year'])
+        &&
+        $data['academic_year'] !== null
+        &&
+        $data['academic_year'] !== ''
+    ) {
+
+        if (
+            !is_string(
+                $data['academic_year']
+            )
+        ) {
+
+            $errors['academic_year'] =
+                'Academic year must be a string.';
+
+        } elseif (
+            mb_strlen(
+                trim(
+                    $data['academic_year']
+                )
+            ) > 20
+        ) {
+
+            $errors['academic_year'] =
+                'Academic year must not exceed 20 characters.';
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Graduation Year
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        isset($data['graduation_year'])
+        &&
+        $data['graduation_year'] !== null
+        &&
+        $data['graduation_year'] !== ''
+    ) {
+
+        $graduation_year =
+            filter_var(
+                $data['graduation_year'],
+                FILTER_VALIDATE_INT
+            );
+
+        if (
+            $graduation_year === false
+            ||
+            $graduation_year < 1950
+            ||
+            $graduation_year > 2100
+        ) {
+
+            $errors['graduation_year'] =
+                'Graduation year must be a valid year.';
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Motivation
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        isset($data['motivation'])
+        &&
+        $data['motivation'] !== null
+    ) {
+
+        if (
+            !is_string(
+                $data['motivation']
+            )
+        ) {
+
+            $errors['motivation'] =
+                'Motivation must be a string.';
+
+        } elseif (
+            mb_strlen(
+                trim(
+                    $data['motivation']
+                )
+            ) > 5000
+        ) {
+
+            $errors['motivation'] =
+                'Motivation must not exceed 5000 characters.';
         }
     }
 
@@ -1103,6 +1353,149 @@ function application_validator_search(
             'Search keyword must not exceed 255 characters.';
     }
 
+
+    return application_validator_result(
+        empty($errors),
+        $errors
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Validate Application Answers
+|--------------------------------------------------------------------------
+|
+| Validates submitted answers against the training's configured
+| questions (required questions must be answered).
+|
+*/
+
+function application_validator_answers(
+    array $answers,
+    array $questions
+): array {
+
+    $errors = [];
+
+    if (
+        !is_array($answers)
+        ||
+        empty($questions)
+    ) {
+        return application_validator_result(
+            empty($errors),
+            $errors
+        );
+    }
+
+    $answers_by_question = [];
+
+    foreach ($answers as $answer) {
+
+        if (
+            !is_array($answer)
+        ) {
+            continue;
+        }
+
+        $question_id =
+            isset($answer['question_id'])
+                ? (int) $answer['question_id']
+                : 0;
+
+        if ($question_id <= 0) {
+            continue;
+        }
+
+        $value =
+            $answer['answer']
+            ?? $answer['value']
+            ?? '';
+
+        if (
+            !is_string($value)
+        ) {
+
+            $errors["answers.{$question_id}"] =
+                'Answer must be a string.';
+
+            continue;
+        }
+
+        $answers_by_question[$question_id] =
+            trim($value);
+    }
+
+    foreach ($questions as $question) {
+
+        $question_id =
+            (int) $question['id'];
+
+        $answered =
+            array_key_exists(
+                $question_id,
+                $answers_by_question
+            );
+
+        if (
+            !empty($question['required'])
+            &&
+            (
+                !$answered
+                ||
+                $answers_by_question[$question_id] === ''
+            )
+        ) {
+
+            $errors["answers.{$question_id}"] =
+                'This question is required.';
+
+            continue;
+        }
+
+        if (!$answered) {
+            continue;
+        }
+
+        $value =
+            $answers_by_question[$question_id];
+
+        if (
+            mb_strlen($value) > 10000
+        ) {
+
+            $errors["answers.{$question_id}"] =
+                'Answer must not exceed 10000 characters.';
+
+            continue;
+        }
+
+        if (
+            in_array(
+                $question['question_type'] ?? '',
+                ['select', 'radio'],
+                true
+            )
+            &&
+            !empty($question['options'])
+        ) {
+
+            $allowed_options = $question['options'];
+
+            if (
+                !in_array(
+                    $value,
+                    $allowed_options,
+                    true
+                )
+            ) {
+
+                $errors["answers.{$question_id}"] =
+                    'Selected option is not valid.';
+            }
+        }
+    }
 
     return application_validator_result(
         empty($errors),

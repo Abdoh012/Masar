@@ -17,6 +17,12 @@ if ($path === '/api/v1/companies/me' && $method === 'GET') {
     return;
 }
 
+if ($path === '/api/v1/companies/me' && $method === 'PUT') {
+    middleware_company();
+    company_controller_update_my_profile();
+    return;
+}
+
 if ($path === '/api/v1/companies' && $method === 'POST') {
     company_controller_create();
     return;

@@ -43,6 +43,38 @@ function student_service_validate_cv_file_ownership( int $user_id, mixed $cv_fil
     return [ 'cv_file_id' => $cv_file_id, ];
 }
 
+/**
+ * Resolves the student's academic choices (User Field + Specialist) to
+ * database IDs.
+ *
+ * The User Field is read from the `field` payload key when present, falling
+ * back to the legacy `faculty` key used by the current registration form.
+ * Specialist is always read from the `specialization` key and resolved
+ * against the existing `specializations` table. University is no longer part
+ * of the student registration model.
+ */
+function student_service_resolve_academic_data( array $data ): ?array {
+    $user_field = trim((string) ($data['field'] ?? ''));
+
+    if ($user_field === '') {
+        $user_field = trim((string) ($data['faculty'] ?? ''));
+    }
+
+    $specialization = trim((string) ($data['specialization'] ?? ''));
+
+    $field_id = student_repository_resolve_field_id( $user_field );
+    $specialization_id = student_repository_resolve_specialization_id( $specialization );
+
+    if ($field_id === null || $specialization_id === null) {
+        return null;
+    }
+
+    return [
+        'field_id' => $field_id,
+        'specialization_id' => $specialization_id,
+    ];
+}
+
 function student_service_create_profile( int $user_id, array $data ): array {
 
     if ($user_id <= 0) {
@@ -55,23 +87,17 @@ function student_service_create_profile( int $user_id, array $data ): array {
         return [ 'error' => true, 'status' => 409, 'message' => 'Student profile already exists.' ];
     }
 
-    $academic_data = student_repository_resolve_academic_data(
-        trim((string) ($data['university'] ?? '')),
-        trim((string) ($data['faculty'] ?? '')),
-        trim((string) ($data['specialization'] ?? ''))
-    );
+    $academic_data = student_service_resolve_academic_data( $data );
 
     if ($academic_data === null) {
-        return [ 'error' => true, 'status' => 422, 'message' => 'University, faculty, or specialization is incorrect.' ];
+        return [ 'error' => true, 'status' => 422, 'message' => 'User field or specialization is incorrect.' ];
     }
 
     $student_data = [
         'user_id' => $user_id,
         'full_name' => trim( $data['full_name'] ?? '' ),
-        'university_id' => $academic_data['university_id'],
-        'faculty_id' => $academic_data['faculty_id'],
+        'field_id' => $academic_data['field_id'],
         'specialization_id' => $academic_data['specialization_id'],
-
     ];
 
     if (!empty($data['degree'] ?? null)) {
@@ -98,10 +124,6 @@ function student_service_create_profile( int $user_id, array $data ): array {
             return $cv_result;
         }
         $student_data['cv_file_id'] = $cv_result['cv_file_id'];
-    }
-
-    if (!student_repository_academic_data_exists( $student_data['university_id'], $student_data['faculty_id'], $student_data['specialization_id'] )) {
-        return [ 'error' => true, 'status' => 422, 'message' => 'University, faculty, or specialization is incorrect.' ];
     }
 
     $student_id = student_repository_create( $student_data );
@@ -155,19 +177,14 @@ function student_service_update_profile( int $user_id, array $data ): array {
     $student_id = (int) $student['id'];
     $student_data = [];
 
-    if ( array_key_exists( 'university', $data ) || array_key_exists( 'faculty', $data ) || array_key_exists( 'specialization', $data ) ) {
-        $academic_data = student_repository_resolve_academic_data(
-            trim((string) ($data['university'] ?? '')),
-            trim((string) ($data['faculty'] ?? '')),
-            trim((string) ($data['specialization'] ?? ''))
-        );
+    if ( array_key_exists( 'field', $data ) || array_key_exists( 'faculty', $data ) || array_key_exists( 'specialization', $data ) ) {
+        $academic_data = student_service_resolve_academic_data( $data );
 
         if ($academic_data === null) {
-            return [ 'error' => true, 'status' => 422, 'message' => 'University, faculty, and specialization must be provided together and are incorrect.' ];
+            return [ 'error' => true, 'status' => 422, 'message' => 'User field and specialization are incorrect.' ];
         }
 
-        $student_data['university_id'] = $academic_data['university_id'];
-        $student_data['faculty_id'] = $academic_data['faculty_id'];
+        $student_data['field_id'] = $academic_data['field_id'];
         $student_data['specialization_id'] = $academic_data['specialization_id'];
     }
 
@@ -246,19 +263,14 @@ function student_complete_profile_data( int $user_id, array $data ): array {
         return [ 'error' => true, 'status' => 404, 'message' => 'Student profile not found.' ];
     }
 
-    $academic_data = student_repository_resolve_academic_data(
-        trim((string) ($data['university'] ?? '')),
-        trim((string) ($data['faculty'] ?? '')),
-        trim((string) ($data['specialization'] ?? ''))
-    );
+    $academic_data = student_service_resolve_academic_data( $data );
 
     if ($academic_data === null) {
-        return [ 'error' => true, 'status' => 422, 'message' => 'University, faculty, or specialization is incorrect.' ];
+        return [ 'error' => true, 'status' => 422, 'message' => 'User field or specialization is incorrect.' ];
     }
 
     $student_data = [
-        'university_id' => $academic_data['university_id'],
-        'faculty_id' => $academic_data['faculty_id'],
+        'field_id' => $academic_data['field_id'],
         'specialization_id' => $academic_data['specialization_id'],
         'is_profile_complete' => 1,
     ];
@@ -345,7 +357,7 @@ function student_get_profile_status( int $user_id ): array {
         return [ 'error' => true, 'status' => 404, 'message' => 'Student profile not found.'];
     }
 
-    $required_fields = [ 'university_id' => $student['university_id'] ?? null, 'faculty_id' => $student['faculty_id'] ?? null, 'specialization_id' => $student['specialization_id'] ?? null ];
+    $required_fields = [ 'field_id' => $student['field_id'] ?? null, 'specialization_id' => $student['specialization_id'] ?? null ];
     $missing_fields = [];
 
     foreach ( $required_fields as $field => $value ) {
@@ -370,9 +382,9 @@ function student_get_profile_status( int $user_id ): array {
 }
 
 function student_calculate_completion_percentage( array $student, ?array $profile ): int {
-    $total = 5;
+    $total = 4;
     $completed = 0;
-    $fields = [ 'university_id', 'faculty_id', 'specialization_id',];
+    $fields = [ 'field_id', 'specialization_id',];
 
     foreach ( $fields as $field ) {
         if ( !empty( $student[$field] ?? null ) ) {

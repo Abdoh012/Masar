@@ -74,13 +74,21 @@ function auth_validate_register( array $data ): array {
             $errors['full_name'][] = 'Full name must not exceed 255 characters.';
         }
 
-        foreach (['university', 'faculty', 'specialization'] as $academic_field) {
-            $academic_value = trim((string) ($data[$academic_field] ?? ''));
-            if ($academic_value === '') {
-                $errors[$academic_field][] = ucfirst($academic_field) . ' is required.';
-            } elseif (strlen($academic_value) > 255) {
-                $errors[$academic_field][] = ucfirst($academic_field) . ' must not exceed 255 characters.';
-            }
+        $user_field_key = array_key_exists('field', $data) ? 'field' : 'faculty';
+        $user_field = trim((string) ($data[$user_field_key] ?? ''));
+
+        if ($user_field === '') {
+            $errors[$user_field_key][] = 'User field is required.';
+        } elseif (strlen($user_field) > 255) {
+            $errors[$user_field_key][] = 'User field must not exceed 255 characters.';
+        }
+
+        $specialization = trim((string) ($data['specialization'] ?? ''));
+
+        if ($specialization === '') {
+            $errors['specialization'][] = 'Specialization is required.';
+        } elseif (strlen($specialization) > 255) {
+            $errors['specialization'][] = 'Specialization must not exceed 255 characters.';
         }
     }
 
@@ -95,14 +103,32 @@ function auth_validate_register( array $data ): array {
             $errors['company_name'][] = 'Company legal name must not exceed 255 characters.';
         }
 
-        $industry = trim( $data['industry'] ?? '' );
+        $has_work_fields =
+            array_key_exists('work_field_ids', $data)
+            ||
+            trim( $data['industry'] ?? '' ) !== '';
 
-        if ($industry === '') {
-            $errors['industry'][] = 'Industry is required for company registration.';
-        } elseif ( strlen($industry) < 2 ) {
-            $errors['industry'][] = 'Industry must be at least 2 characters.';
-        } elseif ( strlen($industry) > 255 ) {
-            $errors['industry'][] = 'Industry must not exceed 255 characters.';
+        if (!$has_work_fields) {
+            $errors['work_field_ids'][] = 'At least one work field is required for company registration.';
+        } else {
+            if ( array_key_exists('work_field_ids', $data) ) {
+                if ( !is_array($data['work_field_ids']) || empty($data['work_field_ids']) ) {
+                    $errors['work_field_ids'][] = 'Work fields must be a non-empty array of study field IDs.';
+                } else {
+                    foreach ($data['work_field_ids'] as $field_id) {
+                        if ( !is_numeric($field_id) || (int) $field_id <= 0 ) {
+                            $errors['work_field_ids'][] = 'Each work field must be a positive study field ID.';
+                            break;
+                        }
+                    }
+                }
+            }
+
+            $industry = trim( $data['industry'] ?? '' );
+
+            if ( $industry !== '' && strlen($industry) > 255 ) {
+                $errors['industry'][] = 'Industry must not exceed 255 characters.';
+            }
         }
     }
 

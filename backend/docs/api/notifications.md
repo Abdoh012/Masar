@@ -18,7 +18,7 @@ It covers:
 Base URL:
 
 ```text
-/api/notifications
+/api/v1/notifications
 ```
 
 All notification endpoints require authentication.
@@ -47,7 +47,7 @@ Returns notifications belonging to the authenticated user.
 ### Endpoint
 
 ```http
-GET /api/notifications
+GET /api/v1/notifications
 ```
 
 ### Query Parameters
@@ -55,14 +55,29 @@ GET /api/notifications
 ```text
 page
 per_page
+
+unread
 read
 type
+search
+from
+to
+order
 ```
+
+`read` is the inverse of `unread`:
+
+* `read=false` is equivalent to `unread=true`.
+* `read=true` is equivalent to `unread=false`.
 
 ### Example
 
 ```http
-GET /api/notifications?page=1&per_page=20&read=false
+GET /api/v1/notifications?page=1&per_page=20&read=false
+```
+
+```http
+GET /api/v1/notifications?unread=true&type=training_expiry
 ```
 
 ### Response
@@ -104,7 +119,7 @@ Returns a single notification.
 ### Endpoint
 
 ```http
-GET /api/notifications/{notificationId}
+GET /api/v1/notifications/{notificationId}
 ```
 
 ### Response
@@ -138,7 +153,7 @@ Marks a notification as read.
 ### Endpoint
 
 ```http
-POST /api/notifications/{notificationId}/read
+POST /api/v1/notifications/{notificationId}/read
 ```
 
 ### Response
@@ -165,7 +180,7 @@ Marks all unread notifications belonging to the authenticated user as read.
 ### Endpoint
 
 ```http
-POST /api/notifications/read-all
+POST /api/v1/notifications/read-all
 ```
 
 ### Response
@@ -188,7 +203,7 @@ Returns the number of unread notifications.
 ### Endpoint
 
 ```http
-GET /api/notifications/unread-count
+GET /api/v1/notifications/unread-count
 ```
 
 ### Response
@@ -217,7 +232,7 @@ Deletes or hides a notification according to the application's retention policy.
 ### Endpoint
 
 ```http
-DELETE /api/notifications/{notificationId}
+DELETE /api/v1/notifications/{notificationId}
 ```
 
 ### Response
@@ -230,29 +245,6 @@ DELETE /api/notifications/{notificationId}
 ```
 
 If soft deletion is used, the notification record should remain available for the appropriate retention period.
-
----
-
-# 7. Delete All Read Notifications
-
-Removes read notifications belonging to the authenticated user.
-
-### Endpoint
-
-```http
-DELETE /api/notifications/read
-```
-
-### Response
-
-```json
-{
-    "success": true,
-    "message": "Read notifications deleted successfully."
-}
-```
-
-Unread notifications must not be deleted by this endpoint.
 
 ---
 
@@ -538,7 +530,7 @@ per_page
 Example:
 
 ```http
-GET /api/notifications?page=2&per_page=20
+GET /api/v1/notifications?page=2&per_page=20
 ```
 
 Response:
@@ -563,24 +555,36 @@ The API should enforce a maximum `per_page`.
 Notifications may be filtered by:
 
 ```text
+unread
 read
 type
+search
+from
+to
 ```
 
 Examples:
 
 ```http
-GET /api/notifications?read=false
+GET /api/v1/notifications?unread=true
 ```
 
 ```http
-GET /api/notifications?type=application_accepted
+GET /api/v1/notifications?read=false
+```
+
+```http
+GET /api/v1/notifications?type=application_accepted
+```
+
+```http
+GET /api/v1/notifications?search=accepted
 ```
 
 Multiple filters may be combined:
 
 ```http
-GET /api/notifications?read=false&type=application_accepted
+GET /api/v1/notifications?unread=true&type=application_accepted
 ```
 
 ---
@@ -610,11 +614,11 @@ If notification preferences are implemented, they should be managed separately f
 Recommended endpoint:
 
 ```http
-GET /api/notifications/preferences
+GET /api/v1/notifications/preferences
 ```
 
 ```http
-PUT /api/notifications/preferences
+PUT /api/v1/notifications/preferences
 ```
 
 Example request:
@@ -846,19 +850,15 @@ shared/functions/email.php
 # Related Routes
 
 ```text
-GET    /api/notifications
-GET    /api/notifications/{notificationId}
+GET    /api/v1/notifications
+GET    /api/v1/notifications/{notificationId}
 
-POST   /api/notifications/{notificationId}/read
-POST   /api/notifications/read-all
+POST   /api/v1/notifications/{notificationId}/read
+POST   /api/v1/notifications/read-all
 
-GET    /api/notifications/unread-count
+GET    /api/v1/notifications/unread-count
 
-DELETE /api/notifications/{notificationId}
-DELETE /api/notifications/read
-
-GET    /api/notifications/preferences
-PUT    /api/notifications/preferences
+DELETE /api/v1/notifications/{notificationId}
 ```
 
 ---

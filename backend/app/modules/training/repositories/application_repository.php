@@ -438,15 +438,43 @@ function application_repository_create(
         ?? $data['notes']
         ?? null;
 
+    $applicant_type =
+        $data['applicant_type']
+        ?? 'student';
+
+    if (
+        !in_array(
+            $applicant_type,
+            ['student', 'graduated'],
+            true
+        )
+    ) {
+        $applicant_type = 'student';
+    }
+
     $sql = "
         INSERT INTO training_applications (
             training_id,
             student_id,
             message,
+            cv_file_id,
+            university_id,
+            faculty_id,
+            applicant_type,
+            academic_year,
+            graduation_year,
+            motivation,
             status,
             applied_at
         )
         VALUES (
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
             ?,
             ?,
             ?,
@@ -465,6 +493,26 @@ function application_repository_create(
 
         $message,
 
+        $data['cv_file_id']
+            ?? null,
+
+        $data['university_id']
+            ?? null,
+
+        $data['faculty_id']
+            ?? null,
+
+        $applicant_type,
+
+        $data['academic_year']
+            ?? null,
+
+        $data['graduation_year']
+            ?? null,
+
+        $data['motivation']
+            ?? null,
+
         $status
 
     ];
@@ -479,6 +527,165 @@ function application_repository_create(
     }
 
     return (int) db_last_insert_id();
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Save Application Answers
+|--------------------------------------------------------------------------
+*/
+
+function application_repository_save_answers(
+    int $application_id,
+    array $answers
+): bool {
+
+    if (
+        $application_id <= 0
+        ||
+        empty($answers)
+    ) {
+        return false;
+    }
+
+    $inserted = 0;
+
+    foreach ($answers as $answer) {
+
+        $question_id =
+            isset($answer['question_id'])
+                ? (int) $answer['question_id']
+                : 0;
+
+        $value =
+            $answer['answer']
+            ?? $answer['value']
+            ?? '';
+
+        if (
+            $question_id <= 0
+            ||
+            !is_string($value)
+        ) {
+            continue;
+        }
+
+        $statement = db_execute(
+            "
+                INSERT INTO application_answers (
+                    application_id,
+                    question_id,
+                    answer
+                )
+                VALUES (?, ?, ?)
+            ",
+            [
+                $application_id,
+                $question_id,
+                trim($value)
+            ]
+        );
+
+        $inserted +=
+            $statement->rowCount();
+    }
+
+    return $inserted > 0;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Get Application Answers
+|--------------------------------------------------------------------------
+*/
+
+function application_repository_get_answers(
+    int $application_id
+): array {
+
+    if ($application_id <= 0) {
+        return [];
+    }
+
+    $rows = db_fetch_all(
+        "
+            SELECT
+                aa.question_id,
+                aa.answer,
+                tq.question,
+                tq.question_type,
+                tq.options
+            FROM application_answers aa
+            INNER JOIN training_questions tq
+                ON tq.id = aa.question_id
+            WHERE aa.application_id = ?
+            ORDER BY tq.sort_order ASC, tq.id ASC
+        ",
+        [$application_id]
+    );
+
+    return is_array($rows)
+        ? $rows
+        : [];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Find University By ID
+|--------------------------------------------------------------------------
+*/
+
+function application_repository_find_university_by_id(
+    int $university_id
+): ?array {
+
+    if ($university_id <= 0) {
+        return null;
+    }
+
+    return db_fetch_one(
+        "
+            SELECT
+                id,
+                name,
+                city
+            FROM universities
+            WHERE id = ?
+            LIMIT 1
+        ",
+        [$university_id]
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Find Faculty By ID
+|--------------------------------------------------------------------------
+*/
+
+function application_repository_find_faculty_by_id(
+    int $faculty_id
+): ?array {
+
+    if ($faculty_id <= 0) {
+        return null;
+    }
+
+    return db_fetch_one(
+        "
+            SELECT
+                id,
+                name
+            FROM faculties
+            WHERE id = ?
+            LIMIT 1
+        ",
+        [$faculty_id]
+    );
 }
 
 

@@ -18,17 +18,56 @@
  * Database logic belongs to training_repository.php.
  */
 
+require_once __DIR__ . '/../../../core/http/request.php';
+require_once __DIR__ . '/../../../core/http/response.php';
+require_once __DIR__ . '/../../../core/auth/token.php';
+require_once __DIR__ . '/../../../shared/functions/authorization.php';
+
+require_once __DIR__ . '/../services/training_service.php';
+
 
 /*
 |--------------------------------------------------------------------------
-| Dependencies
+| Optional Student Context
 |--------------------------------------------------------------------------
+|
+| Resolves the authenticated student's profile ID when a valid
+| token is present. Returns null for guests so public listing
+| and detail endpoints remain accessible without authentication.
+|
 */
 
-require_once __DIR__ . '/../../../core/http/request.php';
-require_once __DIR__ . '/../../../core/http/response.php';
+function training_controller_student_context(): ?int
+{
+    if (
+        !token_authenticate_request()
+    ) {
+        return null;
+    }
 
-require_once __DIR__ . '/../services/training_service.php';
+    $user = auth_user();
+
+    if (
+        !$user
+        ||
+        !is_student_role(
+            $user['role'] ?? null
+        )
+    ) {
+        return null;
+    }
+
+    $student =
+        application_repository_find_student_by_user_id(
+            (int) $user['id']
+        );
+
+    if (!$student) {
+        return null;
+    }
+
+    return (int) $student['student_id'];
+}
 
 
 /*
@@ -42,11 +81,6 @@ require_once __DIR__ . '/../services/training_service.php';
 
 function training_controller_create(): void
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Request Method
-    |--------------------------------------------------------------------------
-    */
 
     $method = request_method();
 
@@ -59,13 +93,6 @@ function training_controller_create(): void
         return;
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Authenticated User
-    |--------------------------------------------------------------------------
-    */
-
     $user = auth_user();
 
     if (!$user) {
@@ -76,13 +103,6 @@ function training_controller_create(): void
 
         return;
     }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Check User Role
-    |--------------------------------------------------------------------------
-    */
 
     if (
         !isset($user['role'])
@@ -97,21 +117,7 @@ function training_controller_create(): void
         return;
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Request Data
-    |--------------------------------------------------------------------------
-    */
-
     $data = request_json();
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Create Training
-    |--------------------------------------------------------------------------
-    */
 
     $result =
         training_service_create(
@@ -153,9 +159,7 @@ function training_controller_create(): void
 |--------------------------------------------------------------------------
 */
 
-function training_controller_show(
-    int $training_id = 0
-): void
+function training_controller_show( int $training_id = 0 ): void
 {
     /*
     |--------------------------------------------------------------------------
@@ -213,7 +217,8 @@ function training_controller_show(
 
     $result =
         training_service_find(
-            $training_id
+            $training_id,
+            training_controller_student_context()
         );
 
 
@@ -310,6 +315,37 @@ function training_controller_index(): void
                 'company_id'
             ),
 
+        'field_id' =>
+            request_get_int(
+                'field_id'
+            ),
+
+        'specialization_id' =>
+            request_get_int(
+                'specialization_id'
+            ),
+
+        'skill_id' =>
+            request_get_int(
+                'skill_id'
+            ),
+
+        'city' =>
+            request_get(
+                'city'
+            ),
+
+        'keyword' =>
+            request_get(
+                'keyword'
+            ),
+
+        'sort' =>
+            request_get(
+                'sort',
+                'newest'
+            ),
+
         'page' =>
             request_get_int(
                 'page',
@@ -333,7 +369,8 @@ function training_controller_index(): void
 
     $result =
         training_service_list(
-            $filters
+            $filters,
+            training_controller_student_context()
         );
 
 
@@ -908,5 +945,323 @@ function training_controller_delete(): void
     response_success(
         null,
         $result['message'] ?? 'Training opportunity deleted successfully.'
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Save Training
+|--------------------------------------------------------------------------
+|
+| Student saves a published training opportunity.
+|
+*/
+
+function training_controller_save( int $training_id = 0 ): void
+{
+    /*
+    |--------------------------------------------------------------------------
+    | Request Method
+    |--------------------------------------------------------------------------
+    */
+
+    $method = request_method();
+
+    if ($method !== 'POST') {
+
+        response_method_not_allowed(
+            'Only POST method is allowed.'
+        );
+
+        return;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Training ID
+    |--------------------------------------------------------------------------
+    */
+
+    if ($training_id <= 0) {
+
+        $training_id =
+            request_get_int(
+                'id'
+            );
+    }
+
+    if (
+        $training_id <= 0
+    ) {
+
+        response_validation_error(
+            [
+                'id' =>
+                    'A valid training ID is required.'
+            ]
+        );
+
+        return;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Save
+    |--------------------------------------------------------------------------
+    */
+
+    $result =
+        training_service_save(
+            (int) auth_id(),
+            $training_id
+        );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Response
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        !$result['success']
+    ) {
+
+        response_error(
+            $result['message'] ?? 'Unable to save training opportunity.',
+            $result['status_code'] ?? 400,
+            $result['errors'] ?? []
+        );
+
+        return;
+    }
+
+
+    response_success(
+        $result['data'] ?? null,
+        $result['message'] ?? 'Training opportunity saved successfully.'
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Unsave Training
+|--------------------------------------------------------------------------
+|
+| Student removes a training opportunity from their saved list.
+|
+*/
+
+function training_controller_unsave( int $training_id = 0 ): void
+{
+    /*
+    |--------------------------------------------------------------------------
+    | Request Method
+    |--------------------------------------------------------------------------
+    */
+
+    $method = request_method();
+
+    if ($method !== 'DELETE') {
+
+        response_method_not_allowed(
+            'Only DELETE method is allowed.'
+        );
+
+        return;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Training ID
+    |--------------------------------------------------------------------------
+    */
+
+    if ($training_id <= 0) {
+
+        $training_id =
+            request_get_int(
+                'id'
+            );
+    }
+
+    if (
+        $training_id <= 0
+    ) {
+
+        response_validation_error(
+            [
+                'id' =>
+                    'A valid training ID is required.'
+            ]
+        );
+
+        return;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Unsave
+    |--------------------------------------------------------------------------
+    */
+
+    $result =
+        training_service_unsave(
+            (int) auth_id(),
+            $training_id
+        );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Response
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        !$result['success']
+    ) {
+
+        response_error(
+            $result['message'] ?? 'Unable to remove saved training opportunity.',
+            $result['status_code'] ?? 400,
+            $result['errors'] ?? []
+        );
+
+        return;
+    }
+
+
+    response_success(
+        $result['data'] ?? null,
+        $result['message'] ?? 'Training opportunity removed from saved list.'
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Get Saved Trainings
+|--------------------------------------------------------------------------
+|
+| Student lists their saved training opportunities.
+|
+*/
+
+function training_controller_saved(): void
+{
+    /*
+    |--------------------------------------------------------------------------
+    | Request Method
+    |--------------------------------------------------------------------------
+    */
+
+    $method = request_method();
+
+    if ($method !== 'GET') {
+
+        response_method_not_allowed(
+            'Only GET method is allowed.'
+        );
+
+        return;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Query Parameters
+    |--------------------------------------------------------------------------
+    */
+
+    $filters = [
+
+        'company_id' =>
+            request_get_int(
+                'company_id'
+            ),
+
+        'training_type' =>
+            request_get(
+                'training_type'
+            ),
+
+        'work_mode' =>
+            request_get(
+                'work_mode'
+            ),
+
+        'paid' =>
+            request_get(
+                'paid'
+            ),
+
+        'keyword' =>
+            request_get(
+                'keyword'
+            ),
+
+        'sort' =>
+            request_get(
+                'sort',
+                'newest'
+            ),
+
+        'page' =>
+            request_get_int(
+                'page',
+                1
+            ),
+
+        'limit' =>
+            request_get_int(
+                'limit',
+                20
+            ),
+
+    ];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get Saved Trainings
+    |--------------------------------------------------------------------------
+    */
+
+    $result =
+        training_service_saved_list(
+            (int) auth_id(),
+            $filters
+        );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Response
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        !$result['success']
+    ) {
+
+        response_error(
+            $result['message'] ?? 'Unable to retrieve saved training opportunities.',
+            $result['status_code'] ?? 400,
+            $result['errors'] ?? []
+        );
+
+        return;
+    }
+
+
+    response_success(
+        $result['data']
     );
 }

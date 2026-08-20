@@ -41,13 +41,18 @@ Not required.
 
 ```json
 {
-    "name": "Ahmed Mohamed",
+    "full_name": "Ahmed Mohamed",
     "email": "ahmed@example.com",
     "password": "StrongPassword@123",
     "password_confirmation": "StrongPassword@123",
-    "role": "student"
+    "accept_terms": true,
+    "role": "student",
+    "field": "Engineering",
+    "specialization": "Mechanical Engineering"
 }
 ```
+
+For student registration, `field` (User Field) and `specialization` (Specialist) are required and must match seeded lookup data. The legacy `faculty` key is accepted as a fallback for `field` (`faculty` + `specialization`), so clients sending the old key name still work. `university` is no longer part of the student model and is ignored if sent.
 
 ### Response
 

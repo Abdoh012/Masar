@@ -177,9 +177,7 @@ function application_controller_create(): void
 |--------------------------------------------------------------------------
 */
 
-function application_controller_show(
-    int $application_id = 0
-): void
+function application_controller_show( int $application_id = 0 ): void
 {
     /*
     |--------------------------------------------------------------------------

@@ -26,13 +26,13 @@ function send_expiry_notifications(PDO $pdo): int
         SELECT
             tl.id,
             tl.title,
-            tl.application_deadline,
+            tl.ends_at,
             tl.company_id
         FROM training_listings tl
         WHERE
             tl.status = 'published'
-            AND tl.application_deadline IS NOT NULL
-            AND tl.application_deadline BETWEEN
+            AND tl.ends_at IS NOT NULL
+            AND tl.ends_at BETWEEN
                 CURRENT_TIMESTAMP
                 AND DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 1 DAY)
         "
@@ -53,11 +53,13 @@ function send_expiry_notifications(PDO $pdo): int
     $studentStatement = $pdo->prepare(
         "
         SELECT DISTINCT
-            ta.student_id
+            s.user_id
         FROM training_applications ta
+        INNER JOIN students s
+            ON s.id = ta.student_id
         WHERE
             ta.training_id = :training_id
-            AND ta.status IN ('pending', 'submitted')
+            AND ta.status = 'submitted'
         "
     );
 
@@ -67,16 +69,18 @@ function send_expiry_notifications(PDO $pdo): int
             user_id,
             type,
             title,
-            message,
-            data,
+            body,
+            entity_type,
+            entity_id,
             created_at
         )
         VALUES (
             :user_id,
             :type,
             :title,
-            :message,
-            :data,
+            :body,
+            :entity_type,
+            :entity_id,
             CURRENT_TIMESTAMP
         )
         "
@@ -93,21 +97,15 @@ function send_expiry_notifications(PDO $pdo): int
 
         foreach ($students as $student) {
             $notifications[] = [
-                'user_id' => (int) $student['student_id'],
+                'user_id' => (int) $student['user_id'],
                 'type' => 'training_expiry',
                 'title' => 'Training opportunity is expiring soon',
-                'message' =>
+                'body' =>
                     'The training opportunity "' .
                     $training['title'] .
                     '" will close soon.',
-                'data' => json_encode(
-                    [
-                        'training_id' => (int) $training['id'],
-                        'deadline' => $training['application_deadline'],
-                    ],
-                    JSON_UNESCAPED_UNICODE |
-                    JSON_UNESCAPED_SLASHES
-                ),
+                'entity_type' => 'training',
+                'entity_id' => (int) $training['id'],
             ];
         }
     }
@@ -122,16 +120,18 @@ function send_expiry_notifications(PDO $pdo): int
         "
         SELECT
             ts.id,
-            ts.student_id,
-            ts.end_date,
+            s.user_id,
+            ts.trial_ends_at,
             tl.title
         FROM training_sessions ts
         INNER JOIN training_listings tl
             ON tl.id = ts.training_id
+        INNER JOIN students s
+            ON s.id = ts.student_id
         WHERE
-            ts.status = 'active'
-            AND ts.end_date IS NOT NULL
-            AND ts.end_date BETWEEN
+            ts.status = 'trial'
+            AND ts.trial_ends_at IS NOT NULL
+            AND ts.trial_ends_at BETWEEN
                 CURRENT_TIMESTAMP
                 AND DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 1 DAY)
         "
@@ -145,21 +145,15 @@ function send_expiry_notifications(PDO $pdo): int
 
     foreach ($sessions as $session) {
         $notifications[] = [
-            'user_id' => (int) $session['student_id'],
+            'user_id' => (int) $session['user_id'],
             'type' => 'session_expiry',
             'title' => 'Training session is ending soon',
-            'message' =>
+            'body' =>
                 'Your training session "' .
                 $session['title'] .
                 '" is ending soon.',
-            'data' => json_encode(
-                [
-                    'session_id' => (int) $session['id'],
-                    'end_date' => $session['end_date'],
-                ],
-                JSON_UNESCAPED_UNICODE |
-                JSON_UNESCAPED_SLASHES
-            ),
+            'entity_type' => 'session',
+            'entity_id' => (int) $session['id'],
         ];
     }
 
@@ -176,8 +170,9 @@ function send_expiry_notifications(PDO $pdo): int
             ':user_id' => $notification['user_id'],
             ':type' => $notification['type'],
             ':title' => $notification['title'],
-            ':message' => $notification['message'],
-            ':data' => $notification['data'],
+            ':body' => $notification['body'],
+            ':entity_type' => $notification['entity_type'],
+            ':entity_id' => $notification['entity_id'],
         ]);
 
         $sentCount++;
