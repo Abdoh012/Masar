@@ -3,9 +3,8 @@
 /**
  * MASAR - Expire Trial Periods
  *
- * Marks active training sessions whose trial period
- * has expired as completed/expired according to the
- * session lifecycle.
+ * Stops training sessions still in the trial period whose trial
+ * period has expired, according to the session lifecycle.
  */
 
 declare(strict_types=1);
@@ -17,12 +16,13 @@ function expire_trial_periods(PDO $pdo): int
     $sql = "
         UPDATE training_sessions
         SET
-            status = 'expired',
+            status = 'stopped',
+            actual_ended_at = CURRENT_TIMESTAMP,
             updated_at = CURRENT_TIMESTAMP
         WHERE
-            status = 'active'
-            AND trial_end_date IS NOT NULL
-            AND trial_end_date < CURRENT_TIMESTAMP
+            status = 'trial'
+            AND trial_ends_at IS NOT NULL
+            AND trial_ends_at < CURRENT_TIMESTAMP
     ";
 
     $statement = $pdo->prepare($sql);

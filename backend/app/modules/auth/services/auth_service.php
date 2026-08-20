@@ -357,7 +357,7 @@ function auth_register_user(array $data): array
             if ($role === USER_ROLE_STUDENT) {
                 $student_result = student_service_create_profile($created_user_id, [
                     'full_name' => trim($data['full_name'] ?? ''),
-                    'university' => trim((string) ($data['university'] ?? '')),
+                    'field' => trim((string) ($data['field'] ?? '')),
                     'faculty' => trim((string) ($data['faculty'] ?? '')),
                     'specialization' => trim((string) ($data['specialization'] ?? '')),
                 ]);
@@ -371,11 +371,18 @@ function auth_register_user(array $data): array
 
             if ($role === USER_ROLE_COMPANY) {
                 $company_name = trim($data['company_name'] ?? $data['legal_name'] ?? '');
-                $company_result = company_service_create($created_user_id, [
+
+                $company_payload = [
                     'company_name' => $company_name,
                     'industry' => trim($data['industry'] ?? ''),
                     'description' => trim($data['description'] ?? ''),
-                ]);
+                ];
+
+                if (isset($data['work_field_ids']) && is_array($data['work_field_ids'])) {
+                    $company_payload['work_field_ids'] = $data['work_field_ids'];
+                }
+
+                $company_result = company_service_create($created_user_id, $company_payload);
 
                 if (
                     (isset($company_result['error']) && $company_result['error'] === true)

@@ -149,6 +149,246 @@ function company_repository_create(
 
 /*
 |--------------------------------------------------------------------------
+| Add Work Field
+|--------------------------------------------------------------------------
+*/
+
+function company_repository_add_work_field(
+    int $company_id,
+    int $field_id
+): bool {
+
+    if (
+        $company_id <= 0 ||
+        $field_id <= 0
+    ) {
+
+        return false;
+    }
+
+
+    $sql = "
+        INSERT IGNORE INTO company_work_fields (
+            company_id,
+            field_id,
+            created_at
+        )
+        VALUES (
+            ?,
+            ?,
+            NOW()
+        )
+    ";
+
+
+    $statement =
+        db_execute(
+            $sql,
+            [
+                $company_id,
+                $field_id,
+            ]
+        );
+
+    return $statement !== false;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Delete All Work Fields
+|--------------------------------------------------------------------------
+*/
+
+function company_repository_delete_work_fields(
+    int $company_id
+): bool {
+
+    if ($company_id <= 0) {
+        return false;
+    }
+
+
+    $sql = "
+        DELETE FROM company_work_fields
+        WHERE company_id = ?
+    ";
+
+
+    $statement =
+        db_execute(
+            $sql,
+            [$company_id]
+        );
+
+    return $statement !== false;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Replace All Work Fields
+|--------------------------------------------------------------------------
+*/
+
+function company_repository_replace_work_fields(
+    int $company_id,
+    array $field_ids
+): bool {
+
+    if ($company_id <= 0) {
+        return false;
+    }
+
+
+    return db_transaction(function () use ($company_id, $field_ids): bool {
+        $deleted =
+            company_repository_delete_work_fields(
+                $company_id
+            );
+
+        if (!$deleted) {
+            throw new RuntimeException('Unable to replace company work fields.');
+        }
+
+
+        foreach ($field_ids as $field_id) {
+            $added =
+                company_repository_add_work_field(
+                    $company_id,
+                    (int) $field_id
+                );
+
+            if (!$added) {
+                throw new RuntimeException('Unable to replace company work fields.');
+            }
+        }
+
+        return true;
+    });
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Get Work Fields
+|--------------------------------------------------------------------------
+*/
+
+function company_repository_get_work_fields(
+    int $company_id
+): array {
+
+    if ($company_id <= 0) {
+        return [];
+    }
+
+
+    $sql = "
+        SELECT
+            cwf.field_id,
+            sf.name AS field_name
+        FROM company_work_fields cwf
+        INNER JOIN study_fields sf
+            ON sf.id = cwf.field_id
+        WHERE cwf.company_id = ?
+        ORDER BY sf.name ASC
+    ";
+
+
+    return db_fetch_all(
+        $sql,
+        [$company_id]
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Resolve Work Field ID
+|--------------------------------------------------------------------------
+*/
+
+function company_repository_resolve_work_field_id(
+    mixed $input
+): ?int {
+
+    if (
+        is_int($input)
+        ||
+        (
+            is_string($input)
+            &&
+            ctype_digit($input)
+        )
+    ) {
+
+        $row =
+            db_fetch_one(
+                " SELECT id FROM study_fields WHERE id = ? AND is_active = 1 LIMIT 1 ",
+                [(int) $input]
+            );
+
+        return $row ? (int) $row['id'] : null;
+    }
+
+
+    if (
+        is_string($input)
+        &&
+        trim($input) !== ''
+    ) {
+
+        $row =
+            db_fetch_one(
+                " SELECT id FROM study_fields WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) AND is_active = 1 LIMIT 1 ",
+                [trim($input)]
+            );
+
+        return $row ? (int) $row['id'] : null;
+    }
+
+
+    return null;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Resolve Work Field IDs
+|--------------------------------------------------------------------------
+|
+| Resolves a list of study field IDs and/or names against the study_fields
+| lookup table. Returns null when any input does not match an active study
+| field. study_fields is the single source of truth for work fields.
+|
+*/
+
+function company_repository_resolve_work_field_ids(
+    array $inputs
+): ?array {
+
+    $resolved = [];
+
+    foreach ($inputs as $input) {
+        $field_id =
+            company_repository_resolve_work_field_id(
+                $input
+            );
+
+        if ($field_id === null) {
+            return null;
+        }
+
+        $resolved[$field_id] = $field_id;
+    }
+
+    return array_values($resolved);
+}
+
+
+/*
+|--------------------------------------------------------------------------
 | Update Company
 |--------------------------------------------------------------------------
 */
@@ -173,7 +413,6 @@ function company_repository_update(
 
         'company_name',
         'description',
-        'industry',
 
     ];
 

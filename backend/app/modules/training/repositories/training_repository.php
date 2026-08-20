@@ -822,16 +822,139 @@ function training_repository_count_published(): int {
 function training_repository_get_public_list(
     array $filters = [],
     int $limit = 20,
-    int $offset = 0
+    int $offset = 0,
+    string $sort = 'newest'
 ): array {
 
     $limit = max(1, min($limit, 100));
     $offset = max(0, $offset);
 
+    $parts =
+        training_repository_build_public_query(
+            $filters
+        );
+
+    $saved_only =
+        !empty($filters['saved_only'])
+        &&
+        !empty($filters['student_id']);
+
+    $student_id =
+        (int) (
+            $filters['student_id']
+            ?? 0
+        );
+
+    $sql = "
+        SELECT
+            t.*,
+
+            c.legal_name AS company_name,
+            c.city AS company_city,
+            NULL AS company_logo,
+
+            " . (
+                $saved_only
+                    ? '1'
+                    : 'CASE WHEN st.id IS NULL THEN 0 ELSE 1 END'
+            ) . " AS is_saved
+
+        FROM training_listings t
+
+        LEFT JOIN companies c
+            ON c.id = t.company_id
+
+        " . (
+            $saved_only
+                ? ''
+                : "LEFT JOIN saved_trainings st
+                    ON st.training_id = t.id
+                    AND st.student_id = ?"
+        ) . "
+
+        {$parts['joins']}
+
+        WHERE {$parts['where']}
+
+        " . training_repository_sort_clause(
+            $sort
+        ) . "
+
+        LIMIT {$limit}
+        OFFSET {$offset}
+    ";
+
+    $params = $saved_only
+        ? $parts['params']
+        : array_merge(
+            [$student_id],
+            $parts['params']
+        );
+
+    $result = db_fetch_all(
+        $sql,
+        $params
+    );
+
+    return is_array($result)
+        ? $result
+        : [];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Count Public Trainings
+|--------------------------------------------------------------------------
+*/
+
+function training_repository_count_public(
+    array $filters = []
+): int {
+
+    $parts =
+        training_repository_build_public_query(
+            $filters
+        );
+
+    $sql = "
+        SELECT
+            COUNT(*) AS total
+        FROM training_listings t
+        {$parts['joins']}
+        WHERE {$parts['where']}
+    ";
+
+    $row = db_fetch_one(
+        $sql,
+        $parts['params']
+    );
+
+    return (int) (
+        $row['total']
+        ?? 0
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Build Public Training Query Parts
+|--------------------------------------------------------------------------
+|
+| Shared WHERE / JOIN builder used by both the public list and
+| its total count so filters stay consistent.
+|
+*/
+
+function training_repository_build_public_query(
+    array $filters = []
+): array {
+
+    $joins = '';
     $conditions = [
         "t.status = 'published'"
     ];
-
     $params = [];
 
     if (
@@ -846,7 +969,20 @@ function training_repository_get_public_list(
     }
 
     if (
+        !empty($filters['field'])
+    ) {
+
+        $conditions[] =
+            't.field = ?';
+
+        $params[] =
+            $filters['field'];
+    }
+
+    if (
         !empty($filters['specialization'])
+        &&
+        empty($filters['field'])
     ) {
 
         $conditions[] =
@@ -854,6 +990,36 @@ function training_repository_get_public_list(
 
         $params[] =
             $filters['specialization'];
+    }
+
+    if (
+        !empty($filters['specialization_id'])
+    ) {
+
+        $joins .=
+            " JOIN training_specializations tsp
+                ON tsp.training_id = t.id";
+
+        $conditions[] =
+            'tsp.specialization_id = ?';
+
+        $params[] =
+            (int) $filters['specialization_id'];
+    }
+
+    if (
+        !empty($filters['skill_id'])
+    ) {
+
+        $joins .=
+            " JOIN training_skills tsk
+                ON tsk.training_id = t.id";
+
+        $conditions[] =
+            'tsk.skill_id = ?';
+
+        $params[] =
+            (int) $filters['skill_id'];
     }
 
     if (
@@ -904,6 +1070,30 @@ function training_repository_get_public_list(
     }
 
     if (
+        isset($filters['employment_possible'])
+        &&
+        $filters['employment_possible'] !== null
+    ) {
+
+        $conditions[] =
+            't.may_lead_to_employment = ?';
+
+        $params[] =
+            (int) $filters['employment_possible'] > 0 ? 1 : 0;
+    }
+
+    if (
+        !empty($filters['city'])
+    ) {
+
+        $conditions[] =
+            't.location LIKE ?';
+
+        $params[] =
+            '%' . $filters['city'] . '%';
+    }
+
+    if (
         !empty($filters['keyword'])
     ) {
 
@@ -922,159 +1112,66 @@ function training_repository_get_public_list(
         );
     }
 
-    $where =
-        implode(
+    if (
+        !empty($filters['saved_only'])
+        &&
+        !empty($filters['student_id'])
+    ) {
+
+        $joins .=
+            " JOIN saved_trainings st
+                ON st.training_id = t.id";
+
+        $conditions[] =
+            'st.student_id = ?';
+
+        $params[] =
+            (int) $filters['student_id'];
+    }
+
+    return [
+        'joins' => $joins,
+        'where' => implode(
             " AND ",
             $conditions
-        );
-
-    $sql = "
-        SELECT
-            t.*
-        FROM training_listings t
-        WHERE {$where}
-        ORDER BY t.created_at DESC
-        LIMIT {$limit}
-        OFFSET {$offset}
-    ";
-
-    $result = db_fetch_all(
-        $sql,
-        $params
-    );
-
-    return is_array($result)
-        ? $result
-        : [];
+        ),
+        'params' => $params,
+    ];
 }
 
 
 /*
 |--------------------------------------------------------------------------
-| Count Public Trainings
+| Public Training Sort Clause
 |--------------------------------------------------------------------------
+|
+| Maps a whitelisted sort key to an ORDER BY clause.
+|
 */
 
-function training_repository_count_public(
-    array $filters = []
-): int {
+function training_repository_sort_clause(
+    string $sort
+): string {
 
-    $conditions = [
-        "status = 'published'"
-    ];
+    switch ($sort) {
 
-    $params = [];
+        case 'oldest':
+            return "ORDER BY t.created_at ASC";
 
-    if (
-        !empty($filters['company_id'])
-    ) {
+        case 'title':
+        case 'name':
+            return "ORDER BY t.title ASC";
 
-        $conditions[] =
-            'company_id = ?';
+        case 'deadline':
+            return "ORDER BY t.application_deadline IS NULL ASC, t.application_deadline ASC";
 
-        $params[] =
-            (int) $filters['company_id'];
+        case 'relevance':
+            return "ORDER BY t.created_at DESC";
+
+        case 'newest':
+        default:
+            return "ORDER BY t.created_at DESC";
     }
-
-    if (
-        !empty($filters['specialization'])
-    ) {
-
-        $conditions[] =
-            'field = ?';
-
-        $params[] =
-            $filters['specialization'];
-    }
-
-    if (
-        !empty($filters['training_type'])
-        &&
-        in_array(
-            $filters['training_type'],
-            ['shadowing', 'hands_on', 'project_based'],
-            true
-        )
-    ) {
-
-        $conditions[] =
-            'training_type = ?';
-
-        $params[] =
-            $filters['training_type'];
-    }
-
-    if (
-        !empty($filters['work_mode'])
-        &&
-        in_array(
-            $filters['work_mode'],
-            ['onsite', 'remote', 'hybrid'],
-            true
-        )
-    ) {
-
-        $conditions[] =
-            'mode = ?';
-
-        $params[] =
-            $filters['work_mode'];
-    }
-
-    if (
-        isset($filters['paid'])
-        &&
-        $filters['paid'] !== null
-    ) {
-
-        $conditions[] =
-            'is_paid = ?';
-
-        $params[] =
-            (int) $filters['paid'] > 0 ? 1 : 0;
-    }
-
-    if (
-        !empty($filters['keyword'])
-    ) {
-
-        $search =
-            '%' . $filters['keyword'] . '%';
-
-        $conditions[] =
-            "(title LIKE ? OR description LIKE ? OR field LIKE ? OR location LIKE ?)";
-
-        array_push(
-            $params,
-            $search,
-            $search,
-            $search,
-            $search
-        );
-    }
-
-    $where =
-        implode(
-            " AND ",
-            $conditions
-        );
-
-    $sql = "
-        SELECT
-            COUNT(*) AS total
-        FROM training_listings
-        WHERE {$where}
-    ";
-
-    $row = db_fetch_one(
-        $sql,
-        $params
-    );
-
-    return (int) (
-        $row['total']
-        ?? 0
-    );
 }
 
 
@@ -1382,4 +1479,389 @@ function training_repository_decrement_capacity(
         ]
     );
     return $statement->rowCount() > 0;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Save Training For Student
+|--------------------------------------------------------------------------
+*/
+
+function training_repository_saved_add(
+    int $student_id,
+    int $training_id
+): bool {
+
+    if (
+        $student_id <= 0
+        ||
+        $training_id <= 0
+    ) {
+        return false;
+    }
+
+    $sql = "
+        INSERT IGNORE INTO saved_trainings (
+            student_id,
+            training_id
+        )
+        VALUES (?, ?)
+    ";
+
+    $statement = db_execute(
+        $sql,
+        [
+            $student_id,
+            $training_id
+        ]
+    );
+
+    return true;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Unsave Training For Student
+|--------------------------------------------------------------------------
+*/
+
+function training_repository_saved_remove(
+    int $student_id,
+    int $training_id
+): bool {
+
+    if (
+        $student_id <= 0
+        ||
+        $training_id <= 0
+    ) {
+        return false;
+    }
+
+    $sql = "
+        DELETE FROM saved_trainings
+        WHERE
+            student_id = ?
+            AND training_id = ?
+        LIMIT 1
+    ";
+
+    $statement = db_execute(
+        $sql,
+        [
+            $student_id,
+            $training_id
+        ]
+    );
+
+    return $statement->rowCount() > 0;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Check Training Saved By Student
+|--------------------------------------------------------------------------
+*/
+
+function training_repository_is_saved(
+    int $student_id,
+    int $training_id
+): bool {
+
+    if (
+        $student_id <= 0
+        ||
+        $training_id <= 0
+    ) {
+        return false;
+    }
+
+    $sql = "
+        SELECT
+            id
+        FROM saved_trainings
+        WHERE
+            student_id = ?
+            AND training_id = ?
+        LIMIT 1
+    ";
+
+    $row = db_fetch_one(
+        $sql,
+        [
+            $student_id,
+            $training_id
+        ]
+    );
+
+    return !empty($row);
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Get Saved Training IDs For Student
+|--------------------------------------------------------------------------
+*/
+
+function training_repository_get_saved_ids(
+    int $student_id
+): array {
+
+    if ($student_id <= 0) {
+        return [];
+    }
+
+    $rows = db_fetch_all(
+        "
+            SELECT
+                training_id
+            FROM saved_trainings
+            WHERE student_id = ?
+            ORDER BY created_at DESC
+        ",
+        [$student_id]
+    );
+
+    if (!is_array($rows)) {
+        return [];
+    }
+
+    return array_map(
+        function ($row) {
+            return (int) $row['training_id'];
+        },
+        $rows
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Count Saved Trainings For Student
+|--------------------------------------------------------------------------
+*/
+
+function training_repository_count_saved(
+    int $student_id
+): int {
+
+    if ($student_id <= 0) {
+        return 0;
+    }
+
+    $row = db_fetch_one(
+        "
+            SELECT
+                COUNT(*) AS total
+            FROM saved_trainings
+            WHERE student_id = ?
+        ",
+        [$student_id]
+    );
+
+    return (int) (
+        $row['total']
+        ?? 0
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Skills By Training IDs
+|--------------------------------------------------------------------------
+*/
+
+function training_repository_get_skills_by_training_ids(
+    array $training_ids
+): array {
+
+    if (empty($training_ids)) {
+        return [];
+    }
+
+    $placeholders =
+        implode(
+            ',',
+            array_fill(0, count($training_ids), '?')
+        );
+
+    $rows = db_fetch_all(
+        "
+            SELECT
+                ts.training_id,
+                s.id AS skill_id,
+                s.name AS skill_name
+            FROM training_skills ts
+            INNER JOIN skills s
+                ON s.id = ts.skill_id
+            WHERE ts.training_id IN ({$placeholders})
+            ORDER BY s.name ASC
+        ",
+        array_values($training_ids)
+    );
+
+    $grouped = [];
+
+    foreach ($rows as $row) {
+        $training_id = (int) $row['training_id'];
+
+        if (!isset($grouped[$training_id])) {
+            $grouped[$training_id] = [];
+        }
+
+        $grouped[$training_id][] = [
+            'id' => (int) $row['skill_id'],
+            'name' => $row['skill_name'],
+        ];
+    }
+
+    return $grouped;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Specializations By Training IDs
+|--------------------------------------------------------------------------
+*/
+
+function training_repository_get_specializations_by_training_ids(
+    array $training_ids
+): array {
+
+    if (empty($training_ids)) {
+        return [];
+    }
+
+    $placeholders =
+        implode(
+            ',',
+            array_fill(0, count($training_ids), '?')
+        );
+
+    $rows = db_fetch_all(
+        "
+            SELECT
+                tsp.training_id,
+                sp.id AS specialization_id,
+                sp.name AS specialization_name
+            FROM training_specializations tsp
+            INNER JOIN specializations sp
+                ON sp.id = tsp.specialization_id
+            WHERE tsp.training_id IN ({$placeholders})
+            ORDER BY sp.name ASC
+        ",
+        array_values($training_ids)
+    );
+
+    $grouped = [];
+
+    foreach ($rows as $row) {
+        $training_id = (int) $row['training_id'];
+
+        if (!isset($grouped[$training_id])) {
+            $grouped[$training_id] = [];
+        }
+
+        $grouped[$training_id][] = [
+            'id' => (int) $row['specialization_id'],
+            'name' => $row['specialization_name'],
+        ];
+    }
+
+    return $grouped;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Questions By Training ID
+|--------------------------------------------------------------------------
+*/
+
+function training_repository_get_questions(
+    int $training_id
+): array {
+
+    if ($training_id <= 0) {
+        return [];
+    }
+
+    $rows = db_fetch_all(
+        "
+            SELECT
+                id,
+                question,
+                question_type,
+                required,
+                options,
+                sort_order
+            FROM training_questions
+            WHERE training_id = ?
+            ORDER BY sort_order ASC, id ASC
+        ",
+        [$training_id]
+    );
+
+    if (!is_array($rows)) {
+        return [];
+    }
+
+    return array_map(
+        function ($row) {
+            $row['id'] = (int) $row['id'];
+            $row['required'] = (int) $row['required'] > 0;
+            $row['sort_order'] = (int) $row['sort_order'];
+
+            if (
+                !empty($row['options'])
+                &&
+                in_array(
+                    $row['question_type'],
+                    ['select', 'radio'],
+                    true
+                )
+            ) {
+                $decoded = json_decode($row['options'], true);
+
+                $row['options'] = is_array($decoded)
+                    ? $decoded
+                    : [];
+            } else {
+                $row['options'] = [];
+            }
+
+            return $row;
+        },
+        $rows
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| All Study Fields
+|--------------------------------------------------------------------------
+*/
+
+function training_repository_get_study_fields(): array {
+
+    $rows = db_fetch_all(
+        "
+            SELECT
+                id,
+                name
+            FROM study_fields
+            ORDER BY name ASC
+        "
+    );
+
+    return is_array($rows)
+        ? $rows
+        : [];
 }

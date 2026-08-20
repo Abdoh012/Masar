@@ -42,8 +42,7 @@ Returns the authenticated student's full profile including the attached CV file 
             "full_name": "Test Student",
             "phone": null,
             "bio": null,
-            "university_id": 1,
-            "faculty_id": 2,
+            "field_id": 1,
             "degree_id": 3,
             "specialization_id": 5,
             "graduation_year": 2027,
@@ -78,8 +77,7 @@ Creates the student profile for the authenticated user. Academic fields are name
 ```json
 {
     "full_name": "Test Student",
-    "university": "Cairo University",
-    "faculty": "Faculty of Computers and Artificial Intelligence",
+    "field": "Engineering",
     "specialization": "Artificial Intelligence",
     "degree": "Bachelor of Computer Science",
     "graduation_year": 2027,
@@ -93,9 +91,10 @@ Creates the student profile for the authenticated user. Academic fields are name
 
 ### Notes
 
-- `university`, `faculty`, and `specialization` are required and must match seeded lookup data.
+- `field` and `specialization` are required and must match seeded lookup data. The legacy `faculty` key is accepted as a fallback for the User Field (`faculty` + `specialization`), so clients sending the old key name still work.
 - `degree`, `graduation_year`, `bio`, `phone`, `city`, `skills`, and `cv_file_id` are optional.
 - If `cv_file_id` is supplied, the file must belong to the authenticated user.
+- `university` is no longer part of the student model and is ignored if sent.
 
 ### Response
 
@@ -108,8 +107,7 @@ Creates the student profile for the authenticated user. Academic fields are name
         "student": {
             "id": 1,
             "full_name": "Test Student",
-            "university_id": 1,
-            "faculty_id": 2,
+            "field_id": 1,
             "degree_id": 3,
             "specialization_id": 5,
             "graduation_year": 2027,
@@ -133,8 +131,7 @@ Updates any subset of the authenticated student's profile fields.
 
 ```json
 {
-    "university": "Cairo University",
-    "faculty": "Faculty of Computers and Artificial Intelligence",
+    "field": "Engineering",
     "specialization": "Software Engineering",
     "degree": "Bachelor of Computer Science",
     "graduation_year": 2028,
@@ -148,9 +145,10 @@ Updates any subset of the authenticated student's profile fields.
 
 ### Notes
 
-- `university`, `faculty`, and `specialization` must be provided together when any of them is updated.
+- `field` and `specialization` must be provided together when either is updated. The legacy `faculty` key is accepted as a fallback for the User Field.
 - Pass an empty string for `degree`, or `0`/`null` for `cv_file_id`, to clear that field.
 - `cv_file_id` is only accepted when the file belongs to the authenticated user. Otherwise the request is rejected with `422`.
+- `university` is ignored if sent.
 
 ### Response
 
@@ -161,8 +159,7 @@ Updates any subset of the authenticated student's profile fields.
         "student": {
             "id": 1,
             "full_name": "Test Student",
-            "university_id": 1,
-            "faculty_id": 2,
+            "field_id": 1,
             "degree_id": 3,
             "specialization_id": 7,
             "graduation_year": 2028,
@@ -195,7 +192,7 @@ Reports whether the profile is complete and which fields are still missing.
 }
 ```
 
-Completion is based on `university_id`, `faculty_id`, `specialization_id`, skills, and an attached CV.
+Completion is based on `field_id`, `specialization_id`, skills, and an attached CV.
 
 ---
 
@@ -212,8 +209,7 @@ Completes the profile in one request and sets `is_profile_complete = 1`.
 ```json
 {
     "full_name": "Test Student",
-    "university": "Cairo University",
-    "faculty": "Faculty of Computers and Artificial Intelligence",
+    "field": "Engineering",
     "specialization": "Artificial Intelligence",
     "degree": "Bachelor of Computer Science",
     "bio": "Backend developer",
@@ -224,7 +220,7 @@ Completes the profile in one request and sets `is_profile_complete = 1`.
 
 ### Notes
 
-- `full_name`, `skills` and `cv_file_id` are required.
+- `full_name`, `field`, `specialization`, `skills` and `cv_file_id` are required. The legacy `faculty` key is accepted as a fallback for the User Field.
 - `cv_file_id` must belong to the authenticated user.
 
 ### Response
@@ -269,8 +265,7 @@ Allowed roles: `student`, `company`, `admin`.
             "id": 1,
             "full_name": "Test Student",
             "bio": "Backend developer",
-            "university_id": 1,
-            "faculty_id": 2,
+            "field_id": 1,
             "degree_id": 3,
             "specialization_id": 5,
             "graduation_year": 2027,
@@ -453,17 +448,38 @@ The file must belong to the authenticated user. Otherwise the request is rejecte
 DELETE /api/v1/students/me/cv
 ```
 
-Detaches the CV. The physical file is not deleted.
+Requires a student Bearer token. Removes the current CV:
 
-### Response
+- deletes the physical file from storage (`app/storage/uploads/...`),
+- deletes the corresponding `files` record,
+- clears the student's `cv_file_id` reference.
+
+The deletion is scoped to the authenticated student's stored CV record only; the
+physical path is resolved from the database and validated to stay inside the
+application's upload/storage directory, so no client-supplied or out-of-tree path
+can ever be deleted. Returns `404` with `No CV found.` when the student has no CV.
+
+### Response (success)
 
 ```json
 {
     "success": true,
+    "message": null,
     "data": {
-        "message": "CV removed successfully.",
-        "cv_file_id": null
-    }
+        "message": "CV removed successfully."
+    },
+    "errors": null
+}
+```
+
+### Response (no CV attached)
+
+```json
+{
+    "success": false,
+    "message": "No CV found.",
+    "data": null,
+    "errors": null
 }
 ```
 

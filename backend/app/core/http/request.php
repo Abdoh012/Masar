@@ -86,7 +86,59 @@ function request_path(): string
         }
     }
 
+    $path = rtrim($path, '/');
+
     return $path === '' ? '/' : $path;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Get Base URL
+|--------------------------------------------------------------------------
+|
+| Builds the application base URL from the current request (scheme, host
+| and base directory). This is portable: it never depends on a hardcoded
+| host or a machine-specific Apache configuration.
+|
+*/
+
+function request_base_url(): string
+{
+    $scheme = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')) ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? ($_SERVER['SERVER_NAME'] ?? 'localhost');
+
+    return $scheme . '://' . $host . request_base_path();
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Get Base Path
+|--------------------------------------------------------------------------
+|
+| Returns the URL path prefix (e.g. "/Masar/backend") that points to the
+| project root, derived from SCRIPT_NAME. Empty string when the project is
+| served from the web root.
+|
+*/
+
+function request_base_path(): string
+{
+    $script_name = $_SERVER['SCRIPT_NAME'] ?? '/';
+    $script_dir = rtrim(str_replace('\\', '/', dirname($script_name)), '/');
+
+    if ($script_dir === '' || $script_dir === '.' || $script_dir === '/') {
+        return '';
+    }
+
+    $base_path = $script_dir;
+
+    if (substr($base_path, -7) === '/public') {
+        $base_path = substr($base_path, 0, -7);
+    }
+
+    return $base_path;
 }
 
 

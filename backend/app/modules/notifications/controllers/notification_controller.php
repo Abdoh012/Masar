@@ -34,6 +34,11 @@ $base_path =
     );
 
 
+require_once
+    $base_path .
+    '/core/http/request.php';
+
+
 $service_file =
     __DIR__ .
     '/../services/notification_service.php';
@@ -355,6 +360,150 @@ function notification_controller_index(): array
         is_array($input)
             ? $input
             : [];
+
+
+    /*
+     * Read documented GET query parameters through the
+     * existing request helper. Body/POST input is merged
+     * first, then query string values take precedence.
+     */
+
+    $filters['page'] =
+        request_get_int(
+            'page',
+            (int) (
+                $filters['page']
+                ?? 1
+            )
+        );
+
+
+    $per_page =
+        request_get_int(
+            'per_page',
+            0
+        );
+
+
+    if ($per_page > 0) {
+
+        $filters['limit'] =
+            $per_page;
+
+    } else {
+
+        $limit =
+            request_get_int(
+                'limit',
+                0
+            );
+
+
+        if ($limit > 0) {
+
+            $filters['limit'] =
+                $limit;
+        }
+    }
+
+
+    $unread =
+        request_get(
+            'unread'
+        );
+
+
+    if ($unread !== null) {
+
+        $filters['unread'] =
+            $unread;
+    }
+
+
+    /*
+     * The documented "read" filter mirrors the unread
+     * state: read=false means unread, read=true means read.
+     */
+
+    $read =
+        request_get(
+            'read'
+        );
+
+
+    if ($read !== null) {
+
+        $filters['unread'] =
+            !filter_var(
+                $read,
+                FILTER_VALIDATE_BOOLEAN
+            );
+    }
+
+
+    $type =
+        request_get(
+            'type'
+        );
+
+
+    if ($type !== null) {
+
+        $filters['type'] =
+            $type;
+    }
+
+
+    $search =
+        request_get(
+            'search'
+        );
+
+
+    if ($search !== null) {
+
+        $filters['search'] =
+            $search;
+    }
+
+
+    $from =
+        request_get(
+            'from'
+        );
+
+
+    if ($from !== null) {
+
+        $filters['from'] =
+            $from;
+    }
+
+
+    $to =
+        request_get(
+            'to'
+        );
+
+
+    if ($to !== null) {
+
+        $filters['to'] =
+            $to;
+    }
+
+
+    $order =
+        request_get(
+            'order'
+        );
+
+
+    if ($order !== null) {
+
+        $filters['order'] =
+            $order;
+    }
 
 
     try {

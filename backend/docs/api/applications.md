@@ -7,10 +7,30 @@ The Applications API manages student applications to training opportunities, inc
 Base URL:
 
 ```text
-/api/applications
+/api/v1/applications
 ```
 
 All endpoints require authentication.
+
+---
+
+# 0. Implemented Endpoints
+
+The routes currently implemented and verified:
+
+```text
+POST   /api/v1/applications                 Student submits an application
+GET    /api/v1/applications/my              Student's own applications
+GET    /api/v1/applications/{id}            Application detail (student/company/admin)
+GET    /api/v1/applications?training_id=..  Company's applications for one training
+POST   /api/v1/applications/withdraw        Student withdraws a pending application
+POST   /api/v1/applications/accept          Company accepts a pending application
+POST   /api/v1/applications/reject          Company rejects a pending application
+```
+
+Student routes require `role=student`; company routes require `role=company`.
+Submission is transactional: the application record and all answers are created in a
+single DB transaction (`db_begin_transaction` / `db_commit` / `db_rollback`).
 
 ---
 
@@ -32,7 +52,7 @@ Returns applications belonging to the authenticated student.
 ### Endpoint
 
 ```http
-GET /api/applications
+GET /api/v1/applications/my
 ```
 
 ### Authorization
@@ -97,7 +117,7 @@ Returns a single application.
 ### Endpoint
 
 ```http
-GET /api/applications/{applicationId}
+GET /api/v1/applications/{applicationId}
 ```
 
 ### Authorization
@@ -113,37 +133,63 @@ The request is allowed only when the authenticated user is:
 ```json
 {
     "success": true,
+    "message": "Application retrieved successfully.",
     "data": {
-        "id": 15,
-        "training": {
-            "id": 10,
-            "title": "Backend PHP Internship"
-        },
-        "student": {
-            "id": 25,
-            "name": "Ahmed Mohamed"
-        },
-        "company": {
-            "id": 4,
-            "name": "Example Company"
-        },
+        "id": 5,
+        "training_id": 2,
+        "student_id": 101,
+        "message": null,
         "status": "pending",
-        "cover_letter": "I am interested in this training opportunity.",
-        "applied_at": "2026-08-01 12:00:00"
+        "rejection_reason": null,
+        "rejection_note": null,
+        "applied_at": "2026-08-20 15:20:40",
+        "reviewed_at": null,
+        "withdrawn_at": null,
+        "reviewed_by": null,
+        "cv_file_id": 17,
+        "university_id": 1,
+        "faculty_id": 2,
+        "applicant_type": "student",
+        "academic_year": "2nd",
+        "graduation_year": 2028,
+        "motivation": "I am excited about this opportunity.",
+        "training_title": "Frontend Engineering Internship",
+        "training_company_id": 46,
+        "student_user_id": 209,
+        "student_name": "Student Two",
+        "student_email": "stu2@test.local",
+        "answers": [
+            {
+                "question_id": 1,
+                "answer": "I am eager.",
+                "question": "Why do you want this internship?",
+                "question_type": "textarea",
+                "options": null
+            }
+        ],
+        "university_name": "Cairo University",
+        "faculty_name": "Faculty of Computers and Artificial Intelligence"
     }
 }
 ```
+
+The response is enriched by `application_service_enrich_application`: it attaches the
+submitted `answers`, resolves `university_name` / `faculty_name`, and normalizes the
+status (the DB stores `submitted`, which is exposed as `pending`). The `my applications`
+list (`/api/v1/applications/my`) returns the same fields but without `answers` /
+`university_name` / `faculty_name` and keeps the raw `submitted` status.
 
 ---
 
 # 3. Create Application
 
-Creates an application for a training opportunity.
+Creates an application for a training opportunity. This is the student's multi-step
+application: education/CV/motivation plus the training's dynamic questions/answers.
 
 ### Endpoint
 
 ```http
-POST /api/applications
+POST /api/v1/applications
 ```
 
 ### Authorization
@@ -158,9 +204,53 @@ student
 
 ```json
 {
-    "training_id": 10,
-    "cover_letter": "I am interested in this training opportunity because it matches my backend development skills."
+    "training_id": 2,
+    "cv_file_id": 17,
+    "applicant_type": "student",
+    "university_id": 1,
+    "faculty_id": 1,
+    "academic_year": "3rd year",
+    "graduation_year": 2027,
+    "motivation": "I am passionate about frontend development and want hands-on experience.",
+    "cover_letter": "Optional cover letter.",
+    "answers": [
+        {
+            "question_id": 1,
+            "answer": "I want to learn modern frontend engineering in a real team."
+        }
+    ]
 }
+```
+
+Fields:
+
+```text
+training_id      int          required  (validated server-side; must be published,
+                                        deadline not passed, capacity available)
+student_id       ignored      the authenticated student is resolved server-side
+cv_file_id       int          optional  must reference an existing file record
+university_id    int          optional  must exist in universities (422 if not)
+faculty_id       int          optional  must exist in faculties (422 if not)
+applicant_type   student|graduated (default student)
+academic_year    string       max 20 chars
+graduation_year  int          between 1950 and 2100
+motivation       string       max 5000 chars
+cover_letter     string       max 10000 chars
+answers          array        validated against the training's questions:
+                              required questions must be answered; select/radio
+                              answers must be one of the question's options
+```
+
+### Validation responses
+
+```text
+409  duplicate application          "You have already applied for this training opportunity."
+409  deadline passed                "The application deadline has passed."
+409  training not accepting         "This training opportunity is not accepting applications."
+409  capacity reached               "This training opportunity has reached its capacity."
+422  invalid university/faculty     "Selected university/faculty was not found."
+422  missing required answer        answers.<question_id> => "This question is required."
+422  invalid select/radio option    answers.<question_id> => "Selected option is not valid."
 ```
 
 ### Response
@@ -171,12 +261,23 @@ student
     "message": "Application submitted successfully.",
     "data": {
         "id": 15,
-        "training_id": 10,
+        "training_id": 2,
+        "student_id": 100,
+        "cv_file_id": 17,
+        "university_id": 1,
+        "faculty_id": 1,
+        "applicant_type": "student",
+        "academic_year": "3rd year",
+        "graduation_year": 2027,
+        "motivation": "...",
+        "cover_letter": "...",
         "status": "pending",
-        "applied_at": "2026-08-01 12:00:00"
+        "applied_at": "2026-08-20 12:00:00"
     }
 }
 ```
+
+The application and its answers are created inside a database transaction.
 
 ---
 
@@ -232,7 +333,15 @@ Allows the student to withdraw an eligible application.
 ### Endpoint
 
 ```http
-POST /api/applications/{applicationId}/withdraw
+POST /api/v1/applications/withdraw
+```
+
+### Request
+
+```json
+{
+    "id": 15
+}
 ```
 
 ### Authorization
@@ -325,7 +434,15 @@ Accepts an application.
 ### Endpoint
 
 ```http
-POST /api/applications/{applicationId}/accept
+POST /api/v1/applications/accept
+```
+
+### Request
+
+```json
+{
+    "id": 15
+}
 ```
 
 ### Authorization
@@ -366,7 +483,7 @@ Rejects an application.
 ### Endpoint
 
 ```http
-POST /api/applications/{applicationId}/reject
+POST /api/v1/applications/reject
 ```
 
 ### Authorization
@@ -387,9 +504,20 @@ administrator
 
 ```json
 {
-    "reason_id": 3,
-    "note": "The applicant does not meet the required criteria."
+    "id": 15,
+    "rejection_reason": "Candidate did not meet minimum requirements"
 }
+```
+
+`rejection_reason` is required and must be one of the preset values:
+
+```text
+Candidate did not meet minimum requirements
+Position already filled
+Insufficient capacity in training
+Application incomplete
+Candidate withdrew consideration
+Training program discontinued
 ```
 
 ### Response
@@ -400,13 +528,10 @@ administrator
     "message": "Application rejected successfully.",
     "data": {
         "id": 15,
-        "status": "rejected",
-        "rejection_reason_id": 3
+        "status": "rejected"
     }
 }
 ```
-
-The rejection reason must reference a valid configured rejection reason.
 
 ---
 
@@ -771,20 +896,23 @@ Another example:
 
 # Related Endpoints
 
+Implemented (base URL `/api/v1`):
+
 ```text
-GET    /api/applications
-GET    /api/applications/{applicationId}
+POST   /api/v1/applications
+GET    /api/v1/applications/my
+GET    /api/v1/applications/{applicationId}
+GET    /api/v1/applications?training_id={trainingId}
+POST   /api/v1/applications/withdraw   (body: { "id": applicationId })
+POST   /api/v1/applications/accept     (body: { "id": applicationId })
+POST   /api/v1/applications/reject     (body: { "id": applicationId, "rejection_reason": "..." })
+```
 
-POST   /api/applications
-PUT    /api/applications/{applicationId}
-PATCH  /api/applications/{applicationId}
+Design/spec-only (not routed yet):
 
-POST   /api/applications/{applicationId}/withdraw
-
-GET    /api/applications/training/{trainingId}
-
-POST   /api/applications/{applicationId}/accept
-POST   /api/applications/{applicationId}/reject
+```text
+PUT/PATCH /api/v1/applications/{applicationId}
+GET       /api/v1/applications/training/{trainingId}
 ```
 
 ---
