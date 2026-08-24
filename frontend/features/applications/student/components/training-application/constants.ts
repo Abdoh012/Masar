@@ -62,6 +62,9 @@ export const STEPS = [
   { label: "Training Application" },
 ] as const;
 
+// Heading above the desktop vertical progress rail.
+export const PROGRESS_RAIL_HEADING = "Application Progress";
+
 // Per-step header copy (the same labels drive the progress indicator).
 export const STEP_HEADERS: Record<
   TrainingApplicationStep,

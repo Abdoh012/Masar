@@ -108,49 +108,51 @@ export function TrainingApplicationContainer({ listingId }: TrainingApplicationC
 
   return (
     <div className="w-full rounded-lg border border-border bg-card p-5 shadow-sm sm:p-8">
-      <ProgressIndicator currentStep={step} />
+      <div className="md:flex md:gap-6 lg:gap-8">
+        <ProgressIndicator currentStep={step} />
 
-      <form
-        className="mt-8 space-y-6"
-        onSubmit={(event) => {
-          event.preventDefault();
-          handleSubmit();
-        }}
-      >
-        <Motion key={step} variants={fadeInUp}>
-          <div className="space-y-6">
-            <StepHeader step={step} />
+        <form
+          className="mt-8 min-w-0 flex-1 space-y-6 md:mt-0"
+          onSubmit={(event) => {
+            event.preventDefault();
+            handleSubmit();
+          }}
+        >
+          <Motion key={step} variants={fadeInUp}>
+            <div className="space-y-6">
+              <StepHeader step={step} />
 
-            {step === 1 ? (
-              <PersonalInfoFields
-                values={values.personal}
-                cvFile={cvFile}
-                onFieldChange={updatePersonal}
-                onCvSelect={(file) => setCvFile({ name: file.name, size: file.size })}
-                onCvRemove={() => setCvFile(null)}
-              />
-            ) : null}
+              {step === 1 ? (
+                <PersonalInfoFields
+                  values={values.personal}
+                  cvFile={cvFile}
+                  onFieldChange={updatePersonal}
+                  onCvSelect={(file) => setCvFile({ name: file.name, size: file.size })}
+                  onCvRemove={() => setCvFile(null)}
+                />
+              ) : null}
 
-            {step === 2 ? (
-              <EducationFields values={values.education} onFieldChange={updateEducation} />
-            ) : null}
+              {step === 2 ? (
+                <EducationFields values={values.education} onFieldChange={updateEducation} />
+              ) : null}
 
-            {step === 3 ? (
-              <TrainingApplicationFields
-                values={values.application}
-                onFieldChange={updateApplication}
-              />
-            ) : null}
-          </div>
-        </Motion>
+              {step === 3 ? (
+                <TrainingApplicationFields
+                  values={values.application}
+                  onFieldChange={updateApplication}
+                />
+              ) : null}
+            </div>
+          </Motion>
 
-        <StepNavigation
-          step={step}
-          isSubmitting={isSubmitting}
-          onBack={handleBack}
-          backHref={`/listings/${listingId}`}
-        />
-      </form>
+          <StepNavigation
+            step={step}
+            isSubmitting={isSubmitting}
+            onBack={handleBack}
+            backHref={`/listings/${listingId}`}
+          />
+        </form>
+      </div>
     </div>
   );
 }
