@@ -58,12 +58,17 @@ company
         "approval_status": "pending",
         "work_fields": [
             { "field_id": 1, "field_name": "Engineering" }
+        ],
+        "specializations": [
+            { "id": 1, "name": "Software Engineering" }
         ]
     }
 }
 ```
 
-`work_fields` lists the company's work fields. Each entry references the `study_fields` lookup table (`field_id` → `study_fields.id`); `study_fields` is the single source of truth for work field names shared with students.
+`work_fields` lists the company's work fields (legacy/current field-based classification). Each entry references the `study_fields` lookup table (`field_id` → `study_fields.id`); `study_fields` is the single source of truth for work field names shared with students.
+
+`specializations` lists the company's industry specializations (new specialization-based industry classification). Each entry references the `specializations` lookup table (`id` → `specializations.id`). This is what training matching uses to match companies against a student's specialization.
 
 ---
 
@@ -83,11 +88,14 @@ POST /api/companies
 {
     "company_name": "Test Company",
     "work_field_ids": [1, 2],
+    "specialization_ids": [1, 4],
     "description": "Works across engineering and computer science."
 }
 ```
 
-Work fields are study field IDs from the `study_fields` lookup table (`1` = Engineering, `2` = Computer Science, `3` = Business, `4` = Medicine). The legacy `industry` name is also accepted and resolved against `study_fields`. Invalid or non-existent study fields are rejected with `422`.
+`work_field_ids` (legacy/current field-based classification) are study field IDs from the `study_fields` lookup table (`1` = Engineering, `2` = Computer Science, `3` = Business, `4` = Medicine). The legacy `industry` name is also accepted and resolved against `study_fields`.
+
+`specialization_ids` (new specialization-based industry classification) are specialization IDs from the `specializations` lookup table and are stored in `company_specializations`. They are optional; when supplied, `work_field_ids`/`industry` become optional as well. Both keys may be sent together. Invalid or non-existent IDs are rejected with `422`; duplicate specialization IDs are rejected with `422`.
 
 ### Response
 
@@ -106,6 +114,10 @@ Work fields are study field IDs from the `study_fields` lookup table (`1` = Engi
         "work_fields": [
             { "field_id": 1, "field_name": "Engineering" },
             { "field_id": 2, "field_name": "Computer Science" }
+        ],
+        "specializations": [
+            { "id": 1, "name": "Software Engineering" },
+            { "id": 4, "name": "Data Science" }
         ]
     }
 }
@@ -129,14 +141,16 @@ PUT /api/companies/me
 {
     "company_name": "Test Company",
     "work_field_ids": [1, 2],
+    "specialization_ids": [1, 4],
     "description": "Works across engineering and computer science."
 }
 ```
 
 ### Notes
 
-- `work_field_ids` is an array of study field IDs that replaces the company's work fields. Pass an empty array to clear them.
+- `work_field_ids` (legacy/current field-based classification) is an array of study field IDs that replaces the company's work fields. Pass an empty array to clear them.
 - The legacy `industry` name is accepted and resolved against `study_fields`. Invalid or non-existent study fields are rejected with `422`.
+- `specialization_ids` (new specialization-based industry classification) is an optional array of specialization IDs that replaces the company's specializations in `company_specializations`. Pass an empty array to clear them. Invalid, non-existent, or duplicate IDs are rejected with `422`.
 
 ### Response
 
@@ -153,6 +167,10 @@ PUT /api/companies/me
         "work_fields": [
             { "field_id": 1, "field_name": "Engineering" },
             { "field_id": 2, "field_name": "Computer Science" }
+        ],
+        "specializations": [
+            { "id": 1, "name": "Software Engineering" },
+            { "id": 4, "name": "Data Science" }
         ]
     }
 }

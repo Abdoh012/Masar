@@ -74,20 +74,33 @@ function auth_validate_register( array $data ): array {
             $errors['full_name'][] = 'Full name must not exceed 255 characters.';
         }
 
+        // User Field: `field` (or legacy `faculty`) by name, or `field_id`.
+        $has_field_id =
+            isset($data['field_id'])
+            && is_numeric($data['field_id'])
+            && (int) $data['field_id'] > 0;
+
         $user_field_key = array_key_exists('field', $data) ? 'field' : 'faculty';
         $user_field = trim((string) ($data[$user_field_key] ?? ''));
 
-        if ($user_field === '') {
+        if ($user_field === '' && !$has_field_id) {
             $errors[$user_field_key][] = 'User field is required.';
-        } elseif (strlen($user_field) > 255) {
+        } elseif ($user_field !== '' && strlen($user_field) > 255) {
             $errors[$user_field_key][] = 'User field must not exceed 255 characters.';
         }
 
+        // Specialization: by name, or `specialization_id`. It must belong to
+        // the selected field; that relationship is enforced in the service.
+        $has_specialization_id =
+            isset($data['specialization_id'])
+            && is_numeric($data['specialization_id'])
+            && (int) $data['specialization_id'] > 0;
+
         $specialization = trim((string) ($data['specialization'] ?? ''));
 
-        if ($specialization === '') {
+        if ($specialization === '' && !$has_specialization_id) {
             $errors['specialization'][] = 'Specialization is required.';
-        } elseif (strlen($specialization) > 255) {
+        } elseif ($specialization !== '' && strlen($specialization) > 255) {
             $errors['specialization'][] = 'Specialization must not exceed 255 characters.';
         }
     }
@@ -103,12 +116,40 @@ function auth_validate_register( array $data ): array {
             $errors['company_name'][] = 'Company legal name must not exceed 255 characters.';
         }
 
+        // Industry: a single specialization name, an array of names, or
+        // absent (specialization_ids may be supplied instead).
+        $industry = $data['industry'] ?? '';
+        $industry_names = is_array($industry) ? $industry : [ $industry ];
+
+        $has_industries = false;
+
+        foreach ($industry_names as $industry_name) {
+            if (!is_string($industry_name)) {
+                continue;
+            }
+
+            if (trim($industry_name) !== '') {
+                $has_industries = true;
+            }
+
+            if (strlen(trim($industry_name)) > 255) {
+                $errors['industry'][] = 'Each industry must not exceed 255 characters.';
+                break;
+            }
+        }
+
         $has_work_fields =
             array_key_exists('work_field_ids', $data)
             ||
-            trim( $data['industry'] ?? '' ) !== '';
+            $has_industries;
 
-        if (!$has_work_fields) {
+        // Transition: specialization_ids (company_specializations) may be
+        // supplied instead of work fields during company registration.
+        $has_specialization_ids =
+            array_key_exists('specialization_ids', $data)
+            && is_array($data['specialization_ids']);
+
+        if (!$has_work_fields && !$has_specialization_ids) {
             $errors['work_field_ids'][] = 'At least one work field is required for company registration.';
         } else {
             if ( array_key_exists('work_field_ids', $data) ) {
@@ -122,12 +163,6 @@ function auth_validate_register( array $data ): array {
                         }
                     }
                 }
-            }
-
-            $industry = trim( $data['industry'] ?? '' );
-
-            if ( $industry !== '' && strlen($industry) > 255 ) {
-                $errors['industry'][] = 'Industry must not exceed 255 characters.';
             }
         }
     }

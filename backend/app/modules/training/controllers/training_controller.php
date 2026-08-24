@@ -31,9 +31,9 @@ require_once __DIR__ . '/../services/training_service.php';
 | Optional Student Context
 |--------------------------------------------------------------------------
 |
-| Resolves the authenticated student's profile ID when a valid
-| token is present. Returns null for guests so public listing
-| and detail endpoints remain accessible without authentication.
+| تحدد هوية الطالب المسجل عند توفر JWT صالح، وتُرجع null للزوار.
+| هذا يسمح بفتح صفحات التدريب العامة دون تسجيل دخول، مع الاحتفاظ
+| بحالة الطالب إذا كان المستخدم مسجلاً كطالب.
 |
 */
 
@@ -75,7 +75,8 @@ function training_controller_student_context(): ?int
 | Create Training
 |--------------------------------------------------------------------------
 |
-| Company creates a new training opportunity.
+| إنشاء فرصة تدريب جديدة من قبل الشركة.
+| يتحقق من صلاحية المستخدم والدور ويُرسل البيانات إلى الخدمة الأساسية.
 |
 */
 
@@ -157,6 +158,10 @@ function training_controller_create(): void
 |--------------------------------------------------------------------------
 | Get Training By ID
 |--------------------------------------------------------------------------
+|
+| عرض تفاصيل فرصة تدريب واحدة بناءً على معرفها.
+| تُستخدم هذه الدالة في صفحة تفاصيل التدريب.
+|
 */
 
 function training_controller_show( int $training_id = 0 ): void
@@ -253,7 +258,8 @@ function training_controller_show( int $training_id = 0 ): void
 | Get Training List
 |--------------------------------------------------------------------------
 |
-| Public listing of available training opportunities.
+| عرض قائمة فرص التدريب المتاحة للجميع.
+| تدعم البحث والتصفية والفرز وال分页، وتُستخدم في الصفحة الرئيسية.
 |
 */
 
@@ -285,11 +291,6 @@ function training_controller_index(): void
 
     $filters = [
 
-        'specialization' =>
-            request_get(
-                'specialization'
-            ),
-
         'training_type' =>
             request_get(
                 'training_type'
@@ -315,11 +316,6 @@ function training_controller_index(): void
                 'company_id'
             ),
 
-        'field_id' =>
-            request_get_int(
-                'field_id'
-            ),
-
         'specialization_id' =>
             request_get_int(
                 'specialization_id'
@@ -333,11 +329,6 @@ function training_controller_index(): void
         'city' =>
             request_get(
                 'city'
-            ),
-
-        'keyword' =>
-            request_get(
-                'keyword'
             ),
 
         'sort' =>
@@ -405,7 +396,8 @@ function training_controller_index(): void
 | Update Training
 |--------------------------------------------------------------------------
 |
-| Company can update its own training opportunity.
+| تعديل فرصة تدريب موجودة تابعة للشركة.
+| يتم التحقق من صلاحية الشركة ووجود التدريب قبل تحديثه.
 |
 */
 
@@ -549,7 +541,8 @@ function training_controller_update(): void
 | Publish Training
 |--------------------------------------------------------------------------
 |
-| Moves a training opportunity from draft to published.
+| نشر فرصة تدريب من الحالة المسودة إلى الحالة العامة.
+| بعد النشر تصبح متاحة للطلاب للبحث والتقديم.
 |
 */
 
@@ -683,10 +676,9 @@ function training_controller_publish(): void
 | Close Training
 |--------------------------------------------------------------------------
 |
-| Company manually closes a training opportunity.
-|
-| Pending applications will be handled by
-| training_closing_service.php.
+| إغلاق فرصة تدريب يدويًا من قبل الشركة.
+| يساعد هذا على توقف استقبال الطلبات الجديدة، بينما تتم معالجة
+| الطلبات المعلقة عبر خدمة إغلاق التدريب الخاصة بالنظام.
 |
 */
 
@@ -820,7 +812,8 @@ function training_controller_close(): void
 | Delete Training
 |--------------------------------------------------------------------------
 |
-| Deletes a draft training opportunity.
+| حذف فرصة تدريب موجودة إذا كانت في حالة المسودة أو لا يسمح بها.
+| تُستخدم هذه العملية بشكل خاص لحذف الفرص غير المنشورة.
 |
 */
 
@@ -954,7 +947,8 @@ function training_controller_delete(): void
 | Save Training
 |--------------------------------------------------------------------------
 |
-| Student saves a published training opportunity.
+| حفظ فرصة تدريب في قائمة الطالب المحفوظة.
+| تُستخدم هذه الدالة عندما يضيف الطالب فرصة تدريب إلى مفضلاته.
 |
 */
 
@@ -1052,7 +1046,8 @@ function training_controller_save( int $training_id = 0 ): void
 | Unsave Training
 |--------------------------------------------------------------------------
 |
-| Student removes a training opportunity from their saved list.
+| إزالة فرصة تدريب من قائمة الطالب المحفوظة.
+| تُستخدم عندما يريد الطالب حذف فرصة من مفضلاته.
 |
 */
 
@@ -1150,7 +1145,8 @@ function training_controller_unsave( int $training_id = 0 ): void
 | Get Saved Trainings
 |--------------------------------------------------------------------------
 |
-| Student lists their saved training opportunities.
+| عرض كل فرص التدريب المحفوظة للطالب.
+| تُستخدم في شاشة المفضلة أو المحفوظات للطالب.
 |
 */
 

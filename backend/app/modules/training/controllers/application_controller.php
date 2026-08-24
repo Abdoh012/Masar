@@ -102,6 +102,11 @@ function application_controller_create(): void
     |--------------------------------------------------------------------------
     | Request Data
     |--------------------------------------------------------------------------
+    |
+    | The Create Application request is raw JSON (application/json). The CV
+    | is not part of this request: it is uploaded separately through the
+    | existing file upload endpoint and only its id (cv_file_id) is sent.
+    |
     */
 
     $data =
@@ -1115,4 +1120,125 @@ function application_controller_reject(): void
             ??
         'Application rejected successfully.'
     );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Download Application CV
+|--------------------------------------------------------------------------
+|
+| Authorized by the application service through Application → Training →
+| Company ownership (or the owning student / an administrator). The route
+| streams the physical file returned here.
+|
+*/
+
+function application_controller_cv( int $application_id = 0 ): array
+{
+    /*
+    |--------------------------------------------------------------------------
+    | Request Method
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        request_method() !== 'GET'
+    ) {
+
+        response_method_not_allowed(
+            'Only GET method is allowed.'
+        );
+
+        return [];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Authentication
+    |--------------------------------------------------------------------------
+    */
+
+    $user = auth_user();
+
+
+    if (!$user) {
+
+        response_unauthorized(
+            'Authentication is required.'
+        );
+
+        return [];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Application ID
+    |--------------------------------------------------------------------------
+    */
+
+    if ($application_id <= 0) {
+
+        $application_id =
+            request_get_int(
+                'id'
+            );
+    }
+
+
+    if (
+        $application_id <= 0
+    ) {
+
+        response_validation_error(
+            [
+
+                'id' =>
+                    'A valid application ID is required.'
+
+            ]
+        );
+
+        return [];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Resolve CV
+    |--------------------------------------------------------------------------
+    */
+
+    $result =
+        application_service_cv(
+            (int) $user['id'],
+            $application_id,
+            strtolower((string) ($user['role'] ?? ''))
+        );
+
+
+    if (
+        !$result['success']
+    ) {
+
+        response_error(
+            $result['message']
+                ??
+            'Unable to download CV.',
+
+            $result['status_code']
+                ??
+            404,
+
+            $result['errors']
+                ??
+            []
+        );
+
+        return [];
+    }
+
+    return $result;
 }

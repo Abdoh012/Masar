@@ -86,6 +86,195 @@ function training_repository_find_company_by_user_id(
 
 /*
 |--------------------------------------------------------------------------
+| Get Student Specialization ID
+|--------------------------------------------------------------------------
+|
+| Returns the specialization_id of a student, or null when the student
+| does not exist or has no specialization set.
+|
+*/
+
+function training_repository_get_student_specialization_id(
+    int $student_id
+): ?int {
+
+    if ($student_id <= 0) {
+        return null;
+    }
+
+    $row = db_fetch_one(
+        "
+            SELECT
+                s.specialization_id
+            FROM students s
+            WHERE s.id = ?
+            LIMIT 1
+        ",
+        [$student_id]
+    );
+
+    if (
+        !is_array($row)
+        ||
+        empty($row['specialization_id'])
+    ) {
+        return null;
+    }
+
+    return (int) $row['specialization_id'];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Get Company Specialization IDs
+|--------------------------------------------------------------------------
+|
+| Returns the specialization ids registered for a company through the
+| company_specializations pivot table. Used to automatically inherit
+| the company's specializations when it creates a training.
+|
+*/
+
+function training_repository_get_company_specialization_ids(
+    int $company_id
+): array {
+
+    if ($company_id <= 0) {
+        return [];
+    }
+
+    $rows = db_fetch_all(
+        "
+            SELECT
+                cs.specialization_id
+            FROM company_specializations cs
+            WHERE cs.company_id = ?
+            ORDER BY cs.specialization_id ASC
+        ",
+        [$company_id]
+    );
+
+    if (!is_array($rows)) {
+        return [];
+    }
+
+    $specialization_ids = [];
+
+    foreach ($rows as $row) {
+
+        $specialization_id =
+            (int) $row['specialization_id'];
+
+        if ($specialization_id > 0) {
+            $specialization_ids[] =
+                $specialization_id;
+        }
+    }
+
+    return array_values(
+        array_unique(
+            $specialization_ids
+        )
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Replace Training Specializations
+|--------------------------------------------------------------------------
+|
+| Synchronizes the training_specializations pivot rows for a training:
+| existing rows are removed and the given specialization ids are
+| reinserted. INSERT IGNORE + the composite primary key
+| (training_id, specialization_id) make the operation idempotent and
+| duplicate-safe. An empty id list leaves the training with zero
+| specialization rows.
+|
+*/
+
+function training_repository_replace_specializations(
+    int $training_id,
+    array $specialization_ids
+): bool {
+
+    if ($training_id <= 0) {
+        return false;
+    }
+
+    /*
+     | Remove current relationships first so the training always
+     | reflects exactly the provided set.
+     */
+
+    db_execute(
+        "
+            DELETE FROM training_specializations
+            WHERE training_id = ?
+        ",
+        [$training_id]
+    );
+
+    /*
+     | Deduplicate and sanitize ids before inserting.
+     */
+
+    $clean_ids = [];
+
+    foreach ($specialization_ids as $specialization_id) {
+
+        $specialization_id =
+            (int) $specialization_id;
+
+        if ($specialization_id > 0) {
+            $clean_ids[$specialization_id] =
+                true;
+        }
+    }
+
+    if (empty($clean_ids)) {
+        return true;
+    }
+
+    $values = [];
+    $params = [];
+
+    foreach (
+        array_keys($clean_ids)
+        as $clean_id
+    ) {
+        $values[] =
+            "(?, ?)";
+        $params[] =
+            $training_id;
+        $params[] =
+            $clean_id;
+    }
+
+    $sql = "
+        INSERT IGNORE INTO training_specializations (
+            training_id,
+            specialization_id
+        )
+        VALUES
+            " . implode(
+                ", ",
+                $values
+            ) . "
+    ";
+
+    db_execute(
+        $sql,
+        $params
+    );
+
+    return true;
+}
+
+
+/*
+|--------------------------------------------------------------------------
 | Get Training List
 |--------------------------------------------------------------------------
 */
@@ -272,20 +461,6 @@ function training_repository_create(
         $status_value = 'draft';
     }
 
-    $field_value =
-        trim(
-            (string) (
-                $data['field']
-                ?? $data['specialization']
-                ?? $data['title']
-                ?? ''
-            )
-        );
-
-    if ($field_value === '') {
-        $field_value = 'General';
-    }
-
     $is_paid =
         (int) (
             $data['is_paid']
@@ -303,7 +478,6 @@ function training_repository_create(
             company_id,
             title,
             description,
-            field,
             training_type,
             mode,
             may_lead_to_employment,
@@ -322,7 +496,6 @@ function training_repository_create(
             updated_at
         )
         VALUES (
-            ?,
             ?,
             ?,
             ?,
@@ -355,8 +528,6 @@ function training_repository_create(
 
         $data['description']
             ?? null,
-
-        $field_value,
 
         $type_value,
 
@@ -469,9 +640,7 @@ function training_repository_update(
 
         'may_lead_to_employment' => 'may_lead_to_employment',
 
-        'employment_possible' => 'may_lead_to_employment',
-
-        'field' => 'field'
+        'employment_possible' => 'employment_possible'
 
     ];
 
@@ -851,7 +1020,7 @@ function training_repository_get_public_list(
 
             c.legal_name AS company_name,
             c.city AS company_city,
-            NULL AS company_logo,
+            c.company_logo AS company_logo,
 
             " . (
                 $saved_only
@@ -969,30 +1138,6 @@ function training_repository_build_public_query(
     }
 
     if (
-        !empty($filters['field'])
-    ) {
-
-        $conditions[] =
-            't.field = ?';
-
-        $params[] =
-            $filters['field'];
-    }
-
-    if (
-        !empty($filters['specialization'])
-        &&
-        empty($filters['field'])
-    ) {
-
-        $conditions[] =
-            't.field = ?';
-
-        $params[] =
-            $filters['specialization'];
-    }
-
-    if (
         !empty($filters['specialization_id'])
     ) {
 
@@ -1005,6 +1150,57 @@ function training_repository_build_public_query(
 
         $params[] =
             (int) $filters['specialization_id'];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Specialization-Based Company Matching
+    |--------------------------------------------------------------------------
+    |
+    | Restricts results to trainings owned by companies whose registered
+    | industry (company_specializations) includes one of the given
+    | specialization ids. Used for authenticated students so their
+    | Opportunities page only shows relevant trainings.
+    |
+    | All ids are cast to int, so they are safe to inline in SQL.
+    |
+    */
+
+    if (
+        !empty($filters['match_company_specialization_ids'])
+        &&
+        is_array($filters['match_company_specialization_ids'])
+    ) {
+
+        $match_specialization_ids = [];
+
+        foreach (
+            $filters['match_company_specialization_ids']
+            as $match_specialization_id
+        ) {
+
+            $match_specialization_id =
+                (int) $match_specialization_id;
+
+            if ($match_specialization_id > 0) {
+
+                $match_specialization_ids[$match_specialization_id] =
+                    true;
+            }
+        }
+
+        if (!empty($match_specialization_ids)) {
+
+            $joins .=
+                " JOIN company_specializations csm
+                    ON csm.company_id = t.company_id
+                    AND csm.specialization_id IN ("
+                    . implode(
+                        ', ',
+                        array_keys($match_specialization_ids)
+                    )
+                    . ")";
+        }
     }
 
     if (
@@ -1101,11 +1297,10 @@ function training_repository_build_public_query(
             '%' . $filters['keyword'] . '%';
 
         $conditions[] =
-            "(t.title LIKE ? OR t.description LIKE ? OR t.field LIKE ? OR t.location LIKE ?)";
+            "(t.title LIKE ? OR t.description LIKE ? OR t.location LIKE ?)";
 
         array_push(
             $params,
-            $search,
             $search,
             $search,
             $search
@@ -1208,7 +1403,6 @@ function training_repository_search(
             t.title LIKE ?
             OR t.description LIKE ?
             OR t.location LIKE ?
-            OR t.field LIKE ?
         ORDER BY t.created_at DESC
         LIMIT {$limit}
         OFFSET {$offset}
@@ -1217,7 +1411,6 @@ function training_repository_search(
     $result = db_fetch_all(
         $sql,
         [
-            $search,
             $search,
             $search,
             $search
@@ -1258,13 +1451,11 @@ function training_repository_count_search(
             title LIKE ?
             OR description LIKE ?
             OR location LIKE ?
-            OR field LIKE ?
     "; 
 
     $row = db_fetch_one(
         $sql,
         [
-            $search,
             $search,
             $search,
             $search
@@ -1299,7 +1490,7 @@ function training_repository_find_with_company(
             c.id AS company_id,
             c.legal_name AS company_name,
             c.city AS company_city,
-            NULL AS company_logo
+            c.company_logo AS company_logo
 
         FROM training_listings t
 
@@ -1840,28 +2031,4 @@ function training_repository_get_questions(
         },
         $rows
     );
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| All Study Fields
-|--------------------------------------------------------------------------
-*/
-
-function training_repository_get_study_fields(): array {
-
-    $rows = db_fetch_all(
-        "
-            SELECT
-                id,
-                name
-            FROM study_fields
-            ORDER BY name ASC
-        "
-    );
-
-    return is_array($rows)
-        ? $rows
-        : [];
 }

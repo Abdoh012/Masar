@@ -28,6 +28,8 @@ require_once __DIR__ . '/../repositories/training_repository.php';
 
 require_once __DIR__ . '/../validators/application_validator.php';
 
+require_once __DIR__ . '/../../files/repositories/file_repository.php';
+
 require_once __DIR__ . '/../../notifications/services/notification_service.php';
 
 require_once __DIR__ . '/../../../core/database/transaction.php';
@@ -272,6 +274,14 @@ function application_service_create(
             $training_id
         );
 
+    /*
+    | When the previous application was rejected, the student may re-apply.
+    | The unique (training_id, student_id) index prevents a second INSERT,
+    | so a re-application reuses the existing rejected row instead.
+    */
+
+    $reapplication_id = 0;
+
 
     if ($existing) {
 
@@ -300,6 +310,16 @@ function application_service_create(
                 'status_code' => 409
 
             ];
+        }
+
+        if (
+            $existingApp
+            &&
+            strtolower($existingApp['status']) === 'rejected'
+        ) {
+
+            $reapplication_id =
+                (int) $existingApp['id'];
         }
     }
 
@@ -405,51 +425,106 @@ function application_service_create(
     }
 
 
-    /*
+/*
     |--------------------------------------------------------------------------
     | Validate Answers Against Training Questions
     |--------------------------------------------------------------------------
-    */
+    |
+    | Answers are only validated when the client sends an "answers" property.
+    | If answers are absent, validation is skipped and answers are treated
+    | as empty (not saved).
+    |
+    | When answers are present, the existing validation (required questions,
+    | question ownership, answer format, option constraints) is fully preserved.
+*/
 
-    $questions =
-        training_repository_get_questions(
-            $training_id
-        );
-
-    $answers =
-        $data['answers']
-        ?? [];
+    $answers = [];
 
     if (
-        !is_array($answers)
+        isset($data['answers'])
+        &&
+        is_array($data['answers'])
     ) {
+        $answers = $data['answers'];
 
-        $answers = [];
+        $questions =
+            training_repository_get_questions(
+                $training_id
+            );
+
+        $answers_validation =
+            application_validator_answers(
+                $answers,
+                $questions
+            );
+
+        if (
+            !$answers_validation['valid']
+        ) {
+
+            return [
+
+                'success' => false,
+
+                'message' =>
+                    'Application answers are invalid.',
+
+                'errors' =>
+                    $answers_validation['errors'],
+
+                'status_code' => 422
+
+            ];
+        }
     }
 
-    $answers_validation =
-        application_validator_answers(
-            $answers,
-            $questions
-        );
 
-    if (
-        !$answers_validation['valid']
-    ) {
+    /*
+    |--------------------------------------------------------------------------
+    | Validate CV Ownership
+    |--------------------------------------------------------------------------
+    |
+    | The CV is uploaded separately through the existing file upload endpoint
+    | (POST /api/v1/files). Here only its id (cv_file_id) is accepted and it
+    | must reference a file record owned by the authenticated student. The
+    | file repository enforces ownership, so a student can never attach
+    | another user's file.
+    |
+    */
 
-        return [
+    $cv_file_id =
+        isset($data['cv_file_id'])
+            ? (int) $data['cv_file_id']
+            : 0;
 
-            'success' => false,
+    if ($cv_file_id > 0) {
 
-            'message' =>
-                'Application answers are invalid.',
+        $cv_file =
+            file_repository_find_for_user(
+                $cv_file_id,
+                $user_id
+            );
 
-            'errors' =>
-                $answers_validation['errors'],
+        if (!$cv_file) {
 
-            'status_code' => 422
+            return [
 
-        ];
+                'success' => false,
+
+                'message' =>
+                    'Selected CV file was not found.',
+
+                'errors' => [
+
+                    'cv_file_id' =>
+                        'Selected CV file was not found.'
+
+                ],
+
+                'status_code' => 422
+
+            ];
+        }
     }
 
 
@@ -459,6 +534,23 @@ function application_service_create(
     |--------------------------------------------------------------------------
     */
 
+    $applicant_type =
+        isset($data['current_status'])
+            ? strtolower(
+                trim(
+                    (string) $data['current_status']
+                )
+            )
+            : (
+                isset($data['applicant_type'])
+                    ? strtolower(
+                        trim(
+                            (string) $data['applicant_type']
+                        )
+                    )
+                    : 'student'
+            );
+
     $application_data = [
 
         'training_id' =>
@@ -467,10 +559,27 @@ function application_service_create(
         'student_id' =>
             (int) $student['student_id'],
 
+        /*
+        | The company is derived from the selected training and never trusted
+        | from the client payload. A client-supplied company_id is overwritten
+        | with the real training company.
+        */
+        'company_id' =>
+            isset($training['company_id'])
+                ? (int) $training['company_id']
+                : null,
+
         'cover_letter' =>
             isset($data['cover_letter'])
                 ? trim(
                     $data['cover_letter']
+                )
+                : null,
+
+        'message' =>
+            isset($data['message'])
+                ? trim(
+                    (string) $data['message']
                 )
                 : null,
 
@@ -481,9 +590,75 @@ function application_service_create(
                 )
                 : null,
 
+        'full_name' =>
+            isset($data['full_name'])
+                ? trim(
+                    (string) $data['full_name']
+                )
+                : (
+                    $student['full_name']
+                    ?? null
+                ),
+
+        'email' =>
+            isset($data['email'])
+                ? trim(
+                    (string) $data['email']
+                )
+                : (
+                    $student['user_email']
+                    ?? null
+                ),
+
+        'phone' =>
+            isset($data['phone'])
+                ? trim(
+                    (string) $data['phone']
+                )
+                : (
+                    $student['phone']
+                    ?? null
+                ),
+
+        'city' =>
+            isset($data['city'])
+                ? trim(
+                    (string) $data['city']
+                )
+                : (
+                    $student['city']
+                    ?? null
+                ),
+
+        'address' =>
+            isset($data['address'])
+                ? trim(
+                    (string) $data['address']
+                )
+                : null,
+
+        'why_interested' =>
+            isset($data['why_interested'])
+                ? trim(
+                    (string) $data['why_interested']
+                )
+                : null,
+
+        'what_to_learn' =>
+            isset($data['what_to_learn'])
+                ? trim(
+                    (string) $data['what_to_learn']
+                )
+                : null,
+
+        'skills' =>
+            isset($data['skills'])
+                ? $data['skills']
+                : null,
+
         'cv_file_id' =>
-            isset($data['cv_file_id'])
-                ? (int) $data['cv_file_id']
+            $cv_file_id > 0
+                ? $cv_file_id
                 : null,
 
         'university_id' =>
@@ -497,13 +672,7 @@ function application_service_create(
                 : null,
 
         'applicant_type' =>
-            isset($data['applicant_type'])
-                ? strtolower(
-                    trim(
-                        (string) $data['applicant_type']
-                    )
-                )
-                : 'student',
+            $applicant_type,
 
         'academic_year' =>
             isset($data['academic_year'])
@@ -533,27 +702,67 @@ function application_service_create(
 
         db_begin_transaction();
 
-        $application_id =
-            application_repository_create(
-                $application_data
+        if ($reapplication_id > 0) {
+
+            $application_id = $reapplication_id;
+
+            $reapplied =
+                application_repository_reapply(
+                    $application_id,
+                    $application_data
+                );
+
+            if (!$reapplied) {
+
+                db_rollback();
+
+                return [
+
+                    'success' => false,
+
+                    'message' =>
+                        'Unable to submit application.',
+
+                    'errors' => [],
+
+                    'status_code' => 500
+
+                ];
+            }
+
+            /*
+            | A rejected student may have answered the questions before; the
+            | re-application replaces those answers with the new submission.
+            */
+
+            application_repository_delete_answers(
+                $application_id
             );
 
-        if (!$application_id) {
+        } else {
 
-            db_rollback();
+            $application_id =
+                application_repository_create(
+                    $application_data
+                );
 
-            return [
+            if (!$application_id) {
 
-                'success' => false,
+                db_rollback();
 
-                'message' =>
-                    'Unable to submit application.',
+                return [
 
-                'errors' => [],
+                    'success' => false,
 
-                'status_code' => 500
+                    'message' =>
+                        'Unable to submit application.',
 
-            ];
+                    'errors' => [],
+
+                    'status_code' => 500
+
+                ];
+            }
         }
 
         if (!empty($answers)) {
@@ -616,6 +825,12 @@ function application_service_create(
             (int) $application_id
         );
 
+    if ($application) {
+        $application = application_service_enrich_application(
+            $application
+        );
+    }
+
 
     /*
     |--------------------------------------------------------------------------
@@ -674,6 +889,24 @@ function application_service_enrich_application(
         ($application['status'] ?? '') === 'submitted'
             ? 'pending'
             : ($application['status'] ?? null);
+
+    if (
+        !empty($application['skills'])
+        &&
+        is_string($application['skills'])
+    ) {
+
+        $decoded_skills =
+            json_decode(
+                $application['skills'],
+                true
+            );
+
+        $application['skills'] =
+            is_array($decoded_skills)
+                ? $decoded_skills
+                : [];
+    }
 
     $application['answers'] =
         application_repository_get_answers(
@@ -799,7 +1032,7 @@ function application_service_find(
     */
 
     if (
-        $role === 'admin'
+        is_admin_role($role)
     ) {
 
         return [
@@ -966,6 +1199,227 @@ function application_service_find(
 
 /*
 |--------------------------------------------------------------------------
+| Download Application CV
+|--------------------------------------------------------------------------
+|
+| Returns a streamable download payload for the application's CV. Access
+| is authorized through the application: the owning student, the company
+| that owns the training, or an administrator. This keeps a company from
+| reaching arbitrary student files while allowing it to download the CV of
+| an applicant to its own training.
+|
+*/
+
+function application_service_cv(
+    int $user_id,
+    int $application_id,
+    ?string $role = null
+): array {
+
+    if (
+        $application_id <= 0
+    ) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Invalid application ID.',
+
+            'errors' => [],
+
+            'status_code' => 422
+
+        ];
+    }
+
+
+    $application =
+        application_repository_find_with_details(
+            $application_id
+        );
+
+
+    if (!$application) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Application not found.',
+
+            'errors' => [],
+
+            'status_code' => 404
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Authorize
+    |--------------------------------------------------------------------------
+    */
+
+    $authorized = false;
+
+    if (is_admin_role($role)) {
+
+        $authorized = true;
+
+    } elseif ($role === 'student') {
+
+        $student =
+            application_repository_find_student_by_user_id(
+                $user_id
+            );
+
+        $authorized =
+            $student
+            &&
+            (int) $application['student_id']
+            ===
+            (int) $student['student_id'];
+
+    } elseif ($role === 'company') {
+
+        $company =
+            application_repository_find_company_by_user_id(
+                $user_id
+            );
+
+        $authorized =
+            $company
+            &&
+            (int) ($application['training_company_id'] ?? 0)
+            ===
+            (int) ($company['company_id'] ?? 0);
+    }
+
+    if (!$authorized) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'You are not allowed to access this CV.',
+
+            'errors' => [],
+
+            'status_code' => 403
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Resolve CV File
+    |--------------------------------------------------------------------------
+    */
+
+    $cv_file_id =
+        (int) ($application['cv_file_id'] ?? 0);
+
+    if ($cv_file_id <= 0) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'This application has no CV.',
+
+            'errors' => [],
+
+            'status_code' => 404
+
+        ];
+    }
+
+    $file =
+        file_repository_find(
+            $cv_file_id
+        );
+
+    if (!$file) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'CV file was not found.',
+
+            'errors' => [],
+
+            'status_code' => 404
+
+        ];
+    }
+
+    $path =
+        $file['path']
+        ?? $file['storage_path']
+        ?? null;
+
+    if (
+        !$path
+        ||
+        !is_file($path)
+    ) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Physical CV file was not found.',
+
+            'errors' => [],
+
+            'status_code' => 404
+
+        ];
+    }
+
+    return [
+
+        'success' => true,
+
+        'message' =>
+            'CV file ready.',
+
+        'download' =>
+            true,
+
+        'path' =>
+            $path,
+
+        'filename' =>
+            $file['original_name']
+            ?? $file['stored_name']
+            ?? basename($path),
+
+        'mime_type' =>
+            $file['mime_type']
+            ?? 'application/octet-stream',
+
+        'size' =>
+            (int) ($file['size_bytes'] ?? filesize($path)),
+
+        'status_code' => 200
+
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
 | List Student Applications
 |--------------------------------------------------------------------------
 */
@@ -1077,6 +1531,14 @@ function application_service_list_student(
             $offset,
             $status
         );
+
+    foreach ($items as &$item) {
+        $item['status'] =
+            ($item['status'] ?? '') === 'submitted'
+                ? 'pending'
+                : ($item['status'] ?? null);
+    }
+    unset($item);
 
 
     /*
@@ -1307,6 +1769,14 @@ function application_service_list_company(
             $status
         );
 
+    foreach ($items as &$item) {
+        $item['status'] =
+            ($item['status'] ?? '') === 'submitted'
+                ? 'pending'
+                : ($item['status'] ?? null);
+    }
+    unset($item);
+
 
     /*
     |--------------------------------------------------------------------------
@@ -1447,10 +1917,36 @@ function application_service_accept(
     |--------------------------------------------------------------------------
     | Ownership
     |--------------------------------------------------------------------------
+    |
+    | The application row has no company_id; ownership is resolved through
+    | the training that owns the application (Application → Training →
+    | Company). A company can never manage another company's application.
+    |
     */
 
+    $training =
+        training_repository_find_by_id(
+            (int) $application['training_id']
+        );
+
+    if (!$training) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Training opportunity not found.',
+
+            'errors' => [],
+
+            'status_code' => 404
+
+        ];
+    }
+
     if (
-        (int) $application['company_id']
+        (int) $training['company_id']
         !==
         (int) $company['company_id']
     ) {
@@ -1474,12 +1970,26 @@ function application_service_accept(
     |--------------------------------------------------------------------------
     | Status
     |--------------------------------------------------------------------------
+    |
+    | The database stores submitted; the API exposes it as pending. Both
+    | representations are accepted when checking the transition source.
+    |
     */
 
+    $current_status =
+        strtolower(
+            (string) (
+                $application['status']
+                ?? ''
+            )
+        );
+
     if (
-        isset($application['status'])
-        &&
-        $application['status'] !== 'pending'
+        !in_array(
+            $current_status,
+            ['submitted', 'pending'],
+            true
+        )
     ) {
 
         return [
@@ -1504,14 +2014,13 @@ function application_service_accept(
     */
 
     if (
-        isset($application['capacity'])
+        isset($training['capacity'])
         &&
-        $application['capacity'] !== null
+        $training['capacity'] !== null
     ) {
 
         $capacity =
-            (int) $application['capacity'];
-
+            (int) $training['capacity'];
 
         if (
             $capacity > 0
@@ -1521,7 +2030,6 @@ function application_service_accept(
                 application_repository_count_accepted(
                     (int) $application['training_id']
                 );
-
 
             if (
                 $accepted_count >= $capacity
@@ -1553,7 +2061,8 @@ function application_service_accept(
     $accepted =
         application_repository_update_status(
             $application_id,
-            'accepted'
+            'accepted',
+            $user_id
         );
 
 
@@ -1581,7 +2090,6 @@ function application_service_accept(
     | Get Updated Application
     |--------------------------------------------------------------------------
     */
-/*
 
     $updated =
         application_repository_find_by_id(
@@ -1595,12 +2103,17 @@ function application_service_accept(
     |--------------------------------------------------------------------------
     */
 
+    $student =
+        application_repository_find_student_by_id(
+            (int) $application['student_id']
+        );
+
     $notificationService =
         new \NotificationService();
 
 
     $notificationService->notifyUser(
-        (int) $application['student_user_id'],
+        (int) ($student['user_id'] ?? 0),
         'Application Accepted',
         'Your application has been accepted for the training opportunity.',
         'application',
@@ -1702,10 +2215,35 @@ function application_service_reject(
     |--------------------------------------------------------------------------
     | Ownership
     |--------------------------------------------------------------------------
+    |
+    | Ownership is resolved through the owning training (Application →
+    | Training → Company).
+    |
     */
 
+    $training =
+        training_repository_find_by_id(
+            (int) $application['training_id']
+        );
+
+    if (!$training) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Training opportunity not found.',
+
+            'errors' => [],
+
+            'status_code' => 404
+
+        ];
+    }
+
     if (
-        (int) $application['company_id']
+        (int) $training['company_id']
         !==
         (int) $company['company_id']
     ) {
@@ -1729,12 +2267,26 @@ function application_service_reject(
     |--------------------------------------------------------------------------
     | Status
     |--------------------------------------------------------------------------
+    |
+    | The database stores submitted; the API exposes it as pending. Both
+    | representations are accepted when checking the transition source.
+    |
     */
 
+    $current_status =
+        strtolower(
+            (string) (
+                $application['status']
+                ?? ''
+            )
+        );
+
     if (
-        isset($application['status'])
-        &&
-        $application['status'] !== 'pending'
+        !in_array(
+            $current_status,
+            ['submitted', 'pending'],
+            true
+        )
     ) {
 
         return [
@@ -1840,7 +2392,9 @@ function application_service_reject(
     $rejected =
         application_repository_reject(
             $application_id,
-            $reason
+            $user_id,
+            $reason,
+            trim((string) ($data['rejection_note'] ?? '')) ?: null
         );
 
 
@@ -1868,10 +2422,11 @@ function application_service_reject(
     | Get Updated Application
     |--------------------------------------------------------------------------
     */
-$updated =
-    application_repository_find_by_id(
-        $application_id
-    );
+
+    $updated =
+        application_repository_find_by_id(
+            $application_id
+        );
 
 
     /*
@@ -1880,12 +2435,17 @@ $updated =
     |--------------------------------------------------------------------------
     */
 
+    $student =
+        application_repository_find_student_by_id(
+            (int) $application['student_id']
+        );
+
     $notificationService =
         new \NotificationService();
 
 
     $notificationService->notifyUser(
-        (int) $application['student_user_id'],
+        (int) ($student['user_id'] ?? 0),
         'Application Rejected',
         'Your application has been rejected for the training opportunity.',
         'application',
@@ -2019,10 +2579,20 @@ function application_service_withdraw(
     |--------------------------------------------------------------------------
     */
 
+    $current_status =
+        strtolower(
+            (string) (
+                $application['status']
+                ?? ''
+            )
+        );
+
     if (
-        isset($application['status'])
-        &&
-        $application['status'] !== 'pending'
+        !in_array(
+            $current_status,
+            ['submitted', 'pending'],
+            true
+        )
     ) {
 
         return [
@@ -2047,9 +2617,8 @@ function application_service_withdraw(
     */
 
     $withdrawn =
-        application_repository_update_status(
-            $application_id,
-            'withdrawn'
+        application_repository_withdraw(
+            $application_id
         );
 
 
@@ -2228,10 +2797,20 @@ function application_service_update(
     |--------------------------------------------------------------------------
     */
 
+    $current_status =
+        strtolower(
+            (string) (
+                $application['status']
+                ?? ''
+            )
+        );
+
     if (
-        isset($application['status'])
-        &&
-        $application['status'] !== 'pending'
+        !in_array(
+            $current_status,
+            ['submitted', 'pending'],
+            true
+        )
     ) {
 
         return [

@@ -1,0 +1,70 @@
+$kind: http-request
+description: Student submits a training application with CV file in a single multipart/form-data request. The Backend uploads the CV, generates a file_id, and creates the Application with cv_file_id set to the uploaded file's ID. No separate /api/v1/files request is needed.
+url: "{{base_url}}/api/v1/applications"
+method: POST
+auth: {}
+header: []
+body:
+  mode: formdata
+  formdata:
+    - name: full_name
+      value: "Ahmed Mohamed"
+      type: text
+    - name: email
+      value: "ahmed@example.com"
+      type: text
+    - name: phone
+      value: "01000000000"
+      type: text
+    - name: address
+      value: "Alexandria"
+      type: text
+    - name: city
+      value: "Alexandria"
+      type: text
+    - name: training_id
+      value: "{{training_id}}"
+      type: text
+    - name: university_id
+      value: "2"
+      type: text
+    - name: academic_year
+      value: "3rd year"
+      type: text
+    - name: applicant_type
+      value: "student"
+      type: text
+    - name: message
+      value: "I am interested in this training."
+      type: text
+    - name: why_interested
+      value: "I want to join this training and improve my practical skills."
+      type: text
+    - name: what_to_learn
+      value: "I want to improve my PHP and SQL skills."
+      type: text
+    - name: skills
+      value: "PHP"
+      type: text
+    - name: skills
+      value: "SQL"
+      type: text
+    - name: cv
+      type: file
+  language: text/javascript
+scripts:
+  - type: test
+    code: |-
+      pm.test("Create application succeeds", function () {
+        pm.expect(pm.response.code).to.eql(201);
+        const json = pm.response.json();
+        pm.expect(json.success).to.eql(true);
+        if (json.data && json.data.id) {
+          pm.collectionVariables.set("application_id", String(json.data.id));
+        }
+        if (json.data && json.data.cv_file_id) {
+          pm.collectionVariables.set("cv_file_id", String(json.data.cv_file_id));
+        }
+      });
+    language: text/javascript
+order: 100

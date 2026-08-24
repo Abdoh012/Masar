@@ -23,6 +23,12 @@ if ($path === '/api/v1/companies/me' && $method === 'PUT') {
     return;
 }
 
+if ($path === '/api/v1/companies/me/logo' && $method === 'POST') {
+    middleware_company();
+    company_controller_update_logo();
+    return;
+}
+
 if ($path === '/api/v1/companies' && $method === 'POST') {
     company_controller_create();
     return;
