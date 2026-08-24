@@ -50,7 +50,7 @@ function company_controller_get_my_profile(): void
 {
     /*
     |--------------------------------------------------------------------------
-    | Get Authenticated User
+    | Authentication
     |--------------------------------------------------------------------------
     */
 
@@ -360,6 +360,27 @@ function company_controller_update_my_profile(): void
 
     /*
     |--------------------------------------------------------------------------
+    | Multipart Logo Upload
+    |--------------------------------------------------------------------------
+    |
+    | When the request carries multipart form-data with a "logo" file,
+    | this endpoint updates ONLY the company logo of the authenticated
+    | company through the existing file upload architecture.
+    |
+    */
+
+    if (request_has_file('logo')) {
+
+        company_controller_handle_logo_upload(
+            (int) $user['id']
+        );
+
+        return;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
     | Request Data
     |--------------------------------------------------------------------------
     */
@@ -427,6 +448,82 @@ function company_controller_update_my_profile(): void
         $result['data']
             ?? null,
         'Company profile updated successfully.'
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Update Company Logo (POST /api/v1/companies/me/logo)
+|--------------------------------------------------------------------------
+|
+| Dedicated multipart endpoint for the authenticated company's logo.
+| PHP only parses multipart form-data ($_FILES) for POST requests,
+| which is why this exists alongside the JSON profile update.
+|
+*/
+
+function company_controller_update_logo(): void
+{
+
+    $user =
+        auth_user();
+
+    if (
+        empty($user)
+        ||
+        empty($user['id'])
+    ) {
+
+        response_error(
+            'Authentication required.',
+            401
+        );
+
+        return;
+    }
+
+    company_controller_handle_logo_upload(
+        (int) $user['id']
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Handle Logo Upload
+|--------------------------------------------------------------------------
+*/
+
+function company_controller_handle_logo_upload(int $user_id): void
+{
+
+    $logo_result = company_service_update_logo_by_user_id(
+        $user_id,
+        request_file('logo') ?? []
+    );
+
+    if (
+        !$logo_result['success']
+    ) {
+
+        response_error(
+            $logo_result['message']
+                ?? 'Unable to update the company logo.',
+            $logo_result['status']
+                ?? 400,
+            $logo_result['errors']
+                ?? []
+        );
+
+        return;
+    }
+
+    response_success(
+        $logo_result['data']
+            ?? null,
+        $logo_result['message']
+            ?? 'Company logo updated successfully.'
     );
 }
 

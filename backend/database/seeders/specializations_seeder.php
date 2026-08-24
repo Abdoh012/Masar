@@ -3,7 +3,16 @@
 /**
  * MASAR - Specializations Seeder
  *
- * Seeds the specializations lookup table.
+ * Seeds the specializations lookup table with the FIELD -> SPECIALIZATION
+ * relationship (specializations.field_id -> study_fields.id).
+ *
+ * The same specializations list is used by:
+ * - Student registration (User Field -> Specialization).
+ * - Company registration (Industry = Specialization, stored in
+ *   company_specializations).
+ *
+ * Idempotent: existing rows are reused via the unique name key and never
+ * duplicated.
  */
 
 declare(strict_types=1);
@@ -11,183 +20,74 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../app/config/database.php';
 require_once __DIR__ . '/../../app/core/database/connection.php';
 
-function seed_specializations(PDO $pdo): void
+/*
+|--------------------------------------------------------------------------
+| Field -> Specializations Dataset
+|--------------------------------------------------------------------------
+*/
+
+function seed_specializations_map(): array
 {
-    $specializations = [
-        [
-            'name' => 'Computer Science',
-            'name_ar' => 'علوم الحاسب',
-            'code' => 'CS',
+    return [
+        'Engineering' => [
+            'Mechanical Engineering',
+            'Civil Engineering',
+            'Electrical Engineering',
+            'Architecture',
         ],
-        [
-            'name' => 'Information Technology',
-            'name_ar' => 'تكنولوجيا المعلومات',
-            'code' => 'IT',
+        'Medicine' => [
+            'General Medicine',
+            'Surgery',
+            'Pediatrics',
+            'Cardiology',
         ],
-        [
-            'name' => 'Information Systems',
-            'name_ar' => 'نظم المعلومات',
-            'code' => 'IS',
+        'Pharmacy' => [
+            'Clinical Pharmacy',
+            'Pharmaceutical Industry',
+            'Pharmacology',
         ],
-        [
-            'name' => 'Artificial Intelligence',
-            'name_ar' => 'الذكاء الاصطناعي',
-            'code' => 'AI',
+        'Computer Science' => [
+            'Software Engineering',
+            'Artificial Intelligence',
+            'Data Science',
+            'Cyber Security',
+            'Web Development',
         ],
-        [
-            'name' => 'Data Science',
-            'name_ar' => 'علوم البيانات',
-            'code' => 'DS',
+        'Business' => [
+            'Marketing',
+            'Human Resources',
+            'Business Administration',
+            'Sales',
         ],
-        [
-            'name' => 'Cybersecurity',
-            'name_ar' => 'الأمن السيبراني',
-            'code' => 'CYBER',
+        'Law' => [
+            'Corporate Law',
+            'Criminal Law',
+            'Commercial Law',
         ],
-        [
-            'name' => 'Software Engineering',
-            'name_ar' => 'هندسة البرمجيات',
-            'code' => 'SE',
+        'Media' => [
+            'Journalism',
+            'Digital Media',
+            'Broadcasting',
+            'Digital Marketing',
         ],
-        [
-            'name' => 'Computer Engineering',
-            'name_ar' => 'هندسة الحاسبات',
-            'code' => 'CE',
+        'Design' => [
+            'UI/UX Design',
+            'Product Design',
+            'Graphic Design',
         ],
-        [
-            'name' => 'Electronics and Communications Engineering',
-            'name_ar' => 'هندسة الإلكترونيات والاتصالات',
-            'code' => 'ECE',
-        ],
-        [
-            'name' => 'Electrical Engineering',
-            'name_ar' => 'الهندسة الكهربائية',
-            'code' => 'EE',
-        ],
-        [
-            'name' => 'Mechanical Engineering',
-            'name_ar' => 'الهندسة الميكانيكية',
-            'code' => 'ME',
-        ],
-        [
-            'name' => 'Civil Engineering',
-            'name_ar' => 'الهندسة المدنية',
-            'code' => 'CEV',
-        ],
-        [
-            'name' => 'Architecture',
-            'name_ar' => 'العمارة',
-            'code' => 'ARCH',
-        ],
-        [
-            'name' => 'Business Administration',
-            'name_ar' => 'إدارة الأعمال',
-            'code' => 'BA',
-        ],
-        [
-            'name' => 'Accounting',
-            'name_ar' => 'المحاسبة',
-            'code' => 'ACC',
-        ],
-        [
-            'name' => 'Finance',
-            'name_ar' => 'التمويل',
-            'code' => 'FIN',
-        ],
-        [
-            'name' => 'Marketing',
-            'name_ar' => 'التسويق',
-            'code' => 'MKT',
-        ],
-        [
-            'name' => 'Human Resources',
-            'name_ar' => 'الموارد البشرية',
-            'code' => 'HR',
-        ],
-        [
-            'name' => 'Management Information Systems',
-            'name_ar' => 'نظم معلومات إدارية',
-            'code' => 'MIS',
-        ],
-        [
-            'name' => 'Economics',
-            'name_ar' => 'الاقتصاد',
-            'code' => 'ECO',
-        ],
-        [
-            'name' => 'Medicine',
-            'name_ar' => 'الطب',
-            'code' => 'MED',
-        ],
-        [
-            'name' => 'Pharmacy',
-            'name_ar' => 'الصيدلة',
-            'code' => 'PHARM',
-        ],
-        [
-            'name' => 'Nursing',
-            'name_ar' => 'التمريض',
-            'code' => 'NURS',
-        ],
-        [
-            'name' => 'Law',
-            'name_ar' => 'القانون',
-            'code' => 'LAW',
-        ],
-        [
-            'name' => 'Mass Communication',
-            'name_ar' => 'الإعلام',
-            'code' => 'MEDIA',
-        ],
-        [
-            'name' => 'Graphic Design',
-            'name_ar' => 'التصميم الجرافيكي',
-            'code' => 'GD',
-        ],
-        [
-            'name' => 'Digital Marketing',
-            'name_ar' => 'التسويق الرقمي',
-            'code' => 'DM',
-        ],
-        [
-            'name' => 'Content Creation',
-            'name_ar' => 'صناعة المحتوى',
-            'code' => 'CONTENT',
-        ],
-        [
-            'name' => 'Languages and Translation',
-            'name_ar' => 'اللغات والترجمة',
-            'code' => 'LANG',
-        ],
-        [
-            'name' => 'English Language',
-            'name_ar' => 'اللغة الإنجليزية',
-            'code' => 'ENG',
-        ],
-        [
-            'name' => 'Mathematics',
-            'name_ar' => 'الرياضيات',
-            'code' => 'MATH',
-        ],
-        [
-            'name' => 'Physics',
-            'name_ar' => 'الفيزياء',
-            'code' => 'PHY',
-        ],
-        [
-            'name' => 'Chemistry',
-            'name_ar' => 'الكيمياء',
-            'code' => 'CHEM',
-        ],
-        [
-            'name' => 'Biology',
-            'name_ar' => 'الأحياء',
-            'code' => 'BIO',
+        'Accounting' => [
+            'Financial Accounting',
+            'Management Accounting',
+            'Auditing',
         ],
     ];
+}
 
-    $sql = "
-        INSERT INTO specializations (
+function seed_specializations(PDO $pdo): void
+{
+    // Make sure every referenced study field exists (reuses rows).
+    $field_sql = "
+        INSERT INTO study_fields (
             name,
             is_active
         )
@@ -199,12 +99,53 @@ function seed_specializations(PDO $pdo): void
             is_active = 1
     ";
 
-    $statement = $pdo->prepare($sql);
+    $field_statement = $pdo->prepare($field_sql);
 
-    foreach ($specializations as $specialization) {
-        $statement->execute([
-            ':name' => $specialization['name'],
-        ]);
+    $find_field_sql = "
+        SELECT id
+        FROM study_fields
+        WHERE name = :name
+        LIMIT 1
+    ";
+
+    $find_field_statement = $pdo->prepare($find_field_sql);
+
+    $specialization_sql = "
+        INSERT INTO specializations (
+            name,
+            field_id,
+            is_active
+        )
+        VALUES (
+            :name,
+            :field_id,
+            1
+        )
+        ON DUPLICATE KEY UPDATE
+            is_active = 1,
+            field_id = VALUES(field_id)
+    ";
+
+    $specialization_statement = $pdo->prepare($specialization_sql);
+
+    foreach (seed_specializations_map() as $field_name => $specializations) {
+        $field_statement->execute([':name' => $field_name]);
+
+        $find_field_statement->execute([':name' => $field_name]);
+        $field_id = $find_field_statement->fetchColumn();
+
+        if ($field_id === false) {
+            throw new RuntimeException(
+                "Failed to resolve study field '{$field_name}'."
+            );
+        }
+
+        foreach ($specializations as $specialization_name) {
+            $specialization_statement->execute([
+                ':name' => $specialization_name,
+                ':field_id' => (int) $field_id,
+            ]);
+        }
     }
 }
 

@@ -18,13 +18,28 @@ function seed_study_fields(PDO $pdo): void
             'name' => 'Engineering',
         ],
         [
+            'name' => 'Medicine',
+        ],
+        [
+            'name' => 'Pharmacy',
+        ],
+        [
             'name' => 'Computer Science',
         ],
         [
             'name' => 'Business',
         ],
         [
-            'name' => 'Medicine',
+            'name' => 'Law',
+        ],
+        [
+            'name' => 'Media',
+        ],
+        [
+            'name' => 'Design',
+        ],
+        [
+            'name' => 'Accounting',
         ],
     ];
 

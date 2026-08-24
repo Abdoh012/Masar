@@ -79,24 +79,77 @@ function company_validator_create(
 
     /*
     |--------------------------------------------------------------------------
-    | Work Fields (Industry)
+    | Work Fields / Industry
     |--------------------------------------------------------------------------
     |
-    | Work fields must reference the study_fields lookup table. The endpoint
-    | accepts study field IDs (work_field_ids) or the legacy industry name.
+    | Work fields must reference the study_fields lookup table via positive
+    | study field IDs. The industry holds specialization name(s): either a
+    | single name or an array of names, resolved against the specializations
+    | lookup table in the service layer. At least one work field or one
+    | industry is required.
     |
     */
+
+    $industry_input =
+        isset($data['industry'])
+            ? $data['industry']
+            : null;
+
+    $has_industry_names = false;
+
+    if (is_string($industry_input)) {
+
+        if (
+            trim($industry_input) !== ''
+        ) {
+
+            $has_industry_names = true;
+
+            if (
+                strlen(trim($industry_input)) > 255
+            ) {
+
+                $errors['industry'] =
+                    'Each industry must not exceed 255 characters.';
+            }
+        }
+    } elseif (is_array($industry_input)) {
+
+        foreach ($industry_input as $industry_name) {
+
+            if (
+                !is_string($industry_name)
+            ) {
+                continue;
+            }
+
+            if (
+                trim($industry_name) !== ''
+            ) {
+                $has_industry_names = true;
+            }
+
+            if (
+                strlen(trim($industry_name)) > 255
+            ) {
+
+                $errors['industry'] =
+                    'Each industry must not exceed 255 characters.';
+
+                break;
+            }
+        }
+    }
 
     $has_work_fields =
         array_key_exists('work_field_ids', $data)
         ||
-        (
-            isset($data['industry'])
-            &&
-            trim((string) $data['industry']) !== ''
-        );
+        $has_industry_names;
 
-    if (!$has_work_fields) {
+    $has_specializations =
+        array_key_exists('specialization_ids', $data);
+
+    if (!$has_work_fields && !$has_specializations) {
 
         $errors['work_field_ids'] =
             'At least one work field is required.';
@@ -132,17 +185,69 @@ function company_validator_create(
                 }
             }
         }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Specialization IDs (Industry)
+    |--------------------------------------------------------------------------
+    |
+    | Optional during the transition from work fields. When supplied, the
+    | IDs must be positive specialization IDs. Existence against the
+    | specializations lookup table is checked in the service layer.
+    |
+    */
+
+    if (
+        array_key_exists(
+            'specialization_ids',
+            $data
+        )
+    ) {
 
         if (
-            isset($data['industry'])
-            &&
-            trim((string) $data['industry']) !== ''
-            &&
-            strlen(trim((string) $data['industry'])) > 255
+            !is_array($data['specialization_ids'])
         ) {
 
-            $errors['industry'] =
-                'Industry must not exceed 255 characters.';
+            $errors['specialization_ids'] =
+                'Specializations must be an array of specialization IDs.';
+
+        } else {
+
+            $seen_specialization_ids = [];
+
+            foreach ($data['specialization_ids'] as $specialization_id) {
+
+                if (
+                    !is_numeric($specialization_id)
+                    ||
+                    (int) $specialization_id <= 0
+                ) {
+
+                    $errors['specialization_ids'] =
+                        'Each specialization must be a positive specialization ID.';
+
+                    break;
+                }
+
+                if (
+                    in_array(
+                        (int) $specialization_id,
+                        $seen_specialization_ids,
+                        true
+                    )
+                ) {
+
+                    $errors['specialization_ids'] =
+                        'Specialization IDs must not contain duplicates.';
+
+                    break;
+                }
+
+                $seen_specialization_ids[] =
+                    (int) $specialization_id;
+            }
         }
     }
 
@@ -252,6 +357,65 @@ function company_validator_update(
 
     /*
     |--------------------------------------------------------------------------
+    | Specialization IDs
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        array_key_exists(
+            'specialization_ids',
+            $data
+        )
+    ) {
+
+        if (
+            !is_array($data['specialization_ids'])
+        ) {
+
+            $errors['specialization_ids'] =
+                'Specializations must be an array of specialization IDs.';
+
+        } else {
+
+            $seen_specialization_ids = [];
+
+            foreach ($data['specialization_ids'] as $specialization_id) {
+
+                if (
+                    !is_numeric($specialization_id)
+                    ||
+                    (int) $specialization_id <= 0
+                ) {
+
+                    $errors['specialization_ids'] =
+                        'Each specialization must be a positive specialization ID.';
+
+                    break;
+                }
+
+                if (
+                    in_array(
+                        (int) $specialization_id,
+                        $seen_specialization_ids,
+                        true
+                    )
+                ) {
+
+                    $errors['specialization_ids'] =
+                        'Specialization IDs must not contain duplicates.';
+
+                    break;
+                }
+
+                $seen_specialization_ids[] =
+                    (int) $specialization_id;
+            }
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
     | Description
     |--------------------------------------------------------------------------
     */
@@ -265,6 +429,8 @@ function company_validator_update(
         'industry',
 
         'work_field_ids',
+
+        'specialization_ids',
 
     ];
 
@@ -358,8 +524,13 @@ function company_validator_update(
 
     /*
     |--------------------------------------------------------------------------
-    | Industry
+    | Industry (Specialization Name(s))
     |--------------------------------------------------------------------------
+    |
+    | The industry holds specialization name(s): a single name or an array
+    | of names. Existence against the specializations lookup table is
+    | checked in the service layer.
+    |
     */
 
     if (
@@ -369,32 +540,59 @@ function company_validator_update(
         )
     ) {
 
-        $industry =
-            trim(
-                (string) $data['industry']
-            );
+        $industry_input =
+            $data['industry'];
+
+        $industry_names =
+            is_array($industry_input)
+                ? $industry_input
+                : [ $industry_input ];
+
+        foreach ($industry_names as $industry_name) {
+
+            if (
+                !is_string($industry_name)
+            ) {
+
+                $errors['industry'] =
+                    'Each industry must be a specialization name.';
+
+                break;
+            }
+
+            $industry =
+                trim($industry_name);
 
 
-        if (
-            $industry === ''
-        ) {
+            if (
+                $industry === ''
+            ) {
 
-            $errors['industry'] =
-                'Industry cannot be empty.';
+                $errors['industry'] =
+                    'Industry cannot be empty.';
 
-        } elseif (
-            strlen($industry) < 2
-        ) {
+                break;
+            }
 
-            $errors['industry'] =
-                'Industry must be at least 2 characters.';
+            if (
+                strlen($industry) < 2
+            ) {
 
-        } elseif (
-            strlen($industry) > 255
-        ) {
+                $errors['industry'] =
+                    'Industry must be at least 2 characters.';
 
-            $errors['industry'] =
-                'Industry must not exceed 255 characters.';
+                break;
+            }
+
+            if (
+                strlen($industry) > 255
+            ) {
+
+                $errors['industry'] =
+                    'Industry must not exceed 255 characters.';
+
+                break;
+            }
         }
     }
 

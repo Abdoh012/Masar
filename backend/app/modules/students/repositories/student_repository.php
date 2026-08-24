@@ -63,11 +63,50 @@ function student_repository_resolve_field_id( string $field ): ?int {
     return is_array($row) ? (int) $row['id'] : null;
 }
 
+function student_repository_find_field_by_id( int $field_id ): ?array {
+    if ($field_id <= 0) {
+        return null;
+    }
+
+    $sql = " SELECT id, name FROM study_fields WHERE id = ? AND is_active = 1 LIMIT 1 ";
+    $row = db_fetch_one( $sql, [$field_id] );
+
+    return is_array($row) ? $row : null;
+}
+
 function student_repository_resolve_specialization_id( string $specialization ): ?int {
     $sql = " SELECT id FROM specializations WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) AND is_active = 1 LIMIT 1 ";
     $row = db_fetch_one( $sql, [$specialization] );
 
     return is_array($row) ? (int) $row['id'] : null;
+}
+
+/**
+ * Resolves a specialization by name scoped to the given study field.
+ * The field -> specialization relationship (specializations.field_id)
+ * is enforced: a specialization only resolves when it belongs to the
+ * selected active study field.
+ */
+function student_repository_resolve_specialization_id_in_field( string $specialization, int $field_id ): ?int {
+    if ($field_id <= 0) {
+        return null;
+    }
+
+    $sql = " SELECT id FROM specializations WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) AND field_id = ? AND is_active = 1 LIMIT 1 ";
+    $row = db_fetch_one( $sql, [$specialization, $field_id] );
+
+    return is_array($row) ? (int) $row['id'] : null;
+}
+
+function student_repository_find_specialization_by_id( int $specialization_id ): ?array {
+    if ($specialization_id <= 0) {
+        return null;
+    }
+
+    $sql = " SELECT id, name, field_id FROM specializations WHERE id = ? AND is_active = 1 LIMIT 1 ";
+    $row = db_fetch_one( $sql, [$specialization_id] );
+
+    return is_array($row) ? $row : null;
 }
 
 function student_repository_resolve_degree_id( string $degree ): ?int {

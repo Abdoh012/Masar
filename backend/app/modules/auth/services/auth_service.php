@@ -360,6 +360,8 @@ function auth_register_user(array $data): array
                     'field' => trim((string) ($data['field'] ?? '')),
                     'faculty' => trim((string) ($data['faculty'] ?? '')),
                     'specialization' => trim((string) ($data['specialization'] ?? '')),
+                    'field_id' => $data['field_id'] ?? null,
+                    'specialization_id' => $data['specialization_id'] ?? null,
                 ]);
 
                 if (isset($student_result['error'])) {
@@ -374,12 +376,22 @@ function auth_register_user(array $data): array
 
                 $company_payload = [
                     'company_name' => $company_name,
-                    'industry' => trim($data['industry'] ?? ''),
                     'description' => trim($data['description'] ?? ''),
                 ];
 
+                // Industry: a specialization name, an array of names, or absent.
+                if (isset($data['industry'])) {
+                    $company_payload['industry'] = is_array($data['industry'])
+                        ? $data['industry']
+                        : trim((string) $data['industry']);
+                }
+
                 if (isset($data['work_field_ids']) && is_array($data['work_field_ids'])) {
                     $company_payload['work_field_ids'] = $data['work_field_ids'];
+                }
+
+                if (isset($data['specialization_ids']) && is_array($data['specialization_ids'])) {
+                    $company_payload['specialization_ids'] = $data['specialization_ids'];
                 }
 
                 $company_result = company_service_create($created_user_id, $company_payload);

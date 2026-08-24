@@ -28,6 +28,26 @@ function search_service_search(string $query, array $filters = []): array {
     return ['items' => $items, 'total' => (int) ($result['total'] ?? count($items)), 'page' => $filters['page'], 'limit' => $filters['limit'], 'query' => $query];
 }
 
+function search_service_trainings_filters(array $filters = []): array {
+    /*
+     * Training Filters API: type/mode/price filtering with whitelisted
+     * sorting and standard pagination. The repository re-validates the
+     * sort whitelist; page and limit are clamped defensively here.
+     */
+    $page = max(1, (int) ($filters['page'] ?? 1));
+    $limit = search_service_limit($filters['limit'] ?? 20);
+    $result = search_repository_trainings_filters([
+        'training_type' => $filters['training_type'] ?? '',
+        'mode' => $filters['mode'] ?? '',
+        'paid' => $filters['paid'] ?? null,
+        'sort' => $filters['sort'] ?? 'newest',
+        'page' => $page,
+        'limit' => $limit,
+    ]);
+    $items = is_array($result['items'] ?? null) ? array_values($result['items']) : [];
+    return ['items' => $items, 'total' => (int) ($result['total'] ?? count($items)), 'page' => $page, 'limit' => $limit];
+}
+
 function search_service_suggestions(string $query, array $options = []): array {
     $query = search_service_normalize_query($query);
     if (!search_service_valid_query($query)) return [];

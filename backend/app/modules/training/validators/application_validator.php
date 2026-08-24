@@ -9,10 +9,45 @@
 
 
 /*
-|--------------------------------------------------------------------------
-| Validation Result
-|--------------------------------------------------------------------------
-*/
+    |--------------------------------------------------------------------------
+    | Message
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        isset($data['message'])
+        &&
+        $data['message'] !== null
+    ) {
+
+        if (
+            !is_string(
+                $data['message']
+            )
+        ) {
+
+            $errors['message'] =
+                'Message must be a string.';
+
+        } elseif (
+            mb_strlen(
+                trim(
+                    $data['message']
+                )
+            ) > 10000
+        ) {
+
+            $errors['message'] =
+                'Message must not exceed 10000 characters.';
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Notes
+    |--------------------------------------------------------------------------
+    */
 
 function application_validator_result(
     bool $valid,
@@ -418,6 +453,201 @@ function application_validator_create(
 
     /*
     |--------------------------------------------------------------------------
+    | Current Status
+    |--------------------------------------------------------------------------
+    |
+    | current_status is the canonical applicant status accepted by the
+    | application flow. It is stored in the applicant_type column.
+    |
+    */
+
+    if (
+        isset($data['current_status'])
+        &&
+        $data['current_status'] !== null
+        &&
+        $data['current_status'] !== ''
+    ) {
+
+        $current_status =
+            strtolower(
+                trim(
+                    (string) $data['current_status']
+                )
+            );
+
+        if (
+            !in_array(
+                $current_status,
+                ['student', 'graduated'],
+                true
+            )
+        ) {
+
+            $errors['current_status'] =
+                'Current status must be student or graduated.';
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Full Name
+    |--------------------------------------------------------------------------
+    |
+    | Optional: when the client sends it, it must be a valid string. When it
+    | is absent, the service snapshots the applicant's profile full name.
+    |
+    */
+
+    if (
+        isset($data['full_name'])
+        &&
+        $data['full_name'] !== null
+        &&
+        $data['full_name'] !== ''
+    ) {
+
+        if (
+            !is_string($data['full_name'])
+            ||
+            mb_strlen(
+                trim($data['full_name'])
+            ) > 255
+        ) {
+
+            $errors['full_name'] =
+                'Full name must not exceed 255 characters.';
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Email
+    |--------------------------------------------------------------------------
+    |
+    | Optional: when the client sends it, it must be a valid email. When it
+    | is absent, the service snapshots the authenticated user's email.
+    |
+    */
+
+    if (
+        isset($data['email'])
+        &&
+        $data['email'] !== null
+        &&
+        $data['email'] !== ''
+    ) {
+
+        if (
+            filter_var(
+                trim((string) $data['email']),
+                FILTER_VALIDATE_EMAIL
+            ) === false
+        ) {
+
+            $errors['email'] =
+                'Email must be a valid email address.';
+
+        } elseif (
+            mb_strlen(
+                trim((string) $data['email'])
+            ) > 255
+        ) {
+
+            $errors['email'] =
+                'Email must not exceed 255 characters.';
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Phone
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        isset($data['phone'])
+        &&
+        $data['phone'] !== null
+        &&
+        $data['phone'] !== ''
+    ) {
+
+        if (
+            !is_string($data['phone'])
+            ||
+            mb_strlen(
+                trim($data['phone'])
+            ) > 20
+        ) {
+
+            $errors['phone'] =
+                'Phone must not exceed 20 characters.';
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | City
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        isset($data['city'])
+        &&
+        $data['city'] !== null
+        &&
+        $data['city'] !== ''
+    ) {
+
+        if (
+            !is_string($data['city'])
+            ||
+            mb_strlen(
+                trim($data['city'])
+            ) > 100
+        ) {
+
+            $errors['city'] =
+                'City must not exceed 100 characters.';
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Address
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        isset($data['address'])
+        &&
+        $data['address'] !== null
+        &&
+        $data['address'] !== ''
+    ) {
+
+        if (
+            !is_string($data['address'])
+            ||
+            mb_strlen(
+                trim($data['address'])
+            ) > 500
+        ) {
+
+            $errors['address'] =
+                'Address must not exceed 500 characters.';
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
     | University ID
     |--------------------------------------------------------------------------
     */
@@ -577,6 +807,190 @@ function application_validator_create(
             $errors['motivation'] =
                 'Motivation must not exceed 5000 characters.';
         }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Why Interested
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        !isset($data['why_interested'])
+        ||
+        $data['why_interested'] === null
+        ||
+        trim(
+            (string) $data['why_interested']
+        ) === ''
+    ) {
+
+        $errors['why_interested'] =
+            'Why interested is required.';
+
+    } elseif (
+        mb_strlen(
+            trim(
+                (string) $data['why_interested']
+            )
+        ) > 5000
+    ) {
+
+        $errors['why_interested'] =
+            'Why interested must not exceed 5000 characters.';
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | What To Learn
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        !isset($data['what_to_learn'])
+        ||
+        $data['what_to_learn'] === null
+        ||
+        trim(
+            (string) $data['what_to_learn']
+        ) === ''
+    ) {
+
+        $errors['what_to_learn'] =
+            'What you want to learn is required.';
+
+    } elseif (
+        mb_strlen(
+            trim(
+                (string) $data['what_to_learn']
+            )
+        ) > 5000
+    ) {
+
+        $errors['what_to_learn'] =
+            'What you want to learn must not exceed 5000 characters.';
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Skills
+    |--------------------------------------------------------------------------
+    |
+    | Skills is an optional array of skill names. The array is stored on
+    | the application record as a JSON snapshot so it survives changes to
+    | the applicant's profile later.
+    |
+    */
+
+    if (
+        isset($data['skills'])
+        &&
+        $data['skills'] !== null
+        &&
+        $data['skills'] !== ''
+    ) {
+
+        if (
+            !is_array($data['skills'])
+        ) {
+
+            $errors['skills'] =
+                'Skills must be an array.';
+
+        } elseif (
+            count($data['skills']) > 50
+        ) {
+
+            $errors['skills'] =
+                'Skills must not exceed 50 items.';
+
+        } else {
+
+            foreach ($data['skills'] as $index => $skill) {
+
+                if (
+                    !is_string($skill)
+                    ||
+                    trim($skill) === ''
+                ) {
+
+                    $errors["skills.{$index}"] =
+                        'Each skill must be a non-empty string.';
+
+                    continue;
+                }
+
+                if (
+                    mb_strlen(
+                        trim($skill)
+                    ) > 100
+                ) {
+
+                    $errors["skills.{$index}"] =
+                        'Each skill must not exceed 100 characters.';
+                }
+            }
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Education Conditional Requirements
+    |--------------------------------------------------------------------------
+    |
+    | current_status (alias: applicant_type) drives which education field is
+    | required: an enrolled student must provide academic_year, while a
+    | graduate must provide graduation_year.
+    |
+    */
+
+    $resolved_status =
+        strtolower(
+            trim(
+                (string) (
+                    $data['current_status']
+                    ?? $data['applicant_type']
+                    ?? 'student'
+                )
+            )
+        );
+
+    if (
+        $resolved_status === 'graduated'
+        &&
+        (
+            !isset($data['graduation_year'])
+            ||
+            $data['graduation_year'] === null
+            ||
+            $data['graduation_year'] === ''
+        )
+    ) {
+
+        $errors['graduation_year'] =
+            'Graduation year is required for graduates.';
+    }
+
+    if (
+        $resolved_status === 'student'
+        &&
+        (
+            !isset($data['academic_year'])
+            ||
+            $data['academic_year'] === null
+            ||
+            trim(
+                (string) $data['academic_year']
+            ) === ''
+        )
+    ) {
+
+        $errors['academic_year'] =
+            'Academic year is required for students.';
     }
 
 
@@ -1380,8 +1794,14 @@ function application_validator_answers(
 
     if (
         !is_array($answers)
-        ||
+    ) {
+        $answers = [];
+    }
+
+    if (
         empty($questions)
+        &&
+        empty($answers)
     ) {
         return application_validator_result(
             empty($errors),
@@ -1425,6 +1845,38 @@ function application_validator_answers(
 
         $answers_by_question[$question_id] =
             trim($value);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reject Unknown Questions
+    |--------------------------------------------------------------------------
+    |
+    | An answer may only reference a question that belongs to the training
+    | the student is applying to. Anything else is rejected so a student
+    | cannot inject answers for questions of other trainings (or bogus IDs).
+    |
+    */
+
+    $valid_question_ids = [];
+
+    foreach ($questions as $question) {
+        $valid_question_ids[] = (int) $question['id'];
+    }
+
+    foreach (array_keys($answers_by_question) as $question_id) {
+
+        if (
+            !in_array(
+                $question_id,
+                $valid_question_ids,
+                true
+            )
+        ) {
+
+            $errors["answers.{$question_id}"] =
+                'This question does not belong to the selected training.';
+        }
     }
 
     foreach ($questions as $question) {

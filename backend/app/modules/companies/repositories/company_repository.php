@@ -72,6 +72,7 @@ function company_repository_find_by_user_id(
             user_id,
             legal_name AS company_name,
             description,
+            company_logo,
             approval_status,
             created_at,
             updated_at
@@ -84,6 +85,51 @@ function company_repository_find_by_user_id(
         $sql,
         [$user_id]
     );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Set Company Logo
+|--------------------------------------------------------------------------
+|
+| Stores the relative storage path of the company's logo image.
+| The path follows the file upload service convention (e.g.
+| "companies/20260821_a1b2c3d4.png"). Passing null clears the logo.
+|
+*/
+
+function company_repository_set_logo(
+    int $company_id,
+    ?string $logo_path
+): bool {
+
+    if ($company_id <= 0) {
+        return false;
+    }
+
+    $logo_path =
+        $logo_path === null
+            ? null
+            : trim($logo_path);
+
+    if ($logo_path === '') {
+        $logo_path = null;
+    }
+
+    $statement = db_execute(
+        "
+            UPDATE companies
+            SET
+                company_logo = ?,
+                updated_at = NOW()
+            WHERE id = ?
+            LIMIT 1
+        ",
+        [$logo_path, $company_id]
+    );
+
+    return true;
 }
 
 
@@ -381,6 +427,260 @@ function company_repository_resolve_work_field_ids(
         }
 
         $resolved[$field_id] = $field_id;
+    }
+
+    return array_values($resolved);
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Add Specialization
+|--------------------------------------------------------------------------
+|
+| Links a company to a specialization (industry) in the
+| company_specializations pivot table. The composite primary key
+| (company_id, specialization_id) makes INSERT IGNORE idempotent,
+| so duplicate links are never created.
+|
+*/
+
+function company_repository_add_specialization(
+    int $company_id,
+    int $specialization_id
+): bool {
+
+    if (
+        $company_id <= 0 ||
+        $specialization_id <= 0
+    ) {
+
+        return false;
+    }
+
+
+    $sql = "
+        INSERT IGNORE INTO company_specializations (
+            company_id,
+            specialization_id,
+            created_at
+        )
+        VALUES (
+            ?,
+            ?,
+            NOW()
+        )
+    ";
+
+
+    $statement =
+        db_execute(
+            $sql,
+            [
+                $company_id,
+                $specialization_id,
+            ]
+        );
+
+    return $statement !== false;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Delete All Specializations
+|--------------------------------------------------------------------------
+*/
+
+function company_repository_delete_specializations(
+    int $company_id
+): bool {
+
+    if ($company_id <= 0) {
+        return false;
+    }
+
+
+    $sql = "
+        DELETE FROM company_specializations
+        WHERE company_id = ?
+    ";
+
+
+    $statement =
+        db_execute(
+            $sql,
+            [$company_id]
+        );
+
+    return $statement !== false;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Replace All Specializations
+|--------------------------------------------------------------------------
+*/
+
+function company_repository_replace_specializations(
+    int $company_id,
+    array $specialization_ids
+): bool {
+
+    if ($company_id <= 0) {
+        return false;
+    }
+
+
+    return db_transaction(function () use ($company_id, $specialization_ids): bool {
+        $deleted =
+            company_repository_delete_specializations(
+                $company_id
+            );
+
+        if (!$deleted) {
+            throw new RuntimeException('Unable to replace company specializations.');
+        }
+
+
+        foreach ($specialization_ids as $specialization_id) {
+            $added =
+                company_repository_add_specialization(
+                    $company_id,
+                    (int) $specialization_id
+                );
+
+            if (!$added) {
+                throw new RuntimeException('Unable to replace company specializations.');
+            }
+        }
+
+        return true;
+    });
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Get Specializations
+|--------------------------------------------------------------------------
+*/
+
+function company_repository_get_specializations(
+    int $company_id
+): array {
+
+    if ($company_id <= 0) {
+        return [];
+    }
+
+
+    $sql = "
+        SELECT
+            cs.specialization_id AS id,
+            s.name
+        FROM company_specializations cs
+        INNER JOIN specializations s
+            ON s.id = cs.specialization_id
+        WHERE cs.company_id = ?
+        ORDER BY s.name ASC
+    ";
+
+
+    return db_fetch_all(
+        $sql,
+        [$company_id]
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Resolve Specialization ID
+|--------------------------------------------------------------------------
+|
+| Accepts a specialization ID (int / numeric string) or a specialization
+| name (string). Names are matched case-insensitively against active rows
+| of the specializations lookup table. specializations is the single
+| source of truth for the company industry.
+|
+*/
+
+function company_repository_resolve_specialization_id(
+    mixed $input
+): ?int {
+
+    if (
+        is_int($input)
+        ||
+        (
+            is_string($input)
+            &&
+            ctype_digit($input)
+        )
+    ) {
+
+        $row =
+            db_fetch_one(
+                " SELECT id FROM specializations WHERE id = ? AND is_active = 1 LIMIT 1 ",
+                [(int) $input]
+            );
+
+        return $row ? (int) $row['id'] : null;
+    }
+
+
+    if (
+        is_string($input)
+        &&
+        trim($input) !== ''
+    ) {
+
+        $row =
+            db_fetch_one(
+                " SELECT id FROM specializations WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) AND is_active = 1 LIMIT 1 ",
+                [trim($input)]
+            );
+
+        return $row ? (int) $row['id'] : null;
+    }
+
+
+    return null;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Resolve Specialization IDs
+|--------------------------------------------------------------------------
+|
+| Resolves a list of specialization IDs and/or names against the
+| specializations lookup table. Returns null when any input does not match
+| an active specialization. Duplicates are removed. specializations is the
+| single source of truth for the company industry
+| (company_specializations).
+|
+*/
+
+function company_repository_resolve_specialization_ids(
+    array $inputs
+): ?array {
+
+    $resolved = [];
+
+    foreach ($inputs as $input) {
+        $specialization_id =
+            company_repository_resolve_specialization_id(
+                $input
+            );
+
+        if ($specialization_id === null) {
+            return null;
+        }
+
+        $resolved[$specialization_id] = $specialization_id;
     }
 
     return array_values($resolved);

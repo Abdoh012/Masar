@@ -49,9 +49,14 @@ function student_service_validate_cv_file_ownership( int $user_id, mixed $cv_fil
  *
  * The User Field is read from the `field` payload key when present, falling
  * back to the legacy `faculty` key used by the current registration form.
- * Specialist is always read from the `specialization` key and resolved
- * against the existing `specializations` table. University is no longer part
+ * A numeric `field_id` is also accepted. Specialist is read from the
+ * `specialization` key (or numeric `specialization_id`) and MUST belong to
+ * the selected field: the field -> specialization relationship
+ * (specializations.field_id) is enforced here. University is no longer part
  * of the student registration model.
+ *
+ * Returns null when the field or specialization is unknown/inactive or when
+ * the specialization does not belong to the selected field.
  */
 function student_service_resolve_academic_data( array $data ): ?array {
     $user_field = trim((string) ($data['field'] ?? ''));
@@ -62,10 +67,35 @@ function student_service_resolve_academic_data( array $data ): ?array {
 
     $specialization = trim((string) ($data['specialization'] ?? ''));
 
-    $field_id = student_repository_resolve_field_id( $user_field );
-    $specialization_id = student_repository_resolve_specialization_id( $specialization );
+    // Resolve the study field (by ID when provided, otherwise by name).
+    if (isset($data['field_id']) && (int) $data['field_id'] > 0) {
+        $field = student_repository_find_field_by_id((int) $data['field_id']);
+        $field_id = is_array($field) ? (int) $field['id'] : null;
+    } else {
+        $field_id = student_repository_resolve_field_id( $user_field );
+    }
 
-    if ($field_id === null || $specialization_id === null) {
+    if ($field_id === null) {
+        return null;
+    }
+
+    // Resolve the specialization strictly inside the selected field.
+    if (isset($data['specialization_id']) && (int) $data['specialization_id'] > 0) {
+        $specialization_row = student_repository_find_specialization_by_id((int) $data['specialization_id']);
+
+        if (
+            $specialization_row === null
+            || (int) ($specialization_row['field_id'] ?? 0) !== $field_id
+        ) {
+            return null;
+        }
+
+        $specialization_id = (int) $specialization_row['id'];
+    } else {
+        $specialization_id = student_repository_resolve_specialization_id_in_field( $specialization, $field_id );
+    }
+
+    if ($specialization_id === null) {
         return null;
     }
 

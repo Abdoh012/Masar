@@ -242,6 +242,7 @@ CREATE TABLE `companies` (
   `website` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `phone` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `city` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `company_logo` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `address` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `approval_status` enum('pending','approved','rejected','suspended') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
   `approved_at` datetime DEFAULT NULL,
@@ -634,6 +635,7 @@ CREATE TABLE `specializations` (
   `id` bigint UNSIGNED NOT NULL,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `parent_id` bigint UNSIGNED DEFAULT NULL,
+  `field_id` bigint UNSIGNED DEFAULT NULL,
   `description` text COLLATE utf8mb4_unicode_ci,
   `is_active` tinyint(1) NOT NULL DEFAULT '1',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -763,7 +765,16 @@ CREATE TABLE `training_applications` (
   `id` bigint UNSIGNED NOT NULL,
   `training_id` bigint UNSIGNED NOT NULL,
   `student_id` bigint UNSIGNED NOT NULL,
+  `company_id` bigint UNSIGNED DEFAULT NULL,
   `message` text COLLATE utf8mb4_unicode_ci,
+  `full_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `phone` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `city` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `address` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `why_interested` text COLLATE utf8mb4_unicode_ci,
+  `what_to_learn` text COLLATE utf8mb4_unicode_ci,
+  `skills` text COLLATE utf8mb4_unicode_ci,
   `cv_file_id` bigint UNSIGNED DEFAULT NULL,
   `university_id` bigint UNSIGNED DEFAULT NULL,
   `faculty_id` bigint UNSIGNED DEFAULT NULL,
@@ -791,7 +802,6 @@ CREATE TABLE `training_listings` (
   `company_id` bigint UNSIGNED NOT NULL,
   `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `description` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `field` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `training_type` enum('shadowing','hands_on','project_based') COLLATE utf8mb4_unicode_ci NOT NULL,
   `mode` enum('onsite','remote','hybrid') COLLATE utf8mb4_unicode_ci NOT NULL,
   `may_lead_to_employment` tinyint(1) NOT NULL DEFAULT '0',
@@ -1180,7 +1190,8 @@ ALTER TABLE `specializations`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `uq_specialization_name` (`name`),
   ADD KEY `idx_specializations_parent` (`parent_id`),
-  ADD KEY `idx_specializations_name` (`name`);
+  ADD KEY `idx_specializations_name` (`name`),
+  ADD KEY `idx_specializations_field` (`field_id`);
 
 --
 -- Indexes for table `students`
@@ -1219,6 +1230,7 @@ ALTER TABLE `study_fields`
 ALTER TABLE `training_applications`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `uq_training_student_application` (`training_id`,`student_id`),
+  ADD KEY `idx_applications_company` (`company_id`),
   ADD KEY `idx_applications_training_status` (`training_id`,`status`),
   ADD KEY `idx_applications_student_status` (`student_id`,`status`),
   ADD KEY `idx_applications_status_reviewed` (`status`,`reviewed_at`),
@@ -1231,7 +1243,6 @@ ALTER TABLE `training_listings`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_training_company` (`company_id`),
   ADD KEY `idx_training_status` (`status`),
-  ADD KEY `idx_training_field` (`field`),
   ADD KEY `idx_training_type` (`training_type`),
   ADD KEY `idx_training_mode` (`mode`),
   ADD KEY `idx_training_ends_at` (`ends_at`),
@@ -1611,6 +1622,7 @@ ALTER TABLE `refresh_tokens`
 -- Constraints for table `specializations`
 --
 ALTER TABLE `specializations`
+  ADD CONSTRAINT `fk_specializations_field` FOREIGN KEY (`field_id`) REFERENCES `study_fields` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `fk_specializations_parent` FOREIGN KEY (`parent_id`) REFERENCES `specializations` (`id`) ON DELETE SET NULL;
 
 --
@@ -1637,6 +1649,7 @@ ALTER TABLE `student_skills`
 -- Constraints for table `training_applications`
 --
 ALTER TABLE `training_applications`
+  ADD CONSTRAINT `fk_applications_company` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_applications_reviewer` FOREIGN KEY (`reviewed_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `fk_applications_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_applications_training` FOREIGN KEY (`training_id`) REFERENCES `training_listings` (`id`) ON DELETE CASCADE,

@@ -22,6 +22,7 @@ The routes currently implemented and verified:
 POST   /api/v1/applications                 Student submits an application
 GET    /api/v1/applications/my              Student's own applications
 GET    /api/v1/applications/{id}            Application detail (student/company/admin)
+GET    /api/v1/applications/{id}/cv         Download the application CV (student/company/admin)
 GET    /api/v1/applications?training_id=..  Company's applications for one training
 POST   /api/v1/applications/withdraw        Student withdraws a pending application
 POST   /api/v1/applications/accept          Company accepts a pending application
@@ -140,6 +141,14 @@ The request is allowed only when the authenticated user is:
         "student_id": 101,
         "message": null,
         "status": "pending",
+        "full_name": "Student Two",
+        "email": "stu2@test.local",
+        "phone": "01012345678",
+        "city": "Cairo",
+        "address": "12 Nile Street",
+        "why_interested": "I want hands-on experience in a real team.",
+        "what_to_learn": "Modern frontend engineering and mentorship.",
+        "skills": ["PHP", "SQL", "Teamwork"],
         "rejection_reason": null,
         "rejection_note": null,
         "applied_at": "2026-08-20 15:20:40",
@@ -164,7 +173,7 @@ The request is allowed only when the authenticated user is:
                 "answer": "I am eager.",
                 "question": "Why do you want this internship?",
                 "question_type": "textarea",
-                "options": null
+                "options": []
             }
         ],
         "university_name": "Cairo University",
@@ -174,10 +183,11 @@ The request is allowed only when the authenticated user is:
 ```
 
 The response is enriched by `application_service_enrich_application`: it attaches the
-submitted `answers`, resolves `university_name` / `faculty_name`, and normalizes the
-status (the DB stores `submitted`, which is exposed as `pending`). The `my applications`
-list (`/api/v1/applications/my`) returns the same fields but without `answers` /
-`university_name` / `faculty_name` and keeps the raw `submitted` status.
+submitted `answers`, resolves `university_name` / `faculty_name`, decodes the `skills`
+snapshot, and normalizes the status (the DB stores `submitted`, which is exposed as
+`pending`). The `my applications` list (`/api/v1/applications/my`) returns the same
+snapshot fields plus `training_title` / `company_name` but without `answers` /
+`university_name` / `faculty_name`; its status values are also normalized to `pending`.
 
 ---
 
@@ -205,8 +215,16 @@ student
 ```json
 {
     "training_id": 2,
+    "current_status": "student",
+    "full_name": "Student Two",
+    "email": "stu2@test.local",
+    "phone": "01012345678",
+    "city": "Cairo",
+    "address": "12 Nile Street",
+    "why_interested": "I want hands-on experience in a real team.",
+    "what_to_learn": "Modern frontend engineering and mentorship.",
+    "skills": ["PHP", "SQL", "Teamwork"],
     "cv_file_id": 17,
-    "applicant_type": "student",
     "university_id": 1,
     "faculty_id": 1,
     "academic_year": "3rd year",
@@ -227,19 +245,38 @@ Fields:
 ```text
 training_id      int          required  (validated server-side; must be published,
                                         deadline not passed, capacity available)
+company_id       ignored      derived automatically from training_id -> training_listings.company_id.
+                                        A client-supplied company_id is never trusted and is
+                                        overwritten with the real training company.
 student_id       ignored      the authenticated student is resolved server-side
-cv_file_id       int          optional  must reference an existing file record
+current_status   student|graduated       applicant status (canonical input; stored in
+                                        applicant_type). Aliased by applicant_type.
+full_name        string       optional  snapshot; falls back to the student profile name
+email            string       optional  snapshot; falls back to the user's account email
+phone            string       optional  max 20 chars
+city             string       optional  max 100 chars
+address          string       optional  max 500 chars
+why_interested   string       required  max 5000 chars
+what_to_learn    string       required  max 5000 chars
+skills           array        optional  array of skill names (max 50); stored as JSON
+cv_file_id       int          optional  must reference a file record owned by the
+                                        authenticated student (422 otherwise)
 university_id    int          optional  must exist in universities (422 if not)
 faculty_id       int          optional  must exist in faculties (422 if not)
-applicant_type   student|graduated (default student)
-academic_year    string       max 20 chars
-graduation_year  int          between 1950 and 2100
-motivation       string       max 5000 chars
-cover_letter     string       max 10000 chars
+applicant_type   student|graduated (alias of current_status)
+academic_year    string       required  when current_status is student; max 20 chars
+graduation_year  int          required  when current_status is graduated; 1950..2100
+motivation       string       optional  max 5000 chars
+cover_letter     string       optional  max 10000 chars
 answers          array        validated against the training's questions:
+                              only questions of this training are accepted;
                               required questions must be answered; select/radio
                               answers must be one of the question's options
 ```
+
+
+The `application/json` body with `cv_file_id` continues to work unchanged.
+`company_id` is always derived from the selected training in the JSON flow.
 
 ### Validation responses
 
@@ -249,9 +286,19 @@ answers          array        validated against the training's questions:
 409  training not accepting         "This training opportunity is not accepting applications."
 409  capacity reached               "This training opportunity has reached its capacity."
 422  invalid university/faculty     "Selected university/faculty was not found."
+422  invalid cv ownership           "Selected CV file was not found."
+422  foreign question answer        answers.<question_id> => "This question does not belong to the selected training."
 422  missing required answer        answers.<question_id> => "This question is required."
 422  invalid select/radio option    answers.<question_id> => "Selected option is not valid."
+422  missing conditional year       graduation_year => "Graduation year is required for graduates."
+                                   academic_year => "Academic year is required for students."
 ```
+
+A **rejected** application may be re-submitted by the same student for the same training. Because
+`training_applications` enforces a unique `(training_id, student_id)` constraint, the re-submission
+reuses the existing application row: it resets the status to `pending`, clears the rejection and
+review data (`rejection_reason`, `rejection_note`, `reviewed_by`, `reviewed_at`), replaces the
+snapshot fields, and replaces the previous answers.
 
 ### Response
 
@@ -263,6 +310,15 @@ answers          array        validated against the training's questions:
         "id": 15,
         "training_id": 2,
         "student_id": 100,
+        "company_id": 46,
+        "full_name": "Student Two",
+        "email": "stu2@test.local",
+        "phone": "01012345678",
+        "city": "Cairo",
+        "address": "12 Nile Street",
+        "why_interested": "I want hands-on experience in a real team.",
+        "what_to_learn": "Modern frontend engineering.",
+        "skills": ["PHP", "SQL"],
         "cv_file_id": 17,
         "university_id": 1,
         "faculty_id": 1,
@@ -281,48 +337,38 @@ The application and its answers are created inside a database transaction.
 
 ---
 
-# 4. Update Application
+# 4. Download Application CV
 
-An application may only be updated while it is in an editable state.
+Downloads the CV attached to an application as a binary file.
 
 ### Endpoint
 
 ```http
-PUT /api/applications/{applicationId}
-```
-
-or:
-
-```http
-PATCH /api/applications/{applicationId}
+GET /api/v1/applications/{applicationId}/cv
 ```
 
 ### Authorization
 
-Only the student who owns the application may update editable fields.
+Access is authorized through the application:
 
-### Request
-
-```json
-{
-    "cover_letter": "Updated application message."
-}
+```text
+The owning student
+The company that owns the training (Application → Training → Company)
+An administrator
 ```
+
+A company can never download the CV of an application belonging to another
+company, and it cannot reach arbitrary student files through the general
+`GET /api/v1/files/{id}/download` endpoint (that endpoint is owner-only).
 
 ### Response
 
-```json
-{
-    "success": true,
-    "message": "Application updated successfully.",
-    "data": {
-        "id": 15,
-        "cover_letter": "Updated application message."
-    }
-}
+```text
+200 OK          binary stream (Content-Disposition: attachment)
+401             unauthenticated
+403             not allowed to access this CV
+404             application / CV not found
 ```
-
-Once an application reaches a non-editable status, modifications must be rejected.
 
 ---
 
@@ -338,10 +384,10 @@ POST /api/v1/applications/withdraw
 
 ### Request
 
-```json
-{
-    "id": 15
-}
+The application id is passed as a query parameter:
+
+```http
+POST /api/v1/applications/withdraw?id=15
 ```
 
 ### Authorization
@@ -439,10 +485,10 @@ POST /api/v1/applications/accept
 
 ### Request
 
-```json
-{
-    "id": 15
-}
+The application id is passed as a query parameter:
+
+```http
+POST /api/v1/applications/accept?id=15
 ```
 
 ### Authorization
@@ -502,10 +548,18 @@ administrator
 
 ### Request
 
+The application id is passed as a query parameter:
+
+```http
+POST /api/v1/applications/reject?id=15
+```
+
+Optional JSON body:
+
 ```json
 {
-    "id": 15,
-    "rejection_reason": "Candidate did not meet minimum requirements"
+    "rejection_reason": "Candidate did not meet minimum requirements",
+    "rejection_note": "Optional human-readable detail for the student."
 }
 ```
 
@@ -902,10 +956,11 @@ Implemented (base URL `/api/v1`):
 POST   /api/v1/applications
 GET    /api/v1/applications/my
 GET    /api/v1/applications/{applicationId}
+GET    /api/v1/applications/{applicationId}/cv
 GET    /api/v1/applications?training_id={trainingId}
-POST   /api/v1/applications/withdraw   (body: { "id": applicationId })
-POST   /api/v1/applications/accept     (body: { "id": applicationId })
-POST   /api/v1/applications/reject     (body: { "id": applicationId, "rejection_reason": "..." })
+POST   /api/v1/applications/withdraw   (query: id)
+POST   /api/v1/applications/accept     (query: id)
+POST   /api/v1/applications/reject     (query: id, JSON body: rejection_reason, rejection_note)
 ```
 
 Design/spec-only (not routed yet):
@@ -932,11 +987,28 @@ notifications
 audit_logs
 ```
 
-The primary application record is stored in:
+The primary application record is stored in `training_applications` (source of truth:
+`database/schema/masar.sql`). It carries the student snapshot columns used by the
+submission endpoint:
 
 ```text
-database/migrations/014_create_training_applications_table.sql
+company_id       bigint UNSIGNED (nullable; FK -> companies.id, ON DELETE CASCADE).
+                 Populated automatically from training_id -> training_listings.company_id
+                 when an application is created. Existing legacy rows whose training no
+                 longer exists keep NULL.
+full_name        varchar(255)
+email            varchar(255)
+phone            varchar(20)
+city             varchar(100)
+address          varchar(500)
+why_interested   text
+what_to_learn    text
+skills           text  (JSON array of skill names)
 ```
+
+Answers to the training questions are stored in `application_answers` and the
+student's declared skills are stored as JSON in the `skills` column of the
+application record.
 
 ---
 

@@ -71,9 +71,75 @@ function application_repository_find_student_by_user_id(
     $sql = "
         SELECT
             s.id AS student_id,
-            s.*
+            s.*,
+            u.email AS user_email
         FROM students s
+        LEFT JOIN users u
+            ON u.id = s.user_id
         WHERE s.user_id = ?
+        LIMIT 1
+    ";
+
+    return db_fetch_one(
+        $sql,
+        [$user_id]
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Find Student By ID
+|--------------------------------------------------------------------------
+*/
+
+function application_repository_find_student_by_id(
+    int $student_id
+): ?array {
+
+    if ($student_id <= 0) {
+        return null;
+    }
+
+    $sql = "
+        SELECT
+            s.id AS student_id,
+            s.*,
+            u.email AS user_email
+        FROM students s
+        LEFT JOIN users u
+            ON u.id = s.user_id
+        WHERE s.id = ?
+        LIMIT 1
+    ";
+
+    return db_fetch_one(
+        $sql,
+        [$student_id]
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Find Company By User ID
+|--------------------------------------------------------------------------
+*/
+
+function application_repository_find_company_by_user_id(
+    int $user_id
+): ?array {
+
+    if ($user_id <= 0) {
+        return null;
+    }
+
+    $sql = "
+        SELECT
+            c.id AS company_id,
+            c.*
+        FROM companies c
+        WHERE c.user_id = ?
         LIMIT 1
     ";
 
@@ -456,7 +522,16 @@ function application_repository_create(
         INSERT INTO training_applications (
             training_id,
             student_id,
+            company_id,
             message,
+            full_name,
+            email,
+            phone,
+            city,
+            address,
+            why_interested,
+            what_to_learn,
+            skills,
             cv_file_id,
             university_id,
             faculty_id,
@@ -468,6 +543,15 @@ function application_repository_create(
             applied_at
         )
         VALUES (
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
             ?,
             ?,
             ?,
@@ -491,7 +575,38 @@ function application_repository_create(
         $data['student_id']
             ?? null,
 
+        $data['company_id']
+            ?? null,
+
         $message,
+
+        $data['full_name']
+            ?? null,
+
+        $data['email']
+            ?? null,
+
+        $data['phone']
+            ?? null,
+
+        $data['city']
+            ?? null,
+
+        $data['address']
+            ?? null,
+
+        $data['why_interested']
+            ?? null,
+
+        $data['what_to_learn']
+            ?? null,
+
+        is_array($data['skills'] ?? null)
+            ? json_encode(
+                array_values($data['skills']),
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+            )
+            : ($data['skills'] ?? null),
 
         $data['cv_file_id']
             ?? null,
@@ -527,6 +642,149 @@ function application_repository_create(
     }
 
     return (int) db_last_insert_id();
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Reapply For Training
+|--------------------------------------------------------------------------
+|
+| Resets a previously rejected application back to a fresh submitted state
+| with the new snapshot data. The training_applications table enforces a
+| unique (training_id, student_id) index, so a re-application after a
+| rejection reuses the existing row instead of attempting a second INSERT
+| (which would violate the unique index and fail).
+|
+*/
+
+function application_repository_reapply(
+    int $application_id,
+    array $data
+): bool {
+
+    if (
+        $application_id <= 0
+        ||
+        empty($data)
+    ) {
+        return false;
+    }
+
+    $message =
+        $data['message']
+        ?? $data['cover_letter']
+        ?? $data['notes']
+        ?? null;
+
+    $applicant_type =
+        $data['applicant_type']
+        ?? 'student';
+
+    if (
+        !in_array(
+            $applicant_type,
+            ['student', 'graduated'],
+            true
+        )
+    ) {
+        $applicant_type = 'student';
+    }
+
+    $skills =
+        is_array($data['skills'] ?? null)
+            ? json_encode(
+                array_values($data['skills']),
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+            )
+            : ($data['skills'] ?? null);
+
+    $sql = "
+        UPDATE training_applications
+        SET
+            company_id = ?,
+            message = ?,
+            full_name = ?,
+            email = ?,
+            phone = ?,
+            city = ?,
+            address = ?,
+            why_interested = ?,
+            what_to_learn = ?,
+            skills = ?,
+            cv_file_id = ?,
+            university_id = ?,
+            faculty_id = ?,
+            applicant_type = ?,
+            academic_year = ?,
+            graduation_year = ?,
+            motivation = ?,
+            status = 'submitted',
+            rejection_reason = NULL,
+            rejection_note = NULL,
+            reviewed_by = NULL,
+            reviewed_at = NULL,
+            applied_at = NOW()
+        WHERE id = ?
+        LIMIT 1
+    ";
+
+    $statement = db_execute(
+        $sql,
+        [
+            $data['company_id']
+                ?? null,
+
+            $message,
+
+            $data['full_name']
+                ?? null,
+
+            $data['email']
+                ?? null,
+
+            $data['phone']
+                ?? null,
+
+            $data['city']
+                ?? null,
+
+            $data['address']
+                ?? null,
+
+            $data['why_interested']
+                ?? null,
+
+            $data['what_to_learn']
+                ?? null,
+
+            $skills,
+
+            $data['cv_file_id']
+                ?? null,
+
+            $data['university_id']
+                ?? null,
+
+            $data['faculty_id']
+                ?? null,
+
+            $applicant_type,
+
+            $data['academic_year']
+                ?? null,
+
+            $data['graduation_year']
+                ?? null,
+
+            $data['motivation']
+                ?? null,
+
+            $application_id
+        ]
+    );
+
+    return $statement->rowCount() > 0;
 }
 
 
@@ -597,6 +855,36 @@ function application_repository_save_answers(
 
 /*
 |--------------------------------------------------------------------------
+| Delete Application Answers
+|--------------------------------------------------------------------------
+|
+| Removes all answers belonging to an application. Used when a rejected
+| student re-applies and replaces their previous answers.
+|
+*/
+
+function application_repository_delete_answers(
+    int $application_id
+): bool {
+
+    if ($application_id <= 0) {
+        return false;
+    }
+
+    $statement = db_execute(
+        "
+            DELETE FROM application_answers
+            WHERE application_id = ?
+        ",
+        [$application_id]
+    );
+
+    return $statement->rowCount() > 0;
+}
+
+
+/*
+|--------------------------------------------------------------------------
 | Get Application Answers
 |--------------------------------------------------------------------------
 */
@@ -626,9 +914,39 @@ function application_repository_get_answers(
         [$application_id]
     );
 
-    return is_array($rows)
-        ? $rows
-        : [];
+    if (!is_array($rows)) {
+        return [];
+    }
+
+    return array_map(
+        function ($row) {
+
+            $row['question_id'] =
+                (int) $row['question_id'];
+
+            if (
+                !empty($row['options'])
+                &&
+                in_array(
+                    $row['question_type'],
+                    ['select', 'radio'],
+                    true
+                )
+            ) {
+
+                $decoded = json_decode($row['options'], true);
+
+                $row['options'] = is_array($decoded)
+                    ? $decoded
+                    : [];
+            } else {
+                $row['options'] = [];
+            }
+
+            return $row;
+        },
+        $rows
+    );
 }
 
 
@@ -924,14 +1242,35 @@ function application_repository_accept(
 function application_repository_reject(
     int $application_id,
     ?int $reviewed_by = null,
-    ?string $reason = null
+    ?string $reason = null,
+    ?string $note = null
 ): bool {
 
     if ($application_id <= 0) {
         return false;
     }
 
-    $allowed_reasons = [
+    /*
+    |--------------------------------------------------------------------------
+    | Rejection Reason Mapping
+    |--------------------------------------------------------------------------
+    |
+    | The database rejection_reason column is an enum of short codes. The
+    | API accepts the preset human-readable reasons; each is mapped to its
+    | code and the human-readable text is preserved in rejection_note.
+    |
+    */
+
+    $reason_map = [
+        'Candidate did not meet minimum requirements' => 'requirements_not_met',
+        'Position already filled' => 'position_filled',
+        'Insufficient capacity in training' => 'other',
+        'Application incomplete' => 'other',
+        'Candidate withdrew consideration' => 'candidate_not_suitable',
+        'Training program discontinued' => 'training_closed',
+    ];
+
+    $allowed_codes = [
         'position_filled',
         'candidate_not_suitable',
         'requirements_not_met',
@@ -940,9 +1279,13 @@ function application_repository_reject(
     ];
 
     $rejection_reason =
-        in_array($reason, $allowed_reasons, true)
-            ? $reason
-            : 'other';
+        isset($reason_map[$reason])
+            ? $reason_map[$reason]
+            : (
+                in_array($reason, $allowed_codes, true)
+                    ? $reason
+                    : 'other'
+            );
 
     $sql = "
         UPDATE training_applications
@@ -961,7 +1304,7 @@ function application_repository_reject(
         [
             $reviewed_by,
             $rejection_reason,
-            $reason,
+            $note ?: $reason,
             $application_id
         ]
     );
@@ -1035,12 +1378,16 @@ function application_repository_get_by_student(
                 t.company_id,
                 t.starts_at,
                 t.ends_at,
-                t.location
+                t.location,
+                c.legal_name AS company_name
 
             FROM training_applications a
 
             LEFT JOIN training_listings t
                 ON t.id = a.training_id
+
+            LEFT JOIN companies c
+                ON c.id = t.company_id
 
             WHERE
                 a.student_id = ?
@@ -1070,12 +1417,16 @@ function application_repository_get_by_student(
                 t.company_id,
                 t.starts_at,
                 t.ends_at,
-                t.location
+                t.location,
+                c.legal_name AS company_name
 
             FROM training_applications a
 
             LEFT JOIN training_listings t
                 ON t.id = a.training_id
+
+            LEFT JOIN companies c
+                ON c.id = t.company_id
 
             WHERE a.student_id = ?
 

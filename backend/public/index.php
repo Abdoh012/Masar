@@ -384,6 +384,11 @@ if (str_starts_with($path, '/api/v1/auth')) {
     return;
 }
 
+if (str_starts_with($path, '/api/v1/lookups')) {
+    require_once __DIR__ . '/../routes/lookups.php';
+    return;
+}
+
 if (str_starts_with($path, '/api/v1/users')) {
     require_once __DIR__ . '/../routes/users.php';
     return;

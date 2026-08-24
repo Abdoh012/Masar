@@ -153,11 +153,6 @@ function training_service_create(
                 $data['description']
             ),
 
-        'specialization' =>
-            isset($data['specialization'])
-                ? trim($data['specialization'])
-                : null,
-
         'training_type' =>
             isset($data['training_type'])
                 ? trim($data['training_type'])
@@ -209,19 +204,54 @@ function training_service_create(
 
     /*
     |--------------------------------------------------------------------------
-    | Create
+    | Create + Specialization Inheritance
     |--------------------------------------------------------------------------
+    |
+    | The listing row and its inherited specialization relationships are
+    | written inside one database transaction: the company's current
+    | company_specializations are copied into training_specializations,
+    | so the company profile stays the single source of truth. If any
+    | step fails, the whole creation is rolled back and no orphan
+    | training_listings row remains.
+    |
     */
 
-    $training_id =
-        training_repository_create(
-            $training_data
+    try {
+
+        $training_id = db_transaction(
+            function () use ($company, $training_data) {
+
+                $new_training_id =
+                    training_repository_create(
+                        $training_data
+                    );
+
+                if (
+                    !$new_training_id
+                ) {
+                    throw new RuntimeException(
+                        'Unable to create training opportunity.'
+                    );
+                }
+
+                $company_specialization_ids =
+                    training_repository_get_company_specialization_ids(
+                        (int) $company['company_id']
+                    );
+
+                if (!empty($company_specialization_ids)) {
+
+                    training_repository_replace_specializations(
+                        (int) $new_training_id,
+                        $company_specialization_ids
+                    );
+                }
+
+                return (int) $new_training_id;
+            }
         );
 
-
-    if (
-        !$training_id
-    ) {
+    } catch (Throwable $exception) {
 
         return [
 
@@ -248,6 +278,17 @@ function training_service_create(
         training_repository_find_by_id(
             (int) $training_id
         );
+
+    if ($training) {
+
+        $created_specializations =
+            training_repository_get_specializations_by_training_ids(
+                [(int) $training_id]
+            );
+
+        $training['specializations'] =
+            $created_specializations[(int) $training_id] ?? [];
+    }
 
 
     return [
@@ -549,20 +590,6 @@ function training_service_list(
 
     $normalized_filters = [
 
-        'field' =>
-            !empty($filters['field'])
-                ? trim(
-                    $filters['field']
-                )
-                : null,
-
-        'specialization' =>
-            !empty($filters['specialization'])
-                ? trim(
-                    $filters['specialization']
-                )
-                : null,
-
         'specialization_id' =>
             !empty($filters['specialization_id'])
                 ? (int) $filters['specialization_id']
@@ -613,51 +640,7 @@ function training_service_list(
                 )
                 : null,
 
-        'keyword' =>
-            !empty($filters['keyword'])
-                ? trim(
-                    $filters['keyword']
-                )
-                : null,
-
     ];
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Resolve Field ID To Name
-    |--------------------------------------------------------------------------
-    |
-    | The training listing stores the study field as a name,
-    | so a field_id filter must be mapped to the matching name.
-    |
-    */
-
-    if (
-        !empty($filters['field_id'])
-    ) {
-
-        $field_id =
-            (int) $filters['field_id'];
-
-        $study_fields =
-            training_repository_get_study_fields();
-
-        foreach ($study_fields as $study_field) {
-
-            if (
-                (int) $study_field['id']
-                ===
-                $field_id
-            ) {
-
-                $normalized_filters['field'] =
-                    $study_field['name'];
-
-                break;
-            }
-        }
-    }
 
 
     /*
@@ -674,6 +657,74 @@ function training_service_list(
 
         $normalized_filters['student_id'] =
             $student_id;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Specialization-Based Company Matching
+        |--------------------------------------------------------------------------
+        |
+        | Authenticated students only see trainings from companies whose
+        | registered industry (company_specializations) matches the
+        | student's specialization. Matching is done on the specialization,
+        | never on the broad study field.
+        |
+        */
+
+        $student_specialization_id =
+            training_repository_get_student_specialization_id(
+                (int) $student_id
+            );
+
+
+        if ($student_specialization_id === null) {
+
+            /*
+            | Student has no specialization: no company can match, so an
+            | empty result set is returned using the regular response
+            | shape (no error).
+            |
+            */
+
+            return [
+
+                'success' => true,
+
+                'message' =>
+                    'Training opportunities retrieved successfully.',
+
+                'data' => [
+
+                    'items' => [],
+
+                    'pagination' => [
+
+                        'current_page' =>
+                            $page,
+
+                        'per_page' =>
+                            $limit,
+
+                        'total' => 0,
+
+                        'total_pages' => 0,
+
+                        'has_next_page' => false,
+
+                        'has_previous_page' => false
+
+                    ]
+
+                ],
+
+                'status_code' => 200
+
+            ];
+        }
+
+
+        $normalized_filters['match_company_specialization_ids'] =
+            [$student_specialization_id];
     }
 
 
@@ -1049,8 +1100,6 @@ function training_service_update(
 
         'description',
 
-        'specialization',
-
         'training_type',
 
         'work_mode',
@@ -1105,8 +1154,6 @@ function training_service_update(
         'title',
 
         'description',
-
-        'specialization',
 
         'training_type',
 
@@ -1174,6 +1221,55 @@ function training_service_update(
     if (
         !$updated
     ) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Unable to update training opportunity.',
+
+            'errors' => [],
+
+            'status_code' => 500
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Specialization Synchronization
+    |--------------------------------------------------------------------------
+    |
+    | Keeps the training's specialization relationships consistent with
+    | the company's current company_specializations after a successful
+    | update. Existing rows are replaced with the company's current set
+    | inside one transaction; a company without specializations leaves
+    | the training with zero specialization rows.
+    |
+    */
+
+    try {
+
+        db_transaction(
+            function () use ($company, $training_id) {
+
+                $company_specialization_ids =
+                    training_repository_get_company_specialization_ids(
+                        (int) $company['company_id']
+                    );
+
+                training_repository_replace_specializations(
+                    (int) $training_id,
+                    $company_specialization_ids
+                );
+
+                return true;
+            }
+        );
+
+    } catch (Throwable $exception) {
 
         return [
 
