@@ -74,7 +74,7 @@ export async function signup(
       : {
           ...base,
           full_name: String(formData.get("fullName") ?? ""),
-          faculty: String(formData.get("userField") ?? ""),
+          field: String(formData.get("userField") ?? ""),
           specialization: String(formData.get("specialist") ?? ""),
         };
 

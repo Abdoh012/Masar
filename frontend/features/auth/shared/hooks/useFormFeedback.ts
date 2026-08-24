@@ -17,21 +17,29 @@ export function useFormFeedBack(
 
   // Handle form feedback
   useEffect(() => {
-    // Skip the untouched initial state (null or an empty ActionState) so
-    // no toast fires on first mount — only after a real submission.
-    if (!state || (!state.success && !state.message && !state.error)) return;
+    if (!state) return;
 
-    if (!state?.success) {
-      if (state?.fieldErrors) {
-        for (const error of state.fieldErrors?.password ??
-          state.fieldErrors?.confirmPassword) {
-          showError(error || "Something went wrong!");
+    // Skip the untouched initial state (an ActionState with nothing to report)
+    // so no toast fires on first mount — only after a real submission.
+    const hasFeedback =
+      Boolean(state.success) ||
+      Boolean(state.message) ||
+      Boolean(state.error) ||
+      (state.fieldErrors != null && Object.keys(state.fieldErrors).length > 0);
+    if (!hasFeedback) return;
+
+    if (!state.success) {
+      if (state.fieldErrors) {
+        for (const errors of Object.values(state.fieldErrors)) {
+          for (const error of errors) {
+            showError(error || "Something went wrong!");
+          }
         }
         return;
       }
 
       showError(state.message || state.error || "Something went wrong!");
-    } else if (state?.success) {
+    } else {
       showSuccess(state.message || "Operation completed successfully!");
     }
   }, [state]);
