@@ -49,13 +49,25 @@ export function SignUpForm() {
       <RoleSelector value={role} onChange={setRole} />
       <input type="hidden" name="role" value={role} />
 
-      <FormField
-        name="fullName"
-        label={FIELD_CONFIG.fullName.label}
-        type={FIELD_CONFIG.fullName.type}
-        placeholder={FIELD_CONFIG.fullName.placeholder}
-        defaultValue={restoredValues?.fullName}
-      />
+      {!isCompany && (
+        <FormField
+          name="fullName"
+          label={FIELD_CONFIG.fullName.label}
+          type={FIELD_CONFIG.fullName.type}
+          placeholder={FIELD_CONFIG.fullName.placeholder}
+          defaultValue={restoredValues?.fullName}
+        />
+      )}
+
+      {isCompany ? (
+        <FormField
+          name="companyName"
+          label={FIELD_CONFIG.companyName.label}
+          type={FIELD_CONFIG.companyName.type}
+          placeholder={FIELD_CONFIG.companyName.placeholder}
+          defaultValue={restoredValues?.companyName}
+        />
+      ) : null}
 
       <FormField
         name="email"
@@ -78,16 +90,6 @@ export function SignUpForm() {
         label={FIELD_CONFIG.confirmPassword.label}
         placeholder={FIELD_CONFIG.confirmPassword.placeholder}
       />
-
-      {isCompany ? (
-        <FormField
-          name="companyName"
-          label={FIELD_CONFIG.companyName.label}
-          type={FIELD_CONFIG.companyName.type}
-          placeholder={FIELD_CONFIG.companyName.placeholder}
-          defaultValue={restoredValues?.companyName}
-        />
-      ) : null}
 
       <Footer />
 

@@ -7,7 +7,7 @@ interface SkillTagsProps {
 // SkillTags: the small skill pills on the shared ListingCard. Pure leaf.
 export function SkillTags({ skills }: SkillTagsProps) {
   return (
-    <ul aria-label={CARD_SKILLS_ARIA_LABEL} className="flex flex-wrap gap-1.5">
+    <ul className="flex flex-wrap gap-1.5">
       {skills.map((skill) => (
         <li
           key={skill}

@@ -34,7 +34,7 @@ export function SidebarClientShell({
       {/* sidebar inset */}
       <SidebarInset>
         {appHeader}
-        <div className="flex flex-1 flex-col">{content}</div>
+        <div className="flex flex-1 flex-col pb-8">{content}</div>
       </SidebarInset>
     </SidebarProvider>
   );

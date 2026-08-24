@@ -91,14 +91,6 @@ export function ProfileInformationForm({ draft }: ProfileInformationFormProps) {
             defaultValue={restoredValues?.specialist}
             errors={fieldErrors.specialization}
           />
-
-          <ProfileField
-            name="university"
-            label={STUDENT_PROFILE_FIELDS.university.label}
-            placeholder={STUDENT_PROFILE_FIELDS.university.placeholder}
-            defaultValue={restoredValues?.university}
-            errors={fieldErrors.university}
-          />
         </>
       )}
 

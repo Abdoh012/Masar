@@ -2,8 +2,9 @@ import type { ListingCardData } from "../../../shared/types";
 
 // Listing detail constants (R-8; structure rules §14 — no inline data).
 // Mock detail listings keyed by id for the UI-only phase (FR-015/017). The
-// already-applied marker and apply copy are UI-only placeholders until the
-// applications backend exists — nothing here is a submission contract.
+// already-applied marker is a UI-only placeholder until the applications
+// backend exists; the Apply CTA links into the applications feature's wizard,
+// which owns the actual apply flow (R6/R8 — listings never imports it).
 
 export const MOCK_DETAIL_LISTINGS: Record<string, ListingCardData> = {
   "36": {
@@ -98,14 +99,9 @@ export const MOCK_DETAIL_LISTINGS: Record<string, ListingCardData> = {
 export const MOCK_APPLIED_LISTING_IDS: string[] = ["41"];
 
 export const APPLY_COPY = {
-  title: "Apply to this training",
   button: "Apply now",
   applied: "You already applied",
   appliedMessage: "Your application is in. The company will reach out if you're shortlisted.",
-  noteLabel: "Add a note",
-  notePlaceholder: "Optional — tell the company why you're a good fit",
-  success: "Application sent",
-  successMessage: "Your application was recorded for this session.",
 };
 
 export const DETAIL_META = {

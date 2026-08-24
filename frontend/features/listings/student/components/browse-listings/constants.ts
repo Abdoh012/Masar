@@ -160,7 +160,7 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
 // Browse hero copy (reference header band).
 export const BROWSE_HERO = {
   eyebrow: "Explore Opportunities",
-  title: "Listings",
+  title: "Trainings",
   subtitle:
     "Explore training opportunities provided by companies and apply to grow your skills and career.",
 };
@@ -213,8 +213,15 @@ export const TOOLBAR_LABELS = {
 };
 
 export const SORT_OPTIONS: { value: BrowseSort; label: string }[] = [
+
+  { value: "default", label: "Default" },
   { value: "newest", label: "Newest First" },
   { value: "oldest", label: "Oldest First" },
+  { value: "price_low_to_high", label: "Price: Low to High" },
+  { value: "price_high_to_low", label: "Price: High to Low" },
+  { value: "duration_short_to_long", label: "Duration: Short to Long" },
+  { value: "duration_long_to_short", label: "Duration: Long to Short" },
+  
 ];
 
 export const BROWSE_EMPTY_STATE = {
