@@ -61,9 +61,7 @@ export async function signup(
     role,
   };
 
-  const description = String(formData.get("description") ?? "");
-  console.log(formData.get("userField") ?? "");
-  
+  const description = String(formData.get("description") ?? "");  
 
   const payload =
     role === "company"
