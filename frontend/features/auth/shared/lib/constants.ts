@@ -95,7 +95,7 @@ export const COMPANY_PROFILE_FIELDS = {
   },
   description: {
     label: "Description",
-    placeholder: "Tell companies about your training program",
+    placeholder: "Tell students about your training program",
     optional: true,
   },
 } as const;
