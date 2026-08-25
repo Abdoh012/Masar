@@ -1,35 +1,43 @@
 "use client";
 
-import { useState } from "react";
-
 import { Bookmark } from "lucide-react";
 
 import { FilterSelect } from "../../../shared/components/filter-controls/FilterSelect";
 
 import { SORT_OPTIONS, TOOLBAR_LABELS } from "./constants";
 
-// BrowseToolbar: the browse page's top row — the Saved-Only toggle plus the
-// sort dropdown. Presentational for now — sorting is deferred to backend
-// integration (AGENTS.md), so the select owns local value state purely to
-// satisfy the controlled FilterSelect API and stay interactive in the UI-only
-// phase.
-export function BrowseToolbar() {
-  const [sort, setSort] = useState("");
+interface BrowseToolbarProps {
+  sort: string;
+  savedOnly: boolean;
+  onSortChange: (sort: string) => void;
+  onSavedOnlyToggle: () => void;
+}
 
+export function BrowseToolbar({
+  sort,
+  savedOnly,
+  onSortChange,
+  onSavedOnlyToggle,
+}: BrowseToolbarProps) {
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-end gap-3">
       <button
         type="button"
-        className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary-tint"
+        onClick={onSavedOnlyToggle}
+        className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
+          savedOnly
+            ? "border-primary bg-primary text-primary-foreground"
+            : "border-border bg-card text-muted-foreground hover:bg-primary-tint"
+        }`}
       >
-        <Bookmark aria-hidden="true" className="size-4" />
+        <Bookmark className="size-4" />
         {TOOLBAR_LABELS.savedOnly}
       </button>
 
       <FilterSelect
         label={TOOLBAR_LABELS.sort}
         value={sort}
-        onValueChange={setSort}
+        onValueChange={onSortChange}
         allLabel="Default"
         placeholder={TOOLBAR_LABELS.sort}
         options={SORT_OPTIONS}

@@ -1,39 +1,40 @@
+"use client";
+
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { Briefcase, Building2, CalendarDays, GraduationCap } from "lucide-react";
+import {
+  Briefcase,
+  Building2,
+  CalendarDays,
+  GraduationCap,
+} from "lucide-react";
 
 import { FORMAT_LABELS } from "../../../shared/lib/constants";
 import { ModeBadge } from "../../../shared/components/mode-badge/ModeBadge";
 import { PaidBadge } from "../../../shared/components/paid-badge/PaidBadge";
 import { Button } from "@/shared/components/ui/button";
 
+import { useTrainingDetails } from "../../hooks/useTrainingDetails";
+
 import { ApplyCta } from "./ApplyCta";
 import { DetailMetaRow } from "./DetailMetaRow";
+import { DetailSkeleton } from "./DetailSkeleton";
 import {
   DETAIL_COPY,
   DETAIL_META,
   MOCK_APPLIED_LISTING_IDS,
-  MOCK_DETAIL_LISTINGS,
 } from "./constants";
 
 interface ListingDetailContainerProps {
   id: string;
 }
 
-// Student listing detail orchestrator (FR-015). Server component: reads the
-// mock listing by id from constants and renders the full listing with the
-// shared badges (long descriptions/specializations must not break layout —
-// wrapping + truncation handled here). Composes ApplyCta or the
-// already-applied status (FR-017). UI-only; unknown ids hit the route
-// shell's not-found sibling via notFound().
-
 export function ListingDetailContainer({ id }: ListingDetailContainerProps) {
-  const listing = MOCK_DETAIL_LISTINGS[id];
+  const { listing, loading, error } = useTrainingDetails(id);
 
-  if (!listing) {
-    notFound();
-  }
+  if (loading) return <DetailSkeleton />;
+  if (error || !listing) notFound();
 
   const alreadyApplied = MOCK_APPLIED_LISTING_IDS.includes(id);
 
@@ -53,12 +54,15 @@ export function ListingDetailContainer({ id }: ListingDetailContainerProps) {
           <DetailMetaRow icon={Building2} label={DETAIL_META.company}>
             {listing.companyName}
           </DetailMetaRow>
+
           <DetailMetaRow icon={Briefcase} label={DETAIL_META.field}>
             {listing.field}
           </DetailMetaRow>
+
           <DetailMetaRow icon={GraduationCap} label={DETAIL_META.format}>
             {FORMAT_LABELS[listing.format]}
           </DetailMetaRow>
+
           <DetailMetaRow icon={CalendarDays} label={DETAIL_META.posted}>
             Posted {listing.createdAt}
           </DetailMetaRow>
