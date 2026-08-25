@@ -12,6 +12,8 @@ import {
 } from "@/shared/components/ui/select";
 import { FieldErrorList } from "../../shared/components/FieldErrorList";
 
+type SelectOption = string | { value: string; label: string };
+
 interface ProfileSelectFieldProps {
   name: string;
   label: string;
@@ -21,14 +23,14 @@ interface ProfileSelectFieldProps {
   value?: string;
   onValueChange?: (value: string) => void;
   disabled?: boolean;
-  options: string[];
+  options: SelectOption[];
   loading?: boolean;
   error?: string | null;
   errors?: string[];
 }
 
 export function ProfileSelectField(field: ProfileSelectFieldProps) {
-  const isControlled = field.value !== undefined && field.onValueChange !== undefined;
+  const isControlled = field.value !== undefined && field.onValueChange !== undefined;  
 
   return (
     <div className="space-y-1.5">
@@ -56,11 +58,15 @@ export function ProfileSelectField(field: ProfileSelectFieldProps) {
         </SelectTrigger>
 
         <SelectContent>
-          {field.options.map((option) => (
-            <SelectItem key={option} value={option} className="cursor-pointer">
-              {option}
-            </SelectItem>
-          ))}
+          {field.options.map((option) => {
+            const optValue = typeof option === "string" ? option : option.value;
+            const optLabel = typeof option === "string" ? option : option.label;
+            return (
+              <SelectItem key={optValue} value={optValue} className="cursor-pointer">
+                {optLabel}
+              </SelectItem>
+            );
+          })}
         </SelectContent>
       </Select>
 

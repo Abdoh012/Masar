@@ -9,9 +9,9 @@ import {
 } from "../../shared/lib/constants";
 import {
   useLookupOptions,
-  STUDY_FIELDS_ENDPOINT,
   SPECIALIZATIONS_ENDPOINT,
 } from "../../shared/hooks/useLookupOptions";
+import { useStudyFields } from "../../shared/hooks/useStudyFields";
 import { useSpecializationOptions } from "../../shared/hooks/useSpecializationOptions";
 import { SubmitButton } from "../../shared/components/SubmitButton";
 import { ProfileField } from "./ProfileField";
@@ -42,7 +42,7 @@ export function ProfileInformationForm({ draft }: ProfileInformationFormProps) {
   const fieldErrors = state?.fieldErrors ?? {};
 
   // Lookup options fetched dynamically from the backend.
-  const fieldOptions = useLookupOptions(STUDY_FIELDS_ENDPOINT);
+  const studyFields = useStudyFields();
   const industryOptions = useLookupOptions(SPECIALIZATIONS_ENDPOINT);
 
   // Student specialization depends on the selected study field.
@@ -111,9 +111,9 @@ export function ProfileInformationForm({ draft }: ProfileInformationFormProps) {
             placeholder={STUDENT_PROFILE_FIELDS.userField.placeholder}
             value={selectedFieldId ?? ""}
             onValueChange={(value) => setSelectedFieldId(value || null)}
-            options={fieldOptions.options}
-            loading={fieldOptions.loading}
-            error={fieldOptions.error}
+            options={studyFields.options.map((f) => ({ value: String(f.id), label: f.name }))}
+            loading={studyFields.loading}
+            error={studyFields.error}
             errors={fieldErrors.faculty}
           />
 
