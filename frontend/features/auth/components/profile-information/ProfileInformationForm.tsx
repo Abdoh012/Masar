@@ -5,8 +5,14 @@ import {
   COMPANY_PROFILE_FIELDS,
   STUDENT_PROFILE_FIELDS,
 } from "../../shared/lib/constants";
+import {
+  useLookupOptions,
+  STUDY_FIELDS_ENDPOINT,
+  SPECIALIZATIONS_ENDPOINT,
+} from "../../shared/hooks/useLookupOptions";
 import { SubmitButton } from "../../shared/components/SubmitButton";
 import { ProfileField } from "./ProfileField";
+import { ProfileSelectField } from "./ProfileSelectField";
 import { FieldErrorList } from "../../shared/components/FieldErrorList";
 import { signup } from "../../actions";
 import { useFormFeedBack } from "../../shared/hooks/useFormFeedback";
@@ -31,6 +37,10 @@ export function ProfileInformationForm({ draft }: ProfileInformationFormProps) {
   // register payload field names). Password errors render in their own block
   // below, since the password itself is a hidden step-1 input on this step.
   const fieldErrors = state?.fieldErrors ?? {};
+
+  // Lookup options fetched dynamically from the backend.
+  const fieldOptions = useLookupOptions(STUDY_FIELDS_ENDPOINT);
+  const specializationOptions = useLookupOptions(SPECIALIZATIONS_ENDPOINT);
 
   return (
     <form className="space-y-5" action={formAction}>
@@ -57,11 +67,14 @@ export function ProfileInformationForm({ draft }: ProfileInformationFormProps) {
 
       {isCompany ? (
         <>
-          <ProfileField
+          <ProfileSelectField
             name="industry"
             label={COMPANY_PROFILE_FIELDS.industry.label}
             placeholder={COMPANY_PROFILE_FIELDS.industry.placeholder}
             defaultValue={restoredValues?.industry}
+            options={specializationOptions.options}
+            loading={specializationOptions.loading}
+            error={specializationOptions.error}
             errors={fieldErrors.industry}
           />
 
@@ -76,19 +89,25 @@ export function ProfileInformationForm({ draft }: ProfileInformationFormProps) {
         </>
       ) : (
         <>
-          <ProfileField
+          <ProfileSelectField
             name="userField"
             label={STUDENT_PROFILE_FIELDS.userField.label}
             placeholder={STUDENT_PROFILE_FIELDS.userField.placeholder}
             defaultValue={restoredValues?.userField}
+            options={fieldOptions.options}
+            loading={fieldOptions.loading}
+            error={fieldOptions.error}
             errors={fieldErrors.faculty}
           />
 
-          <ProfileField
+          <ProfileSelectField
             name="specialist"
             label={STUDENT_PROFILE_FIELDS.specialist.label}
             placeholder={STUDENT_PROFILE_FIELDS.specialist.placeholder}
             defaultValue={restoredValues?.specialist}
+            options={specializationOptions.options}
+            loading={specializationOptions.loading}
+            error={specializationOptions.error}
             errors={fieldErrors.specialization}
           />
         </>

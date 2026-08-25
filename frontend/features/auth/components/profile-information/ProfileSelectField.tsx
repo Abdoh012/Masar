@@ -1,0 +1,78 @@
+"use client";
+
+import { Loader2 } from "lucide-react";
+
+import { Label } from "@/shared/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/components/ui/select";
+import { FieldErrorList } from "../../shared/components/FieldErrorList";
+
+interface ProfileSelectFieldProps {
+  name: string;
+  label: string;
+  placeholder: string;
+  optional?: boolean;
+  defaultValue?: string;
+  options: string[];
+  loading?: boolean;
+  error?: string | null;
+  errors?: string[];
+}
+
+export function ProfileSelectField(field: ProfileSelectFieldProps) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <Label>{field.label}</Label>
+        {field.optional ? (
+          <span className="text-xs text-muted-foreground">(optional)</span>
+        ) : null}
+      </div>
+
+      <Select
+        key={field.defaultValue ?? ""}
+        defaultValue={field.defaultValue}
+        name={field.name}
+      >
+        <SelectTrigger
+          className="h-10 cursor-pointer"
+          disabled={field.loading || !!field.error}
+        >
+          <SelectValue
+            placeholder={field.loading ? "Loading..." : field.placeholder}
+          />
+        </SelectTrigger>
+
+        <SelectContent>
+          {field.options.map((option) => (
+            <SelectItem key={option} value={option} className="cursor-pointer">
+              {option}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {field.loading && !field.error ? (
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Loader2 className="size-3 animate-spin" />
+          Loading options…
+        </p>
+      ) : field.error ? (
+        <p className="text-xs text-destructive">{field.error}</p>
+      ) : null}
+
+      {!field.loading && !field.error && field.options.length === 0 ? (
+        <p className="text-xs text-destructive">
+          No options available. Please try again later.
+        </p>
+      ) : null}
+
+      <FieldErrorList errors={field.errors} />
+    </div>
+  );
+}
