@@ -18,6 +18,9 @@ interface ProfileSelectFieldProps {
   placeholder: string;
   optional?: boolean;
   defaultValue?: string;
+  value?: string;
+  onValueChange?: (value: string) => void;
+  disabled?: boolean;
   options: string[];
   loading?: boolean;
   error?: string | null;
@@ -25,6 +28,8 @@ interface ProfileSelectFieldProps {
 }
 
 export function ProfileSelectField(field: ProfileSelectFieldProps) {
+  const isControlled = field.value !== undefined && field.onValueChange !== undefined;
+
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-2">
@@ -35,13 +40,15 @@ export function ProfileSelectField(field: ProfileSelectFieldProps) {
       </div>
 
       <Select
-        key={field.defaultValue ?? ""}
-        defaultValue={field.defaultValue}
+        key={isControlled ? undefined : field.defaultValue ?? ""}
+        {...(isControlled
+          ? { value: field.value, onValueChange: field.onValueChange }
+          : { defaultValue: field.defaultValue })}
         name={field.name}
       >
         <SelectTrigger
           className="h-10 cursor-pointer"
-          disabled={field.loading || !!field.error}
+          disabled={field.disabled || field.loading || !!field.error}
         >
           <SelectValue
             placeholder={field.loading ? "Loading..." : field.placeholder}

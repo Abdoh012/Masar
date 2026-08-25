@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import type { SignupDraft, SignupStepTwoValues } from "../../types";
 import {
   COMPANY_PROFILE_FIELDS,
@@ -10,6 +12,7 @@ import {
   STUDY_FIELDS_ENDPOINT,
   SPECIALIZATIONS_ENDPOINT,
 } from "../../shared/hooks/useLookupOptions";
+import { useSpecializationOptions } from "../../shared/hooks/useSpecializationOptions";
 import { SubmitButton } from "../../shared/components/SubmitButton";
 import { ProfileField } from "./ProfileField";
 import { ProfileSelectField } from "./ProfileSelectField";
@@ -40,7 +43,20 @@ export function ProfileInformationForm({ draft }: ProfileInformationFormProps) {
 
   // Lookup options fetched dynamically from the backend.
   const fieldOptions = useLookupOptions(STUDY_FIELDS_ENDPOINT);
-  const specializationOptions = useLookupOptions(SPECIALIZATIONS_ENDPOINT);
+  const industryOptions = useLookupOptions(SPECIALIZATIONS_ENDPOINT);
+
+  // Student specialization depends on the selected study field.
+  const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+  const specializationOptions = useSpecializationOptions(selectedFieldId);
+  const [selectedSpecialization, setSelectedSpecialization] = useState<
+    string | undefined
+  >(restoredValues?.specialist);
+
+  // Clear specialization when the field changes so stale values aren't submitted.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- selectedFieldId drives the reset
+  useEffect(() => {
+    setSelectedSpecialization(undefined);
+  }, [selectedFieldId]);
 
   return (
     <form className="space-y-5" action={formAction}>
@@ -72,9 +88,9 @@ export function ProfileInformationForm({ draft }: ProfileInformationFormProps) {
             label={COMPANY_PROFILE_FIELDS.industry.label}
             placeholder={COMPANY_PROFILE_FIELDS.industry.placeholder}
             defaultValue={restoredValues?.industry}
-            options={specializationOptions.options}
-            loading={specializationOptions.loading}
-            error={specializationOptions.error}
+            options={industryOptions.options}
+            loading={industryOptions.loading}
+            error={industryOptions.error}
             errors={fieldErrors.industry}
           />
 
@@ -93,7 +109,8 @@ export function ProfileInformationForm({ draft }: ProfileInformationFormProps) {
             name="userField"
             label={STUDENT_PROFILE_FIELDS.userField.label}
             placeholder={STUDENT_PROFILE_FIELDS.userField.placeholder}
-            defaultValue={restoredValues?.userField}
+            value={selectedFieldId ?? ""}
+            onValueChange={(value) => setSelectedFieldId(value || null)}
             options={fieldOptions.options}
             loading={fieldOptions.loading}
             error={fieldOptions.error}
@@ -104,8 +121,10 @@ export function ProfileInformationForm({ draft }: ProfileInformationFormProps) {
             name="specialist"
             label={STUDENT_PROFILE_FIELDS.specialist.label}
             placeholder={STUDENT_PROFILE_FIELDS.specialist.placeholder}
-            defaultValue={restoredValues?.specialist}
-            options={specializationOptions.options}
+            value={selectedSpecialization ?? ""}
+            onValueChange={setSelectedSpecialization}
+            disabled={!selectedFieldId}
+            options={specializationOptions.options.map((s) => s.name)}
             loading={specializationOptions.loading}
             error={specializationOptions.error}
             errors={fieldErrors.specialization}
