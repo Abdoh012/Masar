@@ -17,6 +17,7 @@ interface ListingCardProps extends ListingCardData {
   saved?: boolean;
   onSaveToggle?: (listingId: string) => void;
   savePending?: boolean;
+  loading?: boolean;
 }
 
 export function ListingCard({
@@ -24,6 +25,7 @@ export function ListingCard({
   saved: savedProp,
   onSaveToggle,
   savePending,
+  loading,
   ...listing
 }: ListingCardProps) {
   const isSaved = savedProp ?? false;
@@ -40,6 +42,7 @@ export function ListingCard({
             <SaveButton
               saved={isSaved}
               disabled={savePending}
+              loading={loading}
               onToggle={() => onSaveToggle(listing.id)}
             />
           ) : null}

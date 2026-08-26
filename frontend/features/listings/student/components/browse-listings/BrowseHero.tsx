@@ -14,8 +14,6 @@ export function BrowseHero() {
       <p className="mt-3 max-w-2xl text-sm leading-relaxed text-primary dark:text-destructive-foreground">
         {BROWSE_HERO.subtitle}
       </p>
-
-      {/* <span className="absolute w-[2px] h-30 bg-secondary top-1/2 left-5 -translate-y-1/2"></span> */}
     </section>
   );
 }

@@ -24,8 +24,9 @@ export function useListings(params: {
   savedOnly: boolean;
   page: number;
   limit: number;
+  savedVersion?: number;
 }): UseListingsResult {
-  const { query, sort, savedOnly, page, limit } = params;
+  const { query, sort, savedOnly, page, limit, savedVersion } = params;
 
   const [listings, setListings] = useState<ListingCardData[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
@@ -81,7 +82,7 @@ export function useListings(params: {
     return () => {
       cancelled = true;
     };
-  }, [query, sort, savedOnly, page, limit]);
+  }, [query, sort, savedOnly, page, limit, savedVersion]);
 
   return { listings, pagination, loading, error };
 }

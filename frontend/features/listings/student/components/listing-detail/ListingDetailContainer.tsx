@@ -18,7 +18,11 @@ import { SaveButton } from "../../../shared/components/listing-card/SaveButton";
 import { Button } from "@/shared/components/ui/button";
 
 import { useTrainingDetails } from "../../hooks/useTrainingDetails";
-import { saveTrainingAction, unsaveTrainingAction } from "../../actions";
+import {
+  saveTrainingAction,
+  unsaveTrainingAction,
+  getSavedListings,
+} from "../../actions";
 
 import { ApplyCta } from "./ApplyCta";
 import { DetailMetaRow } from "./DetailMetaRow";
@@ -31,24 +35,43 @@ interface ListingDetailContainerProps {
 
 export function ListingDetailContainer({ id }: ListingDetailContainerProps) {
   const { listing, loading, error } = useTrainingDetails(id);
-  const [saved, setSaved] = useState(false);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [savedLoading, setSavedLoading] = useState(true);
   const [savePending, setSavePending] = useState(false);
 
   useEffect(() => {
-    if (listing?.saved !== undefined) setSaved(listing.saved);
-  }, [listing?.saved]);
+    getSavedListings().then((res) => {
+      if (!res.error && Array.isArray(res.data?.items)) {
+        setSavedIds(
+          new Set(
+            res.data.items.map((i: { id: string | number }) => String(i.id)),
+          ),
+        );
+      }
+      setSavedLoading(false);
+    });
+  }, []);
 
   if (loading) return <DetailSkeleton />;
   if (error || !listing) notFound();
 
+  const listingId = listing.id;
+  const saved = savedIds.has(listingId);
   const alreadyApplied = listing.hasApplied ?? false;
 
   async function handleSaveToggle() {
     setSavePending(true);
     const action = saved ? unsaveTrainingAction : saveTrainingAction;
-    const result = await action(listing!.id);
+    const result = await action(listingId);
     setSavePending(false);
-    if (!result.error) setSaved((prev) => !prev);
+    if (!result.error) {
+      setSavedIds((prev) => {
+        const next = new Set(prev);
+        if (prev.has(listingId)) next.delete(listingId);
+        else next.add(listingId);
+        return next;
+      });
+    }
   }
 
   return (
@@ -62,6 +85,7 @@ export function ListingDetailContainer({ id }: ListingDetailContainerProps) {
             <SaveButton
               saved={saved}
               disabled={savePending}
+              loading={savedLoading}
               onToggle={handleSaveToggle}
             />
           </div>

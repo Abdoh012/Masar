@@ -1,5 +1,3 @@
-"use client";
-
 import { FilterSelect } from "../../../shared/components/filter-controls/FilterSelect";
 import { ResetFiltersButton } from "../../../shared/components/filter-controls/ResetFiltersButton";
 

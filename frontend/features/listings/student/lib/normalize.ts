@@ -1,4 +1,5 @@
 import type { ListingCardData } from "../../shared/types";
+import type { Pagination } from "../api";
 
 const API_MODE_MAP: Record<string, string> = {
   shadowing: "observer",
@@ -63,14 +64,7 @@ export function normalizeApiItem(item: Record<string, unknown>): ListingCardData
 
 export function normalizeListResponse(raw: unknown): {
   items: ListingCardData[];
-  pagination: {
-    current_page: number;
-    per_page: number;
-    total: number;
-    total_pages: number;
-    has_next_page: boolean;
-    has_previous_page: boolean;
-  };
+  pagination: Pagination;
 } {
   const data = (raw as Record<string, unknown>)?.data ?? raw;
   const body = data as Record<string, unknown>;
@@ -82,14 +76,7 @@ export function normalizeListResponse(raw: unknown): {
     total_pages: 0,
     has_next_page: false,
     has_previous_page: false,
-  }) as {
-    current_page: number;
-    per_page: number;
-    total: number;
-    total_pages: number;
-    has_next_page: boolean;
-    has_previous_page: boolean;
-  };
+  }) as Pagination;
 
   return {
     items: rawItems.map(normalizeApiItem),
@@ -99,14 +86,7 @@ export function normalizeListResponse(raw: unknown): {
 
 export function normalizeSearchResponse(raw: unknown): {
   items: ListingCardData[];
-  pagination: {
-    current_page: number;
-    per_page: number;
-    total: number;
-    total_pages: number;
-    has_next_page: boolean;
-    has_previous_page: boolean;
-  };
+  pagination: Pagination;
 } {
   const data = (raw as Record<string, unknown>)?.data ?? raw;
   const body = data as Record<string, unknown>;

@@ -1,6 +1,6 @@
 import { LISTING_FORMATS, LISTING_MODES } from "../../../shared/lib/constants";
 import type { ListingMode } from "../../../shared/types";
-import type { BrowseSort, ListingFiltersState } from "../../types";
+import type { BrowseSort } from "../../types";
 
 export const BROWSE_HERO = {
   eyebrow: "Explore Opportunities",
@@ -10,7 +10,6 @@ export const BROWSE_HERO = {
 };
 
 export const FILTER_LABELS = {
-  title: "Filters",
   category: "Category",
   searchPlaceholder: "Search by training title, company, skill, or keyword...",
   clear: "Clear All",
@@ -32,18 +31,7 @@ export const FILTER_LISTS = {
   ] as { value: "any" | "free" | "paid"; label: string }[],
 };
 
-export const DEFAULT_FILTERS: ListingFiltersState = {
-  mode: "",
-  format: "",
-  paid: "any",
-  category: "",
-  query: "",
-  savedOnly: false,
-};
-
 export const TOOLBAR_LABELS = {
-  countSingular: "training found",
-  countPlural: "trainings found",
   savedOnly: "Saved Only",
   sort: "Sort",
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useState, useTransition } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { ListingCard } from "../../../shared/components/listing-card/ListingCard";
@@ -8,7 +8,11 @@ import { Pagination } from "../../../shared/components/pagination/Pagination";
 import createPageUrl from "@/shared/lib/createPageUrl";
 
 import { useListings } from "../../hooks/useListings";
-import { saveTrainingAction, unsaveTrainingAction } from "../../actions";
+import {
+  saveTrainingAction,
+  unsaveTrainingAction,
+  getSavedListings,
+} from "../../actions";
 
 import { BrowseEmptyState } from "./BrowseEmptyState";
 import { BrowseError } from "./BrowseError";
@@ -29,47 +33,50 @@ export function BrowseListingsContainer() {
   const savedOnly = searchParams.get("saved") === "1";
   const page = Number(searchParams.get("page") ?? "1");
 
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [savedLoading, setSavedLoading] = useState(true);
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [savedVersion, setSavedVersion] = useState(0);
+
   const { listings, pagination, loading, error } = useListings({
     query,
     sort,
     savedOnly,
     page,
     limit: PAGE_LIMIT,
+    savedVersion,
   });
 
-  // Save state
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
-  const [pendingId, setPendingId] = useState<string | null>(null);
-
   useEffect(() => {
-    setSavedIds((prev) => {
-      const next = new Set(prev);
-      for (const l of listings) {
-        if (l.saved) next.add(l.id);
-        else next.delete(l.id);
+    getSavedListings().then((res) => {
+      if (!res.error && Array.isArray(res.data?.items)) {
+        setSavedIds(
+          new Set(
+            res.data.items.map((i: { id: string | number }) => String(i.id)),
+          ),
+        );
       }
-      return next;
+      setSavedLoading(false);
     });
-  }, [listings]);
+  }, []);
 
   async function handleSaveToggle(id: string) {
     setPendingId(id);
     const action = savedIds.has(id) ? unsaveTrainingAction : saveTrainingAction;
     const result = await action(id);
     setPendingId(null);
+
     if (!result.error) {
       setSavedIds((prev) => {
         const next = new Set(prev);
-        if (savedIds.has(id)) next.delete(id);
+        if (prev.has(id)) next.delete(id);
         else next.add(id);
         return next;
       });
+
+      setSavedVersion((v) => v + 1);
     }
   }
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [page]);
 
   const handleSearchChange = useCallback(
     (q: string) => {
@@ -149,6 +156,7 @@ export function BrowseListingsContainer() {
                   saved={savedIds.has(listing.id)}
                   onSaveToggle={handleSaveToggle}
                   savePending={pendingId === listing.id}
+                  loading={savedLoading}
                 />
               ))}
             </div>
