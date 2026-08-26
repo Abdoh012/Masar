@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { ListingCard } from "../../../shared/components/listing-card/ListingCard";
@@ -8,6 +8,7 @@ import { Pagination } from "../../../shared/components/pagination/Pagination";
 import createPageUrl from "@/shared/lib/createPageUrl";
 
 import { useListings } from "../../hooks/useListings";
+import { useSaveTraining } from "../../hooks/useSaveTraining";
 
 import { BrowseEmptyState } from "./BrowseEmptyState";
 import { BrowseError } from "./BrowseError";
@@ -35,6 +36,33 @@ export function BrowseListingsContainer() {
     page,
     limit: PAGE_LIMIT,
   });
+
+  const { toggle: toggleSave, isPending: savePending } = useSaveTraining();
+
+  // Track saved state per listing, synced from API response
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setSavedIds((prev) => {
+      const next = new Set(prev);
+      for (const l of listings) {
+        if (l.saved) next.add(l.id);
+        else next.delete(l.id);
+      }
+      return next;
+    });
+  }, [listings]);
+
+  function handleSaveToggle(listingId: string, currentlySaved: boolean) {
+    toggleSave(listingId, currentlySaved, (nextSaved) => {
+      setSavedIds((prev) => {
+        const next = new Set(prev);
+        if (nextSaved) next.add(listingId);
+        else next.delete(listingId);
+        return next;
+      });
+    });
+  }
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -112,7 +140,13 @@ export function BrowseListingsContainer() {
           <>
             <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-2">
               {listings.map((listing) => (
-                <ListingCard key={listing.id} {...listing} />
+                <ListingCard
+                  key={listing.id}
+                  {...listing}
+                  saved={savedIds.has(listing.id)}
+                  onSaveToggle={handleSaveToggle}
+                  savePending={savePending}
+                />
               ))}
             </div>
 

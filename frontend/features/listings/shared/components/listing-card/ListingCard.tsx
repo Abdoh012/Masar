@@ -9,25 +9,49 @@ import { PaidBadge } from "@/features/listings/shared/components/paid-badge/Paid
 import { CARD_ACTION_LABEL } from "./constants";
 import { CardMeta } from "./CardMeta";
 import { CategoryPill } from "./CategoryPill";
+import { SaveButton } from "./SaveButton";
 import { SkillTags } from "./SkillTags";
 
+interface ListingCardProps extends ListingCardData {
+  className?: string;
+  saved?: boolean;
+  onSaveToggle?: (listingId: string, nextSaved: boolean) => void;
+  savePending?: boolean;
+}
+
 export function ListingCard({
+  className,
+  saved: savedProp,
+  onSaveToggle,
+  savePending,
   ...listing
-}: ListingCardData & { className?: string }) {
+}: ListingCardProps) {
+  const isSaved = savedProp ?? false;
+
   return (
     <article
-      className={`flex h-full flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-card ${listing.className}`}
+      className={`flex h-full flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-card ${className}`}
     >
       <div className="flex items-center justify-between gap-3">
         <CategoryPill field={listing.field} />
 
-        <Image
-          src="/logo.png"
-          alt=""
-          width={48}
-          height={48}
-          className="size-12 shrink-0 rounded-xl bg-neutral-50"
-        />
+        <div className="flex items-center gap-1">
+          {onSaveToggle ? (
+            <SaveButton
+              saved={isSaved}
+              disabled={savePending}
+              onToggle={() => onSaveToggle(listing.id, isSaved)}
+            />
+          ) : null}
+
+          <Image
+            src="/logo.png"
+            alt=""
+            width={48}
+            height={48}
+            className="size-12 shrink-0 rounded-xl bg-neutral-50"
+          />
+        </div>
       </div>
 
       <h3 className="text-base font-semibold text-primary-text">

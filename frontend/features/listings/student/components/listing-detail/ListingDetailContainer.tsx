@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { notFound } from "next/navigation";
 
 import {
@@ -13,9 +14,11 @@ import {
 import { FORMAT_LABELS } from "../../../shared/lib/constants";
 import { ModeBadge } from "../../../shared/components/mode-badge/ModeBadge";
 import { PaidBadge } from "../../../shared/components/paid-badge/PaidBadge";
+import { SaveButton } from "../../../shared/components/listing-card/SaveButton";
 import { Button } from "@/shared/components/ui/button";
 
 import { useTrainingDetails } from "../../hooks/useTrainingDetails";
+import { useSaveTraining } from "../../hooks/useSaveTraining";
 
 import { ApplyCta } from "./ApplyCta";
 import { DetailMetaRow } from "./DetailMetaRow";
@@ -32,6 +35,8 @@ interface ListingDetailContainerProps {
 
 export function ListingDetailContainer({ id }: ListingDetailContainerProps) {
   const { listing, loading, error } = useTrainingDetails(id);
+  const { toggle: toggleSave, isPending: savePending } = useSaveTraining();
+  const [saved, setSaved] = useState(false);
 
   if (loading) return <DetailSkeleton />;
   if (error || !listing) notFound();
@@ -44,6 +49,16 @@ export function ListingDetailContainer({ id }: ListingDetailContainerProps) {
         <div className="flex flex-wrap items-center gap-2">
           <ModeBadge mode={listing.mode} />
           <PaidBadge isPaid={listing.isPaid} trialDays={listing.trialDays} />
+
+          <div className="ml-auto">
+            <SaveButton
+              saved={saved}
+              disabled={savePending}
+              onToggle={() =>
+                toggleSave(listing.id, saved, (next) => setSaved(next))
+              }
+            />
+          </div>
         </div>
 
         <h2 className="font-sans text-2xl font-semibold text-foreground">
