@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 
-import { saveTraining, unsaveTraining } from "../api";
+import { saveTrainingAction, unsaveTrainingAction } from "../actions";
 
 export function useSaveTraining() {
   const [isPending, startTransition] = useTransition();
@@ -15,18 +15,15 @@ export function useSaveTraining() {
   ) {
     setError(null);
     startTransition(async () => {
-      try {
-        if (currentlySaved) {
-          await unsaveTraining(id);
-        } else {
-          await saveTraining(id);
-        }
-        onToggle(!currentlySaved);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to update save state",
-        );
+      const action = currentlySaved ? unsaveTrainingAction : saveTrainingAction;
+      const result = await action(id);
+
+      if (result.error) {
+        setError(result.error);
+        return;
       }
+
+      onToggle(!currentlySaved);
     });
   }
 

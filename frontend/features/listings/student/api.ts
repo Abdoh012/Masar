@@ -27,9 +27,6 @@ export interface SearchResponse {
   };
 }
 
-export interface SaveResponse {
-  data: { message: string };
-}
 
 async function apiFetch<T>(path: string): Promise<T> {
   const token =
@@ -82,12 +79,4 @@ export function fetchTrainingDetails(
   id: string,
 ): Promise<{ data: Record<string, unknown> }> {
   return apiFetch(`/trainings/details/${id}`);
-}
-
-export function saveTraining(id: string): Promise<SaveResponse> {
-  return apiFetch<SaveResponse>(`/trainings/save/${id}`);
-}
-
-export function unsaveTraining(id: string): Promise<SaveResponse> {
-  return apiFetch<SaveResponse>(`/trainings/unsave/${id}`);
 }
