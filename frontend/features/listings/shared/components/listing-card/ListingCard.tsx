@@ -15,7 +15,7 @@ import { SkillTags } from "./SkillTags";
 interface ListingCardProps extends ListingCardData {
   className?: string;
   saved?: boolean;
-  onSaveToggle?: (listingId: string, nextSaved: boolean) => void;
+  onSaveToggle?: (listingId: string) => void;
   savePending?: boolean;
 }
 
@@ -40,7 +40,7 @@ export function ListingCard({
             <SaveButton
               saved={isSaved}
               disabled={savePending}
-              onToggle={() => onSaveToggle(listing.id, isSaved)}
+              onToggle={() => onSaveToggle(listing.id)}
             />
           ) : null}
 

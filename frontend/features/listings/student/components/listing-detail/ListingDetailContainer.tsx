@@ -18,7 +18,7 @@ import { SaveButton } from "../../../shared/components/listing-card/SaveButton";
 import { Button } from "@/shared/components/ui/button";
 
 import { useTrainingDetails } from "../../hooks/useTrainingDetails";
-import { useSaveTraining } from "../../hooks/useSaveTraining";
+import { saveTrainingAction, unsaveTrainingAction } from "../../actions";
 
 import { ApplyCta } from "./ApplyCta";
 import { DetailMetaRow } from "./DetailMetaRow";
@@ -35,11 +35,19 @@ interface ListingDetailContainerProps {
 
 export function ListingDetailContainer({ id }: ListingDetailContainerProps) {
   const { listing, loading, error } = useTrainingDetails(id);
-  const { toggle: toggleSave, isPending: savePending } = useSaveTraining();
   const [saved, setSaved] = useState(false);
+  const [savePending, setSavePending] = useState(false);
 
   if (loading) return <DetailSkeleton />;
   if (error || !listing) notFound();
+
+  async function handleSaveToggle() {
+    setSavePending(true);
+    const action = saved ? unsaveTrainingAction : saveTrainingAction;
+    const result = await action(listing!.id);
+    setSavePending(false);
+    if (!result.error) setSaved((prev) => !prev);
+  }
 
   const alreadyApplied = MOCK_APPLIED_LISTING_IDS.includes(id);
 
@@ -54,9 +62,7 @@ export function ListingDetailContainer({ id }: ListingDetailContainerProps) {
             <SaveButton
               saved={saved}
               disabled={savePending}
-              onToggle={() =>
-                toggleSave(listing.id, saved, (next) => setSaved(next))
-              }
+              onToggle={handleSaveToggle}
             />
           </div>
         </div>

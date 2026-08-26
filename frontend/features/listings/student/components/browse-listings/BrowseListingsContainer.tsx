@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { ListingCard } from "../../../shared/components/listing-card/ListingCard";
@@ -8,7 +8,7 @@ import { Pagination } from "../../../shared/components/pagination/Pagination";
 import createPageUrl from "@/shared/lib/createPageUrl";
 
 import { useListings } from "../../hooks/useListings";
-import { useSaveTraining } from "../../hooks/useSaveTraining";
+import { saveTrainingAction, unsaveTrainingAction } from "../../actions";
 
 import { BrowseEmptyState } from "./BrowseEmptyState";
 import { BrowseError } from "./BrowseError";
@@ -37,10 +37,9 @@ export function BrowseListingsContainer() {
     limit: PAGE_LIMIT,
   });
 
-  const { toggle: toggleSave, isPending: savePending } = useSaveTraining();
-
-  // Track saved state per listing, synced from API response
+  // Save state
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [pendingId, setPendingId] = useState<string | null>(null);
 
   useEffect(() => {
     setSavedIds((prev) => {
@@ -53,15 +52,19 @@ export function BrowseListingsContainer() {
     });
   }, [listings]);
 
-  function handleSaveToggle(listingId: string, currentlySaved: boolean) {
-    toggleSave(listingId, currentlySaved, (nextSaved) => {
+  async function handleSaveToggle(id: string) {
+    setPendingId(id);
+    const action = savedIds.has(id) ? unsaveTrainingAction : saveTrainingAction;
+    const result = await action(id);
+    setPendingId(null);
+    if (!result.error) {
       setSavedIds((prev) => {
         const next = new Set(prev);
-        if (nextSaved) next.add(listingId);
-        else next.delete(listingId);
+        if (savedIds.has(id)) next.delete(id);
+        else next.add(id);
         return next;
       });
-    });
+    }
   }
 
   useEffect(() => {
@@ -145,7 +148,7 @@ export function BrowseListingsContainer() {
                   {...listing}
                   saved={savedIds.has(listing.id)}
                   onSaveToggle={handleSaveToggle}
-                  savePending={savePending}
+                  savePending={pendingId === listing.id}
                 />
               ))}
             </div>
