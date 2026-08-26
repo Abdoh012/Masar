@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 
 import {
@@ -23,11 +23,7 @@ import { saveTrainingAction, unsaveTrainingAction } from "../../actions";
 import { ApplyCta } from "./ApplyCta";
 import { DetailMetaRow } from "./DetailMetaRow";
 import { DetailSkeleton } from "./DetailSkeleton";
-import {
-  DETAIL_COPY,
-  DETAIL_META,
-  MOCK_APPLIED_LISTING_IDS,
-} from "./constants";
+import { DETAIL_COPY, DETAIL_META } from "./constants";
 
 interface ListingDetailContainerProps {
   id: string;
@@ -38,8 +34,14 @@ export function ListingDetailContainer({ id }: ListingDetailContainerProps) {
   const [saved, setSaved] = useState(false);
   const [savePending, setSavePending] = useState(false);
 
+  useEffect(() => {
+    if (listing?.saved !== undefined) setSaved(listing.saved);
+  }, [listing?.saved]);
+
   if (loading) return <DetailSkeleton />;
   if (error || !listing) notFound();
+
+  const alreadyApplied = listing.hasApplied ?? false;
 
   async function handleSaveToggle() {
     setSavePending(true);
@@ -48,8 +50,6 @@ export function ListingDetailContainer({ id }: ListingDetailContainerProps) {
     setSavePending(false);
     if (!result.error) setSaved((prev) => !prev);
   }
-
-  const alreadyApplied = MOCK_APPLIED_LISTING_IDS.includes(id);
 
   return (
     <article className="space-y-8">

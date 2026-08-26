@@ -17,12 +17,9 @@ export function SaveButton({ saved, disabled, onToggle }: SaveButtonProps) {
         onToggle();
       }}
       disabled={disabled}
-      aria-label={saved ? "Remove from saved" : "Save training"}
       className="cursor-pointer rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-primary-tint hover:text-primary disabled:opacity-50"
     >
-      <Bookmark
-        className={`size-5 ${saved ? "fill-current" : ""}`}
-      />
+      <Bookmark className={`size-5 ${saved ? "fill-current" : ""}`} />
     </button>
   );
 }

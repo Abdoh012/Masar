@@ -57,6 +57,7 @@ export function normalizeApiItem(item: Record<string, unknown>): ListingCardData
       item.ends_at as string | undefined,
     ),
     saved: Boolean(item.is_saved),
+    hasApplied: Boolean(item.has_applied),
   };
 }
 

@@ -37,4 +37,5 @@ export interface ListingCardData extends Listing {
   skills?: string[];
   duration?: string;
   saved?: boolean;
+  hasApplied?: boolean;
 }

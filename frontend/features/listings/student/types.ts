@@ -1,12 +1,3 @@
-import type { ListingCardData } from "../shared/types";
-
-// Student-side UI-only display types (R-2). BrowseListing is the card data
-// the student browse grid renders; the already-applied marker is a simple
-// UI-only flag used by the detail screen (FR-017) — never part of the TBD
-// backend Listing shape.
-
-export type BrowseListing = ListingCardData;
-
 // Student browse filter state (FR-013), used by the browse orchestrator and
 // the ListingFilters leaf. The paid control is a ternary with a neutral "any"
 // state; mode/format/category are "no filter" when empty; query is the
@@ -29,8 +20,3 @@ export type BrowseSort =
   | "price_high_to_low"
   | "duration_short_to_long"
   | "duration_long_to_short";
-
-export interface AlreadyAppliedMarker {
-  listingId: string;
-  alreadyApplied: true;
-}
