@@ -71,10 +71,6 @@ export function searchListings(
   return apiFetch<SearchResponse>(`/search/trainings?${params}`);
 }
 
-export function fetchSavedListings(): Promise<ListResponse> {
-  return apiFetch<ListResponse>("/trainings/saved/list");
-}
-
 export function fetchTrainingDetails(
   id: string,
 ): Promise<{ data: Record<string, unknown> }> {

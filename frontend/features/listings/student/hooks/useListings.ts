@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 
 import type { ListingCardData } from "../../shared/types";
 import type { Pagination } from "../api";
-import { fetchListings, searchListings, fetchSavedListings } from "../api";
+import { fetchListings, searchListings } from "../api";
+import { getSavedListings } from "../actions";
 import {
   normalizeListResponse,
   normalizeSearchResponse,
@@ -50,8 +51,9 @@ export function useListings(params: {
         let result: { items: ListingCardData[]; pagination: Pagination };
 
         if (savedOnly) {
-          const raw = await fetchSavedListings();
-          result = normalizeListResponse(raw);
+          const res = await getSavedListings();
+          if (res.error) throw new Error(res.error);
+          result = normalizeListResponse(res.data);
         } else if (query.trim()) {
           const raw = await searchListings(query.trim(), page, limit);
           result = normalizeSearchResponse(raw);

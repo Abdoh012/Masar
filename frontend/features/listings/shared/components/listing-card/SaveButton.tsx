@@ -17,7 +17,11 @@ export function SaveButton({ saved, disabled, onToggle }: SaveButtonProps) {
         onToggle();
       }}
       disabled={disabled}
-      className="cursor-pointer rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-primary-tint hover:text-primary disabled:opacity-50"
+      className={`cursor-pointer rounded-md p-1.5 transition-colors disabled:opacity-50 ${
+        saved
+          ? "text-secondary hover:bg-secondary-tint"
+          : "text-muted-foreground hover:bg-primary-tint hover:text-primary"
+      }`}
     >
       <Bookmark className={`size-5 ${saved ? "fill-current" : ""}`} />
     </button>
