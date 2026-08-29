@@ -1,0 +1,24 @@
+$kind: http-request
+description: "multipart/form-data with a single file part named logo. Only the AUTHENTICATED company's own logo can be updated (company id always comes from the JWT, never the request). Allowed images: jpg, jpeg, png, gif, webp (max 10MB). Stores a relative storage path in companies.company_logo; trainings automatically return it as company_logo via the company join."
+url: "{{base_url}}/api/v1/companies/me/logo"
+method: POST
+headers:
+  Accept: application/json
+body:
+  type: formdata
+  content:
+    - type: file
+      key: logo
+      src: []
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const json = pm.response.json();
+      pm.test('company logo updated', function () { pm.expect(json.success).to.eql(true); });
+      pm.test('returns relative logo path', function () { pm.expect(json.data.company_logo).to.be.a('string'); pm.expect(json.data.company_logo.length).to.be.above(0); });
+    language: text/javascript
+order: 3000

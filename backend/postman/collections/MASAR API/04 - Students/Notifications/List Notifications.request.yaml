@@ -1,0 +1,38 @@
+$kind: http-request
+description: Requires a Bearer token. Returns the authenticated user's notifications. Captures `notification_id` from the first notification.
+url: "{{base_url}}/api/v1/notifications?page=1&per_page=20"
+method: GET
+queryParams:
+  - key: page
+    value: "1"
+    description: Page number (default 1).
+  - key: per_page
+    value: "20"
+    description: Notifications per page (max 100).
+  - key: unread
+    value: "true"
+    disabled: true
+    description: "Filter by read state. true = unread only, false = read only. Alternative: read."
+  - key: type
+    value: application
+    disabled: true
+    description: Filter by notification type.
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Notifications listed", function () {
+          pm.expect(pm.response.code).to.eql(200);
+          const json = pm.response.json();
+          pm.expect(json.success).to.eql(true);
+      });
+      const json = pm.response.json();
+      const items = Array.isArray(json.data) ? json.data : (json.data && json.data.items) || [];
+      if (items.length && items[0].id) {
+          pm.collectionVariables.set('notification_id', String(items[0].id));
+      }
+    language: text/javascript
+order: 1000

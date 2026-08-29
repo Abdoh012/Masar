@@ -1,0 +1,21 @@
+$kind: http-request
+description: Public. Lists the active study fields (User Field options for student registration). Stores the first field id into the field_id collection variable.
+url: "{{base_url}}/api/v1/lookups/study-fields"
+method: GET
+headers:
+  Accept: application/json
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Study fields returned", function () {
+          pm.expect(pm.response.code).to.eql(200);
+          const json = pm.response.json();
+          pm.expect(json.success).to.eql(true);
+          pm.expect(Array.isArray(json.data.study_fields)).to.eql(true);
+      });
+      const json = pm.response.json();
+      if (json.data && json.data.study_fields && json.data.study_fields.length) {
+          pm.collectionVariables.set('field_id', String(json.data.study_fields[0].id));
+      }
+    language: text/javascript
+order: 1000

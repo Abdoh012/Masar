@@ -1,0 +1,18 @@
+$kind: http-request
+description: Requires a Bearer token. Deletes the authenticated user's notification.
+url: "{{base_url}}/api/v1/notifications/{{notification_id}}"
+method: DELETE
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Notification deleted", function () {
+          pm.expect(pm.response.code).to.eql(200);
+          const json = pm.response.json();
+          pm.expect(json.success).to.eql(true);
+      });
+    language: text/javascript
+order: 6000

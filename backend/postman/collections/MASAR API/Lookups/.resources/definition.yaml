@@ -1,0 +1,3 @@
+$kind: collection
+description: "Public lookup endpoints used by registration forms: study fields (User Field) and their specializations. Students pick Field -> Specialization; companies pick their Industry from the same specializations list."
+order: 2000

@@ -1,0 +1,83 @@
+$kind: http-request
+description: "Training Filters API: filter published trainings by training_type + mode + paid with whitelisted sorting and pagination. Omitted parameters mean ALL/ANY (no filter on that dimension). Canonical database values - training_type: shadowing | hands_on | project_based; mode: onsite | remote | hybrid; paid: 0 (free) | 1 (paid). Keyword search is NOT part of this endpoint; use Search Trainings (?q=) instead."
+url: "{{base_url}}/api/v1/search/trainings/filters"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  - key: training_type
+    value: hands_on
+    disabled: true
+    description: "Optional training type filter. Allowed values: shadowing, hands_on, project_based. Omit for all training types."
+  - key: mode
+    value: hybrid
+    disabled: true
+    description: "Optional training mode filter. Allowed values: onsite, remote, hybrid. Omit for all modes."
+  - key: paid
+    value: "1"
+    disabled: true
+    description: Optional price filter. 0 = free, 1 = paid. Omit for all price categories.
+  - key: sort
+    value: newest
+    disabled: true
+    description: "Optional sorting. Allowed values: newest, oldest, price_asc, price_desc, duration_asc, duration_desc."
+  - key: page
+    value: "1"
+    disabled: true
+    description: Optional page number. Defaults to 1.
+  - key: limit
+    value: "20"
+    disabled: true
+    description: Optional number of results per page. Defaults to 20. Maximum 100.
+scripts:
+  - type: afterResponse
+    code: |-
+      const json = pm.response.json();
+      pm.test('returns 200', function () { pm.response.to.have.status(200); });
+      pm.test('success is true', function () { pm.expect(json.success).to.eql(true); });
+      pm.test('items is an array', function () { pm.expect(json.data.items).to.be.an('array'); });
+      pm.test('pagination metadata present', function () {
+          pm.expect(json.data.total).to.be.a('number');
+          pm.expect(json.data.page).to.be.a('number');
+          pm.expect(json.data.limit).to.be.a('number');
+      });
+      pm.test('training card contains all expected fields', function () {
+          json.data.items.forEach(function (item) {
+              pm.expect(item).to.have.property('id');
+              pm.expect(item).to.have.property('company_id');
+              pm.expect(item).to.have.property('title');
+              pm.expect(item).to.have.property('description');
+              pm.expect(item).to.have.property('training_type');
+              pm.expect(item).to.have.property('mode');
+              pm.expect(item).to.have.property('may_lead_to_employment');
+              pm.expect(item).to.have.property('is_paid');
+              pm.expect(item).to.have.property('compensation_amount');
+              pm.expect(item).to.have.property('compensation_currency');
+              pm.expect(item).to.have.property('capacity');
+              pm.expect(item).to.have.property('status');
+              pm.expect(item).to.have.property('starts_at');
+              pm.expect(item).to.have.property('ends_at');
+              pm.expect(item).to.have.property('application_deadline');
+              pm.expect(item).to.have.property('location');
+              pm.expect(item).to.have.property('created_at');
+              pm.expect(item).to.have.property('updated_at');
+              pm.expect(item).to.have.property('company_name');
+              pm.expect(item).to.have.property('company_city');
+              pm.expect(item).to.have.property('company_logo');
+              pm.expect(item).to.have.property('is_saved');
+              pm.expect(item).to.have.property('duration');
+              pm.expect(item.skills).to.be.an('array');
+              pm.expect(item.specializations).to.be.an('array');
+          });
+      });
+      pm.test('duration is a non-negative integer or null', function () {
+          json.data.items.forEach(function (item) {
+              const d = item.duration;
+              if (d !== null) {
+                  pm.expect(d).to.be.a('number');
+                  pm.expect(d).to.be.at.least(0);
+              }
+          });
+      });
+    language: text/javascript
+order: 1000

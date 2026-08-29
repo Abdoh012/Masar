@@ -1,0 +1,18 @@
+$kind: http-request
+description: Requires any authenticated user (student, company or admin). Returns a public student profile with private fields (user_id, phone, cv_file_id) removed.
+url: "{{base_url}}/api/v1/students/{{student_id}}"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Public student profile returned", function () {
+          pm.expect(pm.response.code).to.eql(200);
+          const json = pm.response.json();
+          pm.expect(json.success).to.eql(true);
+      });
+    language: text/javascript
+order: 6000
