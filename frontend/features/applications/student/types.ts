@@ -49,7 +49,7 @@ export interface RecentApplicationRow {
   appliedOn: string;
 }
 
-// --- Training application wizard (3-step apply form, UI-only) ---
+// --- Training application wizard (3-step apply form) ---
 
 export type EducationStatus = "student" | "graduated";
 
@@ -83,8 +83,10 @@ export interface ApplicationFormValues {
   application: TrainingApplicationValues;
 }
 
-// The CV upload field is UI-only in this phase: only the file's name/size are
-// kept locally for display; no file is uploaded anywhere.
+// Display-only state for the CV upload: name/size drive the step-1 file card.
+// The file itself never needs the orchestrator — it rides the form's
+// always-mounted <CvFileInput name="cv"> carrier (required), so the step-3
+// FormData carries it natively.
 export interface CvFileState {
   name: string;
   size: number;

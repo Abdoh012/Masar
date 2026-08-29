@@ -23,7 +23,7 @@ export type TryCatchResponse = {
 export type TryCatchRequest = {
   url: string;
   method?: string;
-  body?: object;
+  body?: object | FormData;
   cache?: RequestCache;
   revalidate?: number;
 };

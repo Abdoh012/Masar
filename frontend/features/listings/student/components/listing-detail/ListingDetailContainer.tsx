@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 
 import {
@@ -11,18 +10,13 @@ import {
   GraduationCap,
 } from "lucide-react";
 
-import { FORMAT_LABELS } from "../../../shared/lib/constants";
-import { ModeBadge } from "../../../shared/components/mode-badge/ModeBadge";
-import { PaidBadge } from "../../../shared/components/paid-badge/PaidBadge";
-import { SaveButton } from "../../../shared/components/listing-card/SaveButton";
+import { FORMAT_LABELS } from "@/features/listings/shared/lib/constants";
+import { ModeBadge } from "@/features/listings/shared/components/mode-badge/ModeBadge";
+import { PaidBadge } from "@/features/listings/shared/components/paid-badge/PaidBadge";
+import { SaveButton } from "@/features/listings/shared/components/listing-card/SaveButton";
 import { Button } from "@/shared/components/ui/button";
 
 import { useTrainingDetails } from "../../hooks/useTrainingDetails";
-import {
-  saveTrainingAction,
-  unsaveTrainingAction,
-  getSavedListings,
-} from "../../actions";
 
 import { ApplyCta } from "./ApplyCta";
 import { DetailMetaRow } from "./DetailMetaRow";
@@ -35,44 +29,12 @@ interface ListingDetailContainerProps {
 
 export function ListingDetailContainer({ id }: ListingDetailContainerProps) {
   const { listing, loading, error } = useTrainingDetails(id);
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
-  const [savedLoading, setSavedLoading] = useState(true);
-  const [savePending, setSavePending] = useState(false);
-
-  useEffect(() => {
-    getSavedListings().then((res) => {
-      if (!res.error && Array.isArray(res.data?.items)) {
-        setSavedIds(
-          new Set(
-            res.data.items.map((i: { id: string | number }) => String(i.id)),
-          ),
-        );
-      }
-      setSavedLoading(false);
-    });
-  }, []);
 
   if (loading) return <DetailSkeleton />;
   if (error || !listing) notFound();
 
   const listingId = listing.id;
-  const saved = savedIds.has(listingId);
   const alreadyApplied = listing.hasApplied ?? false;
-
-  async function handleSaveToggle() {
-    setSavePending(true);
-    const action = saved ? unsaveTrainingAction : saveTrainingAction;
-    const result = await action(listingId);
-    setSavePending(false);
-    if (!result.error) {
-      setSavedIds((prev) => {
-        const next = new Set(prev);
-        if (prev.has(listingId)) next.delete(listingId);
-        else next.add(listingId);
-        return next;
-      });
-    }
-  }
 
   return (
     <article className="space-y-8">
@@ -82,12 +44,7 @@ export function ListingDetailContainer({ id }: ListingDetailContainerProps) {
           <PaidBadge isPaid={listing.isPaid} trialDays={listing.trialDays} />
 
           <div className="ml-auto">
-            <SaveButton
-              saved={saved}
-              disabled={savePending}
-              loading={savedLoading}
-              onToggle={handleSaveToggle}
-            />
+            <SaveButton saved={listing.saved} id={listingId} />
           </div>
         </div>
 

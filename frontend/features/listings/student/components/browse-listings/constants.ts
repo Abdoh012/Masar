@@ -1,5 +1,5 @@
-import { LISTING_FORMATS, LISTING_MODES } from "../../../shared/lib/constants";
-import type { ListingMode } from "../../../shared/types";
+import { LISTING_FORMATS, LISTING_MODES } from "@/features/listings/shared/lib/constants";
+import type { ListingMode } from "@/features/listings/shared/types";
 import type { BrowseSort } from "../../types";
 
 export const BROWSE_HERO = {

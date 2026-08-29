@@ -5,7 +5,7 @@ import { SubmitButton } from "../../shared/components/SubmitButton";
 import { OtpInput } from "./OtpInput";
 import { ResendOtpButton } from "./ResendOtpButton";
 import { verifyOtp } from "../../actions";
-import { useFormFeedBack } from "../../shared/hooks/useFormFeedback";
+import { useFormFeedBack } from "@/shared/hooks/useFormFeedback";
 
 interface OtpFormProps {
   email: string;

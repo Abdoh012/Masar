@@ -15,3 +15,4 @@ export { MyListingsListContainer } from "./company/components/my-listings/MyList
 export { BrowseListingsContainer } from "./student/components/browse-listings/BrowseListingsContainer";
 export { ListingDetailContainer } from "./student/components/listing-detail/ListingDetailContainer";
 export { ModerateListingsTableContainer } from "./admin/components/moderate-listings/ModerateListingsTableContainer";
+export { fetchTrainingDetails } from "./student/api";

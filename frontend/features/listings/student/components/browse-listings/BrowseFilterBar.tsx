@@ -1,5 +1,5 @@
-import { FilterSelect } from "../../../shared/components/filter-controls/FilterSelect";
-import { ResetFiltersButton } from "../../../shared/components/filter-controls/ResetFiltersButton";
+import { FilterSelect } from "@/features/listings/shared/components/filter-controls/FilterSelect";
+import { ResetFiltersButton } from "@/features/listings/shared/components/filter-controls/ResetFiltersButton";
 
 import { FILTER_LABELS, FILTER_LISTS } from "./constants";
 

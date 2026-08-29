@@ -6,8 +6,9 @@ import { PERSONAL_INFO_FIELDS } from "./constants";
 interface PersonalInfoFieldsProps {
   values: PersonalInfoValues;
   cvFile: CvFileState | null;
+  cvError?: string | null;
   onFieldChange: (field: keyof PersonalInfoValues, value: string) => void;
-  onCvSelect: (file: File) => void;
+  onCvOpenPicker: () => void;
   onCvRemove: () => void;
 }
 
@@ -18,8 +19,9 @@ interface PersonalInfoFieldsProps {
 export function PersonalInfoFields({
   values,
   cvFile,
+  cvError,
   onFieldChange,
-  onCvSelect,
+  onCvOpenPicker,
   onCvRemove,
 }: PersonalInfoFieldsProps) {
   return (
@@ -58,7 +60,7 @@ export function PersonalInfoFields({
         placeholder={PERSONAL_INFO_FIELDS.description.placeholder}
         value={values.description}
         onChange={(value) => onFieldChange("description", value)}
-        optional
+        required
       />
 
       <div className="grid gap-5 sm:grid-cols-2">
@@ -99,7 +101,12 @@ export function PersonalInfoFields({
         required
       />
 
-      <CvUploadField file={cvFile} onSelect={onCvSelect} onRemove={onCvRemove} />
+      <CvUploadField
+        file={cvFile}
+        error={cvError}
+        onOpenPicker={onCvOpenPicker}
+        onRemove={onCvRemove}
+      />
     </div>
   );
 }

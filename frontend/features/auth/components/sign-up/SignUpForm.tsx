@@ -9,7 +9,7 @@ import { RoleSelector } from "./role-selector/RoleSelector";
 import { FIELD_CONFIG } from "../../shared/lib/constants";
 import Footer from "./footer/Footer";
 import { stageSignup } from "../../actions";
-import { useFormFeedBack } from "../../shared/hooks/useFormFeedback";
+import { useFormFeedBack } from "@/shared/hooks/useFormFeedback";
 import { useSignupDraft } from "../../shared/hooks/useSignupDraft";
 import type { SignupStepOneValues } from "../../types";
 

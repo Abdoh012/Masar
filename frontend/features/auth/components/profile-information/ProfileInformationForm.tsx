@@ -18,7 +18,7 @@ import { ProfileField } from "./ProfileField";
 import { ProfileSelectField } from "./ProfileSelectField";
 import { FieldErrorList } from "../../shared/components/FieldErrorList";
 import { signup } from "../../actions";
-import { useFormFeedBack } from "../../shared/hooks/useFormFeedback";
+import { useFormFeedBack } from "@/shared/hooks/useFormFeedback";
 
 interface ProfileInformationFormProps {
   draft: SignupDraft;

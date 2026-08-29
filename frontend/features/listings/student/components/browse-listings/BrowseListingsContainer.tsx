@@ -1,18 +1,13 @@
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { ListingCard } from "../../../shared/components/listing-card/ListingCard";
-import { Pagination } from "../../../shared/components/pagination/Pagination";
+import { ListingCard } from "@/features/listings/shared/components/listing-card/ListingCard";
+import { Pagination } from "@/features/listings/shared/components/pagination/Pagination";
 import createPageUrl from "@/shared/lib/createPageUrl";
 
 import { useListings } from "../../hooks/useListings";
-import {
-  saveTrainingAction,
-  unsaveTrainingAction,
-  getSavedListings,
-} from "../../actions";
 
 import { BrowseEmptyState } from "./BrowseEmptyState";
 import { BrowseError } from "./BrowseError";
@@ -21,7 +16,7 @@ import { BrowseGridSkeleton } from "./BrowseGridSkeleton";
 import { BrowseHero } from "./BrowseHero";
 import { FilterAndSearch } from "./FilterAndSearch";
 
-const PAGE_LIMIT = 20;
+const PAGE_LIMIT = 10;
 
 export function BrowseListingsContainer() {
   const router = useRouter();
@@ -33,50 +28,13 @@ export function BrowseListingsContainer() {
   const savedOnly = searchParams.get("saved") === "1";
   const page = Number(searchParams.get("page") ?? "1");
 
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
-  const [savedLoading, setSavedLoading] = useState(true);
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [savedVersion, setSavedVersion] = useState(0);
-
   const { listings, pagination, loading, error } = useListings({
     query,
     sort,
     savedOnly,
     page,
     limit: PAGE_LIMIT,
-    savedVersion,
   });
-
-  useEffect(() => {
-    getSavedListings().then((res) => {
-      if (!res.error && Array.isArray(res.data?.items)) {
-        setSavedIds(
-          new Set(
-            res.data.items.map((i: { id: string | number }) => String(i.id)),
-          ),
-        );
-      }
-      setSavedLoading(false);
-    });
-  }, []);
-
-  async function handleSaveToggle(id: string) {
-    setPendingId(id);
-    const action = savedIds.has(id) ? unsaveTrainingAction : saveTrainingAction;
-    const result = await action(id);
-    setPendingId(null);
-
-    if (!result.error) {
-      setSavedIds((prev) => {
-        const next = new Set(prev);
-        if (prev.has(id)) next.delete(id);
-        else next.add(id);
-        return next;
-      });
-
-      setSavedVersion((v) => v + 1);
-    }
-  }
 
   const handleSearchChange = useCallback(
     (q: string) => {
@@ -150,14 +108,7 @@ export function BrowseListingsContainer() {
           <>
             <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-2">
               {listings.map((listing) => (
-                <ListingCard
-                  key={listing.id}
-                  {...listing}
-                  saved={savedIds.has(listing.id)}
-                  onSaveToggle={handleSaveToggle}
-                  savePending={pendingId === listing.id}
-                  loading={savedLoading}
-                />
+                <ListingCard key={listing.id} {...listing} />
               ))}
             </div>
 

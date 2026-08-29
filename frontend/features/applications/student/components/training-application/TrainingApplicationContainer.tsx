@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { startTransition, useRef, useState } from "react";
+import type { FormEvent } from "react";
 import { notFound } from "next/navigation";
 
 import Motion from "@/shared/components/animation/Motion";
 import { fadeInUp } from "@/shared/lib/animations";
+import { useFormFeedBack } from "@/shared/hooks/useFormFeedback";
 
 import type {
   ApplicationFormValues,
@@ -14,45 +16,56 @@ import type {
   TrainingApplicationStep,
   TrainingApplicationValues,
 } from "../../types";
+import { submitApplication } from "../../actions";
+import { ApplicationPayloadFields } from "./ApplicationPayloadFields";
 import { ApplicationSuccess } from "./ApplicationSuccess";
+import { CvFileInput } from "./CvFileInput";
 import { EducationFields } from "./EducationFields";
 import { PersonalInfoFields } from "./PersonalInfoFields";
 import { ProgressIndicator } from "./ProgressIndicator";
 import { StepHeader } from "./StepHeader";
 import { StepNavigation } from "./StepNavigation";
 import { TrainingApplicationFields } from "./TrainingApplicationFields";
-import {
-  INITIAL_VALUES,
-  MOCK_APPLY_TRAININGS,
-  SUBMIT_DELAY_MS,
-} from "./constants";
+import { CV_FIELD_LABELS, INITIAL_VALUES } from "./constants";
 
 interface TrainingApplicationContainerProps {
   listingId: string;
+  listingTitle?: string;
+  companyName?: string;
 }
 
 // TrainingApplicationContainer: the student's 3-step application wizard
 // (Personal Information → Education → Training Application). Orchestrator only —
 // owns the step, the form values (one useState per section), the CV file, and
-// the simulated submit state, then composes the leaves. The whole form is
-// deliberately controlled (structure rules §10 exception): steps must survive
-// Back/Continue navigation, step 2 renders a field conditional on a radio, and
-// step 3 is a chip multi-select — all of which need the container to see every
-// value. One shared <form> swaps the active step's fields, so native `required`
-// validation always gates exactly the rendered step. Submission is UI-only:
-// a timeout simulates the backend call, then the Success panel renders.
-export function TrainingApplicationContainer({ listingId }: TrainingApplicationContainerProps) {
-  const listing = MOCK_APPLY_TRAININGS[listingId];
+// submission feedback, then composes the leaves. The whole form is deliberately
+// controlled (structure rules §10 exception): steps must survive Back/Continue
+// navigation, step 2 renders a field conditional on a radio, and step 3 is a
+// chip multi-select — all of which need the container to see every value. One
+// shared <form> swaps the active step's fields, so native `required` validation
+// always gates exactly the rendered step's text fields. The full snapshot rides
+// the form as hidden backend-named payload inputs; the CV rides the form's
+// always-mounted CvFileInput carrier (name="cv") — sr-only, so CV presence is
+// gated here (inline error under the step-1 field) instead of via a native
+// bubble. Step 3 submits to submitApplication (POST /api/v1/applications) via
+// useFormFeedback, which toasts backend message/fieldErrors and reports pending
+// via isPending.
+export function TrainingApplicationContainer({
+  listingId,
+  listingTitle,
+  companyName,
+}: TrainingApplicationContainerProps) {
+  const { formAction, state, isPending } = useFormFeedBack(
+    submitApplication,
+    null,
+  );
 
   const [step, setStep] = useState<TrainingApplicationStep>(1);
   const [values, setValues] = useState<ApplicationFormValues>(INITIAL_VALUES);
   const [cvFile, setCvFile] = useState<CvFileState | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [cvError, setCvError] = useState<string | null>(null);
+  const cvInputRef = useRef<HTMLInputElement>(null);
 
-  const validListing = useMemo(() => listing ?? null, [listing]);
-
-  if (!validListing) {
+  if (!listingTitle) {
     notFound();
   }
 
@@ -81,27 +94,35 @@ export function TrainingApplicationContainer({ listingId }: TrainingApplicationC
   }
 
   function handleBack() {
-    if (step > 1) setStep((current) => (current - 1) as TrainingApplicationStep);
+    if (step > 1)
+      setStep((current) => (current - 1) as TrainingApplicationStep);
   }
 
-  function handleSubmit() {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!cvFile) {
+      setCvError(CV_FIELD_LABELS.requiredError);
+      if (step > 1) setStep(1);
+      return;
+    }
+
     if (step < 3) {
       setStep((current) => (current + 1) as TrainingApplicationStep);
       return;
     }
 
-    setIsSubmitting(true);
-    window.setTimeout(() => {
-      setIsSubmitting(false);
-      setSubmitted(true);
-    }, SUBMIT_DELAY_MS);
+    const payload = new FormData(event.currentTarget);
+    // A useActionState dispatch called manually (not via <form action>) must
+    // run inside a transition, or isPending never updates.
+    startTransition(() => formAction(payload));
   }
 
-  if (submitted) {
+  if (state?.success) {
     return (
       <ApplicationSuccess
-        specialization={validListing.specialization}
-        companyName={validListing.companyName}
+        listingTitle={listingTitle}
+        companyName={companyName ?? ""}
       />
     );
   }
@@ -113,41 +134,55 @@ export function TrainingApplicationContainer({ listingId }: TrainingApplicationC
 
         <form
           className="mt-8 min-w-0 flex-1 space-y-6 md:mt-0"
-          onSubmit={(event) => {
-            event.preventDefault();
-            handleSubmit();
-          }}
+          onSubmit={handleSubmit}
         >
+          <ApplicationPayloadFields values={values} listingId={listingId} />
+          <CvFileInput
+            ref={cvInputRef}
+            onSelect={(file) => {
+              setCvFile({ name: file.name, size: file.size });
+              setCvError(null);
+            }}
+          />
+
           <Motion key={step} variants={fadeInUp}>
             <div className="space-y-6">
               <StepHeader step={step} />
 
-              {step === 1 ? (
+              {step === 1 && (
                 <PersonalInfoFields
                   values={values.personal}
                   cvFile={cvFile}
+                  cvError={cvError}
                   onFieldChange={updatePersonal}
-                  onCvSelect={(file) => setCvFile({ name: file.name, size: file.size })}
-                  onCvRemove={() => setCvFile(null)}
+                  onCvOpenPicker={() => cvInputRef.current?.click()}
+                  onCvRemove={() => {
+                    if (cvInputRef.current) cvInputRef.current.value = "";
+                    setCvFile(null);
+                    setCvError(null);
+                  }}
                 />
-              ) : null}
+              )}
 
-              {step === 2 ? (
-                <EducationFields values={values.education} onFieldChange={updateEducation} />
-              ) : null}
+              {step === 2 && (
+                <EducationFields
+                  values={values.education}
+                  onFieldChange={updateEducation}
+                />
+              )}
 
-              {step === 3 ? (
+              {step === 3 && (
                 <TrainingApplicationFields
                   values={values.application}
                   onFieldChange={updateApplication}
                 />
-              ) : null}
+              )}
             </div>
           </Motion>
 
           <StepNavigation
             step={step}
-            isSubmitting={isSubmitting}
+            isSubmitting={isPending}
             onBack={handleBack}
             backHref={`/listings/${listingId}`}
           />

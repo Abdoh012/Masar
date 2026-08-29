@@ -13,7 +13,7 @@ export function StepHeader({ step }: StepHeaderProps) {
 
   return (
     <div className="space-y-1.5">
-      <p className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-secondary-text">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-secondary-text">
         Step {step} of {Object.keys(STEP_HEADERS).length}
       </p>
       <h2 className="font-sans text-xl font-semibold text-primary-text">{title}</h2>

@@ -38,4 +38,5 @@ export interface ListingCardData extends Listing {
   duration?: string;
   saved?: boolean;
   hasApplied?: boolean;
+  companyLogo?: string;
 }

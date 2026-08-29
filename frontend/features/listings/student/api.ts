@@ -27,20 +27,8 @@ export interface SearchResponse {
   };
 }
 
-
 async function apiFetch<T>(path: string): Promise<T> {
-  const token =
-    typeof document !== "undefined"
-      ? document.cookie
-          .split("; ")
-          .find((c) => c.startsWith("masarJwt="))
-          ?.split("=")[1]
-      : undefined;
-
-  const headers: Record<string, string> = {};
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  const res = await fetch(`${API_URL}${path}`, { headers });
+  const res = await fetch(`${API_URL}${path}`);
   if (!res.ok) throw new Error(`${res.status}`);
   return res.json();
 }

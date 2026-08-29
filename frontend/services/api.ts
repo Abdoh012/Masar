@@ -18,9 +18,15 @@ export async function serverFetch({
     const cookieStore = await cookies();
     const token = cookieStore.get("masarJwt")?.value;
 
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
+    // Multipart bodies (FormData) must not set Content-Type — fetch generates
+    // the multipart boundary itself; everything else rides JSON.
+    const isFormData = body instanceof FormData;
+
+    const headers: Record<string, string> = {};
+
+    if (!isFormData) {
+      headers["Content-Type"] = "application/json";
+    }
 
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
@@ -29,7 +35,7 @@ export async function serverFetch({
     const fetchOptions: RequestInit & { next?: { revalidate: number } } = {
       method,
       headers,
-      body: body ? JSON.stringify(body) : undefined,
+      body: isFormData ? body : body ? JSON.stringify(body) : undefined,
       cache,
     };
 

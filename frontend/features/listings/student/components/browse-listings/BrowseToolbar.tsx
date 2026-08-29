@@ -1,6 +1,6 @@
 import { Bookmark } from "lucide-react";
 
-import { FilterSelect } from "../../../shared/components/filter-controls/FilterSelect";
+import { FilterSelect } from "@/features/listings/shared/components/filter-controls/FilterSelect";
 
 import { SORT_OPTIONS, TOOLBAR_LABELS } from "./constants";
 

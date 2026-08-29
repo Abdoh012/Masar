@@ -1,5 +1,3 @@
-import { cn } from "@/shared/lib/utils";
-
 import { CATEGORY_STYLES, DEFAULT_CATEGORY_STYLE } from "./constants";
 
 interface CategoryPillProps {

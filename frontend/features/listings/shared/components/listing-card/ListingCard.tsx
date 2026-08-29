@@ -15,21 +15,9 @@ import { SkillTags } from "./SkillTags";
 interface ListingCardProps extends ListingCardData {
   className?: string;
   saved?: boolean;
-  onSaveToggle?: (listingId: string) => void;
-  savePending?: boolean;
-  loading?: boolean;
 }
 
-export function ListingCard({
-  className,
-  saved: savedProp,
-  onSaveToggle,
-  savePending,
-  loading,
-  ...listing
-}: ListingCardProps) {
-  const isSaved = savedProp ?? false;
-
+export function ListingCard({ className, ...listing }: ListingCardProps) {
   return (
     <article
       className={`flex h-full flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-card ${className}`}
@@ -38,14 +26,7 @@ export function ListingCard({
         <CategoryPill field={listing.field} />
 
         <div className="flex items-center gap-1">
-          {onSaveToggle ? (
-            <SaveButton
-              saved={isSaved}
-              disabled={savePending}
-              loading={loading}
-              onToggle={() => onSaveToggle(listing.id)}
-            />
-          ) : null}
+          <SaveButton saved={listing.saved} id={listing.id} />
 
           <Image
             src="/logo.png"

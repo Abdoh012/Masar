@@ -1,4 +1,4 @@
-import type { ListingCardData } from "../../shared/types";
+import type { ListingCardData, ListingMode } from "../../shared/types";
 import type { Pagination } from "../api";
 
 const API_MODE_MAP: Record<string, string> = {
@@ -9,7 +9,10 @@ const API_FORMAT_MAP: Record<string, string> = {
   onsite: "in_person",
 };
 
-function computeDuration(startsAt?: string, endsAt?: string): string | undefined {
+function computeDuration(
+  startsAt?: string,
+  endsAt?: string,
+): string | undefined {
   if (!startsAt || !endsAt) return undefined;
   const start = new Date(startsAt);
   const end = new Date(endsAt);
@@ -21,8 +24,10 @@ function computeDuration(startsAt?: string, endsAt?: string): string | undefined
   return `${months} Month${months === 1 ? "" : "s"}`;
 }
 
-export function normalizeApiItem(item: Record<string, unknown>): ListingCardData {
-  const rawMode = String(item.training_type ?? item.mode ?? "observer");
+export function normalizeApiItem(
+  item: Record<string, unknown>,
+): ListingCardData {
+  const rawMode = String(item.training_type ?? "observer");
   const mappedMode = API_MODE_MAP[rawMode] ?? rawMode;
   const rawFormat = String(item.mode ?? "remote");
   const mappedFormat = API_FORMAT_MAP[rawFormat] ?? rawFormat;
@@ -41,17 +46,19 @@ export function normalizeApiItem(item: Record<string, unknown>): ListingCardData
     companyId: String(item.company_id ?? ""),
     companyName: String(item.company_name ?? ""),
     field: firstSpec ?? String(item.title ?? ""),
-    specialization: String(item.specialization ?? firstSpec ?? item.title ?? ""),
+    specialization: String(
+      item.specialization ?? firstSpec ?? item.title ?? "",
+    ),
     description: String(item.description ?? item.title ?? ""),
-    mode: mappedMode as ListingCardData["mode"],
+    mode: mappedMode as ListingMode,
     format: mappedFormat as ListingCardData["format"],
     hireIntent: Boolean(item.hire_intent),
     isPaid: Boolean(item.is_paid),
-    price: Number(item.compensation_amount ?? item.price ?? 0),
-    trialDays: Number(item.trial_period_days ?? 0) || undefined,
+    price: Number(item.compensation_amount ?? 0),
+    trialDays: Number(item.trial_period_days ?? 0),
     status: "published" as const,
-    createdAt: String(item.created_at ?? item.created ?? new Date().toISOString()),
-    updatedAt: String(item.updated_at ?? item.updated ?? new Date().toISOString()),
+    createdAt: String(item.created_at),
+    updatedAt: String(item.updated_at),
     skills,
     duration: computeDuration(
       item.starts_at as string | undefined,
@@ -59,6 +66,7 @@ export function normalizeApiItem(item: Record<string, unknown>): ListingCardData
     ),
     saved: Boolean(item.is_saved),
     hasApplied: Boolean(item.has_applied),
+    companyLogo: String(item.company_logo ?? ""),
   };
 }
 

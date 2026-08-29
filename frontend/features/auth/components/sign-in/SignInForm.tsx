@@ -6,7 +6,7 @@ import { FIELD_CONFIG } from "../../shared/lib/constants";
 import { FormField } from "../../shared/components/FormField";
 import { SubmitButton } from "../../shared/components/SubmitButton";
 import { signIn } from "../../actions";
-import { useFormFeedBack } from "../../shared/hooks/useFormFeedback";
+import { useFormFeedBack } from "@/shared/hooks/useFormFeedback";
 import { SignInValues } from "../../types";
 
 export function SignInForm() {

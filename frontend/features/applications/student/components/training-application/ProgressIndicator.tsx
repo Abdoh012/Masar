@@ -30,10 +30,12 @@ export function ProgressIndicator({ currentStep }: ProgressIndicatorProps) {
           const isLast = index === STEPS.length - 1;
 
           return (
-            <li key={step.label} className={cn("flex items-center", !isLast && "flex-1")}>
+            <li
+              key={step.label}
+              className={cn("flex items-center", !isLast && "flex-1")}
+            >
               {index > 0 ? (
                 <span
-                  aria-hidden="true"
                   className={cn(
                     "mx-2 h-px flex-1 sm:mx-3",
                     stepNumber <= currentStep ? "bg-primary" : "bg-border",
@@ -43,7 +45,6 @@ export function ProgressIndicator({ currentStep }: ProgressIndicatorProps) {
 
               <span className="flex flex-col items-center gap-1.5">
                 <span
-                  aria-current={isActive ? "step" : undefined}
                   className={cn(
                     "grid size-7 place-items-center rounded-full text-sm font-semibold",
                     isCompleted || isActive
@@ -57,7 +58,9 @@ export function ProgressIndicator({ currentStep }: ProgressIndicatorProps) {
                 <span
                   className={cn(
                     "hidden max-w-[8rem] text-center text-xs font-medium sm:block",
-                    isActive || isCompleted ? "text-primary-text" : "text-muted-foreground",
+                    isActive || isCompleted
+                      ? "text-primary-text"
+                      : "text-muted-foreground",
                   )}
                 >
                   {step.label}
@@ -89,7 +92,6 @@ export function ProgressIndicator({ currentStep }: ProgressIndicatorProps) {
               <li key={step.label} className="flex gap-3">
                 <div className="flex flex-col items-center self-stretch">
                   <span
-                    aria-current={isActive ? "step" : undefined}
                     className={cn(
                       "grid size-7 shrink-0 place-items-center rounded-full text-sm font-semibold",
                       isCompleted || isActive
@@ -101,10 +103,7 @@ export function ProgressIndicator({ currentStep }: ProgressIndicatorProps) {
                   </span>
 
                   {!isLast ? (
-                    <span
-                      aria-hidden="true"
-                      className="mb-1.5 mt-1.5 w-px flex-1 border-l border-dashed border-border"
-                    />
+                    <span className="mb-1.5 mt-1.5 w-px flex-1 border-l border-dashed border-border" />
                   ) : null}
                 </div>
 

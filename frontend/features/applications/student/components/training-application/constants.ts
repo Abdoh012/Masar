@@ -5,32 +5,18 @@ import type {
 } from "../../types";
 
 // Training application wizard constants (structure rules §14 — no inline data).
-// All copy, field configs, the skills catalog, and the mock prefill live here
-// so the components stay presentational. The whole flow is UI-only: the listing
-// target and the student's known details are mocked locally, and nothing here
-// is a backend submission contract.
+// All copy, field configs, and the skills catalog live here so the components
+// stay presentational. The student's known profile details are prefilled
+// locally; the wizard submits to POST /api/v1/applications via the feature's
+// submitApplication action.
 
-// The listing the student is applying to, keyed by the same ids as the student
-// listings detail mocks. Only the copy the apply flow renders is kept here —
-// the applications feature never imports the listings feature (R6).
-export const MOCK_APPLY_TRAININGS: Record<
-  string,
-  { specialization: string; companyName: string }
-> = {
-  "36": { specialization: "Spring Boot Engineer Trainee", companyName: "Sawari Digital" },
-  "41": { specialization: "React Frontend Intern", companyName: "Mobica Alexandria" },
-  "52": { specialization: "Quality & Test Engineer Program", companyName: "StartApp Hub" },
-  "63": { specialization: "DevOps Apprentice", companyName: "CloudiTech" },
-  "73": { specialization: "Frontend Developer Program", companyName: "Orbit Software" },
-};
-
-// The mock student's known profile details, used to prefill the apply form so
+// The student's known profile details, used to prefill the apply form so
 // already-known information is not re-entered. Matches the profiles feature's
 // mock identity; kept local because features never import each other (R6).
 export const MOCK_STUDENT_PROFILE = {
-  fullName: "Nour El-Sayed",
-  email: "nour.elsayed@example.com",
-  university: "Cairo University",
+  fullName: "",
+  email: "",
+  university: "",
 };
 
 export const INITIAL_VALUES: ApplicationFormValues = {
@@ -87,8 +73,11 @@ export const STEP_HEADERS: Record<
   },
 };
 
-// Step 1 field configs. `description` is an optional textarea; everything else
-// except the CV is required (native `required` prop).
+// Step 1 field configs. `description` is the only native-optional field; text
+// fields use native `required`. The CV is also required but gated manually by
+// the orchestrator (its carrier input is sr-only, so a native bubble would
+// anchor to the top of the form instead of the field) — see
+// CV_FIELD_LABELS.requiredError.
 export const PERSONAL_INFO_FIELDS = {
   fullName: {
     label: "Full Name",
@@ -136,7 +125,10 @@ export const EDUCATION_FIELDS = {
   graduationYear: { label: "Graduation Year", placeholder: "e.g. 2026" },
 } as const;
 
-export const EDUCATION_STATUS_OPTIONS: { value: EducationStatus; label: string }[] = [
+export const EDUCATION_STATUS_OPTIONS: {
+  value: EducationStatus;
+  label: string;
+}[] = [
   { value: "student", label: "Still a student" },
   { value: "graduated", label: "Graduated" },
 ];
@@ -150,8 +142,7 @@ export const TRAINING_APPLICATION_FIELDS = {
   },
   learningGoals: {
     label: "What do you hope to learn?",
-    placeholder:
-      "Share the skills and knowledge you want to walk away with...",
+    placeholder: "Share the skills and knowledge you want to walk away with...",
   },
   skills: { label: "Skills" },
 } as const;
@@ -180,6 +171,7 @@ export const CV_FIELD_LABELS = {
   empty: "Click to upload your CV",
   hint: "PDF or Word — max 5 MB",
   remove: "Remove",
+  requiredError: "Please select a file",
 } as const;
 
 export const NAVIGATION_LABELS = {
@@ -192,14 +184,11 @@ export const NAVIGATION_LABELS = {
 
 export const SUCCESS_COPY = {
   title: "Application submitted",
-  message: (specialization: string, companyName: string) =>
-    `Your application to ${specialization} at ${companyName} has been received. The company will reach out if you're shortlisted.`,
+  message: (listingTitle: string, companyName: string) =>
+    `Your application to ${listingTitle} at ${companyName} has been received. The company will reach out if you're shortlisted.`,
   backToBrowse: "Back to browse",
   viewApplications: "View my applications",
 } as const;
-
-// Simulated submission delay so the UI demonstrates the loading state (UI-only).
-export const SUBMIT_DELAY_MS = 1400;
 
 export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;

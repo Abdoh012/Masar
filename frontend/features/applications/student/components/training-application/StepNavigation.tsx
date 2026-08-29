@@ -35,7 +35,7 @@ export function StepNavigation({
           <Link href={backHref}>{NAVIGATION_LABELS.backToListing}</Link>
         </Button>
       ) : (
-        <Button type="button" variant="outline" onClick={onBack}>
+        <Button type="button" variant="outline" className="cursor-pointer" onClick={onBack}>
           {NAVIGATION_LABELS.back}
         </Button>
       )}
