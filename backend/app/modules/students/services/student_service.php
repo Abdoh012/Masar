@@ -52,8 +52,9 @@ function student_service_validate_cv_file_ownership( int $user_id, mixed $cv_fil
  * A numeric `field_id` is also accepted. Specialist is read from the
  * `specialization` key (or numeric `specialization_id`) and MUST belong to
  * the selected field: the field -> specialization relationship
- * (specializations.field_id) is enforced here. University is no longer part
- * of the student registration model.
+ * (specializations.field_id) is enforced here. University is accepted
+ * separately by name in student_service_create_profile and stored as the
+ * numeric university_id (the students.university_id FK is preserved).
  *
  * Returns null when the field or specialization is unknown/inactive or when
  * the specialization does not belong to the selected field.
@@ -136,6 +137,26 @@ function student_service_create_profile( int $user_id, array $data ): array {
             return [ 'error' => true, 'status' => 422, 'message' => 'Degree is not recognized.' ];
         }
         $student_data['degree_id'] = $degree_id;
+    }
+
+    if ( array_key_exists( 'university', $data ) ) {
+        $university_value = $data['university'] ?? '';
+
+        if ( is_array( $university_value ) ) {
+            return [ 'error' => true, 'status' => 422, 'message' => 'University must be a single name string.' ];
+        }
+
+        $university_name = is_string( $university_value ) ? trim( $university_value ) : '';
+
+        if ( $university_name !== '' ) {
+            $university_id = student_repository_resolve_university_id( $university_name );
+
+            if ( $university_id === null ) {
+                return [ 'error' => true, 'status' => 422, 'message' => 'University is not recognized.' ];
+            }
+
+            $student_data['university_id'] = $university_id;
+        }
     }
 
     foreach ( [ 'bio', 'phone', 'city', ] as $field ) {

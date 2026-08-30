@@ -7,6 +7,7 @@ require_once __DIR__ . '/../../../cron/close_expired_trainings.php';
 require_once __DIR__ . '/../../../cron/expire_trial_periods.php';
 require_once __DIR__ . '/../../../cron/send_expiry_notifications.php';
 require_once __DIR__ . '/../../../cron/cleanup_expired_tokens.php';
+require_once __DIR__ . '/../../../cron/cleanup_audit_logs.php';
 
 function cron_list_jobs(): array
 {
@@ -16,6 +17,7 @@ function cron_list_jobs(): array
         'expire_trial_periods',
         'send_expiry_notifications',
         'cleanup_expired_tokens',
+        'cleanup_audit_logs',
     ];
 }
 
@@ -77,6 +79,16 @@ function cron_run_job(string $jobName): array
                     'success' => true,
                     'job' => $jobName,
                     'message' => 'Expired tokens cleaned successfully.',
+                    'deleted_count' => $deletedCount,
+                ];
+
+            case 'cleanup_audit_logs':
+                $deletedCount = cleanup_audit_logs();
+
+                return [
+                    'success' => true,
+                    'job' => $jobName,
+                    'message' => 'Audit logs cleaned successfully.',
                     'deleted_count' => $deletedCount,
                 ];
 

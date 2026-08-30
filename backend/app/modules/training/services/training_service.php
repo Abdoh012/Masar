@@ -32,6 +32,78 @@ require_once __DIR__ . '/../../../core/database/transaction.php';
 
 /*
 |--------------------------------------------------------------------------
+| Calculate Training Duration (Days Remaining)
+|--------------------------------------------------------------------------
+|
+| Returns the number of calendar days remaining until the training
+| ends_at date. On or after the end date the value is 0.
+| Returns null when ends_at is missing or invalid.
+|
+*/
+
+function training_calculate_duration(
+    ?string $ends_at
+): ?int {
+
+    if (empty($ends_at)) {
+        return null;
+    }
+
+    $end_timestamp = @strtotime($ends_at);
+
+    if ($end_timestamp === false) {
+        return null;
+    }
+
+    $today_start = strtotime('today');
+
+    if ($today_start === false) {
+        return null;
+    }
+
+    $remaining = $end_timestamp - $today_start;
+
+    if ($remaining <= 0) {
+        return 0;
+    }
+
+    return (int) floor($remaining / 86400);
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Attach Duration To Training Items
+|--------------------------------------------------------------------------
+|
+| Enriches an array of training items with a calculated duration field.
+| Works on both associative arrays (single item) and indexed arrays
+| (list of items).
+|
+*/
+
+function training_attach_duration_to_items(
+    array $items
+): array {
+
+    if (empty($items)) {
+        return $items;
+    }
+
+    foreach ($items as $index => $item) {
+
+        $items[$index]['duration'] =
+            training_calculate_duration(
+                $item['ends_at'] ?? null
+            );
+    }
+
+    return $items;
+}
+
+
+/*
+|--------------------------------------------------------------------------
 | Create Training
 |--------------------------------------------------------------------------
 |
@@ -448,6 +520,11 @@ function training_service_find(
             $training_id
         );
 
+    $details['duration'] =
+        training_calculate_duration(
+            $details['ends_at'] ?? null
+        );
+
     $details['has_applied'] = false;
     $details['application'] = null;
     $details['is_saved'] = false;
@@ -815,6 +892,11 @@ function training_service_list(
             $items[$index]['specializations'] =
                 $specializations_by_training[$item_id] ?? [];
         }
+
+        $items =
+            training_attach_duration_to_items(
+                $items
+            );
     }
 
 
@@ -2402,6 +2484,11 @@ function training_service_saved_list(
             $items[$index]['specializations'] =
                 $specializations_by_training[$item_id] ?? [];
         }
+
+        $items =
+            training_attach_duration_to_items(
+                $items
+            );
     }
 
 

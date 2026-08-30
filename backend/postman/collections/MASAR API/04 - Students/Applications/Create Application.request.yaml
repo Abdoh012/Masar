@@ -25,7 +25,7 @@ body:
       value: "{{training_id}}"
     - type: text
       key: university_id
-      value: "2"
+      value: "Alexandria University"
     - type: text
       key: academic_year
       value: 3rd year

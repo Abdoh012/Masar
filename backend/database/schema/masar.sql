@@ -1595,7 +1595,7 @@ ALTER TABLE `training_applications`
 --
 ALTER TABLE `training_listings`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_training_company` (`company_id`),
+  ADD KEY `fk_training_listings_company` (`company_id`),
   ADD KEY `idx_training_status` (`status`),
   ADD KEY `idx_training_type` (`training_type`),
   ADD KEY `idx_training_mode` (`mode`),
@@ -1984,6 +1984,12 @@ ALTER TABLE `training_applications`
   ADD CONSTRAINT `fk_applications_cv_file` FOREIGN KEY (`cv_file_id`) REFERENCES `files` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `fk_applications_faculty` FOREIGN KEY (`faculty_id`) REFERENCES `faculties` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `fk_applications_university` FOREIGN KEY (`university_id`) REFERENCES `universities` (`id`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `training_listings`
+--
+ALTER TABLE `training_listings`
+  ADD CONSTRAINT `fk_training_listings_company` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `training_questions`

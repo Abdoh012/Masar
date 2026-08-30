@@ -65,25 +65,43 @@ function search_repository_entity(string $table, array $select, array $columns, 
     return ['items' => $items, 'total' => (int) search_repository_fetch_value("SELECT COUNT(*) FROM {$table} WHERE {$where}", $count_params)];
 }
 
-function search_repository_trainings_card_query(): string {
+function search_repository_trainings_card_query(int $student_id = 0): string {
     /*
-     * Shared SELECT for training search/filter results. The company
-     * fields come live from companies (no denormalized snapshots).
+     * Shared SELECT for training search/filter results.
+     *
+     * Returns the same card structure as the training-listing
+     * repository: all training_listings columns, company fields,
+     * and is_saved resolved per authenticated student through the
+     * saved_trainings relationship (LEFT JOIN + CASE WHEN), the same
+     * pattern used by training_repository_get_public_list(). Guests
+     * and users without a student profile keep is_saved = 0.
+     * starts_at and ends_at are kept so the service layer can derive
+     * duration and the frontend can display date information.
      */
-    return "SELECT t.id, t.company_id, t.title, t.description, t.location,
-            t.training_type,
-            t.mode,
-            t.is_paid,
-            t.compensation_amount,
+    $student_id = max(0, (int) $student_id);
+
+    $is_saved = $student_id > 0
+        ? 'CASE WHEN st.id IS NULL THEN 0 ELSE 1 END'
+        : '0';
+
+    $saved_join = $student_id > 0
+        ? "LEFT JOIN saved_trainings st
+            ON st.training_id = t.id
+            AND st.student_id = {$student_id}"
+        : '';
+
+    return "SELECT t.*,
             c.legal_name AS company_name,
             c.city AS company_city,
-            c.company_logo AS company_logo
+            c.company_logo AS company_logo,
+            {$is_saved} AS is_saved
         FROM training_listings t
-        LEFT JOIN companies c ON c.id = t.company_id";
+        LEFT JOIN companies c ON c.id = t.company_id
+        {$saved_join}";
 }
 
 function search_repository_attach_training_relations(array $items): array {
-    /* Attach skills and specializations for the current page only. */
+    /* Attach skills, specializations and duration for the current page only. */
     $training_ids = array_map(static fn ($row) => (int) $row['id'], $items);
     if ($training_ids === []) return $items;
     $ids = implode(',', $training_ids);
@@ -113,10 +131,28 @@ function search_repository_attach_training_relations(array $items): array {
     ) {
         $specializations[$row['training_id']][] = ['id' => (int) $row['id'], 'name' => $row['name']];
     }
+
+    $today_start = @strtotime('today');
+
     foreach ($items as $index => $item) {
         $id = (int) $item['id'];
         $items[$index]['skills'] = array_values($skills[$id] ?? []);
         $items[$index]['specializations'] = array_values($specializations[$id] ?? []);
+
+        $ends_at = $item['ends_at'] ?? null;
+
+        if (
+            !empty($ends_at)
+            && $today_start !== false
+            && @strtotime($ends_at) !== false
+        ) {
+            $remaining = @strtotime($ends_at) - $today_start;
+            $items[$index]['duration'] = $remaining > 0
+                ? (int) floor($remaining / 86400)
+                : 0;
+        } else {
+            $items[$index]['duration'] = null;
+        }
     }
     return $items;
 }
@@ -134,6 +170,8 @@ function search_repository_trainings(string $query, array $filters = []): array 
     $page = max(1, (int) ($filters['page'] ?? 1));
     $limit = max(1, min(100, (int) ($filters['limit'] ?? 20)));
     $offset = ($page - 1) * $limit;
+
+    $student_id = max(0, (int) ($filters['student_id'] ?? 0));
 
     $where = "(t.title LIKE :kw_title
         OR t.description LIKE :kw_description
@@ -166,7 +204,7 @@ function search_repository_trainings(string $query, array $filters = []): array 
     ];
 
     $items = search_repository_fetch_all(
-        search_repository_trainings_card_query() . "
+        search_repository_trainings_card_query($student_id) . "
         WHERE t.status = 'published' AND {$where}
         ORDER BY t.created_at DESC, t.id DESC
         LIMIT {$limit} OFFSET {$offset}",
@@ -218,6 +256,8 @@ function search_repository_trainings_filters(array $filters = []): array {
     $limit = max(1, min(100, (int) ($filters['limit'] ?? 20)));
     $offset = ($page - 1) * $limit;
 
+    $student_id = max(0, (int) ($filters['student_id'] ?? 0));
+
     $conditions = ["t.status = 'published'"];
     $params = [];
 
@@ -239,7 +279,7 @@ function search_repository_trainings_filters(array $filters = []): array {
     $where = implode(' AND ', $conditions);
 
     $items = search_repository_fetch_all(
-        search_repository_trainings_card_query() . "
+        search_repository_trainings_card_query($student_id) . "
         WHERE {$where}
         " . search_repository_trainings_sort_clause((string) ($filters['sort'] ?? 'newest')) . "
         LIMIT {$limit} OFFSET {$offset}",
