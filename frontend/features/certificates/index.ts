@@ -9,9 +9,15 @@
 export { CertificatesSnapshot } from "./student/components/certificates-snapshot/CertificatesSnapshot";
 export { CertificateDocument } from "./shared/components/certificate-document/CertificateDocument";
 export { SealMark } from "./shared/components/certificate-document/SealMark";
+
 export type { EligibleCertificate } from "./student/types";
 export type { EarnedCertificateRef } from "./student/types";
 export type { RequestStatus } from "./student/types";
+export type { CertificateStatus } from "./student/types";
+export type { EligibleTraining } from "./student/types";
+export type { StudentCertificate } from "./student/types";
+export type { CertificateCounts } from "./student/types";
+export type { CertificatesPageState } from "./student/types";
+export type { CertificatesPageDemoMode } from "./student/components/my-certificates/MyCertificatesPage";
+
 export { MyCertificatesPage } from "./student/components/my-certificates/MyCertificatesPage";
-export { EligibleCertificateCard } from "./student/components/my-certificates/EligibleCertificateCard";
-export { EarnedCertificateCard } from "./student/components/my-certificates/EarnedCertificateCard";

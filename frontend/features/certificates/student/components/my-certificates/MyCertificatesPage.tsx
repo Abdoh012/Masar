@@ -1,129 +1,160 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Award } from "lucide-react";
 
-import type { EligibleCertificate } from "../../types";
-import type { EarnedCertificateRef } from "../../types";
+import Motion from "@/shared/components/animation/Motion";
+import { fadeInUp } from "@/shared/lib/animations";
 
-import { MOCK_ELIGIBLE_CERTIFICATES } from "./constants";
-import { MOCK_CERTIFICATES } from "./constants";
-
-import { EligibleCertificatesSection } from "./EligibleCertificatesSection";
-import { EarnedCertificateCard } from "./EarnedCertificateCard";
-import { CertificateDetailDialog } from "./CertificateDetailDialog";
-import { EmptyCertificatesState } from "./EmptyCertificatesState";
-
+import type { EligibleTraining, StudentCertificate } from "../../types";
+import { CertificateCounts } from "../../types";
 import { showSuccess } from "@/shared/lib/notifications";
+import { CertificateHowItWorks } from "./CertificateHowItWorks";
+import { CertificatesErrorState } from "./CertificatesErrorState";
+import { CertificatesPageSkeleton } from "./CertificatesPageSkeleton";
+import {
+  buildPendingCertificate,
+  MOCK_CERTIFICATES,
+  MOCK_COUNTS,
+  PAGE_LABELS,
+  REQUEST_TOAST_COPY,
+  SUMMARY_LABELS,
+} from "./constants";
+import { EligibleSectionContainer } from "./eligible/EligibleSectionContainer";
+import { CertificateSectionContainer } from "./issued/CertificateSectionContainer";
 
-export function MyCertificatesPage() {
-  const [earned] = useState<EarnedCertificateRef[]>(MOCK_CERTIFICATES);
-  const [requestStatus, setRequestStatus] = useState<
-    "not-requested" | "pending"
-  >("not-requested");
-  const earnedCount = earned.length;
+// Demo switch (UI-only). Flip to preview the different page states without
+// wiring a backend: "content" (default, fully populated), "loading",
+// "empty", "error".
+export type CertificatesPageDemoMode = "content" | "loading" | "empty" | "error";
 
-  const eligible = MOCK_ELIGIBLE_CERTIFICATES;
-  const eligibleHasContent = eligible.length > 0;
-  const earnedHasContent = earned.length > 0;
+// MyCertificatesPage: orchestrator for the /certificates page. "use client"
+// because it owns the demo state switch. Renders the page header + summary
+// counts, the how-it-works panel, the eligible-to-request list, and the
+// certificate records (requested / issued). Owns the records list state so a
+// confirmed request moves the training out of the eligible section and in here
+// as a pending record; fires the request-success toast.
+export function MyCertificatesPage({
+  demoMode = "content",
+}: {
+  demoMode?: CertificatesPageDemoMode;
+}) {
+  const [mode, setMode] = useState<CertificatesPageDemoMode>(demoMode);
 
-  // Both sections empty → show EmptyCertificatesState; suppress section content
-  const bothEmpty = !eligibleHasContent && !earnedHasContent;
-
-  // Detailed certificate state for the modal dialog
-  const [detailedCertificate, setDetailedCertificate] = useState<
-    EarnedCertificateRef | undefined
-  >(undefined);
-
-  // Toast state for request certificate success feedback
-  const [requestToast, setRequestToast] = useState(false);
-
-  const onRequestCertificate = (
-    certificate: import("../../types").EligibleCertificate,
-  ) => {
-    setRequestStatus("pending");
-    setRequestToast(true);
-    showSuccess("Certificate request submitted successfully.");
-  };
-
-  const onViewDetail = (certificate: EarnedCertificateRef) => {
-    setDetailedCertificate(certificate);
-  };
-
-  const onCloseDetail = () => {
-    setDetailedCertificate(undefined);
-  };
-
-  // Toast auto-clears via sonner's default behavior
-  // (sonner toasts auto-dismiss after 5s, or on next interaction)
+  // Simulate a loading pass on first mount so the skeleton is demonstrable,
+  // then settle on the requested mode. Each retry repeats it.
+  const [booted, setBooted] = useState(false);
+  const [certificates, setCertificates] = useState<StudentCertificate[]>(
+    MOCK_CERTIFICATES,
+  );
+  const [counts, setCounts] = useState<CertificateCounts>(MOCK_COUNTS);
 
   useEffect(() => {
-    if (requestToast) {
-      const timeout = setTimeout(() => setRequestToast(false), 3000);
-      return () => clearTimeout(timeout);
-    }
-  }, [requestToast]);
+    const id = setTimeout(() => setBooted(true), 650);
+    return () => clearTimeout(id);
+  }, [mode]);
+
+  const handleRequested = (training: EligibleTraining) => {
+    setCertificates((current) => [...current, buildPendingCertificate(training)]);
+    setCounts((c) => ({
+      eligible: Math.max(0, c.eligible - 1),
+      pending: c.pending + 1,
+      issued: c.issued,
+    }));
+    showSuccess(REQUEST_TOAST_COPY.message(training.companyName));
+  };
+
+  const handleRetry = () => {
+    setBooted(false);
+    setMode("content");
+  };
+
+  if (mode === "loading" || !booted) {
+    return <CertificatesPageSkeleton />;
+  }
+
+  if (mode === "error") {
+    return <CertificatesErrorState onRetry={handleRetry} />;
+  }
+
+  const displayCertificates = mode === "empty" ? [] : certificates;
+  const displayCounts = mode === "empty" ? { eligible: 0, pending: 0, issued: 0 } : counts;
 
   return (
-    <>
-      <h1 className="font-sans text-xl font-semibold text-primary-text">
-        My Certificates
-      </h1>
+    <div className="space-y-8">
+      {/* Header */}
+      <Motion
+        variants={fadeInUp}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        className="flex flex-wrap items-end justify-between gap-3"
+      >
+        <div className="space-y-1.5">
+          <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-secondary-text">
+            {PAGE_LABELS.eyebrow}
+          </p>
+          <h1 className="font-sans text-2xl font-semibold text-primary-text">
+            {PAGE_LABELS.title}
+          </h1>
+          <p className="max-w-xl text-sm text-muted-foreground">
+            {PAGE_LABELS.description}
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5 rounded-full bg-primary-tint px-3 py-1.5 text-sm font-semibold text-primary-text">
+          <Award className="size-4" />
+          {displayCounts.issued} issued
+        </div>
+      </Motion>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Eligible section */}
-        {bothEmpty ? // Both empty → don't show eligible section content; EmptyCertificatesState handles it
-        null : eligibleHasContent ? (
-          // Eligible has content → show card section
-          <EligibleCertificatesSection
-            earnedCount={earnedCount}
-            onRequestCertificate={onRequestCertificate}
-          />
-        ) : // Eligible empty but earned has content → eligible section absent
-        bothEmpty ? null : null}
+      {/* Summary counts */}
+      <SummaryCounts counts={displayCounts} />
 
-        {/* Earned section */}
-        {bothEmpty ? // Both empty → don't show earned section content
-        null : earnedHasContent ? (
-          // Earned has content → show certificate cards
-          <div className="space-y-4">
-            <h2 className="text-lg font-medium text-primary-text">
-              Earned certificates
-            </h2>
-            <div className="space-y-3">
-              {earned.map((cert) => (
-                <EarnedCertificateCard
-                  key={cert.certId}
-                  certificate={cert}
-                  onViewDetail={onViewDetail}
-                />
-              ))}
-            </div>
-          </div>
-        ) : bothEmpty ? // Both empty → don't show earned section content
-        null : (
-          // Eligible has content, earned empty → show empty state message in earned section
-          <div className="space-y-4">
-            <h2 className="text-lg font-medium text-primary-text">
-              Earned certificates
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              No certificates yet — complete a training to earn your first
-              certificate.
-            </p>
-          </div>
-        )}
-      </div>
+      {/* How it works */}
+      {mode !== "empty" ? <CertificateHowItWorks /> : null}
 
-      {/* Certificate detail dialog: only when a certificate is selected */}
-      {detailedCertificate && (
-        <CertificateDetailDialog
-          certificate={detailedCertificate}
-          onOpenChange={onCloseDetail}
-        />
-      )}
+      {/* Eligible to request */}
+      {mode !== "empty" ? (
+        <EligibleSectionContainer onRequested={handleRequested} />
+      ) : null}
 
-      {/* Empty state overlay - ONLY when BOTH sections are empty */}
-      {bothEmpty && <EmptyCertificatesState variant="both-empty" />}
-    </>
+      {/* Your certificates */}
+      <CertificateSectionContainer certificates={displayCertificates} />
+    </div>
+  );
+}
+
+// --- Counts strip: eligible / in-review / issued summary cards ---
+
+function SummaryCounts({ counts }: { counts: CertificateCounts }) {
+  const rows = [
+    { label: SUMMARY_LABELS.eligible, value: counts.eligible, accent: "bg-secondary-tint text-secondary-text" },
+    { label: SUMMARY_LABELS.pending, value: counts.pending, accent: "bg-warning-bg text-warning-fg" },
+    { label: SUMMARY_LABELS.issued, value: counts.issued, accent: "bg-success-bg text-success-fg" },
+  ];
+
+  return (
+    <Motion
+      variants={fadeInUp}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.24, ease: "easeOut" }}
+      className="grid grid-cols-1 gap-3 sm:grid-cols-3"
+    >
+      {rows.map((row) => (
+        <div
+          key={row.label}
+          className="flex items-center justify-between rounded-2xl border border-border bg-card p-4 shadow-card"
+        >
+          <span className="text-sm font-medium text-muted-foreground">{row.label}</span>
+          <span
+            className={`flex size-8 items-center justify-center rounded-full font-sans text-base font-semibold ${row.accent}`}
+          >
+            {row.value}
+          </span>
+        </div>
+      ))}
+    </Motion>
   );
 }
