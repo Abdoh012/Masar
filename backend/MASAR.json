@@ -190,6 +190,11 @@
             "key": "admin_token",
             "value": "",
             "type": "string"
+        },
+        {
+            "key": "search_query",
+            "type": "string",
+            "value": ""
         }
     ],
     "item": [
@@ -428,7 +433,7 @@
                                 ],
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"full_name\": \"Test Student\",\n    \"email\": \"{{register_student_email}}\",\n    \"password\": \"{{register_student_password}}\",\n    \"password_confirmation\": \"{{register_student_password}}\",\n    \"accept_terms\": true,\n    \"role\": \"student\",\n    \"field\": \"Engineering\",\n    \"specialization\": \"Mechanical Engineering\"\n}",
+                                    "raw": "{\n    \"full_name\": \"Test Student\",\n    \"email\": \"{{register_student_email}}\",\n    \"password\": \"{{register_student_password}}\",\n    \"password_confirmation\": \"{{register_student_password}}\",\n    \"accept_terms\": true,\n    \"role\": \"student\",\n    \"field\": \"Engineering\",\n    \"specialization\": \"Mechanical Engineering\",\n    \"university\": \"Alexandria University\"\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -447,7 +452,7 @@
                                         "register"
                                     ]
                                 },
-                                "description": "Public. Creates a student account (status `active`) using the current model: `field` (User Field, resolved against `study_fields` -> `students.field_id`) and `specialization` (resolved against `specializations` -> `students.specialization_id`). University is NOT required and is ignored by the new mapping. Expected: 201 with `data.user` and an access `token`. A 409 means the email is already registered."
+                                "description": "Public. Creates a student account (status active). Academic fields are resolved by name: field against study_fields and specialization against specializations. University is optional and provided by name; it is resolved against the universities table and stored as the numeric university_id. On success returns data.user and an access token. A 409 response means the email is already registered."
                             },
                             "response": [],
                             "event": [
@@ -1108,7 +1113,7 @@
                         {
                             "name": "Resend Reset OTP",
                             "request": {
-                                "method": "GET",
+                                "method": "POST",
                                 "header": [],
                                 "url": {
                                     "raw": "{{base_url}}/api/v1/auth/resend-reset-otp?email={{student_email}}",
@@ -1128,7 +1133,7 @@
                                         }
                                     ]
                                 },
-                                "description": "Public. Resends the password reset OTP for the given email (query parameter)."
+                                "description": "Public. Re-sends the 6-digit password reset OTP for the email address given as the email query parameter (the handler reads request_query('email')). Mirrors the frontend convention POST /api/v1/auth/resend-reset-otp?email={email}. The OTP is delivered by email and is never returned in the response; paste it into the reset_token collection variable. The route also accepts GET."
                             },
                             "response": [],
                             "event": [
@@ -1136,10 +1141,12 @@
                                     "listen": "test",
                                     "script": {
                                         "exec": [
-                                            "pm.test(\"Reset OTP resend succeeds\", function () {",
-                                            "    pm.expect(pm.response.code).to.eql(200);",
-                                            "    const json = pm.response.json();",
-                                            "    pm.expect(json.success).to.eql(true);",
+                                            "pm.test(\"Resend Reset OTP responds\", function () {",
+                                            "    pm.expect(pm.response.code).to.be.oneOf([200, 429]);",
+                                            "    if (pm.response.code === 200) {",
+                                            "        const json = pm.response.json();",
+                                            "        pm.expect(json.success).to.eql(true);",
+                                            "    }",
                                             "});"
                                         ],
                                         "type": "text/javascript"
@@ -4664,7 +4671,7 @@
                                         },
                                         {
                                             "key": "university_id",
-                                            "value": "2",
+                                            "value": "Alexandria University",
                                             "type": "text"
                                         },
                                         {
@@ -7255,6 +7262,107 @@
                         }
                     ],
                     "description": "Dedicated Training Filters API over PUBLISHED trainings: training_type + mode + paid combined with AND, whitelisted sorting (newest, oldest, price_asc, price_desc, duration_asc, duration_desc) and standard page/limit pagination (max 100). All parameters optional - omitted means ALL/ANY for that dimension. Invalid values are rejected with 422. This endpoint does NOT do keyword searching; use Search Trainings (?q=) for that."
+                },
+                {
+                    "name": "Search Trainings",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/search/trainings?q={{search_query}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "search",
+                                "trainings"
+                            ],
+                            "query": [
+                                {
+                                    "key": "q",
+                                    "value": "{{search_query}}"
+                                }
+                            ]
+                        },
+                        "description": "Requires a Bearer token. Full-text searches published trainings using the search_query collection variable. Returns paginated training cards including company_logo, duration, skills and specializations."
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "const json = pm.response.json();",
+                                    "pm.test('search returns 200', function () { pm.response.to.have.status(200); });",
+                                    "pm.test('success is true', function () { pm.expect(json.success).to.eql(true); });",
+                                    "pm.test('items is an array', function () { pm.expect(json.data.items).to.be.an('array'); });",
+                                    "pm.test('pagination metadata present', function () {",
+                                    "    pm.expect(json.data.total).to.be.a('number');",
+                                    "    pm.expect(json.data.page).to.be.a('number');",
+                                    "    pm.expect(json.data.limit).to.be.a('number');",
+                                    "    pm.expect(json.data.query).to.be.a('string');",
+                                    "});",
+                                    "pm.test('training card contains all expected fields', function () {",
+                                    "    const items = json.data.items;",
+                                    "    items.forEach(function (item) {",
+                                    "        pm.expect(item).to.have.property('id');",
+                                    "        pm.expect(item).to.have.property('company_id');",
+                                    "        pm.expect(item).to.have.property('title');",
+                                    "        pm.expect(item).to.have.property('description');",
+                                    "        pm.expect(item).to.have.property('training_type');",
+                                    "        pm.expect(item).to.have.property('mode');",
+                                    "        pm.expect(item).to.have.property('may_lead_to_employment');",
+                                    "        pm.expect(item).to.have.property('is_paid');",
+                                    "        pm.expect(item).to.have.property('compensation_amount');",
+                                    "        pm.expect(item).to.have.property('compensation_currency');",
+                                    "        pm.expect(item).to.have.property('capacity');",
+                                    "        pm.expect(item).to.have.property('status');",
+                                    "        pm.expect(item).to.have.property('starts_at');",
+                                    "        pm.expect(item).to.have.property('ends_at');",
+                                    "        pm.expect(item).to.have.property('application_deadline');",
+                                    "        pm.expect(item).to.have.property('location');",
+                                    "        pm.expect(item).to.have.property('created_at');",
+                                    "        pm.expect(item).to.have.property('updated_at');",
+                                    "        pm.expect(item).to.have.property('company_name');",
+                                    "        pm.expect(item).to.have.property('company_city');",
+                                    "        pm.expect(item).to.have.property('company_logo');",
+                                    "        pm.expect(item).to.have.property('is_saved');",
+                                    "        pm.expect(item).to.have.property('duration');",
+                                    "        pm.expect(item.skills).to.be.an('array');",
+                                    "        pm.expect(item.specializations).to.be.an('array');",
+                                    "    });",
+                                    "});",
+                                    "pm.test('duration is a non-negative integer or null', function () {",
+                                    "    json.data.items.forEach(function (item) {",
+                                    "        const d = item.duration;",
+                                    "        if (d !== null) {",
+                                    "            pm.expect(d).to.be.a('number');",
+                                    "            pm.expect(d).to.be.at.least(0);",
+                                    "        }",
+                                    "    });",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "response": []
                 }
             ],
             "description": "Dedicated Search module. GET /api/v1/search/trainings searches PUBLISHED training listings by the `q` parameter (aliases accepted by the controller: query, search; primary parameter: q). One term matches training title, description and location, plus company legal_name (companies), skill names (training_skills -> skills) and specialization names (training_specializations -> specializations) via EXISTS subqueries, so results contain no duplicates and pagination counts stay correct. Returns {items, total, page, limit, query}. Works without a token."

@@ -77,6 +77,7 @@ function search_controller_trainings_filters(array $request = [], int $user_id =
             'sort' => $sort === '' ? 'newest' : $sort,
             'page' => $page_raw === '' ? 1 : (int) $page_raw,
             'limit' => $limit_raw === '' ? 20 : (int) $limit_raw,
+            'user_id' => $user_id,
         ]);
         return search_controller_success($result, 'Training filters applied successfully.');
     } catch (Throwable $exception) {

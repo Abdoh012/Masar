@@ -1,6 +1,26 @@
 <?php
 
 require_once __DIR__ . '/../repositories/search_repository.php';
+require_once __DIR__ . '/../../training/repositories/application_repository.php';
+
+function search_service_student_id(int $user_id): int {
+    /*
+     * Resolve the authenticated user to a student profile id using the
+     * canonical student lookup shared with the training module. Saved
+     * state belongs to the student; guests and users without a student
+     * profile resolve to 0, matching the training-listing endpoint's
+     * optional student context.
+     */
+    if ($user_id <= 0) {
+        return 0;
+    }
+
+    $student = application_repository_find_student_by_user_id($user_id);
+
+    return $student
+        ? (int) ($student['student_id'] ?? 0)
+        : 0;
+}
 
 function search_service_normalize_query(string $query): string {
     return trim((string) preg_replace('/\s+/u', ' ', trim($query)));
@@ -23,6 +43,9 @@ function search_service_search(string $query, array $filters = []): array {
     $filters['sort'] = in_array(($filters['sort'] ?? 'relevance'), ['relevance', 'date', 'created_at', 'updated_at', 'name', 'title'], true) ? ($filters['sort'] ?? 'relevance') : 'relevance';
     $filters['order'] = in_array(strtoupper((string) ($filters['order'] ?? 'DESC')), ['ASC', 'DESC'], true) ? strtoupper((string) ($filters['order'] ?? 'DESC')) : 'DESC';
     if (!search_service_valid_query($query)) return ['items' => [], 'total' => 0, 'page' => 1, 'limit' => 20, 'query' => $query];
+    if (($filters['type'] ?? '') === 'trainings') {
+        $filters['student_id'] = search_service_student_id((int) ($filters['user_id'] ?? 0));
+    }
     $result = search_repository_search($query, $filters);
     $items = is_array($result['items'] ?? null) ? array_values($result['items']) : [];
     return ['items' => $items, 'total' => (int) ($result['total'] ?? count($items)), 'page' => $filters['page'], 'limit' => $filters['limit'], 'query' => $query];
@@ -43,6 +66,7 @@ function search_service_trainings_filters(array $filters = []): array {
         'sort' => $filters['sort'] ?? 'newest',
         'page' => $page,
         'limit' => $limit,
+        'student_id' => search_service_student_id((int) ($filters['user_id'] ?? 0)),
     ]);
     $items = is_array($result['items'] ?? null) ? array_values($result['items']) : [];
     return ['items' => $items, 'total' => (int) ($result['total'] ?? count($items)), 'page' => $page, 'limit' => $limit];

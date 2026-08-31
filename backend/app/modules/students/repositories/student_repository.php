@@ -116,6 +116,13 @@ function student_repository_resolve_degree_id( string $degree ): ?int {
     return is_array($row) ? (int) $row['id'] : null;
 }
 
+function student_repository_resolve_university_id( string $university ): ?int {
+    $sql = " SELECT id FROM universities WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) AND is_active = 1 LIMIT 1 ";
+    $row = db_fetch_one( $sql, [$university] );
+
+    return is_array($row) ? (int) $row['id'] : null;
+}
+
 function student_repository_update( int $student_id, array $data ): bool{
     if (empty($data)) {
         return false;
