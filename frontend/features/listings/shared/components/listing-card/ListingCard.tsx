@@ -15,9 +15,10 @@ import { SkillTags } from "./SkillTags";
 interface ListingCardProps extends ListingCardData {
   className?: string;
   saved?: boolean;
+  onUnsaved?: () => void;
 }
 
-export function ListingCard({ className, ...listing }: ListingCardProps) {
+export function ListingCard({ className, onUnsaved, ...listing }: ListingCardProps) {
   return (
     <article
       className={`flex h-full flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-card ${className}`}
@@ -26,7 +27,7 @@ export function ListingCard({ className, ...listing }: ListingCardProps) {
         <CategoryPill field={listing.field} />
 
         <div className="flex items-center gap-1">
-          <SaveButton saved={listing.saved} id={listing.id} />
+          <SaveButton saved={listing.saved} id={listing.id} onUnsaved={onUnsaved} />
 
           <Image
             src="/logo.png"

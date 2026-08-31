@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 
 import type { ListingCardData } from "../../shared/types";
-import type { Pagination } from "../api";
-import { fetchListings, searchListings } from "../api";
+import type { Pagination, TrainingFilters } from "../api";
+import { fetchListings, fetchTrainingsFilters, searchListings } from "../api";
 import { getSavedListings } from "../actions";
 import {
   normalizeListResponse,
@@ -16,6 +16,7 @@ export interface UseListingsResult {
   pagination: Pagination;
   loading: boolean;
   error: string | null;
+  removeListing: (id: string) => void;
 }
 
 export function useListings(params: {
@@ -24,9 +25,14 @@ export function useListings(params: {
   savedOnly: boolean;
   page: number;
   limit: number;
+  filters: TrainingFilters;
   savedVersion?: number;
 }): UseListingsResult {
-  const { query, sort, savedOnly, page, limit } = params;
+  const { query, sort, savedOnly, page, limit, filters } = params;
+
+  const trainingType = filters.training_type;
+  const mode = filters.mode;
+  const paid = filters.paid;
 
   const [listings, setListings] = useState<ListingCardData[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
@@ -40,6 +46,8 @@ export function useListings(params: {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const hasFilters = Boolean(trainingType || mode || paid);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,6 +65,14 @@ export function useListings(params: {
           result = normalizeListResponse(res.data);
         } else if (query.trim()) {
           const raw = await searchListings(query.trim(), page, limit);
+          result = normalizeSearchResponse(raw);
+        } else if (hasFilters) {
+          const raw = await fetchTrainingsFilters(
+            { training_type: trainingType, mode, paid },
+            page,
+            limit,
+            sort,
+          );
           result = normalizeSearchResponse(raw);
         } else {
           const raw = await fetchListings(page, limit, sort);
@@ -82,8 +98,11 @@ export function useListings(params: {
     return () => {
       cancelled = true;
     };
-  }, [query, sort, savedOnly, page, limit]);
-  console.log(listings);
+  }, [query, sort, savedOnly, page, limit, trainingType, mode, paid, hasFilters]);
 
-  return { listings, pagination, loading, error };
+  function removeListing(id: string) {
+    setListings((current) => current.filter((item) => item.id !== id));
+  }
+
+  return { listings, pagination, loading, error, removeListing };
 }

@@ -28,13 +28,31 @@ export function BrowseListingsContainer() {
   const savedOnly = searchParams.get("saved") === "1";
   const page = Number(searchParams.get("page") ?? "1");
 
-  const { listings, pagination, loading, error } = useListings({
+  const trainingType = searchParams.get("training_type") ?? "";
+  const mode = searchParams.get("mode") ?? "";
+  const paid = searchParams.get("paid") ?? "";
+
+  const filters = {
+    training_type: trainingType || undefined,
+    mode: mode || undefined,
+    paid: paid || undefined,
+  };
+
+  const { listings, pagination, loading, error, removeListing } = useListings({
     query,
     sort,
     savedOnly,
     page,
     limit: PAGE_LIMIT,
+    filters,
   });
+
+  const handleUnsaved = useCallback(
+    (id: string) => {
+      removeListing(id);
+    },
+    [removeListing],
+  );
 
   const handleSearchChange = useCallback(
     (q: string) => {
@@ -64,15 +82,11 @@ export function BrowseListingsContainer() {
 
   const handleFilterReset = useCallback(() => {
     const params = new URLSearchParams(sp);
-    for (const key of ["trainingType", "mode", "price", "sort", "page"]) {
+    for (const key of ["training_type", "mode", "paid", "sort", "page"]) {
       params.delete(key);
     }
     router.push(`?${params.toString()}`);
   }, [router, sp]);
-
-  const trainingType = searchParams.get("trainingType") ?? "";
-  const mode = searchParams.get("mode") ?? "";
-  const price = searchParams.get("price") ?? "";
 
   return (
     <div>
@@ -91,10 +105,10 @@ export function BrowseListingsContainer() {
         <BrowseFilterBar
           trainingType={trainingType}
           mode={mode}
-          price={price}
-          onTrainingTypeChange={(v) => handleFilterChange("trainingType", v)}
+          price={paid}
+          onTrainingTypeChange={(v) => handleFilterChange("training_type", v)}
           onModeChange={(v) => handleFilterChange("mode", v)}
-          onPriceChange={(v) => handleFilterChange("price", v)}
+          onPriceChange={(v) => handleFilterChange("paid", v)}
           onReset={handleFilterReset}
         />
 
@@ -108,7 +122,11 @@ export function BrowseListingsContainer() {
           <>
             <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-2">
               {listings.map((listing) => (
-                <ListingCard key={listing.id} {...listing} />
+                <ListingCard
+                  key={listing.id}
+                  {...listing}
+                  onUnsaved={() => handleUnsaved(listing.id)}
+                />
               ))}
             </div>
 
