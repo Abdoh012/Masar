@@ -18,5 +18,15 @@ scripts:
       if (json.data && json.data.items && json.data.items.length && json.data.items[0].id) {
           pm.collectionVariables.set('application_id', String(json.data.items[0].id));
       }
+      pm.test("List exposes university as text", function () {
+          const json = pm.response.json();
+          if (json.data && json.data.items && json.data.items.length) {
+              const item = json.data.items[0];
+              pm.expect(item).to.not.have.property('university_id');
+              if (item.university != null) {
+                  pm.expect(item.university).to.be.a('string');
+              }
+          }
+      });
     language: text/javascript
 order: 2000

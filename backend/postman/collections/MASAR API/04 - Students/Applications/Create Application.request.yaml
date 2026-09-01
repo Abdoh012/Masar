@@ -24,7 +24,7 @@ body:
       key: training_id
       value: "{{training_id}}"
     - type: text
-      key: university_id
+      key: university
       value: "Alexandria University"
     - type: text
       key: academic_year
@@ -67,5 +67,14 @@ scripts:
       if (json.data && json.data.id) {
           pm.collectionVariables.set('application_id', String(json.data.id));
       }
+      pm.test("University is stored and returned as text", function () {
+          const json = pm.response.json();
+          if (json.data) {
+              pm.expect(json.data).to.not.have.property('university_id');
+              if (json.data.university != null) {
+                  pm.expect(json.data.university).to.eql('Alexandria University');
+              }
+          }
+      });
     language: text/javascript
 order: 1000

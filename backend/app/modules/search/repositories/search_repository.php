@@ -157,6 +157,68 @@ function search_repository_attach_training_relations(array $items): array {
     return $items;
 }
 
+function search_repository_student_specialization_ids(int $student_id): array {
+    /*
+     * Returns the specialization id(s) assigned to a student. In the
+     * current schema a student holds a single specialization_id column
+     * (there is no student_specializations pivot), so this returns at
+     * most one id. The array shape keeps the OR-matching scope reusable
+     * if a many-to-many relationship is introduced later.
+     */
+    if ($student_id <= 0) {
+        return [];
+    }
+
+    $rows = search_repository_fetch_all(
+        "SELECT s.specialization_id
+        FROM students s
+        WHERE s.id = :student_id
+            AND s.specialization_id IS NOT NULL
+        LIMIT 1",
+        [':student_id' => $student_id]
+    );
+
+    $ids = [];
+    foreach ($rows as $row) {
+        $spec_id = (int) ($row['specialization_id'] ?? 0);
+        if ($spec_id > 0) {
+            $ids[$spec_id] = $spec_id;
+        }
+    }
+    return array_values($ids);
+}
+
+function search_repository_specialization_scope(array $specialization_ids): string {
+    /*
+     * Builds an EXISTS fragment that restricts the current training row
+     * (aliased t) to those whose training_specializations include at
+     * least one of the given specialization ids (OR rule). EXISTS is used
+     * instead of a JOIN so each training stays unique and counts/lists
+     * remain correct. Every id is cast to int before being inlined, so no
+     * user input reaches the SQL string.
+     */
+    $ids = [];
+    foreach ($specialization_ids as $spec_id) {
+        $spec_id = (int) $spec_id;
+        if ($spec_id > 0) {
+            $ids[$spec_id] = $spec_id;
+        }
+    }
+
+    if (empty($ids)) {
+        return '';
+    }
+
+    return " AND EXISTS (
+        SELECT 1
+        FROM training_specializations tsp
+        WHERE tsp.training_id = t.id
+            AND tsp.specialization_id IN ("
+            . implode(', ', array_keys($ids))
+            . ")
+    )";
+}
+
 function search_repository_trainings(string $query, array $filters = []): array {
     /*
      * Dedicated training search over published listings.
@@ -203,9 +265,13 @@ function search_repository_trainings(string $query, array $filters = []): array 
         ':kw_specialization' => '%' . $query . '%',
     ];
 
+    $scope = search_repository_specialization_scope(
+        $filters['match_specialization_ids'] ?? []
+    );
+
     $items = search_repository_fetch_all(
         search_repository_trainings_card_query($student_id) . "
-        WHERE t.status = 'published' AND {$where}
+        WHERE t.status = 'published' AND {$where}{$scope}
         ORDER BY t.created_at DESC, t.id DESC
         LIMIT {$limit} OFFSET {$offset}",
         $params
@@ -215,7 +281,7 @@ function search_repository_trainings(string $query, array $filters = []): array 
     $total = (int) search_repository_fetch_value(
         "SELECT COUNT(*)
         FROM training_listings t
-        WHERE t.status = 'published' AND {$where}",
+        WHERE t.status = 'published' AND {$where}{$scope}",
         $count_params
     );
 
@@ -277,6 +343,10 @@ function search_repository_trainings_filters(array $filters = []): array {
     }
 
     $where = implode(' AND ', $conditions);
+
+    $where .= search_repository_specialization_scope(
+        $filters['match_specialization_ids'] ?? []
+    );
 
     $items = search_repository_fetch_all(
         search_repository_trainings_card_query($student_id) . "

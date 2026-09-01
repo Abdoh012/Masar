@@ -648,29 +648,42 @@ function application_validator_create(
 
     /*
     |--------------------------------------------------------------------------
-    | University ID
+    | University
     |--------------------------------------------------------------------------
+    |
+    | The university is now submitted as free text (e.g. "Cairo University")
+    | rather than a university_id reference. When provided it must be a
+    | non-blank string within the storage column length (255).
+    |
     */
 
     if (
-        isset($data['university_id'])
+        isset($data['university'])
         &&
-        $data['university_id'] !== null
+        $data['university'] !== null
         &&
-        $data['university_id'] !== ''
+        $data['university'] !== ''
     ) {
 
         if (
-            filter_var(
-                $data['university_id'],
-                FILTER_VALIDATE_INT
-            ) === false
-            ||
-            (int) $data['university_id'] <= 0
+            !is_string(
+                $data['university']
+            )
         ) {
 
-            $errors['university_id'] =
-                'Valid university_id is required.';
+            $errors['university'] =
+                'University must be a string.';
+
+        } elseif (
+            mb_strlen(
+                trim(
+                    $data['university']
+                )
+            ) > 255
+        ) {
+
+            $errors['university'] =
+                'University must not exceed 255 characters.';
         }
     }
 

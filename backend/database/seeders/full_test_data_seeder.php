@@ -223,7 +223,7 @@ function masar_insert_application(PDO $pdo, int $training_id, int $company_id, a
         "INSERT INTO training_applications
             (training_id, student_id, company_id, message, full_name, email, phone, city, address,
              why_interested, what_to_learn, skills, status, rejection_reason, rejection_note,
-             applied_at, reviewed_at, withdrawn_at, reviewed_by, cv_file_id, university_id, faculty_id,
+             applied_at, reviewed_at, withdrawn_at, reviewed_by, cv_file_id, university, faculty_id,
              applicant_type, academic_year, graduation_year, motivation)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     );
@@ -249,7 +249,7 @@ function masar_insert_application(PDO $pdo, int $training_id, int $company_id, a
         $status === 'withdrawn' ? ($extra['withdrawn_at'] ?? date('Y-m-d H:i:s')) : null,
         $extra['reviewed_by'] ?? null,
         $extra['cv_file_id'] ?? null,
-        $s['university_id'] ?? null,
+        $s['university'] ?? null,
         $s['faculty_id'] ?? null,
         $extra['applicant_type'] ?? 'student',
         $extra['academic_year'] ?? null,
@@ -471,6 +471,7 @@ function masar_seed(PDO $pdo): void
             'phone' => $d['phone'],
             'city' => $d['city'],
             'university_id' => $unis[$d['university']] ?? null,
+            'university' => $d['university'],
             'field_id' => $sf[$d['field']],
             'specialization_id' => $specs[$d['specialization']],
             'graduation_year' => $d['graduation_year'],

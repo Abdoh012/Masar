@@ -18,6 +18,7 @@ function search_controller_user_id(): int {
 function search_controller_search(array $request = [], int $user_id = 0): array {
     $query = trim((string) ($request['q'] ?? $request['query'] ?? $request['search'] ?? ''));
     if ($query === '') return search_controller_error('Search query is required.');
+    $request['role'] = (auth_user()['role'] ?? null);
     try { return search_controller_success(search_service_search($query, array_merge($request, ['user_id' => $user_id])), 'Search completed successfully.'); }
     catch (Throwable $exception) { return search_controller_error('Unable to complete search.'); }
 }
@@ -78,6 +79,7 @@ function search_controller_trainings_filters(array $request = [], int $user_id =
             'page' => $page_raw === '' ? 1 : (int) $page_raw,
             'limit' => $limit_raw === '' ? 20 : (int) $limit_raw,
             'user_id' => $user_id,
+            'role' => (auth_user()['role'] ?? null),
         ]);
         return search_controller_success($result, 'Training filters applied successfully.');
     } catch (Throwable $exception) {

@@ -78,7 +78,7 @@ if ($path === '/api/v1/applications' && $method === 'POST') {
         $address = request_input('address') ?? '';
         $city = request_input('city') ?? '';
         $training_id = (int) (request_input('training_id') ?? 0);
-        $university_id = request_input('university_id') ?? null;
+        $university = request_input('university') ?? null;
         $academic_year = request_input('academic_year') ?? '';
         $applicant_type = request_input('applicant_type') ?? 'student';
         $message = request_input('message') ?? '';
@@ -124,7 +124,7 @@ if ($path === '/api/v1/applications' && $method === 'POST') {
             'phone' => $phone,
             'address' => $address,
             'city' => $city,
-            'university_id' => $university_id,
+            'university' => $university,
             'academic_year' => $academic_year,
             'applicant_type' => $applicant_type,
             'message' => $message,

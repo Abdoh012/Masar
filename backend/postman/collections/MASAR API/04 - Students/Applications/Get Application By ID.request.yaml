@@ -14,5 +14,14 @@ scripts:
           const json = pm.response.json();
           pm.expect(json.success).to.eql(true);
       });
+      pm.test("Application exposes university as text", function () {
+          const json = pm.response.json();
+          if (json.data) {
+              pm.expect(json.data).to.not.have.property('university_id');
+              if (json.data.university != null) {
+                  pm.expect(json.data.university).to.be.a('string');
+              }
+          }
+      });
     language: text/javascript
 order: 3000

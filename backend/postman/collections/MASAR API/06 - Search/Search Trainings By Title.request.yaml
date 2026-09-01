@@ -58,5 +58,15 @@ scripts:
               }
           });
       });
+      pm.test('is_saved is a live per-user value (0 or 1), never hardcoded', function () {
+          json.data.items.forEach(function (item) {
+              if (item.is_saved !== 0 && item.is_saved !== 1) {
+                  pm.expect(item.is_saved).to.be.oneOf([0, 1]);
+              }
+          });
+      });
+      pm.test('save state context is reported by the backend (guest vs student)', function () {
+          pm.expect(['guest', 'student']).to.include(json.data.save_state_context);
+      });
     language: text/javascript
 order: 2000

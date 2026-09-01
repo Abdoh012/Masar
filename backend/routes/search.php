@@ -5,6 +5,7 @@ require_once __DIR__ . '/../app/config/constants.php';
 require_once __DIR__ . '/../app/core/http/request.php';
 require_once __DIR__ . '/../app/core/http/response.php';
 require_once __DIR__ . '/../app/core/auth/auth.php';
+require_once __DIR__ . '/../app/core/middleware/student.php';
 require_once __DIR__ . '/../app/modules/search/controllers/search_controller.php';
 
 $path = request_path();
@@ -40,11 +41,13 @@ if ($path === '/api/v1/search/companies' && $method === 'GET') {
 }
 
 if ($path === '/api/v1/search/trainings/filters' && $method === 'GET') {
+    middleware_student();
     search_route_respond(search_controller_trainings_filters(request_query(), search_controller_user_id()));
     return;
 }
 
 if ($path === '/api/v1/search/trainings' && $method === 'GET') {
+    middleware_student();
     search_route_respond(search_controller_trainings(request_query(), search_controller_user_id()));
     return;
 }

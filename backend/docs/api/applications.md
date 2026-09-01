@@ -156,7 +156,7 @@ The request is allowed only when the authenticated user is:
         "withdrawn_at": null,
         "reviewed_by": null,
         "cv_file_id": 17,
-        "university_id": 1,
+        "university": "Cairo University",
         "faculty_id": 2,
         "applicant_type": "student",
         "academic_year": "2nd",
@@ -176,18 +176,20 @@ The request is allowed only when the authenticated user is:
                 "options": []
             }
         ],
-        "university_name": "Cairo University",
+        "university": "Cairo University",
         "faculty_name": "Faculty of Computers and Artificial Intelligence"
     }
 }
 ```
 
 The response is enriched by `application_service_enrich_application`: it attaches the
-submitted `answers`, resolves `university_name` / `faculty_name`, decodes the `skills`
+submitted `answers`, resolves the `faculty_name`, decodes the `skills`
 snapshot, and normalizes the status (the DB stores `submitted`, which is exposed as
 `pending`). The `my applications` list (`/api/v1/applications/my`) returns the same
 snapshot fields plus `training_title` / `company_name` but without `answers` /
-`university_name` / `faculty_name`; its status values are also normalized to `pending`.
+`faculty_name`; its status values are also normalized to `pending`. The university is
+stored and returned as free text (`university`), so no `university_name` lookup field
+is produced.
 
 ---
 
@@ -225,7 +227,7 @@ student
     "what_to_learn": "Modern frontend engineering and mentorship.",
     "skills": ["PHP", "SQL", "Teamwork"],
     "cv_file_id": 17,
-    "university_id": 1,
+    "university": "Cairo University",
     "faculty_id": 1,
     "academic_year": "3rd year",
     "graduation_year": 2027,
@@ -261,7 +263,9 @@ what_to_learn    string       required  max 5000 chars
 skills           array        optional  array of skill names (max 50); stored as JSON
 cv_file_id       int          optional  must reference a file record owned by the
                                         authenticated student (422 otherwise)
-university_id    int          optional  must exist in universities (422 if not)
+university       string       optional  free-text university name (e.g.
+                                        "Cairo University"); max 255 chars.
+                                        It is NOT an ID reference anymore.
 faculty_id       int          optional  must exist in faculties (422 if not)
 applicant_type   student|graduated (alias of current_status)
 academic_year    string       required  when current_status is student; max 20 chars
@@ -285,7 +289,7 @@ The `application/json` body with `cv_file_id` continues to work unchanged.
 409  deadline passed                "The application deadline has passed."
 409  training not accepting         "This training opportunity is not accepting applications."
 409  capacity reached               "This training opportunity has reached its capacity."
-422  invalid university/faculty     "Selected university/faculty was not found."
+422  invalid faculty             "Selected faculty was not found."
 422  invalid cv ownership           "Selected CV file was not found."
 422  foreign question answer        answers.<question_id> => "This question does not belong to the selected training."
 422  missing required answer        answers.<question_id> => "This question is required."
@@ -320,7 +324,7 @@ snapshot fields, and replaces the previous answers.
         "what_to_learn": "Modern frontend engineering.",
         "skills": ["PHP", "SQL"],
         "cv_file_id": 17,
-        "university_id": 1,
+        "university": "Cairo University",
         "faculty_id": 1,
         "applicant_type": "student",
         "academic_year": "3rd year",

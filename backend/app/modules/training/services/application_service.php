@@ -360,38 +360,12 @@ function application_service_create(
     |--------------------------------------------------------------------------
     | Validate University / Faculty
     |--------------------------------------------------------------------------
+    |
+    | The university is free text and needs no existence check against a
+    | lookup table; it is stored as-is on the application record. Faculty
+    | remains an ID reference and is validated below.
+    |
     */
-
-    if (
-        !empty($data['university_id'])
-    ) {
-
-        $university =
-            application_repository_find_university_by_id(
-                (int) $data['university_id']
-            );
-
-        if (!$university) {
-
-            return [
-
-                'success' => false,
-
-                'message' =>
-                    'Selected university was not found.',
-
-                'errors' => [
-
-                    'university_id' =>
-                        'Selected university was not found.'
-
-                ],
-
-                'status_code' => 422
-
-            ];
-        }
-    }
 
     if (
         !empty($data['faculty_id'])
@@ -661,9 +635,11 @@ function application_service_create(
                 ? $cv_file_id
                 : null,
 
-        'university_id' =>
-            isset($data['university_id'])
-                ? (int) $data['university_id']
+        'university' =>
+            isset($data['university'])
+                ? trim(
+                    (string) $data['university']
+                )
                 : null,
 
         'faculty_id' =>
@@ -876,8 +852,9 @@ function application_service_create(
 | Enrich Application
 |--------------------------------------------------------------------------
 |
-| Adds answers, university/faculty names and a normalized status
-| to an application record for API responses.
+| Adds answers, the resolved faculty name and a normalized status
+| to an application record for API responses. The university is stored
+| as free text (university), so it needs no lookup.
 |
 */
 
@@ -913,23 +890,7 @@ function application_service_enrich_application(
             (int) $application['id']
         );
 
-    $application['university_name'] = null;
     $application['faculty_name'] = null;
-
-    if (
-        !empty($application['university_id'])
-    ) {
-
-        $university =
-            application_repository_find_university_by_id(
-                (int) $application['university_id']
-            );
-
-        if ($university) {
-            $application['university_name'] =
-                $university['name'];
-        }
-    }
 
     if (
         !empty($application['faculty_id'])
@@ -1015,7 +976,7 @@ function application_service_find(
     | Enrich Application
     |--------------------------------------------------------------------------
     |
-    | Attach answers, university/faculty names and normalize
+    | Attach answers, resolve the faculty name and normalize
     | the status for the response.
     |
     */

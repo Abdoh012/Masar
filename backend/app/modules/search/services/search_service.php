@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../repositories/search_repository.php';
 require_once __DIR__ . '/../../training/repositories/application_repository.php';
+require_once __DIR__ . '/../../../shared/enums/user_roles.php';
 
 function search_service_student_id(int $user_id): int {
     /*
@@ -20,6 +21,52 @@ function search_service_student_id(int $user_id): int {
     return $student
         ? (int) ($student['student_id'] ?? 0)
         : 0;
+}
+
+function search_service_apply_training_scope(array $filters): array {
+    /*
+     * Restrict training search/filter results to the authenticated
+     * student's own specialization(s) at the database query level.
+     *
+     * Only authenticated students are scoped. Guests and non-student
+     * authenticated users (company/admin/trainer) keep the existing
+     * behaviour of seeing all published trainings.
+     *
+     * A student is resolved through students.specialization_id (the
+     * single-column specialization on the student record; there is no
+     * student_specializations pivot in this schema) and matched against
+     * training_specializations via EXISTS, so a training that shares at
+     * least one specialization with the student is eligible (OR rule).
+     *
+     * When no specialization can be resolved the caller must NOT fall
+     * back to "show everything"; the student's scope is empty, which the
+     * repository/service translates to an empty result set.
+     */
+    $user_id = (int) ($filters['user_id'] ?? 0);
+    $filters['student_id'] = $user_id > 0 ? search_service_student_id($user_id) : 0;
+
+    if (!is_student_role($filters['role'] ?? null)) {
+        $filters['training_scope_blocked'] = false;
+        return $filters;
+    }
+
+    $student_id = (int) $filters['student_id'];
+
+    if ($student_id <= 0) {
+        $filters['training_scope_blocked'] = true;
+        return $filters;
+    }
+
+    $specialization_ids = search_repository_student_specialization_ids($student_id);
+
+    if (empty($specialization_ids)) {
+        $filters['training_scope_blocked'] = true;
+        return $filters;
+    }
+
+    $filters['training_scope_blocked'] = false;
+    $filters['match_specialization_ids'] = $specialization_ids;
+    return $filters;
 }
 
 function search_service_normalize_query(string $query): string {
@@ -44,11 +91,14 @@ function search_service_search(string $query, array $filters = []): array {
     $filters['order'] = in_array(strtoupper((string) ($filters['order'] ?? 'DESC')), ['ASC', 'DESC'], true) ? strtoupper((string) ($filters['order'] ?? 'DESC')) : 'DESC';
     if (!search_service_valid_query($query)) return ['items' => [], 'total' => 0, 'page' => 1, 'limit' => 20, 'query' => $query];
     if (($filters['type'] ?? '') === 'trainings') {
-        $filters['student_id'] = search_service_student_id((int) ($filters['user_id'] ?? 0));
+        $filters = search_service_apply_training_scope($filters);
+    }
+    if (!empty($filters['training_scope_blocked'])) {
+        return ['items' => [], 'total' => 0, 'page' => $filters['page'], 'limit' => $filters['limit'], 'query' => $query];
     }
     $result = search_repository_search($query, $filters);
     $items = is_array($result['items'] ?? null) ? array_values($result['items']) : [];
-    return ['items' => $items, 'total' => (int) ($result['total'] ?? count($items)), 'page' => $filters['page'], 'limit' => $filters['limit'], 'query' => $query];
+    return ['items' => $items, 'total' => (int) ($result['total'] ?? count($items)), 'page' => $filters['page'], 'limit' => $filters['limit'], 'query' => $query, 'save_state_context' => ((int) ($filters['student_id'] ?? 0)) > 0 ? 'student' : 'guest'];
 }
 
 function search_service_trainings_filters(array $filters = []): array {
@@ -59,6 +109,10 @@ function search_service_trainings_filters(array $filters = []): array {
      */
     $page = max(1, (int) ($filters['page'] ?? 1));
     $limit = search_service_limit($filters['limit'] ?? 20);
+    $filters = search_service_apply_training_scope(array_merge($filters, ['type' => 'trainings']));
+    if (!empty($filters['training_scope_blocked'])) {
+        return ['items' => [], 'total' => 0, 'page' => $page, 'limit' => $limit];
+    }
     $result = search_repository_trainings_filters([
         'training_type' => $filters['training_type'] ?? '',
         'mode' => $filters['mode'] ?? '',
@@ -66,10 +120,11 @@ function search_service_trainings_filters(array $filters = []): array {
         'sort' => $filters['sort'] ?? 'newest',
         'page' => $page,
         'limit' => $limit,
-        'student_id' => search_service_student_id((int) ($filters['user_id'] ?? 0)),
+        'student_id' => $filters['student_id'] ?? 0,
+        'match_specialization_ids' => $filters['match_specialization_ids'] ?? [],
     ]);
     $items = is_array($result['items'] ?? null) ? array_values($result['items']) : [];
-    return ['items' => $items, 'total' => (int) ($result['total'] ?? count($items)), 'page' => $page, 'limit' => $limit];
+    return ['items' => $items, 'total' => (int) ($result['total'] ?? count($items)), 'page' => $page, 'limit' => $limit, 'save_state_context' => ((int) ($filters['student_id'] ?? 0)) > 0 ? 'student' : 'guest'];
 }
 
 function search_service_suggestions(string $query, array $options = []): array {

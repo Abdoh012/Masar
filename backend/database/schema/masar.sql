@@ -944,7 +944,7 @@ CREATE TABLE `training_applications` (
   `withdrawn_at` datetime DEFAULT NULL,
   `reviewed_by` bigint UNSIGNED DEFAULT NULL,
   `cv_file_id` bigint UNSIGNED DEFAULT NULL,
-  `university_id` bigint UNSIGNED DEFAULT NULL,
+  `university` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `faculty_id` bigint UNSIGNED DEFAULT NULL,
   `applicant_type` enum('student','graduated') DEFAULT NULL,
   `academic_year` varchar(20) DEFAULT NULL,
@@ -1586,7 +1586,6 @@ ALTER TABLE `training_applications`
   ADD KEY `idx_applications_status_reviewed` (`status`,`reviewed_at`),
   ADD KEY `idx_applications_reviewer` (`reviewed_by`),
   ADD KEY `fk_applications_cv_file` (`cv_file_id`),
-  ADD KEY `fk_applications_university` (`university_id`),
   ADD KEY `fk_applications_faculty` (`faculty_id`),
   ADD KEY `idx_applications_company` (`company_id`);
 
@@ -1982,8 +1981,7 @@ ALTER TABLE `students`
 ALTER TABLE `training_applications`
   ADD CONSTRAINT `fk_applications_company` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_applications_cv_file` FOREIGN KEY (`cv_file_id`) REFERENCES `files` (`id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `fk_applications_faculty` FOREIGN KEY (`faculty_id`) REFERENCES `faculties` (`id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `fk_applications_university` FOREIGN KEY (`university_id`) REFERENCES `universities` (`id`) ON DELETE SET NULL;
+  ADD CONSTRAINT `fk_applications_faculty` FOREIGN KEY (`faculty_id`) REFERENCES `faculties` (`id`) ON DELETE SET NULL;
 
 --
 -- Constraints for table `training_listings`

@@ -533,7 +533,7 @@ function application_repository_create(
             what_to_learn,
             skills,
             cv_file_id,
-            university_id,
+            university,
             faculty_id,
             applicant_type,
             academic_year,
@@ -611,7 +611,7 @@ function application_repository_create(
         $data['cv_file_id']
             ?? null,
 
-        $data['university_id']
+        $data['university']
             ?? null,
 
         $data['faculty_id']
@@ -713,7 +713,7 @@ function application_repository_reapply(
             what_to_learn = ?,
             skills = ?,
             cv_file_id = ?,
-            university_id = ?,
+            university = ?,
             faculty_id = ?,
             applicant_type = ?,
             academic_year = ?,
@@ -763,7 +763,7 @@ function application_repository_reapply(
             $data['cv_file_id']
                 ?? null,
 
-            $data['university_id']
+            $data['university']
                 ?? null,
 
             $data['faculty_id']
@@ -946,35 +946,6 @@ function application_repository_get_answers(
             return $row;
         },
         $rows
-    );
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| Find University By ID
-|--------------------------------------------------------------------------
-*/
-
-function application_repository_find_university_by_id(
-    int $university_id
-): ?array {
-
-    if ($university_id <= 0) {
-        return null;
-    }
-
-    return db_fetch_one(
-        "
-            SELECT
-                id,
-                name,
-                city
-            FROM universities
-            WHERE id = ?
-            LIMIT 1
-        ",
-        [$university_id]
     );
 }
 
