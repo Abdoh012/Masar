@@ -59,18 +59,67 @@ async function clearAuthCookies(): Promise<void> {
   }
 }
 
+// Result of a refresh attempt:
+//  - "success": refresh returned a fresh token (plus any rotated refresh/csrf
+//    cookies from the response). Callers apply these values into their own
+//    request-scoped cookie store before retrying.
+//  - "invalid": the refresh was definitively refused (bad/revoked/expired
+//    token, CSRF mismatch, inactive account) — the session is no longer usable
+//    and should be dropped.
+//  - "error": the refresh could not be completed due to a transient/network
+//    failure. This is NOT a verdict on the session — callers must not log the
+//    user out, just surface the original error.
+type RefreshResult =
+  | {
+      status: "success";
+      accessToken: string;
+      refreshToken?: string;
+      csrfToken?: string;
+    }
+  | { status: "invalid" }
+  | { status: "error" };
+
+// Applies a successful refresh result into the caller's own (request-scoped)
+// cookie store. Each concurrent serverFetch has an isolated cookie store, so
+// the shared network refresh must be written back per-caller, or waiters would
+// retry with the stale expired token and get logged out.
+async function applyRefreshResult(result: RefreshResult): Promise<void> {
+  if (result.status !== "success") return;
+
+  await setCookie(ACCESS_TOKEN_COOKIE, result.accessToken, {
+    maxAge: ACCESS_TOKEN_MAX_AGE,
+  });
+
+  if (result.refreshToken) {
+    await setCookie(REFRESH_TOKEN_COOKIE, result.refreshToken, {
+      maxAge: REFRESH_TOKEN_MAX_AGE,
+    });
+  }
+  if (result.csrfToken) {
+    await setCookie(CSRF_TOKEN_COOKIE, result.csrfToken, {
+      maxAge: REFRESH_TOKEN_MAX_AGE,
+    });
+  }
+}
+
 // Exchanges the httpOnly refresh_token cookie (plus its CSRF pair) for a fresh
 // access token. Runs as a raw fetch — never through serverFetch — so it can
 // hand the refresh/CSRF cookie values to the endpoint as request headers and
-// cannot recurse. Success persists the new access token and the rotated
-// refresh/CSRF cookies; failure drops the session cookies entirely.
-export async function refreshAccessToken(): Promise<boolean> {
+// cannot recurse. The new access token and the rotated refresh/CSRF cookies are
+// parsed from the single response and returned so every concurrent waiter can
+// apply them to its own cookie store (see applyRefreshResult).
+//
+// Distinguishes a definitively rejected refresh ("invalid", drops the session)
+// from a transient/network failure ("error", leaves the session intact so a
+// temporary backend blip doesn't force the user to log in again).
+export async function refreshAccessToken(): Promise<RefreshResult> {
   const refreshToken = await getCookie(REFRESH_TOKEN_COOKIE);
   const csrfToken = await getCookie(CSRF_TOKEN_COOKIE);
 
   if (!refreshToken || !csrfToken) {
+    // No way to rotate the session — treat as conclusive and drop it.
     await clearAuthCookies();
-    return false;
+    return { status: "invalid" };
   }
 
   let res: Response;
@@ -84,56 +133,50 @@ export async function refreshAccessToken(): Promise<boolean> {
       cache: "no-store",
     });
   } catch {
-    await clearAuthCookies();
-    return false;
+    // Network-level failure reaching the backend — transient, not a verdict.
+    return { status: "error" };
   }
 
   if (!res.ok) {
-    await clearAuthCookies();
-    return false;
+    if (res.status === 401 || res.status === 403) {
+      // The refresh endpoint conclusively rejected the presented refresh/CSRF
+      // token (invalid, revoked, expired, reused, inactive account, CSRF
+      // mismatch). Drop the now-unusable session.
+      await clearAuthCookies();
+      return { status: "invalid" };
+    }
+    // Server/gateway error (5xx etc.) — transient, keep the session.
+    return { status: "error" };
   }
 
-  // Applying Set-Cookie can fail during a Server Component render (cookies are
-  // read-only outside Server Actions / Route Handlers). That failure must not
-  // leak into serverFetch's outer catch and read as a network error — report
-  // the refresh as not applied, so the caller surfaces the underlying API
-  // error instead of a misleading "Unable to reach the server".
   let accessToken: string | undefined;
+  let newRefresh: string | undefined;
+  let newCsrf: string | undefined;
   try {
-    const data = await res.json();
-    accessToken = typeof data.data?.token === "string" ? data.data.token : undefined;
-
-    if (accessToken) {
-      await setCookie(ACCESS_TOKEN_COOKIE, accessToken, {
-        maxAge: ACCESS_TOKEN_MAX_AGE,
-      });
+    const data = await res.json().catch(() => null);
+    accessToken = typeof data?.data?.token === "string" ? data.data.token : undefined;
+    if (!accessToken) {
+      return { status: "invalid" };
     }
 
     const rotated = parseSetCookie(res);
-    const newRefresh = rotated.find((c) => c.name === REFRESH_TOKEN_COOKIE)?.value;
-    if (newRefresh) {
-      await setCookie(REFRESH_TOKEN_COOKIE, newRefresh, {
-        maxAge: REFRESH_TOKEN_MAX_AGE,
-      });
-    }
-    const newCsrf = rotated.find((c) => c.name === CSRF_TOKEN_COOKIE)?.value;
-    if (newCsrf) {
-      await setCookie(CSRF_TOKEN_COOKIE, newCsrf, {
-        maxAge: REFRESH_TOKEN_MAX_AGE,
-      });
-    }
+    newRefresh = rotated.find((c) => c.name === REFRESH_TOKEN_COOKIE)?.value;
+    newCsrf = rotated.find((c) => c.name === CSRF_TOKEN_COOKIE)?.value;
   } catch {
-    return false;
+    // Couldn't parse the refresh response — not a verdict on the session.
+    return { status: "error" };
   }
 
-  return Boolean(accessToken);
+  return { status: "success", accessToken, refreshToken: newRefresh, csrfToken: newCsrf };
 }
 
 // Single-flight guard: concurrent serverFetch calls hitting an expired token
-// share one refresh round-trip instead of each firing their own.
-let refreshPromise: Promise<boolean> | null = null;
+// share one refresh round-trip instead of each firing their own. The shared
+// result is returned to every waiter so each can apply it to its own cookie
+// store (see applyRefreshResult).
+let refreshPromise: Promise<RefreshResult> | null = null;
 
-async function refreshOnce(): Promise<boolean> {
+async function refreshOnce(): Promise<RefreshResult> {
   if (!refreshPromise) {
     refreshPromise = refreshAccessToken().finally(() => {
       refreshPromise = null;
@@ -176,23 +219,40 @@ export async function serverFetch({
     };
 
     let res = await doFetch();
+    // Set when the authenticated request got a 401 AND the refresh failed for
+    // a transient/network reason. Guards the !res.ok block from clearing the
+    // session (and thus logging the user out) over a backend blip.
+    let refreshTransientFailure = false;
 
     // Expired access token on an authenticated request: refresh once, then
     // retry the original request exactly once. Public requests (no token)
     // never trigger a refresh.
     if (res.status === 401 && hadToken) {
-      const refreshed = await refreshOnce();
-      if (refreshed) {
+      const result = await refreshOnce();
+
+      // The shared refresh result must be written into THIS action's cookie
+      // store before the retry, or the retry would re-read the stale expired
+      // token (each serverFetch has an isolated request-scoped cookie store)
+      // and fail again.
+      if (result.status === "success") {
+        await applyRefreshResult(result);
         res = await doFetch();
+      } else if (result.status === "error") {
+        // Transient/network refresh failure — NOT a verdict on the session.
+        // Keep the cookies so a temporary backend blip doesn't log the user
+        // out; fall through to surface the original API error.
+        refreshTransientFailure = true;
       }
+      // "invalid": refreshAccessToken already cleared the session cookies.
     }
 
     if (!res.ok) {
-      // A 401 that refresh couldn't fix (refresh failed, or the retried
-      // request was still rejected) means the stored access token is no
+      // A 401 that refresh couldn't fix means the stored access token is no
       // longer usable — drop the session so the app returns to its
       // unauthenticated behavior instead of retrying a stale cookie forever.
-      if (res.status === 401 && hadToken) {
+      // A transient refresh failure is the one exception: we keep the cookies
+      // and just surface the underlying API error.
+      if (res.status === 401 && hadToken && !refreshTransientFailure) {
         await clearAuthCookies();
       }
 
