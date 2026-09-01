@@ -31,7 +31,12 @@ export function useFormFeedBack(
     if (!state.success) {
       if (state.fieldErrors) {
         for (const errors of Object.values(state.fieldErrors)) {
-          for (const error of errors) {
+          // The backend reports field errors as either a single message string
+          // ({ field: "message" }) or a list ({ field: ["message", ...] }).
+          // Normalize both into a string[] so a lone string isn't iterated
+          // character-by-character (which produced one-letter toasts).
+          const list = Array.isArray(errors) ? errors : [errors];
+          for (const error of list) {
             showError(error || "Something went wrong!");
           }
         }
