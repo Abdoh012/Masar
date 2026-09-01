@@ -6,20 +6,26 @@ import {
 } from "@/features/listings/student/actions";
 import { showError, showSuccess } from "@/shared/lib/notifications";
 import { Bookmark, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface SaveButtonProps {
   saved: boolean | undefined;
   id: string;
+  onUnsaved?: () => void;
 }
 
-export function SaveButton({ saved, id }: SaveButtonProps) {
+export function SaveButton({ saved, id, onUnsaved }: SaveButtonProps) {
+  const [isSaved, setIsSaved] = useState(saved ?? false);
   const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    setIsSaved(saved ?? false);
+  }, [saved]);
 
   async function handleSaveToggle() {
     if (pending) return;
 
-    const action = saved ? unsaveTrainingAction : saveTrainingAction;
+    const action = isSaved ? unsaveTrainingAction : saveTrainingAction;
 
     try {
       setPending(true);
@@ -29,7 +35,9 @@ export function SaveButton({ saved, id }: SaveButtonProps) {
         return;
       }
 
+      setIsSaved((prev) => !prev);
       showSuccess(result.message || "Training saved successfully");
+      if (isSaved) onUnsaved?.();
     } catch (error) {
       showError("Failed to save training");
     } finally {
@@ -43,7 +51,7 @@ export function SaveButton({ saved, id }: SaveButtonProps) {
       onClick={handleSaveToggle}
       disabled={pending}
       className={`cursor-pointer rounded-md p-1.5 transition-colors disabled:opacity-50 ${
-        saved
+        isSaved
           ? "text-secondary hover:bg-secondary-tint"
           : "text-muted-foreground hover:bg-primary-tint hover:text-primary"
       }`}
@@ -51,7 +59,7 @@ export function SaveButton({ saved, id }: SaveButtonProps) {
       {pending ? (
         <Loader2 className="size-5 animate-spin" />
       ) : (
-        <Bookmark className={`size-5 ${saved ? "fill-current" : ""}`} />
+        <Bookmark className={`size-5 ${isSaved ? "fill-current" : ""}`} />
       )}
     </button>
   );

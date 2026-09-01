@@ -59,6 +59,29 @@ export function searchListings(
   return apiFetch<SearchResponse>(`/search/trainings?${params}`);
 }
 
+export interface TrainingFilters {
+  training_type?: string;
+  mode?: string;
+  paid?: string;
+}
+
+export function fetchTrainingsFilters(
+  filters: TrainingFilters,
+  page: number,
+  limit: number,
+  sort: string,
+): Promise<SearchResponse> {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+  });
+  if (filters.training_type) params.set("training_type", filters.training_type);
+  if (filters.mode) params.set("mode", filters.mode);
+  if (filters.paid) params.set("paid", filters.paid);
+  if (sort && sort !== "default") params.set("sort", sort);
+  return apiFetch<SearchResponse>(`/search/trainings/filters?${params}`);
+}
+
 export function fetchTrainingDetails(
   id: string,
 ): Promise<{ data: Record<string, unknown> }> {
