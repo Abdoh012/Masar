@@ -1,4 +1,0 @@
-$kind: collection
-name: CV / Files
-description: "CV / Files: upload a file (multipart), list files, get/set/remove the student CV reference, and download a file."
-order: 4000
