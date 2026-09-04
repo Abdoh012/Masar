@@ -1,0 +1,16 @@
+$kind: http-request
+description: Requires a student Bearer token. Withdraws a pending application by its `id` query parameter. Only pending applications can be withdrawn (409 otherwise).
+url: "{{base_url}}/api/v1/applications/withdraw"
+method: POST
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Withdraw application responds", function () {
+          pm.expect(pm.response.code).to.be.oneOf([200, 409]);
+      });
+    language: text/javascript
+order: 4000

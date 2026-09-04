@@ -1,0 +1,19 @@
+$kind: http-request
+description: Requires a student Bearer token. Returns the student's current skill names as an array under `data.skills`.
+url: "{{base_url}}/api/v1/students/me/skills"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Skills list returned", function () {
+          pm.expect(pm.response.code).to.eql(200);
+          const json = pm.response.json();
+          pm.expect(json.success).to.eql(true);
+          pm.expect(Array.isArray(json.data.skills)).to.eql(true);
+      });
+    language: text/javascript
+order: 1000

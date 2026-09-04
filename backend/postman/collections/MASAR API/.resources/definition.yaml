@@ -1,0 +1,65 @@
+$kind: collection
+description: |-
+  Clean, professional Postman collection for the MASAR backend, built directly from `routes/auth.php`, `routes/users.php`, `routes/api.php`, and the actual controllers/validators.
+
+  Base URL variable: `{{base_url}}` (default `http://localhost/Masar/backend`).
+
+  ## Suggested flow
+  1. **00 - Environment / Setup -> Health Check** to confirm the backend is reachable.
+  2. **01 - Authentication**: Register, then Login. Login captures `access_token`, `user_id`, `user_role`, `csrf_token` and the HttpOnly `refresh_token` cookie automatically.
+  3. **02 - Users**: authenticated account endpoints (Bearer token + CSRF header handled by pre-request scripts).
+  4. **03 - Auth & Users Security Tests**: run after the happy-path requests to verify error handling.
+
+  ## Test credentials
+  All credentials are safe development placeholders (`@test.local`). Set them to accounts that actually exist in your environment (for example the seeded dev accounts `admin@masar.test / Admin@123456`, `student@masar.test / Student@123456`, `company@masar.test / Company@123456`) before running the Login requests.
+
+  ## Authentication notes
+  - Protected endpoints use `Authorization: Bearer {{access_token}}`.
+  - Token refresh uses the server-issued HttpOnly `refresh_token` cookie (path `/api/v1/auth`) plus the `X-CSRF-Token` header, which must match the `csrf_token` cookie. The collection attaches the CSRF header automatically from the cookie jar.
+  - CSRF-protected write endpoints (`PUT /users/me`, `DELETE /users/me`, `POST /auth/refresh`) require a prior successful Login so the CSRF cookie exists.
+  - There is currently no routed email-verification endpoint in the backend, so it is intentionally omitted.
+  - reCAPTCHA is disabled in the local `.env` (`RECAPTCHA_ENABLED=false`), so `recaptcha_token` is not required. If enabled, add it to the register/login/reset bodies.
+  ## Students
+  - Student academic data uses `field` (User Field, resolved against `study_fields` -> `students.field_id`) and `specialization` (resolved against `specializations` -> `students.specialization_id`).
+  - `university` is no longer part of the student model and is ignored if sent.
+  - Profile completion is based on field, specialization, skills, and CV (total of 4, not 5).
+  - `faculty` is accepted only as a legacy fallback for `field`.
+  - Admin accounts cannot be registered publicly; they are provisioned by the backend and sign in via `POST /api/v1/auth/login` like any other user.
+variables:
+  base_url: http://localhost/Masar/backend
+  access_token: ""
+  refresh_token: ""
+  csrf_token: ""
+  user_id: ""
+  user_role: ""
+  student_id: ""
+  file_id: ""
+  cv_file_id: ""
+  training_id: ""
+  company_id: ""
+  application_id: ""
+  notification_id: ""
+  revoked_token: ""
+  student_email: student@test.local
+  student_password: TestStudent@123
+  company_email: company@test.local
+  company_password: TestCompany@123
+  admin_email: admin@test.local
+  admin_password: TestAdmin@123
+  register_student_email: student.register@test.local
+  register_student_password: StudentReg@2026!
+  register_company_email: company.register@test.local
+  register_company_password: CompanyReg@2026!
+  updated_email: student.updated@test.local
+  new_password: NewPass@2026!
+  reset_token: ""
+  google_state: ""
+  google_code: ""
+  invalid_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OTk5OTkiLCJyb2xlIjoiYWRtaW4iLCJ0eXBlIjoiYWNjZXNzIiwiZXhwIjo0NTAwMDAwMDAwfQ.invalid-signature
+  expired_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OTk5OTkiLCJyb2xlIjoiYWRtaW4iLCJ0eXBlIjoiYWNjZXNzIiwiZXhwIjoxMDAwMDAwMDAwfQ.expired-signature
+  invalid_refresh_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OTk5OTkiLCJyb2xlIjoic3R1ZGVudCIsInR5cGUiOiJyZWZyZXNoIiwiZXhwIjo0NTAwMDAwMDAwfQ.invalid-refresh-signature
+  other_user_id: "1"
+  legacy_student_email: student.legacy@test.local
+  legacy_student_password: Student@12345
+  no_university_email: student.nouni@test.local
+  admin_token: ""

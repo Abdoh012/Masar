@@ -1,0 +1,29 @@
+$kind: http-request
+description: Oldest first (created_at ASC).
+url: "{{base_url}}/api/v1/search/trainings/filters"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  - key: null
+    value: null
+scripts:
+  - type: afterResponse
+    code: |-
+      const json = pm.response.json();
+      pm.test('returns 200', function () { pm.response.to.have.status(200); });
+      pm.test('success is true', function () { pm.expect(json.success).to.eql(true); });
+      pm.test('items is an array', function () { pm.expect(json.data.items).to.be.an('array'); });
+      pm.test('pagination metadata present', function () {
+          pm.expect(json.data.total).to.be.a('number');
+          pm.expect(json.data.page).to.be.a('number');
+          pm.expect(json.data.limit).to.be.a('number');
+      });
+      const json = pm.response.json();
+      pm.test('items sorted by oldest first', function () {
+          const dates = json.data.items.map(function (i) { return i.created_at || ''; });
+          const sorted = dates.slice().sort();
+          pm.expect(dates.join()).to.eql(sorted.join());
+      });
+    language: text/javascript
+order: 7000

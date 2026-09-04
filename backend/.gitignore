@@ -1,0 +1,94 @@
+# ============================================================
+
+# MASAR Git Ignore
+
+# ============================================================
+
+# Environment / secrets
+
+.env
+.env.local
+.env.*.local
+
+# Composer
+
+/vendor/
+
+# Runtime storage
+
+/storage/logs/*
+/storage/cache/*
+/storage/uploads/*
+/storage/certificates/*
+
+# Keep required directories
+
+!/storage/logs/.gitkeep
+!/storage/cache/.gitkeep
+!/storage/certificates/.gitkeep
+
+# Temporary files
+
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# IDE
+
+.idea/
+.vscode/
+*.code-workspace
+
+# OS
+
+.DS_Store
+Thumbs.db
+
+# Logs
+
+*.log
+
+# Coverage
+
+coverage/
+.phpunit.result.cache
+
+# Testing
+
+.phpunit.cache/
+
+# Local databases
+
+*.sqlite
+*.sqlite3
+
+# Generated files
+
+*.generated.php
+
+# Uploads
+
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+*.pdf
+
+# Certificates
+
+/storage/certificates/*
+
+# Backup files
+
+*.bak
+*.backup
+*~
+
+# Node (if frontend tooling is added later)
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
