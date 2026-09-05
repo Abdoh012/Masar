@@ -1,0 +1,30 @@
+$kind: http-request
+description: "Positive. Sends `industry` as an array of specialization IDs [92, 103]. Expected: 201. No token is returned for company registrations."
+url: "{{base_url}}/api/v1/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+        "email": "{{$randomEmail}}",
+        "password": "{{register_company_password}}",
+        "password_confirmation": "{{register_company_password}}",
+        "accept_terms": true,
+        "role": "company",
+        "company_name": "MASAR Multi Industry",
+        "industry": [92, 103],
+        "description": "x"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Multiple industry IDs are accepted", function () {
+          pm.expect(pm.response.code).to.eql(201);
+          const json = pm.response.json();
+          pm.expect(json.success).to.eql(true);
+          pm.expect(json.data.user.role).to.eql('company');
+      });
+    language: text/javascript
+order: 8000

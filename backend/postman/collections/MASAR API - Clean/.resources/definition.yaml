@@ -1,0 +1,46 @@
+$kind: collection
+description: |-
+  Clean Postman collection for the MASAR backend.
+
+  Base URL: {{base_url}}
+
+  This version keeps the main production/API flows and removes redundant security/validation scenarios, duplicate requests, and fixture-specific test requests. Training search and filters are kept as the current official APIs.
+variables:
+  base_url: http://localhost/Masar/backend
+  access_token: ""
+  refresh_token: ""
+  csrf_token: ""
+  user_id: ""
+  user_role: ""
+  student_id: ""
+  file_id: ""
+  cv_file_id: ""
+  training_id: ""
+  company_id: ""
+  application_id: ""
+  notification_id: ""
+  student_email: student@test.local
+  student_password: TestStudent@123
+  company_email: company@test.local
+  company_password: TestCompany@123
+  admin_email: admin@test.local
+  admin_password: TestAdmin@123
+  register_student_email: student.register@test.local
+  register_student_password: StudentReg@2026!
+  register_company_email: company.register@test.local
+  register_company_password: CompanyReg@2026!
+  updated_email: student.updated@test.local
+  new_password: NewPass@2026!
+  reset_token: ""
+  google_state: ""
+  google_code: ""
+  admin_token: ""
+  search_query: ""
+  student_b_email: ibrahim.hossam@test.local
+  student_b_password: IbrahimAI@2026!
+  student_a_token: ""
+  student_b_token: ""
+  regression_training_id: ""
+  regression_search_query: Machine Learning
+  initial_student_a_saved: ""
+  initial_student_b_saved: ""

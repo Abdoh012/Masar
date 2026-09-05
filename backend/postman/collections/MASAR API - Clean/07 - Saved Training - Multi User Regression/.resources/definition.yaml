@@ -1,0 +1,3 @@
+$kind: collection
+description: "Validates that is_saved in Search and Filter is computed live from the saved_trainings relationship (student_id + training_id) and is independent per student. Data-safe: baseline captures original saved state before any mutation; a final Restore re-establishes it. No TRUNCATE/delete of unrelated records. Uses separate student_a_token/student_b_token so the logins never overwrite each other. is_saved is NEVER hard-coded as request data."
+order: 8000

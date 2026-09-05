@@ -1,0 +1,28 @@
+$kind: http-request
+description: "Negative. Omits `field`. Expected: 422 with `errors.field` = `User field is required.`"
+url: "{{base_url}}/api/v1/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+        "full_name": "Test Student",
+        "email": "{{$randomEmail}}",
+        "password": "{{register_student_password}}",
+        "password_confirmation": "{{register_student_password}}",
+        "accept_terms": true,
+        "role": "student",
+        "specialization": 92
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Missing field is rejected", function () {
+          pm.expect(pm.response.code).to.eql(422);
+          const json = pm.response.json();
+          pm.expect(json.errors.field[0]).to.eql('User field is required.');
+      });
+    language: text/javascript
+order: 4000

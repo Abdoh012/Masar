@@ -6,7 +6,7 @@ workspace:
 
 cloudResources:
   collections:
-    ../postman/collections/MASAR API: b1fd3212-fd35-411a-90be-28d2d8d716e1
+    ../postman/collections/MASAR API - Clean: 6f5da284-fbc6-4a72-bc3b-2e09611168ce
 
 # All resources in the `postman/` folder are automatically registered in Local View.
 # Point to additional files outside the `postman/` folder to register them individually. Example:

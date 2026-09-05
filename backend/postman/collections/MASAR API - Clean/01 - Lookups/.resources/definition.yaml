@@ -1,0 +1,3 @@
+$kind: collection
+description: Public lookup endpoints used by student and company forms.
+order: 2000

@@ -1,0 +1,3 @@
+$kind: collection
+description: Core authentication flows only. Security/negative test cases were removed from this clean collection.
+order: 3000

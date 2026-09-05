@@ -1,0 +1,43 @@
+$kind: http-request
+description: Creates a training opportunity for the authenticated company. The frontend MUST send the training's single primary specialization as "specialization_id" (required, positive integer); an unknown/zero id fails with 422. The response exposes the primary "specialization" object ({id, name}) plus the company-view pivot "specializations" array (kept for the company/admin UI). Set {{company_id}} to the authenticated company's id.
+url: "{{base_url}}/api/v1/trainings/create"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "company_id": {{company_id}},
+      "specialization_id": 103,
+      "title": "Backend Internship [PostmanTest]",
+      "description": "Created to verify the required single specialization on the training.",
+      "training_type": "hands_on",
+      "work_mode": "remote",
+      "paid": 1,
+      "salary": 3000
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const json = pm.response.json();
+      pm.test('training created successfully', function () { pm.expect(json.success).to.eql(true); });
+      pm.test('primary specialization object returned', function () {
+          pm.expect(json.data.specialization).to.have.property('id');
+          pm.expect(json.data.specialization.id).to.eql(103);
+          pm.expect(json.data.specialization).to.have.property('name');
+      });
+      pm.test('company-view specializations pivot retained', function () {
+          pm.expect(json.data.specializations).to.be.an('array');
+          pm.expect(json.data.specializations.length).to.be.above(0);
+          pm.expect(json.data.specializations[0]).to.have.property('id');
+          pm.expect(json.data.specializations[0]).to.have.property('name');
+      });
+      if (json.success && json.data && json.data.id) { pm.collectionVariables.set('training_id', json.data.id); }
+    language: text/javascript
+order: 2000

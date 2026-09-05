@@ -1,0 +1,26 @@
+$kind: http-request
+description: Public. Logs in Student B and stores the access token in `{{student_b_token}}` (NOT the shared `access_token`) so the two students do not clobber each other.
+url: "{{base_url}}/api/v1/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+        "email": "{{student_b_email}}",
+        "password": "{{student_b_password}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const json = pm.response.json();
+      pm.test('login returns 200 + token', function () { pm.response.to.have.status(200); });
+      pm.test('success is true', function () { pm.expect(json.success).to.eql(true); });
+      pm.test('token present', function () { pm.expect(json.data.token).to.be.a('string'); });
+      pm.collectionVariables.set('student_b_token', json.data.token);
+      pm.test('login stored in student_b_token', function () {
+          pm.expect(pm.collectionVariables.get('student_b_token')).to.eql(json.data.token);
+      });
+    language: text/javascript
+order: 6000

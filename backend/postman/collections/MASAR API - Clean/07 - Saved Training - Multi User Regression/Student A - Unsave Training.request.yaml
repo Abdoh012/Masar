@@ -1,0 +1,18 @@
+$kind: http-request
+description: Student A removes the discovery regression training from their saved list. Uses the dedicated student token.
+url: "{{base_url}}/api/v1/trainings/unsave/{{regression_training_id}}"
+method: DELETE
+headers:
+  Accept: application/json
+auth:
+  type: bearer
+  credentials:
+    token: "{{student_a_token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const json = pm.response.json();
+      pm.test('Student A unsave returns 200', function () { pm.response.to.have.status(200); });
+      pm.test('Student A unsave success true', function () { pm.expect(json.success).to.eql(true); });
+    language: text/javascript
+order: 13000

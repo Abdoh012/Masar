@@ -1,0 +1,37 @@
+$kind: http-request
+description: "Single training by route parameter: GET /api/v1/trainings/{training_id}. Returns the full training with company details (company_name, company_city, company_logo read live from companies.company_logo), skills, the single primary specialization object ({id, name} resolved from training_listings.specialization_id), application questions and, with a student token, is_saved / has_applied. Works without a token."
+url: "{{base_url}}/api/v1/trainings/details/{{training_id}}"
+method: GET
+headers:
+  Accept: application/json
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const json = pm.response.json();
+      pm.test('returns 200', function () { pm.response.to.have.status(200); });
+      pm.test('response is valid JSON', function () { pm.expect(json).to.be.an('object'); });
+      pm.test('success is true', function () { pm.expect(json.success).to.eql(true); });
+      pm.test('data exists and is an object', function () { pm.expect(json.data).to.be.an('object'); });
+      pm.test('data.id exists', function () { pm.expect(json.data).to.have.property('id'); });
+      pm.test('data.company_id exists', function () { pm.expect(json.data).to.have.property('company_id'); });
+      pm.test('data.title exists', function () { pm.expect(json.data).to.have.property('title'); });
+      pm.test('data.company_name exists', function () { pm.expect(json.data).to.have.property('company_name'); });
+      pm.test('data.company_logo property exists (null allowed when company has no logo)', function () { pm.expect(json.data).to.have.property('company_logo'); });
+      pm.test('data.specialization is an object with id and name', function () {
+          pm.expect(json.data.specialization).to.be.an('object');
+          pm.expect(json.data.specialization).to.have.property('id');
+          pm.expect(json.data.specialization).to.have.property('name');
+      });
+      pm.test('data.duration is present (non-negative integer or null)', function () {
+          const d = json.data.duration;
+          if (d !== null) {
+              pm.expect(d).to.be.a('number');
+              pm.expect(d).to.be.at.least(0);
+          }
+      });
+    language: text/javascript
+order: 4000

@@ -1,3 +1,0 @@
-$kind: collection
-description: Google OAuth. The Start request is fully scriptable; the Callback requires a real browser step (the Google authorization `code`).
-order: 4000

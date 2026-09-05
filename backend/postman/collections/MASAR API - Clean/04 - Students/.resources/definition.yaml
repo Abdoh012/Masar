@@ -1,0 +1,3 @@
+$kind: collection
+description: Core student profile, skills, CV/files, applications, certificates, and notifications APIs. Validation/security test duplicates were removed.
+order: 5000

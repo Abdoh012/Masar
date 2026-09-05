@@ -1,0 +1,29 @@
+$kind: http-request
+description: "Negative. `field` is a non-existent `study_fields.id`. Expected: 422 with message `User field or specialization is incorrect.`"
+url: "{{base_url}}/api/v1/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+        "full_name": "Test Student",
+        "email": "{{$randomEmail}}",
+        "password": "{{register_student_password}}",
+        "password_confirmation": "{{register_student_password}}",
+        "accept_terms": true,
+        "role": "student",
+        "field": 99999,
+        "specialization": 92
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Invalid field ID is rejected", function () {
+          pm.expect(pm.response.code).to.eql(422);
+          const json = pm.response.json();
+          pm.expect(json.message).to.eql('User field or specialization is incorrect.');
+      });
+    language: text/javascript
+order: 1000

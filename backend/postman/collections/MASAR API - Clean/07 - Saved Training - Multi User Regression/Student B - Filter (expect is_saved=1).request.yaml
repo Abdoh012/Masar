@@ -1,0 +1,33 @@
+$kind: http-request
+description: Expect is_saved = 1 via Training Filters after Student B saves.
+url: "{{base_url}}/api/v1/search/trainings/filters?sort=newest&page=1&limit=50"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  sort: newest
+  page: "1"
+  limit: "50"
+auth:
+  type: bearer
+  credentials:
+    token: "{{student_b_token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const json = pm.response.json();
+      pm.test('filter returns 200', function () { pm.response.to.have.status(200); });
+      const tid = pm.collectionVariables.get('regression_training_id');
+      const item = json.data.items.find(function (i) { return String(i.id) === tid; });
+      pm.expect(item, 'regression training appears in filter results').to.exist;
+      pm.test('filter is_saved == 1 (live, DB-backed)', function () {
+          pm.expect(item.is_saved).to.eql(1);
+      });
+      pm.test('filter save_state_context == student' , function () {
+          pm.expect(json.data.save_state_context).to.eql('student');
+      });
+      pm.test('filter is_saved is a live per-user value (0 or 1), never hardcoded', function () {
+          pm.expect(item.is_saved).to.be.oneOf([0, 1]);
+      });
+    language: text/javascript
+order: 11000

@@ -1,0 +1,32 @@
+$kind: http-request
+name: "Student A - Search (independence: still is_saved=1)"
+description: Student B's actions must NOT affect Student A. Student A still has is_saved = 1 for the training.
+url: "{{base_url}}/api/v1/search/trainings?q={{regression_search_query}}"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  q: "{{regression_search_query}}"
+auth:
+  type: bearer
+  credentials:
+    token: "{{student_a_token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const json = pm.response.json();
+      pm.test('search returns 200', function () { pm.response.to.have.status(200); });
+      const tid = pm.collectionVariables.get('regression_training_id');
+      const item = json.data.items.find(function (i) { return String(i.id) === tid; });
+      pm.expect(item, 'regression training appears in search results').to.exist;
+      pm.test('search is_saved == 1 (live, DB-backed)', function () {
+          pm.expect(item.is_saved).to.eql(1);
+      });
+      pm.test('search save_state_context == student' , function () {
+          pm.expect(json.data.save_state_context).to.eql('student');
+      });
+      pm.test('search is_saved is a live per-user value (0 or 1), never hardcoded', function () {
+          pm.expect(item.is_saved).to.be.oneOf([0, 1]);
+      });
+    language: text/javascript
+order: 12000

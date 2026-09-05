@@ -1,0 +1,11 @@
+$kind: http-request
+description: Student saves a published training (idempotent). Requires a student token.
+url: "{{base_url}}/api/v1/trainings/save/{{training_id}}"
+method: POST
+headers:
+  Content-Type: application/json
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+order: 5000

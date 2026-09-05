@@ -1,0 +1,3 @@
+$kind: collection
+description: Search and filter APIs. Search uses q; filters use optional training_type, mode, paid, sort, page, and limit parameters.
+order: 7000

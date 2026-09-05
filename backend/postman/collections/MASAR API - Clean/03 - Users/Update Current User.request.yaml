@@ -1,0 +1,42 @@
+$kind: http-request
+description: Requires Bearer token + CSRF header (attached automatically). Only `email` is accepted by this endpoint; all other fields are rejected. After a successful email change, `student_email` is updated to keep subsequent logins consistent.
+url: "{{base_url}}/api/v1/users/me"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+        "email": "{{updated_email}}"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+scripts:
+  - type: beforeRequest
+    code: |-
+      let csrf = pm.cookies.get('csrf_token');
+      if (!csrf) {
+          csrf = pm.collectionVariables.get('csrf_token');
+      }
+      if (csrf) {
+          pm.request.headers.upsert({ key: 'X-CSRF-Token', value: csrf });
+      }
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test("Update current user succeeds", function () {
+          pm.expect(pm.response.code).to.eql(200);
+          const json = pm.response.json();
+          pm.expect(json.success).to.eql(true);
+      });
+      if (pm.response.code === 200) {
+          const json = pm.response.json();
+          if (json.data && json.data.user && json.data.user.email) {
+              pm.collectionVariables.set('student_email', json.data.user.email);
+          }
+      }
+    language: text/javascript
+order: 1000

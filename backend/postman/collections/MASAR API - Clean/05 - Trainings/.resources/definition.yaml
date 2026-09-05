@@ -1,0 +1,3 @@
+$kind: collection
+description: Training listing, creation, details, company logo, save/unsave, and saved-list endpoints. Duplicate detail request removed.
+order: 6000

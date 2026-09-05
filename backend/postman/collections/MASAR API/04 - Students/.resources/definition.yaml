@@ -1,3 +1,0 @@
-$kind: collection
-description: "Student APIs: profile lifecycle, skills, CV/files, training applications, certificates and notifications. Run '01 - Authentication -> Login (Student)' first so `access_token` is captured. Academic request bodies use the seeded names (e.g. Cairo University / Faculty of Computers and Artificial Intelligence / Artificial Intelligence / Bachelor of Computer Science). The 'CV / Files' subfolder must run before 'Complete Student Profile' so the `cv_file_id` collection variable exists (the upload request sets it automatically). Set `training_id` before using the Applications subfolder."
-order: 6000

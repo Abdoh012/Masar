@@ -1,3 +1,0 @@
-$kind: collection
-description: "Student training discovery and saved trainings: list with filters/sort, detail (enriched, optional student context), save, unsave and saved list. Read endpoints work for guests; save/unsave/saved require a student token (set the training_id collection variable first)."
-order: 7000

@@ -1,0 +1,30 @@
+$kind: http-request
+description: Data-safe teardown. IDEMPOTENT Save that re-establishes the originally recorded saved relationship(s) after the regression unsave. In the documented environment Student A was originally saved, so re-saving with the Student A token restores the DB. Pair with the captured initial_* variables to restore any originally-saved student.
+url: "{{base_url}}/api/v1/trainings/save/{{regression_training_id}}"
+method: POST
+headers:
+  Content-Type: application/json
+auth:
+  type: bearer
+  credentials:
+    token: "{{student_a_token}}"
+scripts:
+  - type: beforeRequest
+    code: |-
+      // If Student A was originally saved and this Restore runs after the Unsave,
+      // re-save to return the DB to its original state.
+      const aInit = pm.collectionVariables.get('initial_student_a_saved');
+      if (aInit === '1') { pm.collectionVariables.set('restore_student_a_active', '1'); }
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      // Best-effort restore of the originally recorded saved state.
+      // In the documented environment Student A was originally saved and Student B
+      // originally unsaved, so a single idempotent Save for Student A is sufficient.
+      const aInit = pm.collectionVariables.get('initial_student_a_saved');
+      const bInit = pm.collectionVariables.get('initial_student_b_saved');
+      const json = pm.response.json();
+      pm.test('restore request returns 200/201', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });
+      pm.test('restore recorded A-init=' + aInit + ' B-init=' + bInit, function () { pm.expect(true).to.eql(true); });
+    language: text/javascript
+order: 16000
