@@ -2,32 +2,21 @@
 
 import { useEffect, useState } from "react";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
-
-export const STUDY_FIELDS_ENDPOINT = `${API_URL}/lookups/study-fields`;
-
-interface StudyField {
-  id: number;
-  name: string;
-}
+import type { LookupOption } from "../api/lookups";
+import { fetchStudyFields } from "../api/lookups";
 
 interface StudyFieldsState {
-  options: StudyField[];
+  options: LookupOption[];
   loading: boolean;
   error: string | null;
 }
 
-function extractStudyFields(json: Record<string, unknown>): StudyField[] {
-  const data = json.data ?? json;
-
+function extractStudyFields(data: unknown): LookupOption[] {
   if (typeof data === "object" && data !== null && !Array.isArray(data)) {
-    const nested = (data as Record<string, unknown>).study_fields;
-    if (Array.isArray(nested)) return nested as StudyField[];
+    const fields = (data as Record<string, unknown>).study_fields;
+    if (Array.isArray(fields)) return fields as LookupOption[];
   }
-
-  if (Array.isArray(data)) return data as StudyField[];
-
+  if (Array.isArray(data)) return data as LookupOption[];
   return [];
 }
 
@@ -41,29 +30,23 @@ export function useStudyFields(): StudyFieldsState {
   useEffect(() => {
     let cancelled = false;
 
-    async function fetchFields() {
+    async function load() {
       try {
-        const res = await fetch(STUDY_FIELDS_ENDPOINT);
-        if (!res.ok)
-          throw new Error(`Failed to load study fields (status ${res.status})`);
-
-        const json = await res.json();
+        const res = await fetchStudyFields();
+        if (res.error) throw new Error(res.error);
         if (cancelled) return;
-
-        const items = extractStudyFields(json);
-        setState({ options: items, loading: false, error: null });
+        setState({ options: extractStudyFields(res.data), loading: false, error: null });
       } catch (err) {
         if (cancelled) return;
         setState({
           options: [],
           loading: false,
-          error:
-            err instanceof Error ? err.message : "Failed to load study fields",
+          error: err instanceof Error ? err.message : "Failed to load study fields",
         });
       }
     }
 
-    fetchFields();
+    load();
     return () => {
       cancelled = true;
     };

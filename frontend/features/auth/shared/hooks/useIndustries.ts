@@ -3,15 +3,15 @@
 import { useEffect, useState } from "react";
 
 import type { LookupOption } from "../api/lookups";
-import { fetchSpecializationsByField } from "../api/lookups";
+import { fetchIndustries } from "../api/lookups";
 
-interface SpecializationState {
+interface IndustriesState {
   options: LookupOption[];
   loading: boolean;
   error: string | null;
 }
 
-function extractSpecializations(data: unknown): LookupOption[] {
+function extractIndustries(data: unknown): LookupOption[] {
   if (typeof data === "object" && data !== null && !Array.isArray(data)) {
     const nested = (data as Record<string, unknown>).specializations;
     if (Array.isArray(nested)) return nested as LookupOption[];
@@ -20,38 +20,28 @@ function extractSpecializations(data: unknown): LookupOption[] {
   return [];
 }
 
-export function useSpecializationOptions(
-  fieldId: string | null,
-): SpecializationState {
-  const [state, setState] = useState<SpecializationState>({
+export function useIndustries(): IndustriesState {
+  const [state, setState] = useState<IndustriesState>({
     options: [],
-    loading: false,
+    loading: true,
     error: null,
   });
 
   useEffect(() => {
-    if (!fieldId) {
-      setState({ options: [], loading: false, error: null });
-      return;
-    }
-
     let cancelled = false;
-    const normalizedId = fieldId;
 
     async function load() {
-      setState((prev) => ({ ...prev, loading: true, error: null }));
-
       try {
-        const res = await fetchSpecializationsByField(normalizedId);
+        const res = await fetchIndustries();
         if (res.error) throw new Error(res.error);
         if (cancelled) return;
-        setState({ options: extractSpecializations(res.data), loading: false, error: null });
+        setState({ options: extractIndustries(res.data), loading: false, error: null });
       } catch (err) {
         if (cancelled) return;
         setState({
           options: [],
           loading: false,
-          error: err instanceof Error ? err.message : "Failed to load specializations",
+          error: err instanceof Error ? err.message : "Failed to load industries",
         });
       }
     }
@@ -60,7 +50,7 @@ export function useSpecializationOptions(
     return () => {
       cancelled = true;
     };
-  }, [fieldId]);
+  }, []);
 
   return state;
 }

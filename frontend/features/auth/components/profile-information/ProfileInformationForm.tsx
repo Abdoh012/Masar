@@ -7,12 +7,9 @@ import {
   COMPANY_PROFILE_FIELDS,
   STUDENT_PROFILE_FIELDS,
 } from "../../shared/lib/constants";
-import {
-  useLookupOptions,
-  SPECIALIZATIONS_ENDPOINT,
-} from "../../shared/hooks/useLookupOptions";
 import { useStudyFields } from "../../shared/hooks/useStudyFields";
 import { useSpecializationOptions } from "../../shared/hooks/useSpecializationOptions";
+import { useIndustries } from "../../shared/hooks/useIndustries";
 import { SubmitButton } from "../../shared/components/SubmitButton";
 import { ProfileField } from "./ProfileField";
 import { ProfileSelectField } from "./ProfileSelectField";
@@ -43,7 +40,7 @@ export function ProfileInformationForm({ draft }: ProfileInformationFormProps) {
 
   // Lookup options fetched dynamically from the backend.
   const studyFields = useStudyFields();
-  const industryOptions = useLookupOptions(SPECIALIZATIONS_ENDPOINT);
+  const industries = useIndustries();
 
   // Student specialization depends on the selected study field.
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
@@ -88,9 +85,9 @@ export function ProfileInformationForm({ draft }: ProfileInformationFormProps) {
             label={COMPANY_PROFILE_FIELDS.industry.label}
             placeholder={COMPANY_PROFILE_FIELDS.industry.placeholder}
             defaultValue={restoredValues?.industry}
-            options={industryOptions.options}
-            loading={industryOptions.loading}
-            error={industryOptions.error}
+            options={industries.options.map((i) => i.name)}
+            loading={industries.loading}
+            error={industries.error}
             errors={fieldErrors.industry}
           />
 
