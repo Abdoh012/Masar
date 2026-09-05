@@ -11,22 +11,22 @@ export const metadata: Metadata = {
 };
 
 // Resolve the real training the student is applying to (from the URL id) so the
-// wizard's success panel shows its actual title/company. The listings api throws
-// the HTTP status as `Error.message`; a 404 becomes a not-found, anything else
-// surfaces to the root error boundary.
+// wizard's success panel shows its actual title/company. The fetch goes through
+// `serverFetch` (student JWT attached); a 404 (reported via `status`) becomes a
+// not-found, anything else surfaces to the root error boundary.
 async function resolveTraining(id: string) {
-  try {
-    const { data } = await fetchTrainingDetails(id);
-    return {
-      title: typeof data.title === "string" ? data.title : "",
-      companyName: typeof data.company_name === "string" ? data.company_name : "",
-    };
-  } catch (error) {
-    if (error instanceof Error && error.message === "404") {
+  const res = await fetchTrainingDetails(id);
+  if (res.success === false) {
+    if (res.status === 404) {
       notFound();
     }
-    throw error;
+    throw new Error(res.error ?? "Failed to load training");
   }
+  const data = (res.data ?? {}) as Record<string, unknown>;
+  return {
+    title: typeof data.title === "string" ? data.title : "",
+    companyName: typeof data.company_name === "string" ? data.company_name : "",
+  };
 }
 
 // Thin composition point: the apply wizard lives in the applications feature;

@@ -64,19 +64,22 @@ export function useListings(params: {
           if (res.error) throw new Error(res.error);
           result = normalizeListResponse(res.data);
         } else if (query.trim()) {
-          const raw = await searchListings(query.trim(), page, limit);
-          result = normalizeSearchResponse(raw);
+          const res = await searchListings(query.trim(), page, limit);
+          if (res.error) throw new Error(res.error);
+          result = normalizeSearchResponse(res);
         } else if (hasFilters) {
-          const raw = await fetchTrainingsFilters(
+          const res = await fetchTrainingsFilters(
             { training_type: trainingType, mode, paid },
             page,
             limit,
             sort,
           );
-          result = normalizeSearchResponse(raw);
+          if (res.error) throw new Error(res.error);
+          result = normalizeSearchResponse(res);
         } else {
-          const raw = await fetchListings(page, limit, sort);
-          result = normalizeListResponse(raw);
+          const res = await fetchListings(page, limit, sort);
+          if (res.error) throw new Error(res.error);
+          result = normalizeListResponse(res);
         }
 
         if (!cancelled) {

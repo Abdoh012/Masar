@@ -32,9 +32,10 @@ export function normalizeApiItem(
   const rawFormat = String(item.mode ?? "remote");
   const mappedFormat = API_FORMAT_MAP[rawFormat] ?? rawFormat;
 
-  const specializations = item.specializations as
+  const specializations = item.specialization as
     | { id?: number; name?: string }[]
     | undefined;
+
   const firstSpec = specializations?.[0]?.name;
 
   const skills = Array.isArray(item.skills)
@@ -47,7 +48,7 @@ export function normalizeApiItem(
     companyName: String(item.company_name ?? ""),
     field: firstSpec ?? String(item.title ?? ""),
     specialization: String(
-      item.specialization ?? firstSpec ?? item.title ?? "",
+      item.specialization_name ?? firstSpec ?? item.title ?? "",
     ),
     description: String(item.description ?? item.title ?? ""),
     mode: mappedMode as ListingMode,

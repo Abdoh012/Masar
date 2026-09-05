@@ -18,6 +18,7 @@ export type TryCatchResponse = {
   errors?: Record<string, string[]>;
   userData?: object;
   message?: string;
+  status?: number;
   cookies?: Array<{ name: string; value: string }>;
 };
 

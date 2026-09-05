@@ -265,6 +265,7 @@ export async function serverFetch({
         error: data?.message || "Invalid data, please try again later",
         errors: data?.errors || undefined,
         userData: body,
+        status: res.status,
       };
     }
 

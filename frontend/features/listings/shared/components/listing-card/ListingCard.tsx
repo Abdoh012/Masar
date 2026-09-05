@@ -18,7 +18,11 @@ interface ListingCardProps extends ListingCardData {
   onUnsaved?: () => void;
 }
 
-export function ListingCard({ className, onUnsaved, ...listing }: ListingCardProps) {
+export function ListingCard({
+  className,
+  onUnsaved,
+  ...listing
+}: ListingCardProps) {
   return (
     <article
       className={`flex h-full flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-card ${className}`}
@@ -27,7 +31,11 @@ export function ListingCard({ className, onUnsaved, ...listing }: ListingCardPro
         <CategoryPill field={listing.field} />
 
         <div className="flex items-center gap-1">
-          <SaveButton saved={listing.saved} id={listing.id} onUnsaved={onUnsaved} />
+          <SaveButton
+            saved={listing.saved}
+            id={listing.id}
+            onUnsaved={onUnsaved}
+          />
 
           <Image
             src="/logo.png"

@@ -1,5 +1,5 @@
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+import { serverFetch } from "@/services/api";
+import type { TryCatchResponse } from "@/types/server-action";
 
 export interface Pagination {
   current_page: number;
@@ -10,59 +10,36 @@ export interface Pagination {
   has_previous_page: boolean;
 }
 
-export interface ListResponse {
-  data: {
-    items: unknown[];
-    pagination: Pagination;
-  };
-}
-
-export interface SearchResponse {
-  data: {
-    items: unknown[];
-    total: number;
-    page: number;
-    limit: number;
-    query: string;
-  };
-}
-
-async function apiFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`);
-  if (!res.ok) throw new Error(`${res.status}`);
-  return res.json();
+export interface TrainingFilters {
+  training_type?: string;
+  mode?: string;
+  paid?: string;
 }
 
 export function fetchListings(
   page: number,
   limit: number,
   sort: string,
-): Promise<ListResponse> {
+): Promise<TryCatchResponse> {
   const params = new URLSearchParams({
     page: String(page),
     limit: String(limit),
   });
   if (sort && sort !== "default") params.set("sort", sort);
-  return apiFetch<ListResponse>(`/trainings/list?${params}`);
+  return serverFetch({ url: `trainings/list?${params}`, cache: "no-store" });
 }
 
 export function searchListings(
   query: string,
   page: number,
   limit: number,
-): Promise<SearchResponse> {
+): Promise<TryCatchResponse> {
   const params = new URLSearchParams({
     q: query,
     page: String(page),
     limit: String(limit),
   });
-  return apiFetch<SearchResponse>(`/search/trainings?${params}`);
-}
-
-export interface TrainingFilters {
-  training_type?: string;
-  mode?: string;
-  paid?: string;
+  return serverFetch({ url: `search/trainings?${params}`, cache: "no-store" });
 }
 
 export function fetchTrainingsFilters(
@@ -70,7 +47,7 @@ export function fetchTrainingsFilters(
   page: number,
   limit: number,
   sort: string,
-): Promise<SearchResponse> {
+): Promise<TryCatchResponse> {
   const params = new URLSearchParams({
     page: String(page),
     limit: String(limit),
@@ -79,11 +56,12 @@ export function fetchTrainingsFilters(
   if (filters.mode) params.set("mode", filters.mode);
   if (filters.paid) params.set("paid", filters.paid);
   if (sort && sort !== "default") params.set("sort", sort);
-  return apiFetch<SearchResponse>(`/search/trainings/filters?${params}`);
+  return serverFetch({
+    url: `search/trainings/filters?${params}`,
+    cache: "no-store",
+  });
 }
 
-export function fetchTrainingDetails(
-  id: string,
-): Promise<{ data: Record<string, unknown> }> {
-  return apiFetch(`/trainings/details/${id}`);
+export function fetchTrainingDetails(id: string): Promise<TryCatchResponse> {
+  return serverFetch({ url: `trainings/details/${id}`, cache: "no-store" });
 }

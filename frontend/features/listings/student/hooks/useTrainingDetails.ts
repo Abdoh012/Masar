@@ -26,6 +26,7 @@ export function useTrainingDetails(id: string): UseTrainingDetailsResult {
 
       try {
         const raw = await fetchTrainingDetails(id);
+        if (raw.error) throw new Error(raw.error);
         if (!cancelled) {
           setListing(normalizeApiItem(raw.data));
           setLoading(false);
