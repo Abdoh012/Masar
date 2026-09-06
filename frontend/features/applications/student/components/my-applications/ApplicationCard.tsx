@@ -1,7 +1,7 @@
 import { Clock } from "lucide-react";
 
 import { STATUS_BADGE_CLASSES } from "../applications-snapshot/constants";
-import { formatApplicationDate } from "./constants";
+import { formatApplicationDate, getStatusDate } from "./constants";
 import { TrialCountdown } from "../../../shared/components/trial-countdown/TrialCountdown";
 import type { MyApplication } from "../../types";
 import { ApplicationCardActions } from "./ApplicationCardActions";
@@ -12,9 +12,11 @@ interface ApplicationCardProps {
 }
 
 // Leaf: one application card on the My Applications page (FR-010/012/013).
-// Renders listing/company, a compact meta row (applied date + training
+// Renders listing/company, a compact meta row (status date + training
 // duration), the status badge, the conditional rejection reason and "may lead
-// to hire" note, and the per-status actions row. Accepted paid applications
+// to hire" note, and the per-status actions row. The date shown is the current
+// status's own date (accepted/rejected/withdrawn/applied — STATUS_DATE_FIELDS),
+// never the raw applied date for terminal statuses. Accepted paid applications
 // additionally render the shared trial countdown inline with the remaining
 // days (FR-011); "Continue past trial" is display-only text, never an action
 // (FR-014). Cards flow two-per-row from the orchestrator's grid.
@@ -46,8 +48,8 @@ export function ApplicationCard({ application, onWithdraw }: ApplicationCardProp
       </div>
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <time className="font-mono text-xs text-muted-foreground" dateTime={application.appliedOn}>
-          Applied {formatApplicationDate(application.appliedOn)}
+        <time className="font-mono text-xs text-muted-foreground" dateTime={getStatusDate(application)}>
+          {application.status} {formatApplicationDate(getStatusDate(application))}
         </time>
         {application.duration ? (
           <span className="inline-flex items-center gap-1.5 rounded-md bg-neutral-badge-bg px-2 py-0.5 text-xs font-medium text-neutral-badge-fg">

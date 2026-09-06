@@ -30,6 +30,7 @@ export const MOCK_APPLICATIONS: MyApplication[] = [
     companyName: "Hala Bank",
     status: "Accepted",
     appliedOn: "2026-07-20",
+    acceptedOn: "2026-07-22",
     duration: "3 months",
     mayLeadToHire: true,
     trial: { daysRemaining: 12, continuePastTrial: true },
@@ -41,6 +42,7 @@ export const MOCK_APPLICATIONS: MyApplication[] = [
     companyName: "NileGrants",
     status: "Accepted",
     appliedOn: "2026-07-10",
+    acceptedOn: "2026-07-12",
     duration: "2 months",
     trial: { daysRemaining: 0 },
   },
@@ -51,6 +53,7 @@ export const MOCK_APPLICATIONS: MyApplication[] = [
     companyName: "NileGrants",
     status: "Rejected",
     appliedOn: "2026-07-02",
+    rejectedOn: "2026-07-05",
     duration: "1 month",
     rejectionReason: "The position was filled by an internal candidate.",
   },
@@ -61,6 +64,7 @@ export const MOCK_APPLICATIONS: MyApplication[] = [
     companyName: "Seera Digital",
     status: "Withdrawn",
     appliedOn: "2026-06-28",
+    withdrawnOn: "2026-07-01",
     duration: "6 months",
   },
   {
@@ -89,6 +93,7 @@ export const MOCK_APPLICATIONS: MyApplication[] = [
     companyName: "Orbit Systems",
     status: "Rejected",
     appliedOn: "2026-05-12",
+    rejectedOn: "2026-05-15",
     duration: "3 months",
   },
   {
@@ -98,6 +103,7 @@ export const MOCK_APPLICATIONS: MyApplication[] = [
     companyName: "Bright Path",
     status: "Accepted",
     appliedOn: "2026-04-20",
+    acceptedOn: "2026-04-24",
     duration: "2 months",
   },
 ];
@@ -166,4 +172,23 @@ const SHORT_DATE = new Intl.DateTimeFormat("en-US", {
 export function formatApplicationDate(isoDate: string): string {
   const [year, month, day] = isoDate.split("-").map(Number);
   return SHORT_DATE.format(new Date(Date.UTC(year, month - 1, day)));
+}
+
+// Date shown on a card is the current status's own date, not the applied
+// date: Accepted → acceptedOn, Rejected → rejectedOn, Withdrawn →
+// withdrawnOn, Applied → appliedOn. Label + field come from this single map
+// so the card and any future consumers never drift (FR-013).
+export const STATUS_DATE_FIELDS = {
+  Applied: "appliedOn",
+  Accepted: "acceptedOn",
+  Rejected: "rejectedOn",
+  Withdrawn: "withdrawnOn",
+} as const;
+
+// Resolves the card's displayed date for an application — the current
+// status's date when present, falling back to the always-present appliedOn
+// (defensive against mock data missing a terminal date; Applied always hits
+// the fallback path by design).
+export function getStatusDate(application: MyApplication): string {
+  return application[STATUS_DATE_FIELDS[application.status]] ?? application.appliedOn;
 }

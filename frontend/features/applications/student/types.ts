@@ -22,6 +22,10 @@ export interface ApplicationTrial {
 }
 
 // One application card on the My Applications page (data-model.md).
+// Status dates follow presence rules: each application always has appliedOn,
+// plus the date of its current status when that status is terminal
+// (acceptedOn for Accepted, rejectedOn for Rejected, withdrawnOn for
+// Withdrawn). Applied keeps appliedOn only.
 export interface MyApplication {
   id: string;
   listingId: string;
@@ -29,6 +33,9 @@ export interface MyApplication {
   companyName: string;
   status: ApplicationStatus;
   appliedOn: string;
+  acceptedOn?: string;
+  rejectedOn?: string;
+  withdrawnOn?: string;
   /** Training program length, e.g. "3 months". UI-only display string. */
   duration?: string;
   rejectionReason?: string;
