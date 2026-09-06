@@ -19,6 +19,7 @@ export type TryCatchResponse = {
   userData?: object;
   message?: string;
   status?: number;
+  cookies?: Array<{ name: string; value: string }>;
 };
 
 export type TryCatchRequest = {

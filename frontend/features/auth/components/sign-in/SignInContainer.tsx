@@ -1,8 +1,20 @@
 import Link from "next/link";
 
 import { AuthCard, SignInForm } from "@/features/auth";
+import { SessionExpiredToast } from "./SessionExpiredToast";
 
-export default function SignInContainer() {
+interface SignInContainerProps {
+  sessionExpired: boolean;
+  error: string;
+}
+
+// SignInContainer: renders the sign-in card. When the user lands here via the
+// session-expired redirect (an unrecoverable 401 in serverFetch), the
+// SessionExpiredToast leaf surfaces the backend error as a toast.
+export default function SignInContainer({
+  sessionExpired,
+  error,
+}: SignInContainerProps) {
   return (
     <AuthCard
       title="Welcome back"
@@ -19,6 +31,7 @@ export default function SignInContainer() {
         </p>
       }
     >
+      <SessionExpiredToast sessionExpired={sessionExpired} error={error} />
       <SignInForm />
     </AuthCard>
   );

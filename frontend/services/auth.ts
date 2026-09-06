@@ -6,8 +6,10 @@ import { serverFetch } from "./api";
 import {
   ACCESS_TOKEN_COOKIE,
   COMPANY_STATUS_COOKIE,
+  CSRF_TOKEN_COOKIE,
   deleteCookie,
   getCookie,
+  REFRESH_TOKEN_COOKIE,
   ROLE_COOKIE,
 } from "./cookies";
 import type { Session, Role, CompanyStatus } from "@/types/auth";
@@ -31,6 +33,8 @@ export async function logout() {
   await deleteCookie(ACCESS_TOKEN_COOKIE);
   await deleteCookie(ROLE_COOKIE);
   await deleteCookie(COMPANY_STATUS_COOKIE);
+  await deleteCookie(REFRESH_TOKEN_COOKIE);
+  await deleteCookie(CSRF_TOKEN_COOKIE);
 
   redirect("/sign-in");
 }

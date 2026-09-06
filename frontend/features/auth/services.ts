@@ -5,6 +5,9 @@ import {
   ACCESS_TOKEN_COOKIE,
   ACCESS_TOKEN_MAX_AGE,
   COMPANY_STATUS_COOKIE,
+  CSRF_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+  REFRESH_TOKEN_MAX_AGE,
   ROLE_COOKIE,
 } from "@/services/cookies";
 import { ROLE_HOME } from "@/config/routes";
@@ -58,6 +61,19 @@ export async function authenticate({
         maxAge: ACCESS_TOKEN_MAX_AGE,
         path: "/",
       });
+    }
+
+    // The backend mints refresh_token + csrf_token cookies on login; persist
+    // them so an expired access token can later be refreshed server-side.
+    for (const { name, value } of result.cookies ?? []) {
+      if (name === REFRESH_TOKEN_COOKIE || name === CSRF_TOKEN_COOKIE) {
+        cookieStore.set(name, value, {
+          httpOnly: true,
+          sameSite: "lax",
+          maxAge: REFRESH_TOKEN_MAX_AGE,
+          path: "/",
+        });
+      }
     }
   }
 

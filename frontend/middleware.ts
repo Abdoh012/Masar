@@ -17,6 +17,22 @@ export function middleware(request: NextRequest) {
   const isAuthRoute = AUTH_ROUTES_PREFIX.some((p) => pathname.startsWith(p));
   const isPendingRoute = pathname === COMPANY_PENDING_ROUTE;
 
+  // A session-expired landing (serverFetch redirects here after an
+  // unrecoverable 401). Cookie deletion may be impossible during an RSC render,
+  // so force-clear the session here or the still-present token would bounce the
+  // auth page straight back to the protected area — a redirect loop.
+  const isSessionExpired =
+    request.nextUrl.searchParams.get("sessionExpired") === "1";
+  if (isAuthRoute && isSessionExpired) {
+    const res = NextResponse.next();
+    res.cookies.delete("masarJwt");
+    res.cookies.delete("masarRole");
+    res.cookies.delete("companyStatus");
+    res.cookies.delete("refresh_token");
+    res.cookies.delete("csrf_token");
+    return res;
+  }
+
   // Stale role cookie with no valid token — clear it, don't loop
   if (!token && role) {
     const res = NextResponse.redirect(
