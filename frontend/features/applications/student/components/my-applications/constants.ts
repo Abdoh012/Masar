@@ -30,6 +30,7 @@ export const MOCK_APPLICATIONS: MyApplication[] = [
     companyName: "Hala Bank",
     status: "Accepted",
     appliedOn: "2026-07-20",
+    duration: "3 months",
     mayLeadToHire: true,
     trial: { daysRemaining: 12, continuePastTrial: true },
   },
@@ -40,6 +41,7 @@ export const MOCK_APPLICATIONS: MyApplication[] = [
     companyName: "NileGrants",
     status: "Accepted",
     appliedOn: "2026-07-10",
+    duration: "2 months",
     trial: { daysRemaining: 0 },
   },
   {
@@ -49,6 +51,7 @@ export const MOCK_APPLICATIONS: MyApplication[] = [
     companyName: "NileGrants",
     status: "Rejected",
     appliedOn: "2026-07-02",
+    duration: "1 month",
     rejectionReason: "The position was filled by an internal candidate.",
   },
   {
@@ -58,6 +61,7 @@ export const MOCK_APPLICATIONS: MyApplication[] = [
     companyName: "Seera Digital",
     status: "Withdrawn",
     appliedOn: "2026-06-28",
+    duration: "6 months",
   },
   {
     id: "app-0977",
@@ -66,6 +70,7 @@ export const MOCK_APPLICATIONS: MyApplication[] = [
     companyName: "Craft Labs",
     status: "Applied",
     appliedOn: "2026-06-15",
+    duration: "3 months",
     mayLeadToHire: true,
   },
   {
@@ -75,6 +80,7 @@ export const MOCK_APPLICATIONS: MyApplication[] = [
     companyName: "Pixel Works",
     status: "Applied",
     appliedOn: "2026-05-30",
+    duration: "4 months",
   },
   {
     id: "app-0922",
@@ -83,6 +89,7 @@ export const MOCK_APPLICATIONS: MyApplication[] = [
     companyName: "Orbit Systems",
     status: "Rejected",
     appliedOn: "2026-05-12",
+    duration: "3 months",
   },
   {
     id: "app-0890",
@@ -91,6 +98,7 @@ export const MOCK_APPLICATIONS: MyApplication[] = [
     companyName: "Bright Path",
     status: "Accepted",
     appliedOn: "2026-04-20",
+    duration: "2 months",
   },
 ];
 

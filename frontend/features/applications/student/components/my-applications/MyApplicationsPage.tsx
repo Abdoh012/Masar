@@ -67,7 +67,7 @@ export function MyApplicationsPage() {
       <ApplicationStatusTabs tabs={statusTabs} active={activeTab} onSelect={setActiveTab} />
 
       {filteredApplications.length > 0 ? (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {filteredApplications.map((application) => (
             <ApplicationCard
               key={application.id}

@@ -29,6 +29,8 @@ export interface MyApplication {
   companyName: string;
   status: ApplicationStatus;
   appliedOn: string;
+  /** Training program length, e.g. "3 months". UI-only display string. */
+  duration?: string;
   rejectionReason?: string;
   mayLeadToHire?: boolean;
   trial?: ApplicationTrial;

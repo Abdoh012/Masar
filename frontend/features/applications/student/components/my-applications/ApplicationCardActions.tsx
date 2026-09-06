@@ -22,7 +22,7 @@ export function ApplicationCardActions({
   onWithdraw,
 }: ApplicationCardActionsProps) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
       <Button asChild size="sm" variant="outline">
         <Link href={`/listings/${application.listingId}`}>
           {CARD_ACTION_LABELS.viewListing}
