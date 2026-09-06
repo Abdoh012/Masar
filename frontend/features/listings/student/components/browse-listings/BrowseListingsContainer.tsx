@@ -8,7 +8,6 @@ import { BrowseHero } from "./BrowseHero";
 import { BrowseResults } from "./BrowseResults";
 import { BROWSE_PAGE_LIMIT } from "./constants";
 import { FilterAndSearch } from "./FilterAndSearch";
-import { GridErrorBoundary } from "./GridErrorBoundary";
 
 interface BrowseListingsContainerProps {
   searchParams: Record<string, string | string[] | undefined>;
@@ -33,9 +32,7 @@ export function BrowseListingsContainer({
         <BrowseFilterBar />
 
         <Suspense fallback={<BrowseGridSkeleton />}>
-          <GridErrorBoundary>
             <BrowseResults params={params} limit={BROWSE_PAGE_LIMIT} />
-          </GridErrorBoundary>
         </Suspense>
       </div>
     </div>

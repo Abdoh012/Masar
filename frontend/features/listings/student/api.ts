@@ -64,7 +64,7 @@ export async function fetchBrowseListings(
   }
 
   const res = await fetchListings(page, limit, sort);
-  // if (res.error) throw new Error(res.error);
+  if (res.error) throw new Error(res.error);
   return normalizeListResponse(res);
 }
 
