@@ -49,9 +49,9 @@ export function BrowseListingsContainer() {
 
   const handleUnsaved = useCallback(
     (id: string) => {
-      removeListing(id);
+      if (savedOnly) removeListing(id);
     },
-    [removeListing],
+    [removeListing, savedOnly],
   );
 
   const handleSearchChange = useCallback(
