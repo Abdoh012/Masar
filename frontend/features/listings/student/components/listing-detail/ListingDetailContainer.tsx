@@ -40,7 +40,7 @@ export async function ListingDetailContainer({ id }: ListingDetailContainerProps
       <div className="space-y-4 rounded-2xl border border-border bg-card p-6">
         <div className="flex flex-wrap items-center gap-2">
           <ModeBadge mode={listing.mode} />
-          <PaidBadge isPaid={listing.isPaid} trialDays={listing.trialDays} />
+          <PaidBadge isPaid={listing.isPaid} trialDays={listing.trialDays} price={listing.price} currency={listing.currency} />
 
           <div className="ml-auto">
             <SaveButton saved={listing.saved} id={listingId} />

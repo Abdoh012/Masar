@@ -43,7 +43,7 @@ export function ListingCard({ className, ...listing }: ListingCardProps) {
 
       <div className="flex flex-wrap items-center gap-2">
         <ModeBadge mode={listing.mode} />
-        <PaidBadge isPaid={listing.isPaid} trialDays={listing.trialDays} />
+        <PaidBadge isPaid={listing.isPaid} trialDays={listing.trialDays} price={listing.price} currency={listing.currency} />
       </div>
 
       <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
