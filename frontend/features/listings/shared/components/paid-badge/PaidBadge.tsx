@@ -10,16 +10,30 @@ import {
 interface PaidBadgeProps {
   isPaid: boolean;
   trialDays?: number;
+  price?: number;
+  currency?: string;
   className?: string;
 }
 
-// PaidBadge: the shared "Free" / "Paid · {trialDays}d trial" pill. One
+function formatPrice(price: number, currency?: string): string {
+  const formatted = new Intl.NumberFormat("en-US").format(price);
+  return currency ? `${formatted} ${currency}` : formatted;
+}
+
+// PaidBadge: the shared "Free" / "Paid · {price} · {trialDays}d trial" pill. One
 // definition reused across ListingCard, ListingDetail, ListingRow, and
 // ListingTableRow (FR-023). Pure leaf.
-export function PaidBadge({ isPaid, trialDays, className }: PaidBadgeProps) {
-  const label = isPaid
-    ? `${PAID_LABEL_PREFIX} · ${trialDays ?? TRIAL_MIN_DAYS}${PAID_LABEL_TRIAL_SUFFIX}`
-    : FREE_LABEL;
+export function PaidBadge({ isPaid, trialDays, price, currency, className }: PaidBadgeProps) {
+  let label: string;
+  if (!isPaid) {
+    label = FREE_LABEL;
+  } else {
+    const pricePart = price ? formatPrice(price, currency) : "";
+    const trialPart = `${trialDays ?? TRIAL_MIN_DAYS}${PAID_LABEL_TRIAL_SUFFIX}`;
+    label = pricePart
+      ? `${PAID_LABEL_PREFIX} · ${pricePart} · ${trialPart}`
+      : `${PAID_LABEL_PREFIX} · ${trialPart}`;
+  }
 
   return (
     <span aria-label={PAID_BADGE_ARIA_LABEL} className={`${PAID_BADGE_CLASSES} ${className ?? ""}`.trim()}>

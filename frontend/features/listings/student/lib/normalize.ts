@@ -56,6 +56,7 @@ export function normalizeApiItem(
     hireIntent: Boolean(item.hire_intent),
     isPaid: Boolean(item.is_paid),
     price: Number(item.compensation_amount ?? 0),
+    currency: String(item.compensation_currency ?? ""),
     trialDays: Number(item.trial_period_days ?? 0),
     status: "published" as const,
     createdAt: String(item.created_at),

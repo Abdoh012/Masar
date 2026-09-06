@@ -21,6 +21,7 @@ export interface Listing {
   hireIntent: boolean;
   isPaid: boolean;
   price?: number;
+  currency?: string;
   trialDays?: number;
   status: ListingStatus;
   createdAt: string;
