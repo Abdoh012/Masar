@@ -1,38 +1,37 @@
-"use client";
-
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import {
-  Briefcase,
-  Building2,
-  CalendarDays,
-  GraduationCap,
-} from "lucide-react";
+import { Briefcase, Building2, CalendarDays, GraduationCap } from "lucide-react";
 
-import { FORMAT_LABELS } from "@/features/listings/shared/lib/constants";
 import { ModeBadge } from "@/features/listings/shared/components/mode-badge/ModeBadge";
 import { PaidBadge } from "@/features/listings/shared/components/paid-badge/PaidBadge";
 import { SaveButton } from "@/features/listings/shared/components/listing-card/SaveButton";
+import { FORMAT_LABELS } from "@/features/listings/shared/lib/constants";
 import { Button } from "@/shared/components/ui/button";
 
-import { useTrainingDetails } from "../../hooks/useTrainingDetails";
+import { fetchTrainingDetails } from "../../api";
+import { normalizeApiItem } from "../../lib/normalize";
 
 import { ApplyCta } from "./ApplyCta";
 import { DetailMetaRow } from "./DetailMetaRow";
-import { DetailSkeleton } from "./DetailSkeleton";
 import { DETAIL_COPY, DETAIL_META } from "./constants";
 
 interface ListingDetailContainerProps {
   id: string;
 }
 
-export function ListingDetailContainer({ id }: ListingDetailContainerProps) {
-  const { listing, loading, error } = useTrainingDetails(id);
+// ListingDetailContainer: server orchestrator for the listing detail page.
+// Resolves the training from the URL id (404 → notFound) and composes the
+// detail card, apply CTA and save toggle. No client state — save/unsave
+// revalidates the route so this component re-renders with the fresh is_saved.
+export async function ListingDetailContainer({ id }: ListingDetailContainerProps) {
+  const raw = await fetchTrainingDetails(id);
+  if (raw.success === false) {
+    if (raw.status === 404) notFound();
+    throw new Error(raw.error ?? "Failed to load training");
+  }
 
-  if (loading) return <DetailSkeleton />;
-  if (error || !listing) notFound();
-
+  const listing = normalizeApiItem(raw.data);
   const listingId = listing.id;
   const alreadyApplied = listing.hasApplied ?? false;
 

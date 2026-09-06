@@ -1,14 +1,12 @@
-import { Loader2 } from "lucide-react";
+import { DetailSkeleton } from "@/features/listings";
 
 export default function Loading() {
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="flex min-h-[40vh] flex-col items-center justify-center gap-4 bg-background font-sans text-foreground"
-    >
-      <Loader2 className="size-8 animate-spin text-primary-text" strokeWidth={2} />
-      <p className="text-sm font-medium text-muted-foreground">Loading listing</p>
+    <div className="min-h-[calc(100dvh-3.5rem)] bg-[#FAF7F1] p-8">
+      <h1 className="sr-only">Training Listing</h1>
+      <div className="mx-auto max-w-3xl">
+        <DetailSkeleton />
+      </div>
     </div>
   );
 }

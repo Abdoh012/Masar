@@ -197,9 +197,13 @@ export async function serverFetch({
     const hadToken = Boolean(await getCookie(ACCESS_TOKEN_COOKIE));
 
     // Builds the request per attempt so a retry after a successful refresh
-    // naturally picks up the fresh access token from the cookie store.
-    const doFetch = async (): Promise<Response> => {
-      const token = await getCookie(ACCESS_TOKEN_COOKIE);
+    // naturally picks up the fresh access token from the cookie store. An
+    // explicit override wins over the cookie so a retry can carry a freshly
+    // minted token even when the cookie store couldn't be updated (read-only
+    // during an RSC render) — re-reading the still-stale cookie would re-401
+    // and clear the whole session.
+    const doFetch = async (accessTokenOverride?: string): Promise<Response> => {
+      const token = accessTokenOverride ?? (await getCookie(ACCESS_TOKEN_COOKIE));
       const headers: Record<string, string> = {};
       if (!isFormData) headers["Content-Type"] = "application/json";
       if (token) headers["Authorization"] = `Bearer ${token}`;
@@ -218,7 +222,22 @@ export async function serverFetch({
       return fetch(`${API_URL}/${url}`, fetchOptions);
     };
 
-    let res = await doFetch();
+    // Safe reads (GET) get a single automatic retry after a transient
+    // transport failure (refused/reset/timeout). Mutations (POST/DELETE) are
+    // never retried — rerunning them could apply twice. The dev backend
+    // (single-threaded `php -S`) can time out fresh connections while its one
+    // worker drains a burst, so a short wait + one retry turns those into a
+    // normal load instead of an error. Only the final failure logs.
+    const isRetryable = method === "GET";
+    let res: Response;
+    try {
+      res = await doFetch();
+    } catch (error) {
+      if (!isRetryable) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      res = await doFetch();
+    }
+
     // Set when the authenticated request got a 401 AND the refresh failed for
     // a transient/network reason. Guards the !res.ok block from clearing the
     // session (and thus logging the user out) over a backend blip.
@@ -235,8 +254,18 @@ export async function serverFetch({
       // token (each serverFetch has an isolated request-scoped cookie store)
       // and fail again.
       if (result.status === "success") {
-        await applyRefreshResult(result);
-        res = await doFetch();
+        // Persist the rotated tokens into this action's cookie store before the
+        // retry. During an RSC render the store is read-only and setCookie
+        // throws — that throw must not abort the retry, so it's swallowed here
+        // and the retry passes the fresh token inline instead. Rotation then
+        // lands on the next Server Action / Route Handler call (save/unsave,
+        // logout, etc.).
+        try {
+          await applyRefreshResult(result);
+        } catch {
+          // read-only store (RSC render): cookie rotation deferred.
+        }
+        res = await doFetch(result.accessToken);
       } else if (result.status === "error") {
         // Transient/network refresh failure — NOT a verdict on the session.
         // Keep the cookies so a temporary backend blip doesn't log the user
@@ -269,7 +298,18 @@ export async function serverFetch({
       };
     }
 
-    const resData = await res.json();
+    // Success body. A 200 with an empty/truncated body (backend killed
+    // mid-response) can't be parsed — treat it like the transport case and
+    // re-fetch once for GETs; a still-bad body falls through to the catch.
+    let resData: any;
+    try {
+      resData = await res.json();
+    } catch (error) {
+      if (!isRetryable) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      res = await doFetch();
+      resData = await res.json();
+    }
     const responseCookies = parseSetCookie(res);
 
     return {
@@ -278,7 +318,12 @@ export async function serverFetch({
       message: resData.message,
       ...(responseCookies.length > 0 ? { cookies: responseCookies } : {}),
     };
-  } catch {
+  } catch (error) {
+    // The in-process fetch to the backend rejected (connection refused/reset,
+    // timeout) or an unexpected step threw. Log the real cause for diagnosis;
+    // the caller still receives the stable friendly message. On the browse/
+    // detail RSC fetch paths this is what a transient backend blip surfaces as.
+    console.error("[serverFetch] request failed", { url, method }, error);
     return {
       success: false,
       error: "Unable to reach the server, please try again later",

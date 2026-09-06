@@ -1,6 +1,14 @@
 import { serverFetch } from "@/services/api";
 import type { TryCatchResponse } from "@/types/server-action";
 
+import type { ListingCardData } from "../shared/types";
+import { getSavedListings } from "./actions";
+import { BrowseParams } from "./lib/browse-params";
+import {
+  normalizeListResponse,
+  normalizeSearchResponse,
+} from "./lib/normalize";
+
 export interface Pagination {
   current_page: number;
   per_page: number;
@@ -14,6 +22,50 @@ export interface TrainingFilters {
   training_type?: string;
   mode?: string;
   paid?: string;
+}
+
+export interface BrowseListingsResult {
+  items: ListingCardData[];
+  pagination: Pagination;
+}
+
+// Selects the right read based on the active browse params (saved-only beats a
+// query beats filters beats a plain listing), normalizes the response, and
+// throws on a failed read so the caller renders its error boundary. The backend
+// computes is_saved/has_applied per authenticated student on each read, so a
+// save/unsave revalidation simply re-runs this.
+export async function fetchBrowseListings(
+  params: BrowseParams,
+  limit: number,
+): Promise<BrowseListingsResult> {
+  const { query, sort, savedOnly, page, trainingType, mode, paid } = params;
+
+  if (savedOnly) {
+    const res = await getSavedListings();
+    if (res.error) throw new Error(res.error);
+    return normalizeListResponse(res.data);
+  }
+
+  if (query.trim()) {
+    const res = await searchListings(query.trim(), page, limit);
+    if (res.error) throw new Error(res.error);
+    return normalizeSearchResponse(res);
+  }
+
+  if (trainingType || mode || paid) {
+    const res = await fetchTrainingsFilters(
+      { training_type: trainingType, mode, paid },
+      page,
+      limit,
+      sort,
+    );
+    if (res.error) throw new Error(res.error);
+    return normalizeSearchResponse(res);
+  }
+
+  const res = await fetchListings(page, limit, sort);
+  // if (res.error) throw new Error(res.error);
+  return normalizeListResponse(res);
 }
 
 export function fetchListings(

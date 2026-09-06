@@ -1,5 +1,8 @@
 import type { BrowseSort } from "../../types";
 
+// Items per page on the browse grid.
+export const BROWSE_PAGE_LIMIT = 10;
+
 export const BROWSE_HERO = {
   eyebrow: "Explore Opportunities",
   title: "Trainings",
@@ -48,13 +51,21 @@ export const TOOLBAR_LABELS = {
 export const SORT_OPTIONS: { value: BrowseSort; label: string }[] = [
   { value: "newest", label: "Newest First" },
   { value: "oldest", label: "Oldest First" },
-  { value: "price_low_to_high", label: "Price: Low to High" },
-  { value: "price_high_to_low", label: "Price: High to Low" },
-  { value: "duration_short_to_long", label: "Duration: Short to Long" },
-  { value: "duration_long_to_short", label: "Duration: Long to Short" },
+  { value: "price_asc", label: "Price: Low to High" },
+  { value: "price_desc", label: "Price: High to Low" },
+  { value: "duration_asc", label: "Duration: Short to Long" },
+  { value: "duration_desc", label: "Duration: Long to Short" },
 ];
 
 export const BROWSE_EMPTY_STATE = {
   title: "No trainings match your filters",
   message: "Try clearing a filter or two to see more options.",
+};
+
+export const GRID_ERROR_COPY = {
+  title: "Couldn't load trainings",
+  message:
+    "We couldn't reach the training service. A moment ago it might just have been a blip — try again.",
+  retry: "Try again",
+  backToBrowse: "Back to browse",
 };

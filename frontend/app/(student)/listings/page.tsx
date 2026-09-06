@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 
 import { BrowseListingsContainer } from "@/features/listings";
 
@@ -7,10 +6,12 @@ export const metadata: Metadata = {
   title: "Browse Trainings",
 };
 
-export default function Page() {
-  return (
-    <Suspense>
-      <BrowseListingsContainer />
-    </Suspense>
-  );
+interface PageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+export default async function Page({ searchParams }: PageProps) {
+  const sp = await searchParams;
+
+  return <BrowseListingsContainer searchParams={sp} />;
 }

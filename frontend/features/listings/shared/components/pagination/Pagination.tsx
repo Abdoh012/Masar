@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -14,17 +14,21 @@ export interface PaginationInfo {
 
 interface PaginationProps {
   pagination: PaginationInfo;
-  searchParamsString: string;
 }
 
-export function Pagination({ pagination, searchParamsString }: PaginationProps) {
+// Pagination: shared pager for the browse grid. Reads the current URL params
+// itself and pushes updates via router.push — the container only hands over the
+// page numbers. Pure leaf, no data fetching (structure rules §6).
+export function Pagination({ pagination }: PaginationProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const sp = searchParams.toString();
   const { current_page, total_pages } = pagination;
 
   if (total_pages <= 1) return null;
 
   function goToPage(page: number) {
-    router.push(createPageUrl("page", page, searchParamsString));
+    router.push(createPageUrl("page", page, sp));
   }
 
   const pages: (number | "...")[] = [];

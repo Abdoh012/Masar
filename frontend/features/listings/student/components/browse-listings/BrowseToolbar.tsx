@@ -1,3 +1,5 @@
+"use client";
+
 import { Bookmark } from "lucide-react";
 
 import { FilterSelect } from "@/features/listings/shared/components/filter-controls/FilterSelect";

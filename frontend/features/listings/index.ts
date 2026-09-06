@@ -14,5 +14,6 @@ export { ListingFormContainer } from "./company/components/listing-form/ListingF
 export { MyListingsListContainer } from "./company/components/my-listings/MyListingsListContainer";
 export { BrowseListingsContainer } from "./student/components/browse-listings/BrowseListingsContainer";
 export { ListingDetailContainer } from "./student/components/listing-detail/ListingDetailContainer";
+export { DetailSkeleton } from "./student/components/listing-detail/DetailSkeleton";
 export { ModerateListingsTableContainer } from "./admin/components/moderate-listings/ModerateListingsTableContainer";
 export { fetchTrainingDetails } from "./student/api";

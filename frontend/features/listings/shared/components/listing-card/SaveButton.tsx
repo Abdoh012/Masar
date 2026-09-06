@@ -1,65 +1,56 @@
 "use client";
 
+import { useTransition } from "react";
+
 import {
   saveTrainingAction,
   unsaveTrainingAction,
 } from "@/features/listings/student/actions";
 import { showError, showSuccess } from "@/shared/lib/notifications";
 import { Bookmark, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
 
 interface SaveButtonProps {
-  saved: boolean | undefined;
+  saved?: boolean;
   id: string;
-  onUnsaved?: () => void;
 }
 
-export function SaveButton({ saved, id, onUnsaved }: SaveButtonProps) {
-  const [isSaved, setIsSaved] = useState(saved ?? false);
-  const [pending, setPending] = useState(false);
+// SaveButton: the bookmark toggle. Renders the backend-reported saved state and
+// delegates the mutation to the server action, which revalidates the listings
+// routes so the server components re-render with the fresh is_saved value. No
+// local state — the `saved` prop is the single source of truth.
+export function SaveButton({ saved = false, id }: SaveButtonProps) {
+  const [isPending, startTransition] = useTransition();
 
-  useEffect(() => {
-    setIsSaved(saved ?? false);
-  }, [saved]);
+  function handleToggle() {
+    if (isPending) return;
 
-  async function handleSaveToggle() {
-    if (pending) return;
+    const action = saved ? unsaveTrainingAction : saveTrainingAction;
 
-    const action = isSaved ? unsaveTrainingAction : saveTrainingAction;
-
-    try {
-      setPending(true);
+    startTransition(async () => {
       const result = await action(id);
-      if (result.error) {
+      if (result?.error) {
         showError(result.error || "Failed to save training");
         return;
       }
-
-      setIsSaved((prev) => !prev);
       showSuccess(result.message || "Training saved successfully");
-      if (isSaved) onUnsaved?.();
-    } catch (error) {
-      showError("Failed to save training");
-    } finally {
-      setPending(false);
-    }
+    });
   }
 
   return (
     <button
       type="button"
-      onClick={handleSaveToggle}
-      disabled={pending}
+      onClick={handleToggle}
+      disabled={isPending}
       className={`cursor-pointer rounded-md p-1.5 transition-colors disabled:opacity-50 ${
-        isSaved
+        saved
           ? "text-secondary hover:bg-secondary-tint"
           : "text-muted-foreground hover:bg-primary-tint hover:text-primary"
       }`}
     >
-      {pending ? (
+      {isPending ? (
         <Loader2 className="size-5 animate-spin" />
       ) : (
-        <Bookmark className={`size-5 ${isSaved ? "fill-current" : ""}`} />
+        <Bookmark className={`size-5 ${saved ? "fill-current" : ""}`} />
       )}
     </button>
   );
