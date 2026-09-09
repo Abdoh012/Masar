@@ -5,10 +5,9 @@ import type {
 } from "../../types";
 
 // Training application wizard constants (structure rules §14 — no inline data).
-// All copy, field configs, and the skills catalog live here so the components
-// stay presentational. The student's known profile details are prefilled
-// locally; the wizard submits to POST /api/v1/applications via the feature's
-// submitApplication action.
+// All copy and field configs live here so the components stay presentational.
+// The student's known profile details are prefilled locally; the wizard
+// submits to POST /api/v1/applications via the feature's submitApplication action.
 
 // The student's known profile details, used to prefill the apply form so
 // already-known information is not re-entered. Matches the profiles feature's
@@ -37,7 +36,6 @@ export const INITIAL_VALUES: ApplicationFormValues = {
   application: {
     interestReason: "",
     learningGoals: "",
-    skills: [],
   },
 };
 
@@ -69,7 +67,7 @@ export const STEP_HEADERS: Record<
   3: {
     title: "Training Application",
     description:
-      "Tell us why you're interested in this training, what you hope to learn, and what skills you can bring.",
+      "Tell us why you're interested in this training and what you hope to learn.",
   },
 };
 
@@ -133,7 +131,7 @@ export const EDUCATION_STATUS_OPTIONS: {
   { value: "graduated", label: "Graduated" },
 ];
 
-// Step 3 field configs + the selectable skills catalog. Skills are optional.
+// Step 3 field configs.
 export const TRAINING_APPLICATION_FIELDS = {
   interestReason: {
     label: "Why are you interested in this training?",
@@ -144,27 +142,7 @@ export const TRAINING_APPLICATION_FIELDS = {
     label: "What do you hope to learn?",
     placeholder: "Share the skills and knowledge you want to walk away with...",
   },
-  skills: { label: "Skills" },
 } as const;
-
-export const SKILL_OPTIONS = [
-  "Java",
-  "Spring Boot",
-  "React",
-  "TypeScript",
-  "SQL",
-  "PostgreSQL",
-  "Docker",
-  "CI/CD",
-  "Linux",
-  "QA",
-  "Test Automation",
-  "Figma",
-  "Prototyping",
-  "SEO",
-  "Social Media",
-  "Excel",
-] as const;
 
 export const CV_FIELD_LABELS = {
   label: "Upload CV / Student Information",

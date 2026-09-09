@@ -4,10 +4,7 @@ import type { TryCatchResponse } from "@/types/server-action";
 import type { ListingCardData } from "../shared/types";
 import { getSavedListings } from "./actions";
 import { BrowseParams } from "./lib/browse-params";
-import {
-  normalizeListResponse,
-  normalizeSearchResponse,
-} from "./lib/normalize";
+import { normalizeListResponse, normalizeSearchResponse } from "./lib/normalize";
 
 export interface Pagination {
   current_page: number;
@@ -18,7 +15,8 @@ export interface Pagination {
   has_previous_page: boolean;
 }
 
-export interface TrainingFilters {
+export interface SearchFilters {
+  q?: string;
   training_type?: string;
   mode?: string;
   paid?: string;
@@ -29,11 +27,8 @@ export interface BrowseListingsResult {
   pagination: Pagination;
 }
 
-// Selects the right read based on the active browse params (saved-only beats a
-// query beats filters beats a plain listing), normalizes the response, and
-// throws on a failed read so the caller renders its error boundary. The backend
-// computes is_saved/has_applied per authenticated student on each read, so a
-// save/unsave revalidation simply re-runs this.
+// Saved-only is a dedicated endpoint; everything else (query, filters, plain
+// browse) goes through the single search/trainings endpoint with all params.
 export async function fetchBrowseListings(
   params: BrowseParams,
   limit: number,
@@ -46,72 +41,34 @@ export async function fetchBrowseListings(
     return normalizeListResponse(res.data);
   }
 
-  if (query.trim()) {
-    const res = await searchListings(query.trim(), page, limit);
-    if (res.error) throw new Error(res.error);
-    return normalizeSearchResponse(res);
-  }
-
-  if (trainingType || mode || paid) {
-    const res = await fetchTrainingsFilters(
-      { training_type: trainingType, mode, paid },
-      page,
-      limit,
-      sort,
-    );
-    if (res.error) throw new Error(res.error);
-    return normalizeSearchResponse(res);
-  }
-
-  const res = await fetchListings(page, limit, sort);
+  const res = await searchTrainings({
+    q: query.trim() || undefined,
+    training_type: trainingType || undefined,
+    mode: mode || undefined,
+    paid: paid || undefined,
+    page,
+    limit,
+    sort,
+  });
   if (res.error) throw new Error(res.error);
-  return normalizeListResponse(res);
+  return normalizeSearchResponse(res);
 }
 
-export function fetchListings(
-  page: number,
-  limit: number,
-  sort: string,
-): Promise<TryCatchResponse> {
+export function searchTrainings(filters: SearchFilters & {
+  page: number;
+  limit: number;
+  sort?: string;
+}): Promise<TryCatchResponse> {
   const params = new URLSearchParams({
-    page: String(page),
-    limit: String(limit),
+    page: String(filters.page),
+    limit: String(filters.limit),
   });
-  if (sort && sort !== "default") params.set("sort", sort);
-  return serverFetch({ url: `trainings/list?${params}`, cache: "no-store" });
-}
-
-export function searchListings(
-  query: string,
-  page: number,
-  limit: number,
-): Promise<TryCatchResponse> {
-  const params = new URLSearchParams({
-    q: query,
-    page: String(page),
-    limit: String(limit),
-  });
-  return serverFetch({ url: `search/trainings?${params}`, cache: "no-store" });
-}
-
-export function fetchTrainingsFilters(
-  filters: TrainingFilters,
-  page: number,
-  limit: number,
-  sort: string,
-): Promise<TryCatchResponse> {
-  const params = new URLSearchParams({
-    page: String(page),
-    limit: String(limit),
-  });
+  if (filters.q) params.set("q", filters.q);
   if (filters.training_type) params.set("training_type", filters.training_type);
   if (filters.mode) params.set("mode", filters.mode);
   if (filters.paid) params.set("paid", filters.paid);
-  if (sort && sort !== "default") params.set("sort", sort);
-  return serverFetch({
-    url: `search/trainings/filters?${params}`,
-    cache: "no-store",
-  });
+  if (filters.sort && filters.sort !== "default") params.set("sort", filters.sort);
+  return serverFetch({ url: `search/trainings?${params}`, cache: "no-store" });
 }
 
 export function fetchTrainingDetails(id: string): Promise<TryCatchResponse> {

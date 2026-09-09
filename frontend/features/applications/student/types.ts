@@ -83,7 +83,6 @@ export interface EducationValues {
 export interface TrainingApplicationValues {
   interestReason: string;
   learningGoals: string;
-  skills: string[];
 }
 
 export interface ApplicationFormValues {

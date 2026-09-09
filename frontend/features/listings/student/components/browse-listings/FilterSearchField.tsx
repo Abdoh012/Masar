@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -29,6 +29,11 @@ export function FilterSearchField({
     onSearchChange(local);
   }
 
+  function handleClear() {
+    setLocal("");
+    onSearchChange("");
+  }
+
   return (
     <form onSubmit={handleSubmit} className="relative w-full sm:w-1/3 mb-4 sm:mb-0">
       <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -37,8 +42,19 @@ export function FilterSearchField({
         placeholder={placeholder}
         value={local}
         onChange={(e) => setLocal(e.target.value)}
-        className="rounded-full py-5 pl-9 pr-24"
+        className="rounded-full py-5 pl-9 pr-24 [&::-webkit-search-cancel-button]:hidden"
       />
+      {local && (
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={handleClear}
+          className="absolute right-18 top-1/2 -translate-y-1/2 rounded-full cursor-pointer p-0 h-7 w-7"
+        >
+          <X className="size-3.5" />
+        </Button>
+      )}
       <Button
         type="submit"
         size="sm"
