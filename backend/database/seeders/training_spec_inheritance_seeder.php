@@ -347,7 +347,7 @@ function tspec_find_or_create_training(
         ':trial_period_days' => $is_paid ? 7 : null,
         ':starts_at' => date('Y-m-d H:i:s', strtotime('+7 days')),
         ':ends_at' => date('Y-m-d H:i:s', strtotime('+90 days')),
-        ':application_deadline' => date('Y-m-d H:i:s', strtotime('+30 days')),
+        ':application_deadline' => date('Y-m-d H:i:s', strtotime('+7 days')),
         ':location' => $city . ', Egypt',
     ]);
 

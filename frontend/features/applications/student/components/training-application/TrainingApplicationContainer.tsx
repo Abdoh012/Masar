@@ -39,14 +39,14 @@ interface TrainingApplicationContainerProps {
 // owns the step, the form values (one useState per section), the CV file, and
 // submission feedback, then composes the leaves. The whole form is deliberately
 // controlled (structure rules §10 exception): steps must survive Back/Continue
-// navigation, step 2 renders a field conditional on a radio, and step 3 is a
-// chip multi-select — all of which need the container to see every value. One
-// shared <form> swaps the active step's fields, so native `required` validation
-// always gates exactly the rendered step's text fields. The full snapshot rides
-// the form as hidden backend-named payload inputs; the CV rides the form's
-// always-mounted CvFileInput carrier (name="cv") — sr-only, so CV presence is
-// gated here (inline error under the step-1 field) instead of via a native
-// bubble. Step 3 submits to submitApplication (POST /api/v1/applications) via
+// navigation, and step 2 renders a field conditional on a radio — both of which
+// need the container to see every value. One shared <form> swaps the active
+// step's fields, so native `required` validation always gates exactly the
+// rendered step's text fields. The full snapshot rides the form as hidden
+// backend-named payload inputs; the CV rides the form's always-mounted
+// CvFileInput carrier (name="cv") — sr-only, so CV presence is gated here
+// (inline error under the step-1 field) instead of via a native bubble.
+// Step 3 submits to submitApplication (POST /api/v1/applications) via
 // useFormFeedback, which toasts backend message/fieldErrors and reports pending
 // via isPending.
 export function TrainingApplicationContainer({
@@ -85,7 +85,7 @@ export function TrainingApplicationContainer({
 
   function updateApplication(
     field: keyof TrainingApplicationValues,
-    value: string | string[],
+    value: string,
   ) {
     setValues((current) => ({
       ...current,

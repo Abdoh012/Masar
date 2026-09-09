@@ -322,7 +322,6 @@ if ($path === '/' || $path === '') {
             <section class="category">
                 <h3>Applications</h3>
                 <div class="endpoint"><span class="badge post">POST</span><span class="path">/api/v1/applications</span></div>
-                <div class="endpoint"><span class="badge get">GET</span><span class="path">/api/v1/applications/my</span></div>
                 <div class="endpoint"><span class="badge get">GET</span><span class="path">/api/v1/applications/{id}</span></div>
                 <div class="endpoint"><span class="badge get">GET</span><span class="path">/api/v1/applications</span></div>
                 <div class="endpoint"><span class="badge post">POST</span><span class="path">/api/v1/applications/withdraw</span></div>

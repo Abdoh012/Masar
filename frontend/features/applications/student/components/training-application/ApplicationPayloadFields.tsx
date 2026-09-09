@@ -35,10 +35,6 @@ export function ApplicationPayloadFields({
       <input type="hidden" name="training_id" value={listingId} readOnly />
       <input type="hidden" name="why_interested" value={application.interestReason} readOnly />
       <input type="hidden" name="what_to_learn" value={application.learningGoals} readOnly />
-
-      {application.skills.map((skill) => (
-        <input key={skill} type="hidden" name="skills" value={skill} readOnly />
-      ))}
     </div>
   );
 }

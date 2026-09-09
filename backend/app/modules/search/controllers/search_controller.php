@@ -25,20 +25,28 @@ function search_controller_search(array $request = [], int $user_id = 0): array 
 
 function search_controller_users(array $request = [], int $user_id = 0): array { return search_controller_type('users', $request, $user_id); }
 function search_controller_companies(array $request = [], int $user_id = 0): array { return search_controller_type('companies', $request, $user_id); }
-function search_controller_trainings(array $request = [], int $user_id = 0): array { return search_controller_type('trainings', $request, $user_id); }
-function search_controller_students(array $request = [], int $user_id = 0): array { return search_controller_type('students', $request, $user_id); }
-function search_controller_certificates(array $request = [], int $user_id = 0): array { return search_controller_type('certificates', $request, $user_id); }
-function search_controller_type(string $type, array $request, int $user_id): array { $request['type'] = $type; return search_controller_search($request, $user_id); }
-
-function search_controller_trainings_filters(array $request = [], int $user_id = 0): array {
+function search_controller_trainings(array $request = [], int $user_id = 0): array {
     /*
-     * Training Filters API: training type + mode + price combined
-     * with whitelisted sorting and pagination. No keyword parameter:
-     * keyword searching belongs to /api/v1/search/trainings.
+     * Unified Training Search + Filters API backed by the single
+     * GET /api/v1/search/trainings endpoint.
+     *
+     * Accepts an optional keyword (q / query / search) together with any
+     * combination of the training filter parameters:
+     *   training_type (shadowing | hands_on | project_based)
+     *   mode         (onsite | remote | hybrid)
+     *   paid         (0 = free, 1 = paid)
+     *   sort         (newest | oldest | price_asc | price_desc | duration_asc | duration_desc)
+     *   page         (positive integer, default 1)
+     *   limit        (integer 1-100, default 20)
+     *
+     * When a keyword is present the search is performed with the filters
+     * applied; when no keyword is present the request behaves exactly like
+     * the previous filter-only API. Student specialization scope and the
+     * training card response shape are preserved in both cases.
      */
     $allowed_types = ['shadowing', 'hands_on', 'project_based'];
     $allowed_modes = ['onsite', 'remote', 'hybrid'];
-    $allowed_sorts = ['newest', 'oldest', 'price_asc', 'price_desc', 'duration_asc', 'duration_desc'];
+    $allowed_sorts = ['newest', 'oldest', 'price_asc', 'price_desc', 'duration_asc', 'duration_desc', 'relevance', 'date', 'created_at', 'updated_at', 'name', 'title'];
 
     $training_type = strtolower(trim((string) ($request['training_type'] ?? '')));
     if ($training_type !== '' && !in_array($training_type, $allowed_types, true)) {
@@ -71,21 +79,25 @@ function search_controller_trainings_filters(array $request = [], int $user_id =
     }
 
     try {
-        $result = search_service_trainings_filters([
+        $result = search_service_trainings([
+            'query' => trim((string) ($request['q'] ?? $request['query'] ?? $request['search'] ?? '')),
             'training_type' => $training_type,
             'mode' => $mode,
             'paid' => $paid_raw === '' ? null : $paid_raw,
-            'sort' => $sort === '' ? 'newest' : $sort,
+            'sort' => $sort,
             'page' => $page_raw === '' ? 1 : (int) $page_raw,
             'limit' => $limit_raw === '' ? 20 : (int) $limit_raw,
             'user_id' => $user_id,
             'role' => (auth_user()['role'] ?? null),
         ]);
-        return search_controller_success($result, 'Training filters applied successfully.');
+        return search_controller_success($result, 'Training search and filters applied successfully.');
     } catch (Throwable $exception) {
-        return search_controller_error('Unable to apply training filters.');
+        return search_controller_error('Unable to process training search and filters.');
     }
 }
+function search_controller_students(array $request = [], int $user_id = 0): array { return search_controller_type('students', $request, $user_id); }
+function search_controller_certificates(array $request = [], int $user_id = 0): array { return search_controller_type('certificates', $request, $user_id); }
+function search_controller_type(string $type, array $request, int $user_id): array { $request['type'] = $type; return search_controller_search($request, $user_id); }
 
 function search_controller_suggestions(array $request = [], int $user_id = 0): array {
     $query = trim((string) ($request['q'] ?? $request['query'] ?? ''));

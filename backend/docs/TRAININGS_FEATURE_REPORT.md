@@ -86,7 +86,6 @@ POST   /api/v1/trainings/{id}/save       student (middleware_student)
 DELETE /api/v1/trainings/{id}/save       student (middleware_student)
 GET    /api/v1/trainings/saved           student (middleware_student)
 POST   /api/v1/applications              student apply (multi-step payload + answers)
-GET    /api/v1/applications/my           student's own applications
 GET    /api/v1/applications/{id}         detail (student/company/admin; enriched)
 GET    /api/v1/search/trainings          searches training_listings
 GET    /api/v1/search/companies|students|users|certificates
@@ -201,8 +200,6 @@ verification is by lint + live HTTP assertions above.
   apply is exposed via `POST /api/v1/applications`.
 - List items expose `is_saved` as `0/1` integers while detail exposes a boolean — cosmetic
   inconsistency preserved from the existing SQL shape.
-- `/api/v1/applications/my` returns the raw `submitted` status (not normalized to `pending`); only
-  detail and the training detail summary normalize it.
 - `training_questions.options` is stored/returned inconsistently: detail returns a JSON array while
   application answers return the raw JSON string for `options`. The validator handles both.
 - No automated test suite exists in the repo; coverage is via the live HTTP checks in section 11.

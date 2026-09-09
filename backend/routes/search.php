@@ -40,11 +40,6 @@ if ($path === '/api/v1/search/companies' && $method === 'GET') {
     return;
 }
 
-if ($path === '/api/v1/search/trainings/filters' && $method === 'GET') {
-    search_route_respond(search_controller_trainings_filters(request_query(), search_controller_user_id()));
-    return;
-}
-
 if ($path === '/api/v1/search/trainings' && $method === 'GET') {
     search_route_respond(search_controller_trainings(request_query(), search_controller_user_id()));
     return;

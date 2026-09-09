@@ -120,26 +120,27 @@ function demo_students(): array
 
 /**
  * [email, legal_name, description, website, phone, city, field, approval_status,
- *  specializations[], work_fields[]]
+ *  specializations[], work_fields[], bank_name, bank_account_name,
+ *  bank_account_number, bank_transfer_instructions]
  */
 function demo_companies(): array
 {
     return [
-        ['careers@niletech.eg', 'NileTech Solutions', 'Software house in Giza building logistics, e-commerce and fintech platforms, with 40+ engineers.', 'https://www.niletech.eg', '01011122231', 'Giza', 'Computer Science', 'approved', ['Software Engineering', 'Backend Development', 'Frontend Development', 'Mobile Development'], ['Computer Science']],
-        ['careers@alexdilabs.com', 'Alexandria Digital Labs', 'Applied AI and data analytics lab serving manufacturing clients across the Delta.', 'https://www.alexdilabs.com', '01122233332', 'Alexandria', 'Computer Science', 'approved', ['Artificial Intelligence', 'Data Analysis', 'Machine Learning', 'Software Engineering'], ['Computer Science']],
-        ['hr@cairomed.eg', 'Cairo Medical Center', 'Multi-specialty hospital in downtown Cairo with 200 beds and a dedicated training floor.', 'https://www.cairomed.eg', '01533344433', 'Cairo', 'Medicine', 'approved', ['General Medicine', 'Pediatrics', 'Surgery'], ['Medicine']],
-        ['info@atlaseng.eg', 'Atlas Engineering', 'Mechanical and civil engineering consultancy with projects across the Nile Delta and the new administrative capital.', 'https://www.atlaseng.eg', '01044455534', 'Giza', 'Engineering', 'approved', ['Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'Architecture'], ['Engineering']],
-        ['careers@brightreach.eg', 'BrightReach Marketing', 'Full-service marketing agency in Cairo managing digital campaigns for retail and healthcare brands.', 'https://www.brightreach.eg', '01155566635', 'Cairo', 'Business', 'approved', ['Marketing', 'Digital Marketing'], ['Business', 'Media']],
-        ['hr@luxorpharma.com', 'Luxor Pharma', 'Pharmaceutical manufacturer and distributor, accredited by the Egyptian Drug Authority.', 'https://www.luxorpharma.com', '01566677736', 'Alexandria', 'Pharmacy', 'approved', ['Clinical Pharmacy', 'Pharmacology'], ['Pharmacy']],
-        ['mail@themis-law.com', 'Themis Law Partners', 'Corporate law firm advising startups and listed companies on contracts and compliance.', 'https://www.themis-law.com', '01077788837', 'Cairo', 'Law', 'approved', ['Corporate Law', 'Commercial Law'], ['Law']],
-        ['hr@ledgerpro.eg', 'LedgerPro Accounting', 'Audit and bookkeeping firm serving SMEs in Greater Cairo and the Delta.', 'https://www.ledgerpro.eg', '01188899938', 'Cairo', 'Accounting', 'approved', ['Financial Accounting', 'Auditing', 'Management Accounting'], ['Accounting']],
-        ['talent@futureworks.io', 'FutureWorks Software', 'Product engineering studio in New Cairo building web and mobile products for international clients.', 'https://www.futureworks.io', '01599900039', 'New Cairo', 'Computer Science', 'approved', ['Software Engineering', 'Full Stack Development', 'Cloud Computing', 'DevOps'], ['Computer Science']],
-        ['hr@greenretail.eg', 'GreenRetail Egypt', 'Specialty retail chain with 15 branches across Cairo and Giza.', 'https://www.greenretail.eg', '01011122230', 'Giza', 'Business', 'approved', ['Business Administration', 'Sales', 'Marketing'], ['Business']],
-        ['careers@medpulse-dx.com', 'MedPulse Diagnostics', 'New medical diagnostics laboratory opening in Dokki, currently onboarding its founding team.', 'https://www.medpulse-dx.com', '01122233331', 'Giza', 'Medicine', 'pending', ['General Medicine', 'Surgery'], ['Medicine']],
-        ['hr@solaroffshore.eg', 'SolarOffshore Energy', 'Renewable energy developer installing solar and onshore wind projects in the Suez region.', 'https://www.solaroffshore.eg', '01533344432', 'Suez', 'Engineering', 'approved', ['Electrical Engineering', 'Mechanical Engineering'], ['Engineering']],
-        ['careers@nilevalley-log.com', 'Nile Valley Logistics', 'Freight and warehousing operator covering the Alexandria economic corridor.', 'https://www.nilevalley-log.com', '01044455533', 'Alexandria', 'Business', 'approved', ['Business Administration', 'Sales'], ['Business']],
-        ['jobs@cleofashion.com', 'CleoFashion International', 'Garment and mixed-use real estate group in Cairo with an in-house design studio.', 'https://www.cleofashion.com', '01155566634', 'Cairo', 'Design', 'rejected', ['Graphic Design', 'Product Design'], ['Design']],
-        ['hr@hrpartners.eg', 'HR Partners Egypt', 'Human resources outsourcing and recruitment firm headquartered in Maadi.', 'https://www.hrpartners.eg', '01566677735', 'Cairo', 'Business', 'approved', ['Human Resources', 'Business Administration'], ['Business']],
+        ['careers@niletech.eg', 'NileTech Solutions', 'Software house in Giza building logistics, e-commerce and fintech platforms, with 40+ engineers.', 'https://www.niletech.eg', '01011122231', 'Giza', 'Computer Science', 'approved', ['Software Engineering', 'Backend Development', 'Frontend Development', 'Mobile Development'], ['Computer Science'], 'Banque Misr', 'NileTech Solutions', 'DEMO-001-2201-4491-1', 'Account is cleared daily. Please transfer the exact amount and send the transfer receipt to careers@niletech.eg.'],
+        ['careers@alexdilabs.com', 'Alexandria Digital Labs', 'Applied AI and data analytics lab serving manufacturing clients across the Delta.', 'https://www.alexdilabs.com', '01122233332', 'Alexandria', 'Computer Science', 'approved', ['Artificial Intelligence', 'Data Analysis', 'Machine Learning', 'Software Engineering'], ['Computer Science'], 'Alexandria Bank of Industry', 'Alexandria Digital Labs', 'DEMO-002-3155-7788-2', 'Place the applicant full name in the transfer reference. Confirmations are posted within one business day.'],
+        ['hr@cairomed.eg', 'Cairo Medical Center', 'Multi-specialty hospital in downtown Cairo with 200 beds and a dedicated training floor.', 'https://www.cairomed.eg', '01533344433', 'Cairo', 'Medicine', 'approved', ['General Medicine', 'Pediatrics', 'Surgery'], ['Medicine'], null, null, null, null],
+        ['info@atlaseng.eg', 'Atlas Engineering', 'Mechanical and civil engineering consultancy with projects across the Nile Delta and the new administrative capital.', 'https://www.atlaseng.eg', '01044455534', 'Giza', 'Engineering', 'approved', ['Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'Architecture'], ['Engineering'], 'Commercial International Bank (CIB)', 'Atlas Engineering', 'DEMO-003-2210-8899-3', 'Transfer reference must include the applicant name.'],
+        ['careers@brightreach.eg', 'BrightReach Marketing', 'Full-service marketing agency in Cairo managing digital campaigns for retail and healthcare brands.', 'https://www.brightreach.eg', '01155566635', 'Cairo', 'Business', 'approved', ['Marketing', 'Digital Marketing'], ['Business', 'Media'], null, null, null, null],
+        ['hr@luxorpharma.com', 'Luxor Pharma', 'Pharmaceutical manufacturer and distributor, accredited by the Egyptian Drug Authority.', 'https://www.luxorpharma.com', '01566677736', 'Alexandria', 'Pharmacy', 'approved', ['Clinical Pharmacy', 'Pharmacology'], ['Pharmacy'], 'QNB Alahly', 'Luxor Pharma', 'DEMO-004-2911-1234-4', null],
+        ['mail@themis-law.com', 'Themis Law Partners', 'Corporate law firm advising startups and listed companies on contracts and compliance.', 'https://www.themis-law.com', '01077788837', 'Cairo', 'Law', 'approved', ['Corporate Law', 'Commercial Law'], ['Law'], null, null, null, null],
+        ['hr@ledgerpro.eg', 'LedgerPro Accounting', 'Audit and bookkeeping firm serving SMEs in Greater Cairo and the Delta.', 'https://www.ledgerpro.eg', '01188899938', 'Cairo', 'Accounting', 'approved', ['Financial Accounting', 'Auditing', 'Management Accounting'], ['Accounting'], 'Banque du Caire', 'LedgerPro Accounting', 'DEMO-005-2612-5566-5', null],
+        ['talent@futureworks.io', 'FutureWorks Software', 'Product engineering studio in New Cairo building web and mobile products for international clients.', 'https://www.futureworks.io', '01599900039', 'New Cairo', 'Computer Science', 'approved', ['Software Engineering', 'Full Stack Development', 'Cloud Computing', 'DevOps'], ['Computer Science'], 'HSBC Egypt', 'FutureWorks Software', 'DEMO-006-0913-7788-6', 'Include the training title in the transfer note.'],
+        ['hr@greenretail.eg', 'GreenRetail Egypt', 'Specialty retail chain with 15 branches across Cairo and Giza.', 'https://www.greenretail.eg', '01011122230', 'Giza', 'Business', 'approved', ['Business Administration', 'Sales', 'Marketing'], ['Business'], null, null, null, null],
+        ['careers@medpulse-dx.com', 'MedPulse Diagnostics', 'New medical diagnostics laboratory opening in Dokki, currently onboarding its founding team.', 'https://www.medpulse-dx.com', '01122233331', 'Giza', 'Medicine', 'pending', ['General Medicine', 'Surgery'], ['Medicine'], null, null, null, null],
+        ['hr@solaroffshore.eg', 'SolarOffshore Energy', 'Renewable energy developer installing solar and onshore wind projects in the Suez region.', 'https://www.solaroffshore.eg', '01533344432', 'Suez', 'Engineering', 'approved', ['Electrical Engineering', 'Mechanical Engineering'], ['Engineering'], null, null, null, null],
+        ['careers@nilevalley-log.com', 'Nile Valley Logistics', 'Freight and warehousing operator covering the Alexandria economic corridor.', 'https://www.nilevalley-log.com', '01044455533', 'Alexandria', 'Business', 'approved', ['Business Administration', 'Sales'], ['Business'], null, null, null, null],
+        ['jobs@cleofashion.com', 'CleoFashion International', 'Garment and mixed-use real estate group in Cairo with an in-house design studio.', 'https://www.cleofashion.com', '01155566634', 'Cairo', 'Design', 'rejected', ['Graphic Design', 'Product Design'], ['Design'], null, null, null, null],
+        ['hr@hrpartners.eg', 'HR Partners Egypt', 'Human resources outsourcing and recruitment firm headquartered in Maadi.', 'https://www.hrpartners.eg', '01566677735', 'Cairo', 'Business', 'approved', ['Human Resources', 'Business Administration'], ['Business'], null, null, null, null],
     ];
 }
 
@@ -563,6 +564,10 @@ function demo_seed(PDO $pdo): void
             'approved_at' => $approvedAt,
             'approved_by' => $status === 'approved' ? $admin1 : null,
             'rejection_reason' => $status === 'rejected' ? 'Incomplete business license documentation (commercial register and tax card missing).' : null,
+            'bank_name' => $c[9] ?? null,
+            'bank_account_name' => $c[10] ?? null,
+            'bank_account_number' => $c[11] ?? null,
+            'bank_transfer_instructions' => $c[12] ?? null,
             'created_at' => demo_datetime(70),
             'updated_at' => demo_datetime(70),
         ]);
@@ -614,7 +619,7 @@ function demo_seed(PDO $pdo): void
         $closedAt = $status === 'closed' ? demo_datetime(2 + $idx % 5) : null;
         $startsAt = $status === 'closed' ? demo_datetime(30 + $idx % 10, '09:00:00') : demo_datetime(10 - $idx % 8, '09:00:00');
         $endsAt = $status === 'closed' ? demo_datetime(5 + $idx % 5, '17:00:00') : demo_datetime(-(10 + $idx % 20), '17:00:00');
-        $deadline = $status === 'closed' ? demo_datetime(35 + $idx % 10, '23:59:59') : demo_datetime(20 - $idx % 10, '23:59:59');
+        $deadline = $startsAt;
 
         $trainingId = demo_insert($pdo, 'training_listings', [
             'company_id' => $company['company_id'],

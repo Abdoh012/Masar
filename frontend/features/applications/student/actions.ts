@@ -46,13 +46,6 @@ export async function submitApplication(
     outbound.set("university_id", universityId);
   }
 
-  const skills = formData.getAll("skills");
-  for (const skill of skills) {
-    if (typeof skill === "string" && skill.trim() !== "") {
-      outbound.append("skills[]", skill.trim());
-    }
-  }
-
   const cv = formData.get("cv");
   if (cv instanceof File && cv.size > 0) {
     outbound.append("cv", cv, cv.name);

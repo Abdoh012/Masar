@@ -884,6 +884,56 @@ function company_service_update_by_user_id(
 
     /*
     |--------------------------------------------------------------------------
+    | Bank Transfer Details (optional)
+    |--------------------------------------------------------------------------
+    |
+    | Optional manual-payment destination fields. Only the owning company can
+    | set them via its own profile (PUT /api/v1/companies/me). They never
+    | leak into public company/training payloads. Empty strings / null clear
+    | the value for companies that stop running paid trainings.
+    |
+    */
+
+    $bank_fields = [
+
+        'bank_name',
+
+        'bank_account_name',
+
+        'bank_account_number',
+
+        'bank_transfer_instructions',
+
+    ];
+
+
+    foreach ($bank_fields as $bank_field) {
+
+        if (
+            array_key_exists(
+                $bank_field,
+                $data
+            )
+        ) {
+
+            $bank_value =
+                trim(
+                    (string) (
+                        $data[$bank_field]
+                        ?? ''
+                    )
+                );
+
+            $update_data[$bank_field] =
+                $bank_value === ''
+                    ? null
+                    : $bank_value;
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
     | Resolve Work Fields
     |--------------------------------------------------------------------------
     |

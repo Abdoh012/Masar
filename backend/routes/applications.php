@@ -18,8 +18,21 @@ require_once __DIR__ . '/../app/modules/files/services/file_upload_service.php';
  * POST /api/v1/applications
  * — Apply for a training
  *
- * GET /api/v1/applications/my
- * — Get my applications
+ * GET /api/v1/applications/applied
+ * — Get my applied (pending) applications only
+ *
+ * GET /api/v1/applications/accepted
+ * — Get my accepted applications only
+ *
+ * GET /api/v1/applications/rejected
+ * — Get my rejected applications only
+ *
+ * GET /api/v1/applications/withdrawn
+ * — Get my withdrawn applications only
+ *
+ * GET /api/v1/applications/all
+ * — Get my applications across all four states (Applied, Accepted, Rejected,
+ *   Withdrawn) in one unified paginated list
  *
  * GET /api/v1/applications/{id}
  * — Get application details
@@ -38,6 +51,9 @@ require_once __DIR__ . '/../app/modules/files/services/file_upload_service.php';
  *
  * POST /api/v1/applications/reject
  * — Reject application
+ *
+ * POST /api/v1/applications/{id}/payment/confirm
+ * — Confirm manual (bank transfer) payment for an accepted paid training
  */
 
 $path = request_path();
@@ -180,10 +196,52 @@ if ($path === '/api/v1/applications' && $method === 'POST') {
     return;
 }
 
-// GET /api/v1/applications/my — Get my applications
-if ($path === '/api/v1/applications/my' && $method === 'GET') {
+// GET /api/v1/applications/applied — Get my applied (pending) applications only
+if ($path === '/api/v1/applications/applied' && $method === 'GET') {
     middleware_student();
-    application_controller_my_applications();
+    application_controller_applied_applications();
+    return;
+}
+
+// POST /api/v1/applications/withdraw — Withdraw application
+if ($path === '/api/v1/applications/withdraw' && $method === 'POST') {
+    middleware_student();
+    application_controller_withdraw();
+    return;
+}
+
+// GET /api/v1/applications/accepted — Get my accepted applications only
+// (registered before the /{id} regex route below so the literal segment wins)
+if ($path === '/api/v1/applications/accepted' && $method === 'GET') {
+    middleware_student();
+    application_controller_accepted_applications();
+    return;
+}
+
+// GET /api/v1/applications/rejected — Get my rejected applications only
+// (also registered before the /{id} regex route so "rejected" is never
+// interpreted as an application id)
+if ($path === '/api/v1/applications/rejected' && $method === 'GET') {
+    middleware_student();
+    application_controller_rejected_applications();
+    return;
+}
+
+// GET /api/v1/applications/withdrawn — Get my withdrawn applications only
+// (also registered before the /{id} regex route so "withdrawn" is never
+// interpreted as an application id)
+if ($path === '/api/v1/applications/withdrawn' && $method === 'GET') {
+    middleware_student();
+    application_controller_withdrawn_applications();
+    return;
+}
+
+// GET /api/v1/applications/all — Get all my applications in one list
+// (Applied + Accepted + Rejected + Withdrawn). Registered before the /{id}
+// regex route so "all" is never interpreted as an application id.
+if ($path === '/api/v1/applications/all' && $method === 'GET') {
+    middleware_student();
+    application_controller_all_applications();
     return;
 }
 
@@ -208,6 +266,37 @@ if (preg_match('#^/api/v1/applications/([0-9]+)/cv$#', $path, $matches) && $meth
 }
 
 /*
+ * Company confirms the manual (bank transfer) payment for an accepted paid
+ * training. Registered before the /{id} regex route below, and it is the only
+ * writer of the manual-payment lifecycle state.
+ */
+// POST /api/v1/applications/{id}/payment/confirm — Confirm manual payment
+if (preg_match('#^/api/v1/applications/([0-9]+)/payment/confirm$#', $path, $matches) && $method === 'POST') {
+    middleware_company();
+    application_controller_confirm_payment((int) $matches[1]);
+    return;
+}
+
+/*
+ * Student submits the bank transfer reference for an accepted paid training
+ * (creates/updates one payments row as pending) and reads its manual payment
+ * lifecycle state. Registered before the /{id} regex route below.
+ */
+// POST /api/v1/applications/{id}/payment — Submit transfer reference
+if (preg_match('#^/api/v1/applications/([0-9]+)/payment$#', $path, $matches) && $method === 'POST') {
+    middleware_student();
+    application_controller_submit_payment_reference((int) $matches[1]);
+    return;
+}
+
+// GET /api/v1/applications/{id}/payment — Get manual payment state
+if (preg_match('#^/api/v1/applications/([0-9]+)/payment$#', $path, $matches) && $method === 'GET') {
+    middleware_student();
+    application_controller_show_payment((int) $matches[1]);
+    return;
+}
+
+/*
  * Application detail is available to the owning student, the owning company
  * (via the training) and administrators. The controller/service enforce the
  * role-based access, so only plain authentication is applied here.
@@ -223,13 +312,6 @@ if (preg_match('#^/api/v1/applications/([0-9]+)$#', $path, $matches) && $method 
 if ($path === '/api/v1/applications' && $method === 'GET') {
     middleware_company();
     application_controller_company_applications();
-    return;
-}
-
-// POST /api/v1/applications/withdraw — Withdraw application
-if ($path === '/api/v1/applications/withdraw' && $method === 'POST') {
-    middleware_student();
-    application_controller_withdraw();
     return;
 }
 

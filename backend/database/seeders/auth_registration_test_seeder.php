@@ -572,7 +572,7 @@ function authtest_find_or_create_training(
             NOW(),
             DATE_ADD(NOW(), INTERVAL 14 DAY),
             DATE_ADD(NOW(), INTERVAL 75 DAY),
-            DATE_ADD(NOW(), INTERVAL 10 DAY),
+            DATE_ADD(NOW(), INTERVAL 14 DAY),
             10,
             NOW(),
             NOW()

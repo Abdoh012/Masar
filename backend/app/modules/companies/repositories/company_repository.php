@@ -73,6 +73,10 @@ function company_repository_find_by_user_id(
             legal_name AS company_name,
             description,
             company_logo,
+            bank_name,
+            bank_account_name,
+            bank_account_number,
+            bank_transfer_instructions,
             approval_status,
             created_at,
             updated_at
@@ -713,6 +717,10 @@ function company_repository_update(
 
         'company_name',
         'description',
+        'bank_name',
+        'bank_account_name',
+        'bank_account_number',
+        'bank_transfer_instructions',
 
     ];
 
