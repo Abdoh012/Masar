@@ -1,3 +1,0 @@
-$kind: collection
-description: "Dedicated Training Filters API over PUBLISHED trainings: training_type + mode + paid combined with AND, whitelisted sorting (newest, oldest, price_asc, price_desc, duration_asc, duration_desc) and standard page/limit pagination (max 100). All parameters optional - omitted means ALL/ANY for that dimension. Invalid values are rejected with 422. This endpoint does NOT do keyword searching; use Search Trainings (?q=) for that."
-order: 1000
