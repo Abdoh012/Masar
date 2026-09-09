@@ -1,3 +1,0 @@
-$kind: collection
-description: Authenticated user account endpoints. The duplicate Get Current User request from auth/me was removed.
-order: 4000

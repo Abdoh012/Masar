@@ -1,3 +1,0 @@
-$kind: collection
-description: Negative/edge-case registration checks for the ID-based field/specialization/industry flow, using real seeded IDs (study field 9, specialization 92 = Mechanical Engineering, 103 = Software Engineering).
-order: 1000
