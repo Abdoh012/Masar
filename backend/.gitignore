@@ -63,6 +63,11 @@ coverage/
 *.sqlite
 *.sqlite3
 
+# Postman local workspace (auto-generated from Postman Cloud)
+
+.postman/
+postman/
+
 # Generated files
 
 *.generated.php
