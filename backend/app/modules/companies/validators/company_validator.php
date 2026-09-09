@@ -340,9 +340,93 @@ function company_validator_update(
     $errors = [];
 
 
-/*
+    /*
     |--------------------------------------------------------------------------
-    | Work Field IDs
+    | Bank Transfer Details (optional, only for paid trainings)
+    |--------------------------------------------------------------------------
+    |
+    | The bank fields describe the company's authorized bank-transfer
+    | destination for manual payments. They are entirely optional: a company
+    | that only runs free trainings never sets them. When provided, an empty
+    | string clears the value (treated as null by the service). Account
+    | details are never shown on public paths.
+    |
+    */
+
+    $bank_string_rules = [
+
+        'bank_name' => [
+            'label' => 'Bank name',
+            'max' => 255,
+        ],
+
+        'bank_account_name' => [
+            'label' => 'Bank account name',
+            'max' => 255,
+        ],
+
+        'bank_account_number' => [
+            'label' => 'Bank account number',
+            'max' => 100,
+        ],
+
+        'bank_transfer_instructions' => [
+            'label' => 'Bank transfer instructions',
+            'max' => 5000,
+        ],
+
+    ];
+
+
+    foreach (array_keys($bank_string_rules) as $bank_field) {
+
+        if (
+            !array_key_exists(
+                $bank_field,
+                $data
+            )
+        ) {
+            continue;
+        }
+
+        $bank_value =
+            $data[$bank_field];
+
+        $bank_rule =
+            $bank_string_rules[$bank_field];
+
+        if (
+            $bank_value === null
+        ) {
+            continue;
+        }
+
+        if (
+            !is_string($bank_value)
+        ) {
+
+            $errors[$bank_field] =
+                $bank_rule['label'] . ' must be a string.';
+
+            continue;
+        }
+
+        if (
+            strlen($bank_value) > $bank_rule['max']
+        ) {
+
+            $errors[$bank_field] =
+                $bank_rule['label']
+                . ' must not exceed '
+                . $bank_rule['max']
+                . ' characters.';
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Return
     |--------------------------------------------------------------------------
     */
 
@@ -456,6 +540,14 @@ function company_validator_update(
         'work_field_ids',
 
         'specialization_ids',
+
+        'bank_name',
+
+        'bank_account_name',
+
+        'bank_account_number',
+
+        'bank_transfer_instructions',
 
     ];
 

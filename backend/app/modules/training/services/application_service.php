@@ -1467,6 +1467,74 @@ function application_service_list_student(
 
     /*
     |--------------------------------------------------------------------------
+    | Specialization Scoping
+    |--------------------------------------------------------------------------
+    |
+    | When the caller sets scope_to_specialization (the Applied endpoint),
+    | results are restricted to trainings whose single primary specialization
+    | matches the student's own specialization, mirroring the Trainings List
+    | and Saved Trainings behavior. A student with no specialization set gets
+    | an empty result set (success, no error).
+    |
+    */
+
+    $match_specialization_ids = null;
+
+    if (
+        !empty($filters['scope_to_specialization'])
+    ) {
+
+        $student_specialization_id =
+            training_repository_get_student_specialization_id(
+                (int) $student['student_id']
+            );
+
+        if ($student_specialization_id === null) {
+
+            return [
+
+                'success' => true,
+
+                'message' =>
+                    'Applications retrieved successfully.',
+
+                'data' => [
+
+                    'items' => [],
+
+                    'pagination' => [
+
+                        'current_page' =>
+                            $page,
+
+                        'per_page' =>
+                            $limit,
+
+                        'total' => 0,
+
+                        'total_pages' => 0,
+
+                        'has_next_page' => false,
+
+                        'has_previous_page' => false
+
+                    ]
+
+                ],
+
+                'status_code' => 200
+
+            ];
+        }
+
+
+        $match_specialization_ids =
+            [$student_specialization_id];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
     | Status Filter
     |--------------------------------------------------------------------------
     */
@@ -1490,7 +1558,8 @@ function application_service_list_student(
             (int) $student['student_id'],
             $limit,
             $offset,
-            $status
+            $status,
+            $match_specialization_ids
         );
 
     foreach ($items as &$item) {
@@ -1511,7 +1580,949 @@ function application_service_list_student(
     $total =
         application_repository_count_by_student(
             (int) $student['student_id'],
-            $status
+            $status,
+            $match_specialization_ids
+        );
+
+
+    $total_pages =
+        $limit > 0
+            ? (int) ceil(
+                $total / $limit
+            )
+            : 0;
+
+
+    return [
+
+        'success' => true,
+
+        'message' =>
+            'Applications retrieved successfully.',
+
+        'data' => [
+
+            'items' =>
+                $items,
+
+            'pagination' => [
+
+                'current_page' =>
+                    $page,
+
+                'per_page' =>
+                    $limit,
+
+                'total' =>
+                    $total,
+
+                'total_pages' =>
+                    $total_pages,
+
+                'has_next_page' =>
+                    $page < $total_pages,
+
+                'has_previous_page' =>
+                    $page > 1
+
+            ]
+
+        ],
+
+        'status_code' => 200
+
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| List Student Accepted Applications
+|--------------------------------------------------------------------------
+|
+| Returns only the authenticated student's accepted applications, scoped to
+| the student's own specialization (the same specialization matching used by
+| the Trainings List and the Applied endpoint). A student with no
+| specialization set gets an empty result set (success, no error).
+|
+*/
+
+function application_service_list_accepted(
+    int $user_id,
+    array $filters = []
+): array {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Find Student
+    |--------------------------------------------------------------------------
+    */
+
+    $student =
+        application_repository_find_student_by_user_id(
+            $user_id
+        );
+
+
+    if (!$student) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Student profile was not found.',
+
+            'errors' => [],
+
+            'status_code' => 404
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pagination
+    |--------------------------------------------------------------------------
+    */
+
+    $page =
+        isset($filters['page'])
+            ? (int) $filters['page']
+            : 1;
+
+
+    $limit =
+        isset($filters['limit'])
+            ? (int) $filters['limit']
+            : 20;
+
+
+    if (
+        $page < 1
+    ) {
+
+        $page = 1;
+    }
+
+
+    if (
+        $limit < 1
+    ) {
+
+        $limit = 20;
+    }
+
+
+    if (
+        $limit > 100
+    ) {
+
+        $limit = 100;
+    }
+
+
+    $offset =
+        ($page - 1) * $limit;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Specialization Scoping
+    |--------------------------------------------------------------------------
+    |
+    | The Accepted endpoint always scopes results to the student's own
+    | specialization. A student with no specialization set gets an empty
+    | result set (success, no error).
+    |
+    */
+
+    $match_specialization_ids = null;
+
+    if (
+        !empty($filters['scope_to_specialization'])
+    ) {
+
+        $student_specialization_id =
+            training_repository_get_student_specialization_id(
+                (int) $student['student_id']
+            );
+
+        if ($student_specialization_id === null) {
+
+            return [
+
+                'success' => true,
+
+                'message' =>
+                    'Applications retrieved successfully.',
+
+                'data' => [
+
+                    'items' => [],
+
+                    'pagination' => [
+
+                        'current_page' =>
+                            $page,
+
+                        'per_page' =>
+                            $limit,
+
+                        'total' => 0,
+
+                        'total_pages' => 0,
+
+                        'has_next_page' => false,
+
+                        'has_previous_page' => false
+
+                    ]
+
+                ],
+
+                'status_code' => 200
+
+            ];
+        }
+
+
+        $match_specialization_ids =
+            [$student_specialization_id];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get Applications
+    |--------------------------------------------------------------------------
+    */
+
+    $items =
+        application_repository_get_accepted_by_student(
+            (int) $student['student_id'],
+            $limit,
+            $offset,
+            $match_specialization_ids
+        );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Count
+    |--------------------------------------------------------------------------
+    */
+
+    $total =
+        application_repository_count_accepted_by_student(
+            (int) $student['student_id'],
+            $match_specialization_ids
+        );
+
+
+    $total_pages =
+        $limit > 0
+            ? (int) ceil(
+                $total / $limit
+            )
+            : 0;
+
+
+    return [
+
+        'success' => true,
+
+        'message' =>
+            'Applications retrieved successfully.',
+
+        'data' => [
+
+            'items' =>
+                $items,
+
+            'pagination' => [
+
+                'current_page' =>
+                    $page,
+
+                'per_page' =>
+                    $limit,
+
+                'total' =>
+                    $total,
+
+                'total_pages' =>
+                    $total_pages,
+
+                'has_next_page' =>
+                    $page < $total_pages,
+
+                'has_previous_page' =>
+                    $page > 1
+
+            ]
+
+        ],
+
+        'status_code' => 200
+
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| List Student Rejected Applications
+|--------------------------------------------------------------------------
+|
+| Returns only the authenticated student's rejected applications, scoped to
+| the student's own specialization (the same specialization matching used by
+| the Trainings List, the Applied and the Accepted endpoints). A student with
+| no specialization set gets an empty result set (success, no error). The
+| items carry only the columns needed to build the Rejected Card DTO.
+|
+*/
+
+function application_service_list_rejected(
+    int $user_id,
+    array $filters = []
+): array {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Find Student
+    |--------------------------------------------------------------------------
+    */
+
+    $student =
+        application_repository_find_student_by_user_id(
+            $user_id
+        );
+
+
+    if (!$student) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Student profile was not found.',
+
+            'errors' => [],
+
+            'status_code' => 404
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pagination
+    |--------------------------------------------------------------------------
+    */
+
+    $page =
+        isset($filters['page'])
+            ? (int) $filters['page']
+            : 1;
+
+
+    $limit =
+        isset($filters['limit'])
+            ? (int) $filters['limit']
+            : 20;
+
+
+    if (
+        $page < 1
+    ) {
+
+        $page = 1;
+    }
+
+
+    if (
+        $limit < 1
+    ) {
+
+        $limit = 20;
+    }
+
+
+    if (
+        $limit > 100
+    ) {
+
+        $limit = 100;
+    }
+
+
+    $offset =
+        ($page - 1) * $limit;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Specialization Scoping
+    |--------------------------------------------------------------------------
+    |
+    | The Rejected endpoint always scopes results to the student's own
+    | specialization. A student with no specialization set gets an empty
+    | result set (success, no error).
+    |
+    */
+
+    $match_specialization_ids = null;
+
+    if (
+        !empty($filters['scope_to_specialization'])
+    ) {
+
+        $student_specialization_id =
+            training_repository_get_student_specialization_id(
+                (int) $student['student_id']
+            );
+
+        if ($student_specialization_id === null) {
+
+            return [
+
+                'success' => true,
+
+                'message' =>
+                    'Applications retrieved successfully.',
+
+                'data' => [
+
+                    'items' => [],
+
+                    'pagination' => [
+
+                        'current_page' =>
+                            $page,
+
+                        'per_page' =>
+                            $limit,
+
+                        'total' => 0,
+
+                        'total_pages' => 0,
+
+                        'has_next_page' => false,
+
+                        'has_previous_page' => false
+
+                    ]
+
+                ],
+
+                'status_code' => 200
+
+            ];
+        }
+
+
+        $match_specialization_ids =
+            [$student_specialization_id];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get Applications
+    |--------------------------------------------------------------------------
+    */
+
+    $items =
+        application_repository_get_rejected_by_student(
+            (int) $student['student_id'],
+            $limit,
+            $offset,
+            $match_specialization_ids
+        );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Count
+    |--------------------------------------------------------------------------
+    */
+
+    $total =
+        application_repository_count_rejected_by_student(
+            (int) $student['student_id'],
+            $match_specialization_ids
+        );
+
+
+    $total_pages =
+        $limit > 0
+            ? (int) ceil(
+                $total / $limit
+            )
+            : 0;
+
+
+    return [
+
+        'success' => true,
+
+        'message' =>
+            'Applications retrieved successfully.',
+
+        'data' => [
+
+            'items' =>
+                $items,
+
+            'pagination' => [
+
+                'current_page' =>
+                    $page,
+
+                'per_page' =>
+                    $limit,
+
+                'total' =>
+                    $total,
+
+                'total_pages' =>
+                    $total_pages,
+
+                'has_next_page' =>
+                    $page < $total_pages,
+
+                'has_previous_page' =>
+                    $page > 1
+
+            ]
+
+        ],
+
+        'status_code' => 200
+
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| List Student Withdrawn Applications
+|--------------------------------------------------------------------------
+*/
+
+function application_service_list_withdrawn(
+    int $user_id,
+    array $filters = []
+): array {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Find Student
+    |--------------------------------------------------------------------------
+    */
+
+    $student =
+        application_repository_find_student_by_user_id(
+            $user_id
+        );
+
+
+    if (!$student) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Student profile was not found.',
+
+            'errors' => [],
+
+            'status_code' => 404
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pagination
+    |--------------------------------------------------------------------------
+    */
+
+    $page =
+        isset($filters['page'])
+            ? (int) $filters['page']
+            : 1;
+
+
+    $limit =
+        isset($filters['limit'])
+            ? (int) $filters['limit']
+            : 20;
+
+
+    if (
+        $page < 1
+    ) {
+
+        $page = 1;
+    }
+
+
+    if (
+        $limit < 1
+    ) {
+
+        $limit = 20;
+    }
+
+
+    if (
+        $limit > 100
+    ) {
+
+        $limit = 100;
+    }
+
+
+    $offset =
+        ($page - 1) * $limit;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Specialization Scoping
+    |--------------------------------------------------------------------------
+    |
+    | The Withdrawn endpoint always scopes results to the student's own
+    | specialization. A student with no specialization set gets an empty
+    | result set (success, no error).
+    |
+    */
+
+    $match_specialization_ids = null;
+
+    if (
+        !empty($filters['scope_to_specialization'])
+    ) {
+
+        $student_specialization_id =
+            training_repository_get_student_specialization_id(
+                (int) $student['student_id']
+            );
+
+        if ($student_specialization_id === null) {
+
+            return [
+
+                'success' => true,
+
+                'message' =>
+                    'Applications retrieved successfully.',
+
+                'data' => [
+
+                    'items' => [],
+
+                    'pagination' => [
+
+                        'current_page' =>
+                            $page,
+
+                        'per_page' =>
+                            $limit,
+
+                        'total' => 0,
+
+                        'total_pages' => 0,
+
+                        'has_next_page' => false,
+
+                        'has_previous_page' => false
+
+                    ]
+
+                ],
+
+                'status_code' => 200
+
+            ];
+        }
+
+
+        $match_specialization_ids =
+            [$student_specialization_id];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get Applications
+    |--------------------------------------------------------------------------
+    */
+
+    $items =
+        application_repository_get_withdrawn_by_student(
+            (int) $student['student_id'],
+            $limit,
+            $offset,
+            $match_specialization_ids
+        );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Count
+    |--------------------------------------------------------------------------
+    */
+
+    $total =
+        application_repository_count_withdrawn_by_student(
+            (int) $student['student_id'],
+            $match_specialization_ids
+        );
+
+
+    $total_pages =
+        $limit > 0
+            ? (int) ceil(
+                $total / $limit
+            )
+            : 0;
+
+
+    return [
+
+        'success' => true,
+
+        'message' =>
+            'Applications retrieved successfully.',
+
+        'data' => [
+
+            'items' =>
+                $items,
+
+            'pagination' => [
+
+                'current_page' =>
+                    $page,
+
+                'per_page' =>
+                    $limit,
+
+                'total' =>
+                    $total,
+
+                'total_pages' =>
+                    $total_pages,
+
+                'has_next_page' =>
+                    $page < $total_pages,
+
+                'has_previous_page' =>
+                    $page > 1
+
+            ]
+
+        ],
+
+        'status_code' => 200
+
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| List Student All Applications
+|--------------------------------------------------------------------------
+|
+| Returns EVERY application of the authenticated student across the four tab
+| states (Applied, Accepted, Rejected, Withdrawn) in one unified paginated
+| list, scoped to the student's own specialization (the same specialization
+| matching used by the Trainings List and all four tab endpoints). A student
+| with no specialization set gets an empty result set (success, no error).
+|
+*/
+
+function application_service_list_all(
+    int $user_id,
+    array $filters = []
+): array {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Find Student
+    |--------------------------------------------------------------------------
+    */
+
+    $student =
+        application_repository_find_student_by_user_id(
+            $user_id
+        );
+
+
+    if (!$student) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Student profile was not found.',
+
+            'errors' => [],
+
+            'status_code' => 404
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pagination
+    |--------------------------------------------------------------------------
+    */
+
+    $page =
+        isset($filters['page'])
+            ? (int) $filters['page']
+            : 1;
+
+
+    $limit =
+        isset($filters['limit'])
+            ? (int) $filters['limit']
+            : 20;
+
+
+    if (
+        $page < 1
+    ) {
+
+        $page = 1;
+    }
+
+
+    if (
+        $limit < 1
+    ) {
+
+        $limit = 20;
+    }
+
+
+    if (
+        $limit > 100
+    ) {
+
+        $limit = 100;
+    }
+
+
+    $offset =
+        ($page - 1) * $limit;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Specialization Scoping
+    |--------------------------------------------------------------------------
+    |
+    | The All endpoint always scopes results to the student's own
+    | specialization, exactly like the Applied/Accepted/Rejected/Withdrawn
+    | tabs. A student with no specialization set gets an empty result set
+    | (success, no error).
+    |
+    */
+
+    $match_specialization_ids = null;
+
+    if (
+        !empty($filters['scope_to_specialization'])
+    ) {
+
+        $student_specialization_id =
+            training_repository_get_student_specialization_id(
+                (int) $student['student_id']
+            );
+
+        if ($student_specialization_id === null) {
+
+            return [
+
+                'success' => true,
+
+                'message' =>
+                    'Applications retrieved successfully.',
+
+                'data' => [
+
+                    'items' => [],
+
+                    'pagination' => [
+
+                        'current_page' =>
+                            $page,
+
+                        'per_page' =>
+                            $limit,
+
+                        'total' => 0,
+
+                        'total_pages' => 0,
+
+                        'has_next_page' => false,
+
+                        'has_previous_page' => false
+
+                    ]
+
+                ],
+
+                'status_code' => 200
+
+            ];
+        }
+
+
+        $match_specialization_ids =
+            [$student_specialization_id];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get Applications
+    |--------------------------------------------------------------------------
+    */
+
+    $items =
+        application_repository_get_all_by_student(
+            (int) $student['student_id'],
+            $limit,
+            $offset,
+            $match_specialization_ids
+        );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Count
+    |--------------------------------------------------------------------------
+    */
+
+    $total =
+        application_repository_count_all_by_student(
+            (int) $student['student_id'],
+            $match_specialization_ids
         );
 
 
@@ -2104,6 +3115,1159 @@ function application_service_accept(
 
 /*
 |--------------------------------------------------------------------------
+| Confirm Manual Payment
+|--------------------------------------------------------------------------
+|
+| Company confirms that the manual (bank transfer) payment for an accepted
+| paid training has been received. This endpoint is the only writer of the
+| manual-payment lifecycle state:
+|
+|     free training              -> NOT_REQUIRED (no payment, nothing to do)
+|     paid training, not paid    -> PENDING (trial still running)
+|     paid + company confirms    -> PAID
+|
+| The application status is NEVER changed here: a student who used up their
+| trial without paying is blocked from continuing by the session/trial logic
+| and is never auto-withdrawn by the payment machine.
+|
+| Authorization (all enforced): company-only, the owning company of the
+| training, the application must already be accepted, and the training must
+| be paid. A second confirm for the same application is idempotent: it
+| returns the existing paid payment without creating a duplicate row.
+|
+*/
+
+function application_service_confirm_payment(
+    int $user_id,
+    int $application_id
+): array {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Find Company
+    |--------------------------------------------------------------------------
+    */
+
+    $company =
+        application_repository_find_company_by_user_id(
+            $user_id
+        );
+
+
+    if (!$company) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Company profile was not found.',
+
+            'errors' => [],
+
+            'status_code' => 404
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Find Application
+    |--------------------------------------------------------------------------
+    */
+
+    $application =
+        application_repository_find_with_details(
+            $application_id
+        );
+
+
+    if (!$application) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Application not found.',
+
+            'errors' => [],
+
+            'status_code' => 404
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Accepted Only
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        strtolower(
+            (string) ($application['status'] ?? '')
+        )
+        !== 'accepted'
+    ) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Only accepted applications can be confirmed for payment.',
+
+            'errors' => [],
+
+            'status_code' => 409
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Ownership
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        (int) ($application['training_company_id'] ?? 0)
+        !==
+        (int) $company['company_id']
+    ) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'You are not allowed to confirm payment for this application.',
+
+            'errors' => [],
+
+            'status_code' => 403
+
+        ];
+    }
+
+
+    $training_id =
+        (int) ($application['training_id'] ?? 0);
+
+    $student_id =
+        (int) ($application['student_id'] ?? 0);
+
+
+    if (
+        $training_id <= 0
+        ||
+        $student_id <= 0
+    ) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Application is missing training or student information.',
+
+            'errors' => [],
+
+            'status_code' => 422
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Paid Training Only
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        (int) ($application['training_is_paid'] ?? 0)
+        !== 1
+    ) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'This training does not require payment.',
+
+            'errors' => [],
+
+            'status_code' => 422
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Existing Payment (Idempotency)
+    |--------------------------------------------------------------------------
+    */
+
+    $existing =
+        application_repository_find_payment_for_application(
+            $training_id,
+            $student_id
+        );
+
+
+    if (
+        $existing !== null
+        &&
+        (string) ($existing['status'] ?? '')
+        === 'paid'
+    ) {
+
+        return [
+
+            'success' => true,
+
+            'message' =>
+                'Payment already confirmed.',
+
+            'data' => [
+
+                'application_id' =>
+                    $application_id,
+
+                'training_id' =>
+                    $training_id,
+
+                'payment_id' =>
+                    (int) ($existing['id'] ?? 0),
+
+                'status' =>
+                    (string) ($existing['status'] ?? 'paid'),
+
+                'paid_at' =>
+                    $existing['paid_at'] ?? null,
+
+                'already_confirmed' =>
+                    true
+
+            ],
+
+            'status_code' => 200
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fee Validation
+    |--------------------------------------------------------------------------
+    */
+
+    $amount =
+        (float) ($application['training_compensation_amount'] ?? 0);
+
+
+    if ($amount <= 0) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'This training has no fee set.',
+
+            'errors' => [
+
+                'training_id' =>
+                    'The paid training fee is not configured.'
+
+            ],
+
+            'status_code' => 422
+
+        ];
+    }
+
+    $currency =
+        strtoupper(
+            trim(
+                (string) (
+                    $application['training_compensation_currency']
+                    ?? 'EGP'
+                )
+            )
+        );
+
+    if ($currency === '') {
+        $currency = 'EGP';
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Confirm (Transaction)
+    |--------------------------------------------------------------------------
+    |
+    | A second confirmation on a row that exists but is NOT paid simply
+    | promotes that row to paid. When no row exists yet it is created
+    | directly as paid (manual = the company received the transfer).
+    |
+    */
+
+    db_begin_transaction();
+
+    try {
+
+        if ($existing !== null) {
+
+            $confirmed =
+                application_repository_confirm_payment(
+                    (int) $existing['id']
+                );
+
+        } else {
+
+            $payment_payload = [
+
+                'training_id' =>
+                    $training_id,
+
+                'training_session_id' =>
+                    null,
+
+                'student_id' =>
+                    $student_id,
+
+                'company_id' =>
+                    (int) $company['company_id'],
+
+                'amount' =>
+                    round($amount, 2),
+
+                'currency' =>
+                    $currency,
+
+                'platform_commission_rate' =>
+                    0.00,
+
+                'platform_commission_amount' =>
+                    0.00,
+
+                'company_amount' =>
+                    round($amount, 2),
+
+                'payment_method' =>
+                    'manual',
+
+                'status' =>
+                    'paid',
+
+                'paid_at' =>
+                    date('Y-m-d H:i:s')
+
+            ];
+
+            $payment_id =
+                application_repository_create_payment(
+                    $payment_payload
+                );
+
+            $confirmed =
+                $payment_id > 0
+                && $payment_id !== false;
+        }
+
+
+        if (!$confirmed) {
+
+            db_rollback();
+
+            return [
+
+                'success' => false,
+
+                'message' =>
+                    'Unable to confirm payment.',
+
+                'errors' => [],
+
+                'status_code' => 500
+
+            ];
+        }
+
+        $payment =
+            application_repository_find_payment_for_application(
+                $training_id,
+                $student_id
+            );
+
+    } catch (Throwable $exception) {
+
+        db_rollback();
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Unable to confirm payment.',
+
+            'errors' => [],
+
+            'status_code' => 500
+
+        ];
+    }
+
+    db_commit();
+
+
+    return [
+
+        'success' => true,
+
+        'message' =>
+            'Payment confirmed successfully.',
+
+        'data' => [
+
+            'application_id' =>
+                $application_id,
+
+            'training_id' =>
+                $training_id,
+
+            'payment_id' =>
+                (int) ($payment['id'] ?? 0),
+
+            'status' =>
+                (string) ($payment['status'] ?? 'paid'),
+
+            'payment_method' =>
+                (string) ($payment['payment_method'] ?? 'manual'),
+
+            'amount' =>
+                (float) ($payment['amount'] ?? 0),
+
+            'currency' =>
+                (string) ($payment['currency'] ?? $currency),
+
+            'paid_at' =>
+                $payment['paid_at'] ?? null,
+
+            'already_confirmed' =>
+                false
+
+        ],
+
+        'status_code' => 200
+
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Submit Payment Reference
+|--------------------------------------------------------------------------
+|
+| Student side of the manual (bank transfer) lifecycle for a paid accepted
+| training. After transferring the fee to the owning company's bank account,
+| the student submits the transfer reference on the application. This creates
+| the payments row as status 'pending' (or updates the reference on an
+| existing pending row) and NEVER marks it paid — only the owning company's
+| confirm endpoint promotes pending to paid.
+|
+| Authorization (all enforced): student-only (the acting user resolves to a
+| student profile), the application must belong to that student, it must be
+| accepted, and the training must be paid with a configured fee. The write is
+| idempotent: submitting the same or a new reference for a pending row updates
+| that single row — a refresh never duplicates it. Once the row is paid, the
+| reference can no longer be changed.
+|
+*/
+
+function application_service_submit_payment_reference(
+    int $user_id,
+    int $application_id,
+    string $reference
+): array {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Find Student
+    |--------------------------------------------------------------------------
+    */
+
+    $student =
+        application_repository_find_student_by_user_id(
+            $user_id
+        );
+
+
+    if (!$student) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Student profile was not found.',
+
+            'errors' => [],
+
+            'status_code' => 404
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reference
+    |--------------------------------------------------------------------------
+    */
+
+    $reference = trim($reference);
+
+
+    if ($reference === '') {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'A payment reference is required.',
+
+            'errors' => [
+
+                'reference' =>
+                    'A payment reference is required.'
+
+            ],
+
+            'status_code' => 422
+
+        ];
+    }
+
+
+    if (mb_strlen($reference) > 255) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'The payment reference cannot exceed 255 characters.',
+
+            'errors' => [
+
+                'reference' =>
+                    'The payment reference cannot exceed 255 characters.'
+
+            ],
+
+            'status_code' => 422
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Find Application
+    |--------------------------------------------------------------------------
+    */
+
+    $application =
+        application_repository_find_with_details(
+            $application_id
+        );
+
+
+    if (!$application) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Application not found.',
+
+            'errors' => [],
+
+            'status_code' => 404
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Accepted Only
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        strtolower(
+            (string) ($application['status'] ?? '')
+        )
+        !== 'accepted'
+    ) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Only accepted applications can submit a payment reference.',
+
+            'errors' => [],
+
+            'status_code' => 409
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Ownership
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        (int) ($application['student_id'] ?? 0)
+        !==
+        (int) $student['student_id']
+    ) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'You are not allowed to submit a payment reference for this application.',
+
+            'errors' => [],
+
+            'status_code' => 403
+
+        ];
+    }
+
+
+    $training_id =
+        (int) ($application['training_id'] ?? 0);
+
+
+    if ($training_id <= 0) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Application is missing training information.',
+
+            'errors' => [],
+
+            'status_code' => 422
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Paid Training Only
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        (int) ($application['training_is_paid'] ?? 0)
+        !== 1
+    ) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'This training does not require payment.',
+
+            'errors' => [],
+
+            'status_code' => 422
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fee Validation
+    |--------------------------------------------------------------------------
+    */
+
+    $amount =
+        (float) ($application['training_compensation_amount'] ?? 0);
+
+
+    if ($amount <= 0) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'This training has no fee set.',
+
+            'errors' => [
+
+                'training_id' =>
+                    'The paid training fee is not configured.'
+
+            ],
+
+            'status_code' => 422
+
+        ];
+    }
+
+    $currency =
+        strtoupper(
+            trim(
+                (string) (
+                    $application['training_compensation_currency']
+                    ?? 'EGP'
+                )
+            )
+        );
+
+    if ($currency === '') {
+        $currency = 'EGP';
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Existing Payment (Idempotency)
+    |--------------------------------------------------------------------------
+    */
+
+    $existing =
+        application_repository_find_payment_for_application(
+            $training_id,
+            (int) $student['student_id']
+        );
+
+
+    if (
+        $existing !== null
+        &&
+        (string) ($existing['status'] ?? '')
+        === 'paid'
+    ) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Payment has already been confirmed.',
+
+            'errors' => [],
+
+            'status_code' => 409
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Submit (Transaction)
+    |--------------------------------------------------------------------------
+    |
+    | No payment row yet -> create one as pending with the reference. A row
+    | that exists but is pending -> update its reference only. Both paths run
+    | in one transaction and leave the row pending until the company confirms.
+    |
+    */
+
+    db_begin_transaction();
+
+    try {
+
+        if ($existing !== null) {
+
+            $updated =
+                application_repository_update_payment_reference(
+                    (int) $existing['id'],
+                    $reference
+                );
+
+        } else {
+
+            $payment_payload = [
+
+                'training_id' =>
+                    $training_id,
+
+                'training_session_id' =>
+                    null,
+
+                'student_id' =>
+                    (int) $student['student_id'],
+
+                'company_id' =>
+                    (int) ($application['training_company_id'] ?? 0),
+
+                'amount' =>
+                    round($amount, 2),
+
+                'currency' =>
+                    $currency,
+
+                'platform_commission_rate' =>
+                    0.00,
+
+                'platform_commission_amount' =>
+                    0.00,
+
+                'company_amount' =>
+                    round($amount, 2),
+
+                'payment_method' =>
+                    'manual',
+
+                'status' =>
+                    'pending',
+
+                'external_reference' =>
+                    $reference,
+
+                'paid_at' =>
+                    null
+
+            ];
+
+            $payment_id =
+                application_repository_create_payment(
+                    $payment_payload
+                );
+
+            $updated =
+                $payment_id > 0
+                && $payment_id !== false;
+        }
+
+
+        if (!$updated) {
+
+            db_rollback();
+
+            return [
+
+                'success' => false,
+
+                'message' =>
+                    'Unable to submit payment reference.',
+
+                'errors' => [],
+
+                'status_code' => 500
+
+            ];
+        }
+
+        $payment =
+            application_repository_find_payment_for_application(
+                $training_id,
+                (int) $student['student_id']
+            );
+
+    } catch (Throwable $exception) {
+
+        db_rollback();
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Unable to submit payment reference.',
+
+            'errors' => [],
+
+            'status_code' => 500
+
+        ];
+    }
+
+    db_commit();
+
+
+    return [
+
+        'success' => true,
+
+        'message' =>
+            'Payment reference submitted successfully. Payment is pending verification.',
+
+        'data' => [
+
+            'application_id' =>
+                $application_id,
+
+            'training_id' =>
+                $training_id,
+
+            'payment_id' =>
+                (int) ($payment['id'] ?? 0),
+
+            'status' =>
+                (string) ($payment['status'] ?? 'pending'),
+
+            'payment_method' =>
+                (string) ($payment['payment_method'] ?? 'manual'),
+
+            'reference' =>
+                isset($payment['external_reference'])
+                && trim((string) $payment['external_reference']) !== ''
+                    ? (string) $payment['external_reference']
+                    : null,
+
+            'amount' =>
+                (float) ($payment['amount'] ?? $amount),
+
+            'currency' =>
+                (string) ($payment['currency'] ?? $currency),
+
+            'paid_at' =>
+                $payment['paid_at'] ?? null,
+
+        ],
+
+        'status_code' => 200
+
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Show Payment
+|--------------------------------------------------------------------------
+|
+| Student reads the manual payment lifecycle state for one of their
+| accepted paid applications. Returns the latest payments row for the
+| application's training when one exists (pending or paid); before the
+| student submits any reference the row does not exist yet and the state
+| is reported as pending with no reference, matching the Accepted ledger.
+|
+*/
+
+function application_service_show_payment(
+    int $user_id,
+    int $application_id
+): array {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Find Student
+    |--------------------------------------------------------------------------
+    */
+
+    $student =
+        application_repository_find_student_by_user_id(
+            $user_id
+        );
+
+
+    if (!$student) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Student profile was not found.',
+
+            'errors' => [],
+
+            'status_code' => 404
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Find Application
+    |--------------------------------------------------------------------------
+    */
+
+    $application =
+        application_repository_find_with_details(
+            $application_id
+        );
+
+
+    if (!$application) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Application not found.',
+
+            'errors' => [],
+
+            'status_code' => 404
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Ownership
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        (int) ($application['student_id'] ?? 0)
+        !==
+        (int) $student['student_id']
+    ) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'You are not allowed to view this payment.',
+
+            'errors' => [],
+
+            'status_code' => 403
+
+        ];
+    }
+
+
+    $training_id =
+        (int) ($application['training_id'] ?? 0);
+
+
+    if ($training_id <= 0) {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Application is missing training information.',
+
+            'errors' => [],
+
+            'status_code' => 422
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Payment Row
+    |--------------------------------------------------------------------------
+    */
+
+    $payment =
+        application_repository_find_payment_for_application(
+            $training_id,
+            (int) $student['student_id']
+        );
+
+
+    return [
+
+        'success' => true,
+
+        'message' =>
+            'Payment retrieved successfully.',
+
+        'data' => [
+
+            'application_id' =>
+                $application_id,
+
+            'training_id' =>
+                $training_id,
+
+            'payment_id' =>
+                $payment !== null
+                    ? (int) ($payment['id'] ?? 0)
+                    : 0,
+
+            'status' =>
+                $payment !== null
+                    ? (string) ($payment['status'] ?? 'pending')
+                    : 'pending',
+
+            'payment_method' =>
+                $payment !== null
+                    ? (string) ($payment['payment_method'] ?? 'manual')
+                    : 'manual',
+
+            'reference' =>
+                $payment !== null
+                && isset($payment['external_reference'])
+                && trim((string) $payment['external_reference']) !== ''
+                    ? (string) $payment['external_reference']
+                    : null,
+
+            'amount' =>
+                $payment !== null
+                    ? (float) ($payment['amount'] ?? 0)
+                    : 0.0,
+
+            'currency' =>
+                $payment !== null
+                    ? (string) ($payment['currency'] ?? 'EGP')
+                    : 'EGP',
+
+            'paid_at' =>
+                $payment !== null
+                    ? ($payment['paid_at'] ?? null)
+                    : null,
+
+            'submitted' =>
+                $payment !== null,
+
+        ],
+
+        'status_code' => 200
+
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
 | Reject Application
 |--------------------------------------------------------------------------
 */
@@ -2643,8 +4807,15 @@ $updated =
             'Application withdrawn successfully.',
 
 
-        'data' =>
-            $updated,
+        'data' => [
+
+            'id' =>
+                (int) ($updated['id'] ?? $application_id),
+
+            'status' =>
+                (string) ($updated['status'] ?? 'withdrawn')
+
+        ],
 
         'status_code' => 200
 

@@ -615,7 +615,7 @@ function matchtest_ensure_training(
 
         $starts_at = date('Y-m-d H:i:s', strtotime('+7 days'));
         $ends_at = date('Y-m-d H:i:s', strtotime('+90 days'));
-        $application_deadline = date('Y-m-d H:i:s', strtotime('+30 days'));
+        $application_deadline = date('Y-m-d H:i:s', strtotime('+7 days'));
         $published_at = $status === 'published'
             ? date('Y-m-d H:i:s')
             : ($status === 'closed' ? date('Y-m-d H:i:s', strtotime('-60 days')) : null);

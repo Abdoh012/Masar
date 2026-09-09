@@ -84,7 +84,6 @@ truth is `database/schema/masar.sql` + the live DB (per `docs/AGENTS.md` §30).
 
 ```text
 POST   /api/v1/applications                          student submits an application
-GET    /api/v1/applications/my                       student's own applications
 GET    /api/v1/applications/{id}                     detail (owning student / owning company / admin)
 GET    /api/v1/applications/{id}/cv                  download CV (same authorization as detail)
 GET    /api/v1/applications?training_id={id}         owning company lists one training's applications
@@ -93,7 +92,7 @@ POST   /api/v1/applications/accept?id={id}           owning company accepts a pe
 POST   /api/v1/applications/reject?id={id}           owning company rejects (JSON body: reason + note)
 ```
 
-All require authentication; `/my` and `withdraw` require `student`, the list/accept/reject require
+All require authentication; `withdraw` requires `student`, the list/accept/reject require
 `company`, and role-agnostic routes enforce the access inside the service layer.
 
 ## 6. Business Rules
@@ -167,7 +166,7 @@ PHPUnit (`composer test`, PHP 8.4.5, PHPUnit 10.5.64):
 
 Live HTTP pass against Laragon Apache/MySQL (PASS on every check):
 
-- student `/my` returns normalized `pending`, `training_title`, `company_name`; detail has answers
+- detail returns normalized `pending`, `training_title`, `company_name`; detail has answers
   with decoded options.
 - IDOR: another student gets 403 on detail and CV; unauth gets 401; student gets 403 on the company
   list; company CV of a no-CV application → 404.

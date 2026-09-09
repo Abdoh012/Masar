@@ -209,6 +209,32 @@ function search_repository_specialization_scope(array $specialization_ids): stri
             . ")";
 }
 
+function search_repository_trainings_filter_conditions(array $filters, array $params): array {
+    /*
+     * Builds the AND-combined filter conditions (training_type, mode, paid)
+     * shared by the training search and filter queries. Returns the
+     * additional WHERE fragments and the merged parameters array.
+     */
+    $conditions = [];
+
+    if (!empty($filters['training_type'])) {
+        $conditions[] = 't.training_type = :f_training_type';
+        $params[':f_training_type'] = (string) $filters['training_type'];
+    }
+
+    if (!empty($filters['mode'])) {
+        $conditions[] = 't.mode = :f_mode';
+        $params[':f_mode'] = (string) $filters['mode'];
+    }
+
+    if (isset($filters['paid']) && $filters['paid'] !== null && $filters['paid'] !== '') {
+        $conditions[] = 't.is_paid = :f_paid';
+        $params[':f_paid'] = (int) $filters['paid'];
+    }
+
+    return [$conditions, $params];
+}
+
 function search_repository_trainings(string $query, array $filters = []): array {
     /*
      * Dedicated training search over published listings.
@@ -218,6 +244,11 @@ function search_repository_trainings(string $query, array $filters = []): array 
      * normalized relations (companies, training_skills -> skills,
      * specializations via training_listings.specialization_id). EXISTS
      * keeps one row per training so pagination and counts stay correct.
+     *
+     * Additionally supports the training filter dimensions (training_type,
+     * mode, paid) combined with AND, plus the documented sort values, so
+     * search and filters can be used together from the unified
+     * /api/v1/search/trainings endpoint.
      */
     $page = max(1, (int) ($filters['page'] ?? 1));
     $limit = max(1, min(100, (int) ($filters['limit'] ?? 20)));
@@ -258,14 +289,25 @@ function search_repository_trainings(string $query, array $filters = []): array 
         ':kw_specialization' => '%' . $query . '%',
     ];
 
+    [$filter_conditions, $params] = search_repository_trainings_filter_conditions($filters, $params);
+
+    if (!empty($filter_conditions)) {
+        $where .= ' AND ' . implode(' AND ', $filter_conditions);
+    }
+
     $scope = search_repository_specialization_scope(
         $filters['match_specialization_ids'] ?? []
     );
 
+    $sort = (string) ($filters['sort'] ?? '');
+    $sort_clause = $sort !== ''
+        ? search_repository_trainings_sort_clause($sort)
+        : 'ORDER BY t.created_at DESC, t.id DESC';
+
     $items = search_repository_fetch_all(
         search_repository_trainings_card_query($student_id) . "
         WHERE t.status = 'published' AND {$where}{$scope}
-        ORDER BY t.created_at DESC, t.id DESC
+        {$sort_clause}
         LIMIT {$limit} OFFSET {$offset}",
         $params
     );
@@ -295,9 +337,9 @@ function search_repository_trainings_sort_clause(string $sort): string {
         case 'price_desc':
             return 'ORDER BY COALESCE(t.compensation_amount, 0) DESC';
         case 'duration_asc':
-            return 'ORDER BY (t.ends_at IS NULL OR t.starts_at IS NULL) ASC, DATEDIFF(t.ends_at, t.starts_at) ASC';
+            return 'ORDER BY (t.ends_at IS NULL) ASC, GREATEST(DATEDIFF(t.ends_at, CURDATE()), 0) ASC, t.id ASC';
         case 'duration_desc':
-            return 'ORDER BY (t.ends_at IS NULL OR t.starts_at IS NULL) ASC, DATEDIFF(t.ends_at, t.starts_at) DESC';
+            return 'ORDER BY (t.ends_at IS NULL) ASC, GREATEST(DATEDIFF(t.ends_at, CURDATE()), 0) DESC, t.id ASC';
         case 'newest':
         default:
             return 'ORDER BY t.created_at DESC, t.id DESC';
@@ -324,20 +366,9 @@ function search_repository_trainings_filters(array $filters = []): array {
     $conditions = ["t.status = 'published'"];
     $params = [];
 
-    if (!empty($filters['training_type'])) {
-        $conditions[] = 't.training_type = :f_training_type';
-        $params[':f_training_type'] = (string) $filters['training_type'];
-    }
+    [$filter_conditions, $params] = search_repository_trainings_filter_conditions($filters, $params);
 
-    if (!empty($filters['mode'])) {
-        $conditions[] = 't.mode = :f_mode';
-        $params[':f_mode'] = (string) $filters['mode'];
-    }
-
-    if (isset($filters['paid']) && $filters['paid'] !== null && $filters['paid'] !== '') {
-        $conditions[] = 't.is_paid = :f_paid';
-        $params[':f_paid'] = (int) $filters['paid'];
-    }
+    $conditions = array_merge($conditions, $filter_conditions);
 
     $where = implode(' AND ', $conditions);
 

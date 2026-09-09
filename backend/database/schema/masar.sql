@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Sep 04, 2026 at 02:04 AM
+-- Generation Time: Sep 09, 2026 at 02:57 AM
 -- Server version: 9.1.0
 -- PHP Version: 8.4.5
 
@@ -1005,7 +1005,29 @@ INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `entity_type`, `entity_id`,
 (1492, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'node', '2026-09-02 07:43:54'),
 (1493, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.4.3', '2026-09-02 07:46:40'),
 (1494, NULL, 'login_failed', 'user', NULL, '[]', '{\"ip\": \"::1\", \"email\": \"mammuslim2003@gmail.com\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-04 04:54:17'),
-(1495, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-04 04:54:38');
+(1495, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-04 04:54:38'),
+(1496, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-04 06:11:21'),
+(1497, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-06 19:16:03'),
+(1498, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-06 21:34:35'),
+(1499, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-06 22:42:28'),
+(1500, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-07 00:13:55'),
+(1501, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-07 00:39:37'),
+(1502, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-07 02:04:34'),
+(1503, 100595, 'login_success', 'user', 100595, '[]', '{\"ip\": \"::1\", \"role\": \"company\"}', '::1', 'curl/8.13.0', '2026-09-08 03:41:19'),
+(1504, 100595, 'login_success', 'user', 100595, '[]', '{\"ip\": \"::1\", \"role\": \"company\"}', '::1', 'curl/8.13.0', '2026-09-08 03:42:02'),
+(1505, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-08 03:46:53'),
+(1506, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-08 03:50:18'),
+(1507, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-08 04:58:09'),
+(1508, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-08 05:18:48'),
+(1509, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-08 06:01:06'),
+(1510, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-09 01:09:45'),
+(1511, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-09 01:53:08'),
+(1512, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-09 03:27:24'),
+(1513, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-09 04:01:32'),
+(1514, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-09 04:49:11'),
+(1515, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-09 05:06:41'),
+(1516, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-09 05:09:14'),
+(1517, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-09 05:49:57');
 
 -- --------------------------------------------------------
 
@@ -1104,6 +1126,10 @@ CREATE TABLE `companies` (
   `city` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `company_logo` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `address` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `bank_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `bank_account_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `bank_account_number` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `bank_transfer_instructions` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `approval_status` enum('pending','approved','rejected','suspended') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
   `approved_at` datetime DEFAULT NULL,
   `approved_by` bigint UNSIGNED DEFAULT NULL,
@@ -1116,22 +1142,23 @@ CREATE TABLE `companies` (
 -- Dumping data for table `companies`
 --
 
-INSERT INTO `companies` (`id`, `user_id`, `legal_name`, `description`, `website`, `phone`, `city`, `company_logo`, `address`, `approval_status`, `approved_at`, `approved_by`, `rejection_reason`, `created_at`, `updated_at`) VALUES
-(100144, 100568, 'NileTech Solutions', 'Software house in Giza building logistics, e-commerce and fintech platforms, with 40+ engineers.', 'https://www.niletech.eg', '01011122231', 'Giza', NULL, 'Giza', 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
-(100145, 100569, 'Alexandria Digital Labs', 'Applied AI and data analytics lab serving manufacturing clients across the Delta.', 'https://www.alexdilabs.com', '01122233332', 'Alexandria', NULL, 'Alexandria', 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
-(100146, 100570, 'Cairo Medical Center', 'Multi-specialty hospital in downtown Cairo with 200 beds and a dedicated training floor.', 'https://www.cairomed.eg', '01533344433', 'Cairo', NULL, 'Cairo', 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
-(100147, 100571, 'Atlas Engineering', 'Mechanical and civil engineering consultancy with projects across the Nile Delta and the new administrative capital.', 'https://www.atlaseng.eg', '01044455534', 'Giza', NULL, 'Giza', 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
-(100148, 100572, 'BrightReach Marketing', 'Full-service marketing agency in Cairo managing digital campaigns for retail and healthcare brands.', 'https://www.brightreach.eg', '01155566635', 'Cairo', NULL, 'Cairo', 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
-(100149, 100573, 'Luxor Pharma', 'Pharmaceutical manufacturer and distributor, accredited by the Egyptian Drug Authority.', 'https://www.luxorpharma.com', '01566677736', 'Alexandria', NULL, 'Alexandria', 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
-(100150, 100574, 'Themis Law Partners', 'Corporate law firm advising startups and listed companies on contracts and compliance.', 'https://www.themis-law.com', '01077788837', 'Cairo', NULL, 'Cairo', 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
-(100151, 100575, 'LedgerPro Accounting', 'Audit and bookkeeping firm serving SMEs in Greater Cairo and the Delta.', 'https://www.ledgerpro.eg', '01188899938', 'Cairo', NULL, 'Cairo', 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
-(100152, 100576, 'FutureWorks Software', 'Product engineering studio in New Cairo building web and mobile products for international clients.', 'https://www.futureworks.io', '01599900039', 'New Cairo', NULL, 'New Cairo', 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
-(100153, 100577, 'GreenRetail Egypt', 'Specialty retail chain with 15 branches across Cairo and Giza.', 'https://www.greenretail.eg', '01011122230', 'Giza', NULL, 'Giza', 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
-(100154, 100578, 'MedPulse Diagnostics', 'New medical diagnostics laboratory opening in Dokki, currently onboarding its founding team.', 'https://www.medpulse-dx.com', '01122233331', 'Giza', NULL, 'Giza', 'pending', NULL, NULL, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
-(100155, 100579, 'SolarOffshore Energy', 'Renewable energy developer installing solar and onshore wind projects in the Suez region.', 'https://www.solaroffshore.eg', '01533344432', 'Suez', NULL, 'Suez', 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
-(100156, 100580, 'Nile Valley Logistics', 'Freight and warehousing operator covering the Alexandria economic corridor.', 'https://www.nilevalley-log.com', '01044455533', 'Alexandria', NULL, 'Alexandria', 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
-(100157, 100581, 'CleoFashion International', 'Garment and mixed-use real estate group in Cairo with an in-house design studio.', 'https://www.cleofashion.com', '01155566634', 'Cairo', NULL, 'Cairo', 'rejected', NULL, NULL, 'Incomplete business license documentation (commercial register and tax card missing).', '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
-(100158, 100582, 'HR Partners Egypt', 'Human resources outsourcing and recruitment firm headquartered in Maadi.', 'https://www.hrpartners.eg', '01566677735', 'Cairo', NULL, 'Cairo', 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00');
+INSERT INTO `companies` (`id`, `user_id`, `legal_name`, `description`, `website`, `phone`, `city`, `company_logo`, `address`, `bank_name`, `bank_account_name`, `bank_account_number`, `bank_transfer_instructions`, `approval_status`, `approved_at`, `approved_by`, `rejection_reason`, `created_at`, `updated_at`) VALUES
+(100144, 100568, 'NileTech Solutions', 'Software house in Giza building logistics, e-commerce and fintech platforms, with 40+ engineers.', 'https://www.niletech.eg', '01011122231', 'Giza', NULL, 'Giza', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
+(100145, 100569, 'Alexandria Digital Labs', 'Applied AI and data analytics lab serving manufacturing clients across the Delta.', 'https://www.alexdilabs.com', '01122233332', 'Alexandria', NULL, 'Alexandria', 'Alexandria Bank of Industry', 'Alexandria Digital Labs', 'DEMO-002-3155-7788-2', 'Place the applicant full name in the transfer reference. Confirmations are posted within one business day.', 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-09-08 06:45:45'),
+(100146, 100570, 'Cairo Medical Center', 'Multi-specialty hospital in downtown Cairo with 200 beds and a dedicated training floor.', 'https://www.cairomed.eg', '01533344433', 'Cairo', NULL, 'Cairo', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
+(100147, 100571, 'Atlas Engineering', 'Mechanical and civil engineering consultancy with projects across the Nile Delta and the new administrative capital.', 'https://www.atlaseng.eg', '01044455534', 'Giza', NULL, 'Giza', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
+(100148, 100572, 'BrightReach Marketing', 'Full-service marketing agency in Cairo managing digital campaigns for retail and healthcare brands.', 'https://www.brightreach.eg', '01155566635', 'Cairo', NULL, 'Cairo', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
+(100149, 100573, 'Luxor Pharma', 'Pharmaceutical manufacturer and distributor, accredited by the Egyptian Drug Authority.', 'https://www.luxorpharma.com', '01566677736', 'Alexandria', NULL, 'Alexandria', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
+(100150, 100574, 'Themis Law Partners', 'Corporate law firm advising startups and listed companies on contracts and compliance.', 'https://www.themis-law.com', '01077788837', 'Cairo', NULL, 'Cairo', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
+(100151, 100575, 'LedgerPro Accounting', 'Audit and bookkeeping firm serving SMEs in Greater Cairo and the Delta.', 'https://www.ledgerpro.eg', '01188899938', 'Cairo', NULL, 'Cairo', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
+(100152, 100576, 'FutureWorks Software', 'Product engineering studio in New Cairo building web and mobile products for international clients.', 'https://www.futureworks.io', '01599900039', 'New Cairo', NULL, 'New Cairo', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
+(100153, 100577, 'GreenRetail Egypt', 'Specialty retail chain with 15 branches across Cairo and Giza.', 'https://www.greenretail.eg', '01011122230', 'Giza', NULL, 'Giza', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
+(100154, 100578, 'MedPulse Diagnostics', 'New medical diagnostics laboratory opening in Dokki, currently onboarding its founding team.', 'https://www.medpulse-dx.com', '01122233331', 'Giza', NULL, 'Giza', NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
+(100155, 100579, 'SolarOffshore Energy', 'Renewable energy developer installing solar and onshore wind projects in the Suez region.', 'https://www.solaroffshore.eg', '01533344432', 'Suez', NULL, 'Suez', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
+(100156, 100580, 'Nile Valley Logistics', 'Freight and warehousing operator covering the Alexandria economic corridor.', 'https://www.nilevalley-log.com', '01044455533', 'Alexandria', NULL, 'Alexandria', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
+(100157, 100581, 'CleoFashion International', 'Garment and mixed-use real estate group in Cairo with an in-house design studio.', 'https://www.cleofashion.com', '01155566634', 'Cairo', NULL, 'Cairo', NULL, NULL, NULL, NULL, 'rejected', NULL, NULL, 'Incomplete business license documentation (commercial register and tax card missing).', '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
+(100158, 100582, 'HR Partners Egypt', 'Human resources outsourcing and recruitment firm headquartered in Maadi.', 'https://www.hrpartners.eg', '01566677735', 'Cairo', NULL, 'Cairo', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
+(100161, 100595, 'TestHire Solutions', 'Test company account used to exercise the Accept, Reject and Withdraw application workflows through the API.', NULL, '01000000000', 'Alexandria', NULL, NULL, NULL, NULL, NULL, NULL, 'approved', '2026-09-08 00:16:40', NULL, NULL, '2026-09-08 00:16:40', '2026-09-08 00:16:40');
 
 -- --------------------------------------------------------
 
@@ -1406,7 +1433,8 @@ INSERT INTO `files` (`id`, `user_id`, `type`, `original_name`, `stored_name`, `p
 (310, 100588, 'cv', 'مووردين.xlsx', '20260902_02aeeae50a47c00cabc64c2b2794217f.xlsx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260902_02aeeae50a47c00cabc64c2b2794217f.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 12625, '2026-09-02 08:19:37'),
 (311, 100588, 'cv', 'مووردين.xlsx', '20260902_3a48534bcfdf26a627aa1cff4979d6d1.xlsx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260902_3a48534bcfdf26a627aa1cff4979d6d1.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 12625, '2026-09-02 08:22:26'),
 (312, 100588, 'cv', 'مووردين.xlsx', '20260902_580a7b9a0b3f74cbef70604d80e2676d.xlsx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260902_580a7b9a0b3f74cbef70604d80e2676d.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 12625, '2026-09-02 08:22:42'),
-(313, 100588, 'cv', '46f4ccf6-719f-4f0a-a002-57c7d5cdbda6 (2).docx', '20260902_7801f454e1ff4ad6f0d6c7b6ac8b996c.docx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260902_7801f454e1ff4ad6f0d6c7b6ac8b996c.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 404214, '2026-09-02 08:25:30');
+(313, 100588, 'cv', '46f4ccf6-719f-4f0a-a002-57c7d5cdbda6 (2).docx', '20260902_7801f454e1ff4ad6f0d6c7b6ac8b996c.docx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260902_7801f454e1ff4ad6f0d6c7b6ac8b996c.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 404214, '2026-09-02 08:25:30'),
+(314, 100588, 'cv', '46f4ccf6-719f-4f0a-a002-57c7d5cdbda6 (2).docx', '20260906_6d3f09c1af32b37a1d2981c4dbf4bcde.docx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260906_6d3f09c1af32b37a1d2981c4dbf4bcde.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 404214, '2026-09-07 00:41:10');
 
 -- --------------------------------------------------------
 
@@ -1797,7 +1825,142 @@ INSERT INTO `notifications` (`id`, `user_id`, `type`, `title`, `body`, `entity_t
 (1901, 100558, 'certificate_approved', 'Certificate Issued', 'Your certificate for \"Clinical Rotation in Internal Medicine\" has been issued and approved.', 'certificate', 29, 0, NULL, NULL, '2026-08-13 10:00:00'),
 (1902, 100546, 'certificate_approved', 'Certificate Issued', 'Your certificate for \"Intro to Structural Drafting\" has been issued and approved.', 'certificate', 30, 0, NULL, NULL, '2026-08-13 10:00:00'),
 (1903, 100544, 'certificate_approved', 'Certificate Issued', 'Your certificate for \"Growth Marketing Campaigns\" has been issued and approved.', 'certificate', 31, 0, NULL, NULL, '2026-08-13 10:00:00'),
-(1904, 100532, 'certificate_approved', 'Certificate Issued', 'Your certificate for \"Junior Auditor Track\" has been issued and approved.', 'certificate', 32, 0, NULL, NULL, '2026-08-13 10:00:00');
+(1904, 100532, 'certificate_approved', 'Certificate Issued', 'Your certificate for \"Junior Auditor Track\" has been issued and approved.', 'certificate', 32, 0, NULL, NULL, '2026-08-13 10:00:00'),
+(1905, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1848, 0, NULL, NULL, '2026-09-07 00:02:46'),
+(1906, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1849, 0, NULL, NULL, '2026-09-07 00:03:02'),
+(1907, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1850, 0, NULL, NULL, '2026-09-07 00:03:14'),
+(1908, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1851, 0, NULL, NULL, '2026-09-07 00:03:15'),
+(1909, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1852, 0, NULL, NULL, '2026-09-07 00:03:15'),
+(1910, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1853, 0, NULL, NULL, '2026-09-07 00:03:15'),
+(1911, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1854, 0, NULL, NULL, '2026-09-07 00:09:35'),
+(1912, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1855, 0, NULL, NULL, '2026-09-07 00:09:50'),
+(1913, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1856, 0, NULL, NULL, '2026-09-07 00:09:50'),
+(1914, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1857, 0, NULL, NULL, '2026-09-07 00:09:50'),
+(1915, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1858, 0, NULL, NULL, '2026-09-07 00:09:51'),
+(1916, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1859, 0, NULL, NULL, '2026-09-07 00:34:23'),
+(1917, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1860, 0, NULL, NULL, '2026-09-07 00:34:24'),
+(1918, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1861, 0, NULL, NULL, '2026-09-07 00:34:24'),
+(1919, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1862, 0, NULL, NULL, '2026-09-07 00:34:24'),
+(1920, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1863, 0, NULL, NULL, '2026-09-07 00:34:25'),
+(1921, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1864, 0, NULL, NULL, '2026-09-07 00:41:10'),
+(1922, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1865, 0, NULL, NULL, '2026-09-07 01:18:05'),
+(1923, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1866, 0, NULL, NULL, '2026-09-07 01:18:30'),
+(1924, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1867, 0, NULL, NULL, '2026-09-07 01:18:30'),
+(1925, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1868, 0, NULL, NULL, '2026-09-07 01:18:31'),
+(1926, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1869, 0, NULL, NULL, '2026-09-07 01:18:31'),
+(1927, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1870, 0, NULL, NULL, '2026-09-07 01:28:51'),
+(1928, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1871, 0, NULL, NULL, '2026-09-07 01:29:03'),
+(1929, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1872, 0, NULL, NULL, '2026-09-07 01:29:03'),
+(1930, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1873, 0, NULL, NULL, '2026-09-07 01:29:03'),
+(1931, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1874, 0, NULL, NULL, '2026-09-07 01:29:03'),
+(1932, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1875, 0, NULL, NULL, '2026-09-08 03:20:18'),
+(1933, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1876, 0, NULL, NULL, '2026-09-08 03:20:19'),
+(1934, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1877, 0, NULL, NULL, '2026-09-08 03:20:19'),
+(1935, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1878, 0, NULL, NULL, '2026-09-08 03:20:19'),
+(1936, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1879, 0, NULL, NULL, '2026-09-08 03:20:20'),
+(1937, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1880, 0, NULL, NULL, '2026-09-08 03:20:20'),
+(1938, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1881, 0, NULL, NULL, '2026-09-08 03:20:20'),
+(1939, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1882, 0, NULL, NULL, '2026-09-08 03:20:20'),
+(1940, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1883, 0, NULL, NULL, '2026-09-08 03:20:21'),
+(1941, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1884, 0, NULL, NULL, '2026-09-08 03:20:21'),
+(1942, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1885, 0, NULL, NULL, '2026-09-08 03:20:22'),
+(1943, 100588, 'application', 'Application Accepted', 'Your application has been accepted for the training opportunity.', 'application', 1878, 0, NULL, NULL, '2026-09-08 03:20:22'),
+(1944, 100588, 'application', 'Application Rejected', 'Your application has been rejected for the training opportunity.', 'application', 1879, 0, NULL, NULL, '2026-09-08 03:20:22'),
+(1945, 100588, 'application', 'Application Accepted', 'Your application has been accepted for the training opportunity.', 'application', 1882, 0, NULL, NULL, '2026-09-08 03:20:22'),
+(1946, 100588, 'application', 'Application Rejected', 'Your application has been rejected for the training opportunity.', 'application', 1883, 0, NULL, NULL, '2026-09-08 03:20:23'),
+(1947, 100588, 'application', 'Application Withdrawn', 'Your application has been withdrawn.', 'application', 1884, 0, NULL, NULL, '2026-09-08 03:20:23'),
+(1948, 100588, 'application', 'Application Withdrawn', 'Your application has been withdrawn.', 'application', 1885, 0, NULL, NULL, '2026-09-08 03:20:23'),
+(1949, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1886, 0, NULL, NULL, '2026-09-08 03:28:24'),
+(1950, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1887, 0, NULL, NULL, '2026-09-08 03:28:24'),
+(1951, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1888, 0, NULL, NULL, '2026-09-08 03:28:25'),
+(1952, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1889, 0, NULL, NULL, '2026-09-08 03:28:26'),
+(1953, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1890, 0, NULL, NULL, '2026-09-08 03:28:41'),
+(1954, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1891, 0, NULL, NULL, '2026-09-08 03:30:34'),
+(1955, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1892, 0, NULL, NULL, '2026-09-08 03:32:26'),
+(1956, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1893, 0, NULL, NULL, '2026-09-08 03:32:28'),
+(1957, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1894, 0, NULL, NULL, '2026-09-08 03:32:29'),
+(1958, 100588, 'application', 'Application Accepted', 'Your application has been accepted for the training opportunity.', 'application', 1892, 0, NULL, NULL, '2026-09-08 03:32:31'),
+(1959, 100588, 'application', 'Application Withdrawn', 'Your application has been withdrawn.', 'application', 1894, 0, NULL, NULL, '2026-09-08 03:32:32'),
+(1960, 100588, 'application', 'Application Accepted', 'Your application has been accepted for the training opportunity.', 'application', 1893, 0, NULL, NULL, '2026-09-08 03:32:33'),
+(1961, 100588, 'application', 'Application Accepted', 'Your application has been accepted for the training opportunity.', 'application', 1875, 0, NULL, NULL, '2026-09-08 03:33:10'),
+(1962, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1895, 0, NULL, NULL, '2026-09-08 03:33:43'),
+(1963, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1896, 0, NULL, NULL, '2026-09-08 03:33:44'),
+(1964, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1897, 0, NULL, NULL, '2026-09-08 03:33:45'),
+(1965, 100588, 'application', 'Application Accepted', 'Your application has been accepted for the training opportunity.', 'application', 1895, 0, NULL, NULL, '2026-09-08 03:33:45'),
+(1966, 100588, 'application', 'Application Withdrawn', 'Your application has been withdrawn.', 'application', 1897, 0, NULL, NULL, '2026-09-08 03:33:47'),
+(1967, 100588, 'application', 'Application Accepted', 'Your application has been accepted for the training opportunity.', 'application', 1896, 0, NULL, NULL, '2026-09-08 03:33:48'),
+(1968, 100588, 'application', 'Application Accepted', 'Your application has been accepted for the training opportunity.', 'application', 1880, 0, NULL, NULL, '2026-09-08 03:34:40'),
+(1969, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1898, 0, NULL, NULL, '2026-09-08 03:37:10'),
+(1970, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1899, 0, NULL, NULL, '2026-09-08 03:37:11'),
+(1971, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1900, 0, NULL, NULL, '2026-09-08 03:37:11'),
+(1972, 100588, 'application', 'Application Accepted', 'Your application has been accepted for the training opportunity.', 'application', 1898, 0, NULL, NULL, '2026-09-08 03:37:11'),
+(1973, 100588, 'application', 'Application Withdrawn', 'Your application has been withdrawn.', 'application', 1900, 0, NULL, NULL, '2026-09-08 03:37:12'),
+(1974, 100588, 'application', 'Application Accepted', 'Your application has been accepted for the training opportunity.', 'application', 1899, 0, NULL, NULL, '2026-09-08 03:37:13'),
+(1975, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1901, 0, NULL, NULL, '2026-09-08 03:38:22'),
+(1976, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1902, 0, NULL, NULL, '2026-09-08 03:38:22'),
+(1977, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1903, 0, NULL, NULL, '2026-09-08 03:38:23'),
+(1978, 100588, 'application', 'Application Accepted', 'Your application has been accepted for the training opportunity.', 'application', 1901, 0, NULL, NULL, '2026-09-08 03:38:23'),
+(1979, 100588, 'application', 'Application Withdrawn', 'Your application has been withdrawn.', 'application', 1903, 0, NULL, NULL, '2026-09-08 03:38:24'),
+(1980, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1904, 0, NULL, NULL, '2026-09-08 03:39:10'),
+(1981, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1905, 0, NULL, NULL, '2026-09-08 03:39:11'),
+(1982, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1906, 0, NULL, NULL, '2026-09-08 03:39:11'),
+(1983, 100588, 'application', 'Application Accepted', 'Your application has been accepted for the training opportunity.', 'application', 1904, 0, NULL, NULL, '2026-09-08 03:42:32'),
+(1984, 100588, 'application', 'Application Rejected', 'Your application has been rejected for the training opportunity.', 'application', 1905, 0, NULL, NULL, '2026-09-08 03:42:32'),
+(1985, 100588, 'application', 'Application Withdrawn', 'Your application has been withdrawn.', 'application', 1906, 0, NULL, NULL, '2026-09-08 03:42:33'),
+(1986, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1907, 0, NULL, NULL, '2026-09-08 03:43:28'),
+(1987, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1908, 0, NULL, NULL, '2026-09-08 03:43:28'),
+(1988, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1909, 0, NULL, NULL, '2026-09-08 03:43:29'),
+(1989, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1910, 0, NULL, NULL, '2026-09-08 03:43:29'),
+(1990, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1911, 0, NULL, NULL, '2026-09-08 03:43:53'),
+(1991, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1912, 0, NULL, NULL, '2026-09-08 04:48:27'),
+(1992, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1913, 0, NULL, NULL, '2026-09-08 04:48:27'),
+(1993, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1914, 0, NULL, NULL, '2026-09-08 04:48:27'),
+(1994, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1915, 0, NULL, NULL, '2026-09-08 04:48:27'),
+(1995, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1916, 0, NULL, NULL, '2026-09-08 04:49:20'),
+(1996, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1917, 0, NULL, NULL, '2026-09-08 04:55:11'),
+(1997, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1918, 0, NULL, NULL, '2026-09-08 04:55:12'),
+(1998, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1919, 0, NULL, NULL, '2026-09-08 04:55:12'),
+(1999, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1920, 0, NULL, NULL, '2026-09-08 04:55:12'),
+(2000, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1921, 0, NULL, NULL, '2026-09-08 05:18:28'),
+(2001, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1922, 0, NULL, NULL, '2026-09-08 05:18:28'),
+(2002, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1923, 0, NULL, NULL, '2026-09-08 05:18:29'),
+(2003, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1924, 0, NULL, NULL, '2026-09-08 05:18:29'),
+(2004, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1925, 0, NULL, NULL, '2026-09-08 05:18:36'),
+(2005, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1926, 0, NULL, NULL, '2026-09-08 05:58:50'),
+(2006, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1927, 0, NULL, NULL, '2026-09-08 05:58:50'),
+(2007, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1928, 0, NULL, NULL, '2026-09-08 05:58:50'),
+(2008, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1929, 0, NULL, NULL, '2026-09-08 05:58:50'),
+(2009, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1930, 0, NULL, NULL, '2026-09-08 06:48:25'),
+(2010, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1931, 0, NULL, NULL, '2026-09-08 06:48:25'),
+(2011, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1932, 0, NULL, NULL, '2026-09-08 06:48:26'),
+(2012, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1933, 0, NULL, NULL, '2026-09-08 06:48:26'),
+(2013, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1934, 0, NULL, NULL, '2026-09-08 07:01:01'),
+(2014, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1935, 0, NULL, NULL, '2026-09-08 07:01:02'),
+(2015, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1936, 0, NULL, NULL, '2026-09-08 07:01:02'),
+(2016, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1937, 0, NULL, NULL, '2026-09-08 07:01:02'),
+(2017, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1938, 0, NULL, NULL, '2026-09-09 01:42:56'),
+(2018, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1939, 0, NULL, NULL, '2026-09-09 01:42:56'),
+(2019, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1940, 0, NULL, NULL, '2026-09-09 01:42:57'),
+(2020, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1941, 0, NULL, NULL, '2026-09-09 01:42:57'),
+(2021, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1942, 0, NULL, NULL, '2026-09-09 01:48:32'),
+(2022, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1943, 0, NULL, NULL, '2026-09-09 01:48:33'),
+(2023, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1944, 0, NULL, NULL, '2026-09-09 01:48:33');
+INSERT INTO `notifications` (`id`, `user_id`, `type`, `title`, `body`, `entity_type`, `entity_id`, `is_read`, `read_at`, `email_sent_at`, `created_at`) VALUES
+(2024, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1945, 0, NULL, NULL, '2026-09-09 01:48:34'),
+(2025, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1950, 0, NULL, NULL, '2026-09-09 02:39:44'),
+(2026, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1951, 0, NULL, NULL, '2026-09-09 02:39:45'),
+(2027, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1952, 0, NULL, NULL, '2026-09-09 02:39:46'),
+(2028, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1953, 0, NULL, NULL, '2026-09-09 02:39:46'),
+(2029, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1977, 0, NULL, NULL, '2026-09-09 03:07:06'),
+(2030, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1978, 0, NULL, NULL, '2026-09-09 03:07:06'),
+(2031, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1979, 0, NULL, NULL, '2026-09-09 03:07:07'),
+(2032, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1980, 0, NULL, NULL, '2026-09-09 03:07:07'),
+(2033, 100588, 'application', 'Application Withdrawn', 'Your application has been withdrawn.', 'application', 1881, 0, NULL, NULL, '2026-09-09 04:27:25'),
+(2034, 100588, 'application', 'Application Withdrawn', 'Your application has been withdrawn.', 'application', 1875, 0, NULL, NULL, '2026-09-09 04:27:42'),
+(2035, 100588, 'application', 'Application Withdrawn', 'Your application has been withdrawn.', 'application', 1881, 0, NULL, NULL, '2026-09-09 04:45:25'),
+(2036, 100588, 'application', 'Application Withdrawn', 'Your application has been withdrawn.', 'application', 1881, 0, NULL, NULL, '2026-09-09 04:50:27'),
+(2037, 100588, 'application', 'Application Withdrawn', 'Your application has been withdrawn.', 'application', 1875, 0, NULL, NULL, '2026-09-09 05:01:18'),
+(2038, 100588, 'application', 'Application Withdrawn', 'Your application has been withdrawn.', 'application', 1875, 0, NULL, NULL, '2026-09-09 05:08:05');
 
 -- --------------------------------------------------------
 
@@ -1834,7 +1997,7 @@ CREATE TABLE `password_resets` (
 CREATE TABLE `payments` (
   `id` bigint UNSIGNED NOT NULL,
   `training_id` bigint UNSIGNED NOT NULL,
-  `training_session_id` bigint UNSIGNED NOT NULL,
+  `training_session_id` bigint UNSIGNED DEFAULT NULL,
   `student_id` bigint UNSIGNED NOT NULL,
   `company_id` bigint UNSIGNED NOT NULL,
   `amount` decimal(12,2) NOT NULL,
@@ -1861,7 +2024,8 @@ INSERT INTO `payments` (`id`, `training_id`, `training_session_id`, `student_id`
 (47, 100217, 240, 1480, 100147, 2000.00, 'EGP', 10.00, 200.00, 1800.00, 'paymob', 'pending', 'PAYMOB-00000003', NULL, '2026-08-24 15:00:00', '2026-08-24 15:00:00'),
 (48, 100224, 247, 1468, 100149, 1800.00, 'EGP', 10.00, 180.00, 1620.00, 'manual', 'pending', 'MANUAL-20260902-00004', NULL, '2026-08-24 15:00:00', '2026-08-24 15:00:00'),
 (49, 100228, 251, 1466, 100151, 2200.00, 'EGP', 10.00, 220.00, 1980.00, 'paymob', 'pending', 'PAYMOB-00000005', NULL, '2026-08-24 15:00:00', '2026-08-24 15:00:00'),
-(50, 100231, 254, 1456, 100152, 3500.00, 'EGP', 10.00, 350.00, 3150.00, 'manual', 'pending', 'MANUAL-20260902-00006', NULL, '2026-08-24 15:00:00', '2026-08-24 15:00:00');
+(50, 100231, 254, 1456, 100152, 3500.00, 'EGP', 10.00, 350.00, 3150.00, 'manual', 'pending', 'MANUAL-20260902-00006', NULL, '2026-08-24 15:00:00', '2026-08-24 15:00:00'),
+(63, 100262, NULL, 1498, 100145, 3600.00, 'EGP', 0.00, 0.00, 3600.00, 'manual', 'pending', 'TRANSFER-RERUN-{{$timestamp}}', NULL, '2026-09-09 05:55:20', '2026-09-09 05:55:21');
 
 -- --------------------------------------------------------
 
@@ -1885,7 +2049,8 @@ INSERT INTO `refresh_tokens` (`id`, `user_id`, `token_hash`, `expires_at`, `revo
 (1045, 100526, '396696d4416b5f2ee60b539828970ce22b8ad9c3a47866d6bb8727857c82eb5e', '2026-10-02 01:18:05', NULL, '2026-09-02 04:18:06'),
 (1052, 100528, '4103cf549ec8dfb9ef3ed7cae70510ada4487c3796c75f9aa947d19dfaafbc1a', '2026-10-02 03:02:39', NULL, '2026-09-02 06:02:40'),
 (1053, 100568, '149d0ef4051abda64eccd31521e2abce377735cfbd22b202d20fbc54e2fb6a2a', '2026-10-02 03:03:53', NULL, '2026-09-02 06:03:53'),
-(1059, 100588, 'f81e5b027ce68c46c345ecc55f6e8fa91d3a8c34861404be4f02d2057b0151ce', '2026-10-04 01:54:37', NULL, '2026-09-04 04:54:37');
+(1068, 100595, '2b3cfb41cb3becb1f2055738a3752dac1997ca4780a6ba27fed7db85095ca74b', '2026-10-08 00:42:02', NULL, '2026-09-08 03:42:02'),
+(1081, 100588, '7cf0c53cb5a0e5925d2498f96ed656d47b8a40e2723d7a2434909b31d3ff0492', '2026-10-09 02:49:56', NULL, '2026-09-09 05:49:56');
 
 -- --------------------------------------------------------
 
@@ -2759,7 +2924,19 @@ INSERT INTO `training_applications` (`id`, `training_id`, `student_id`, `company
 (1844, 100239, 1484, 100158, 'I am Ahmed Seif El-Din and I would like to join this training.', 'Ahmed Seif El-Din', 'ahmed.seif@outlook.com', '01044455592', 'Maadi', 'Maadi', 'I want to deepen my practical skills in Human Resources.', 'Hands-on knowledge of Human Resources and the workflows used by HR Partners Egypt.', 'Content Writing, Communication, English, Creativity, Time Management, Teamwork', 'submitted', NULL, NULL, '2026-08-05 14:00:00', NULL, NULL, NULL, NULL, 647, 'Cairo University', 'graduated', 'Graduated 2025', '2025', 'Looking to convert academic knowledge in Journalism into professional competence.'),
 (1845, 100239, 1486, 100158, 'I am George Magdy Saad and I would like to join this training.', 'George Magdy Saad', 'george.saad@gmail.com', '01566677794', 'Zamalek', 'Zamalek', 'I want to deepen my practical skills in Human Resources.', 'Hands-on knowledge of Human Resources and the workflows used by HR Partners Egypt.', 'Adobe Photoshop, Adobe Illustrator, Creativity, Communication, Time Management, English', 'accepted', NULL, NULL, '2026-08-04 14:00:00', '2026-08-01 11:30:00', NULL, 100582, NULL, 649, 'Helwan University', 'graduated', 'Graduated 2025', '2025', 'Looking to convert academic knowledge in Graphic Design into professional competence.'),
 (1846, 100239, 1488, 100158, 'I am Mariam Tarek Nabil and I would like to join this training.', 'Mariam Tarek Nabil', 'mariam.tarek@gmail.com', '01188899996', '6 October City', '6 October City', 'I want to deepen my practical skills in Human Resources.', 'Hands-on knowledge of Human Resources and the workflows used by HR Partners Egypt.', 'Figma, UI Design, UX Design, Adobe Photoshop, Creativity, Communication', 'rejected', 'other', 'The committee selected candidates whose skills aligned more closely with the program requirements.', '2026-08-03 14:00:00', '2026-07-31 11:30:00', NULL, 100582, NULL, 648, 'Cairo University', 'student', 'Class of 2027', '2027', 'Looking to convert academic knowledge in UI/UX Design into professional competence.'),
-(1847, 100239, 1490, 100158, 'I am Yasmin Ahmed Talaat and I would like to join this training.', 'Yasmin Ahmed Talaat', 'yasmin.talaat@gmail.com', '01011122298', 'Maadi', 'Maadi', 'I want to deepen my practical skills in Human Resources.', 'Hands-on knowledge of Human Resources and the workflows used by HR Partners Egypt.', 'Excel, Power BI, Business Analysis, Communication, Problem Solving, Time Management', 'withdrawn', NULL, NULL, '2026-08-02 14:00:00', NULL, '2026-08-17 09:00:00', NULL, NULL, 61, 'Cairo University', 'student', 'Class of 2026', '2026', 'Looking to convert academic knowledge in Auditing into professional competence.');
+(1847, 100239, 1490, 100158, 'I am Yasmin Ahmed Talaat and I would like to join this training.', 'Yasmin Ahmed Talaat', 'yasmin.talaat@gmail.com', '01011122298', 'Maadi', 'Maadi', 'I want to deepen my practical skills in Human Resources.', 'Hands-on knowledge of Human Resources and the workflows used by HR Partners Egypt.', 'Excel, Power BI, Business Analysis, Communication, Problem Solving, Time Management', 'withdrawn', NULL, NULL, '2026-08-02 14:00:00', NULL, '2026-08-17 09:00:00', NULL, NULL, 61, 'Cairo University', 'student', 'Class of 2026', '2026', 'Looking to convert academic knowledge in Auditing into professional competence.'),
+(1864, 100261, 1498, 100145, 'I am interested in this training.', 'Ahmed Mohamed', 'ahmed@example.com', '01000000000', 'Alexandria', 'Alexandria', 'I want to join this training and improve my practical skills.', 'I want to improve my PHP and SQL skills.', '[]', 'submitted', NULL, NULL, '2026-09-07 00:41:10', NULL, NULL, NULL, 314, NULL, 'Alexandria University', 'student', '3rd year', NULL, NULL),
+(1875, 100275, 1498, 100161, 'I am a motivated student eager to learn from the team.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Alexandria', 'Alexandria, Egypt', 'I want practical experience building real products in a professional team.', 'Hands-on tools, workflows and best practices used in production.', '[\"PHP\",\"SQL\",\"Teamwork\"]', 'withdrawn', NULL, NULL, '2026-09-08 03:20:16', NULL, '2026-09-09 05:08:05', NULL, 314, NULL, 'Alexandria University', 'student', '3rd year', NULL, 'Looking forward to joining this training.'),
+(1876, 100276, 1498, 100161, 'I am a motivated student eager to learn from the team.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Alexandria', 'Alexandria, Egypt', 'I want practical experience building real products in a professional team.', 'Hands-on tools, workflows and best practices used in production.', '[\"PHP\",\"SQL\",\"Teamwork\"]', 'submitted', NULL, NULL, '2026-09-08 03:20:19', NULL, NULL, NULL, 314, NULL, 'Alexandria University', 'student', '3rd year', NULL, 'Looking forward to joining this training.'),
+(1877, 100277, 1498, 100161, 'I am a motivated student eager to learn from the team.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Alexandria', 'Alexandria, Egypt', 'I want practical experience building real products in a professional team.', 'Hands-on tools, workflows and best practices used in production.', '[\"PHP\",\"SQL\",\"Teamwork\"]', 'submitted', NULL, NULL, '2026-09-08 03:20:19', NULL, NULL, NULL, 314, NULL, 'Alexandria University', 'student', '3rd year', NULL, 'Looking forward to joining this training.'),
+(1878, 100278, 1498, 100161, 'I am a motivated student eager to learn from the team.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Alexandria', 'Alexandria, Egypt', 'I want practical experience building real products in a professional team.', 'Hands-on tools, workflows and best practices used in production.', '[\"PHP\",\"SQL\",\"Teamwork\"]', 'accepted', NULL, NULL, '2026-09-08 03:20:19', '2026-09-08 03:20:22', NULL, 100595, 314, NULL, 'Alexandria University', 'student', '3rd year', NULL, 'Looking forward to joining this training.'),
+(1879, 100279, 1498, 100161, 'I am a motivated student eager to learn from the team.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Alexandria', 'Alexandria, Egypt', 'I want practical experience building real products in a professional team.', 'Hands-on tools, workflows and best practices used in production.', '[\"PHP\",\"SQL\",\"Teamwork\"]', 'rejected', 'requirements_not_met', 'Profile does not match the position requirements.', '2026-09-08 03:20:20', '2026-09-08 03:20:22', NULL, 100595, 314, NULL, 'Alexandria University', 'student', '3rd year', NULL, 'Looking forward to joining this training.'),
+(1880, 100280, 1498, 100161, 'I am a motivated student eager to learn from the team.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Alexandria', 'Alexandria, Egypt', 'I want practical experience building real products in a professional team.', 'Hands-on tools, workflows and best practices used in production.', '[\"PHP\",\"SQL\",\"Teamwork\"]', 'submitted', NULL, NULL, '2026-09-08 03:20:20', NULL, NULL, NULL, 314, NULL, 'Alexandria University', 'student', '3rd year', NULL, 'Looking forward to joining this training.'),
+(1881, 100247, 1498, 100144, 'I am a motivated student eager to learn from the team.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Alexandria', 'Alexandria, Egypt', 'I want practical experience building real products in a professional team.', 'Hands-on tools, workflows and best practices used in production.', '[\"PHP\",\"SQL\",\"Teamwork\"]', 'submitted', NULL, NULL, '2026-09-08 03:20:20', NULL, NULL, NULL, 314, NULL, 'Alexandria University', 'student', '3rd year', NULL, 'Looking forward to joining this training.'),
+(1882, 100262, 1498, 100145, 'I am a motivated student eager to learn from the team.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Alexandria', 'Alexandria, Egypt', 'I want practical experience building real products in a professional team.', 'Hands-on tools, workflows and best practices used in production.', '[\"PHP\",\"SQL\",\"Teamwork\"]', 'accepted', NULL, NULL, '2026-09-08 03:20:20', '2026-09-08 03:20:22', NULL, 100569, 314, NULL, 'Alexandria University', 'student', '3rd year', NULL, 'Looking forward to joining this training.'),
+(1883, 100264, 1498, 100145, 'I am a motivated student eager to learn from the team.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Alexandria', 'Alexandria, Egypt', 'I want practical experience building real products in a professional team.', 'Hands-on tools, workflows and best practices used in production.', '[\"PHP\",\"SQL\",\"Teamwork\"]', 'rejected', 'training_closed', 'This training has been discontinued.', '2026-09-08 03:20:20', '2026-09-08 03:20:22', NULL, 100569, 314, NULL, 'Alexandria University', 'student', '3rd year', NULL, 'Looking forward to joining this training.'),
+(1884, 100256, 1498, 100152, 'I am a motivated student eager to learn from the team.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Alexandria', 'Alexandria, Egypt', 'I want practical experience building real products in a professional team.', 'Hands-on tools, workflows and best practices used in production.', '[\"PHP\",\"SQL\",\"Teamwork\"]', 'withdrawn', NULL, NULL, '2026-09-08 03:20:21', NULL, '2026-09-08 03:20:23', NULL, 314, NULL, 'Alexandria University', 'student', '3rd year', NULL, 'Looking forward to joining this training.'),
+(1885, 100255, 1498, 100152, 'I am a motivated student eager to learn from the team.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Alexandria', 'Alexandria, Egypt', 'I want practical experience building real products in a professional team.', 'Hands-on tools, workflows and best practices used in production.', '[\"PHP\",\"SQL\",\"Teamwork\"]', 'withdrawn', NULL, NULL, '2026-09-08 03:20:21', NULL, '2026-09-08 03:20:23', NULL, 314, NULL, 'Alexandria University', 'student', '3rd year', NULL, 'Looking forward to joining this training.');
 
 -- --------------------------------------------------------
 
@@ -2796,45 +2973,73 @@ CREATE TABLE `training_listings` (
 --
 
 INSERT INTO `training_listings` (`id`, `company_id`, `specialization_id`, `title`, `description`, `training_type`, `mode`, `may_lead_to_employment`, `is_paid`, `compensation_amount`, `compensation_currency`, `trial_period_days`, `capacity`, `status`, `published_at`, `starts_at`, `ends_at`, `application_deadline`, `closed_at`, `location`, `created_at`, `updated_at`) VALUES
-(100202, 100144, 199, 'Junior PHP Developer Track', 'A project_based training offered by NileTech Solutions in Giza for 3 students. The program covers the most requested skills in Backend Development and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'onsite', 1, 0, NULL, 'EGP', NULL, 3, 'closed', NULL, '2026-08-03 09:00:00', '2026-08-28 17:00:00', '2026-07-29 23:59:59', '2026-08-31 10:00:00', 'Giza', '2026-08-28 10:00:00', '2026-09-02 06:50:31'),
-(100203, 100144, 201, 'Full Stack Web Internship', 'A hands_on training offered by NileTech Solutions in Giza for 2 students. The program covers the most requested skills in Full Stack Development and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'hybrid', 0, 1, 2500.00, 'EGP', 7, 2, 'published', '2026-07-15 10:00:00', '2026-08-24 09:00:00', '2026-09-13 17:00:00', '2026-08-14 23:59:59', NULL, 'Giza', '2026-07-15 10:00:00', '2026-09-02 06:30:34'),
-(100204, 100144, 199, 'Scaling Laravel Applications', 'A project_based training offered by NileTech Solutions in Giza for 2 students. The program covers the most requested skills in Backend Development and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-07-16 10:00:00', '2026-08-25 09:00:00', '2026-09-14 17:00:00', '2026-08-15 23:59:59', NULL, 'Giza', '2026-07-16 10:00:00', '2026-09-02 06:30:34'),
-(100205, 100144, 200, 'Frontend Craftsmanship Program', 'A hands_on training offered by NileTech Solutions in Giza for 3 students. The program covers the most requested skills in Frontend Development and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'hybrid', 1, 0, NULL, 'EGP', NULL, 3, 'published', '2026-07-17 10:00:00', '2026-08-26 09:00:00', '2026-09-15 17:00:00', '2026-08-16 23:59:59', NULL, 'Giza', '2026-07-17 10:00:00', '2026-09-02 06:30:34'),
-(100206, 100144, 200, 'Mobile Banking UI Project', 'A project_based training offered by NileTech Solutions in Giza for 2 students. The program covers the most requested skills in Frontend Development and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-07-18 10:00:00', '2026-08-27 09:00:00', '2026-09-16 17:00:00', '2026-08-17 23:59:59', NULL, 'Giza', '2026-07-18 10:00:00', '2026-09-02 06:30:34'),
-(100207, 100144, 103, 'QA Automation Essentials', 'A hands_on training offered by NileTech Solutions in Giza for 2 students. The program covers the most requested skills in Software Engineering and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-07-19 10:00:00', '2026-08-28 09:00:00', '2026-09-17 17:00:00', '2026-08-18 23:59:59', NULL, 'Giza', '2026-07-19 10:00:00', '2026-09-02 06:30:34'),
-(100208, 100145, 205, 'Data Science Immersion', 'A project_based training offered by Alexandria Digital Labs in Alexandria for 3 students. The program covers the most requested skills in Data Analysis and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'hybrid', 1, 1, 3000.00, 'EGP', 7, 3, 'closed', NULL, '2026-07-28 09:00:00', '2026-08-27 17:00:00', '2026-07-23 23:59:59', '2026-08-30 10:00:00', 'Alexandria', '2026-09-03 10:00:00', '2026-09-02 06:30:34'),
-(100209, 100145, 206, 'Machine Learning Engineering Internship', 'A project_based training offered by Alexandria Digital Labs in Alexandria for 2 students. The program covers the most requested skills in Machine Learning and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-07-21 10:00:00', '2026-08-30 09:00:00', '2026-09-19 17:00:00', '2026-08-20 23:59:59', NULL, 'Alexandria', '2026-07-21 10:00:00', '2026-09-02 06:30:34'),
-(100210, 100145, 205, 'Business Analytics with Power BI', 'A hands_on training offered by Alexandria Digital Labs in Alexandria for 4 students. The program covers the most requested skills in Data Analysis and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'remote', 0, 0, NULL, 'EGP', NULL, 4, 'published', '2026-07-22 10:00:00', '2026-08-23 09:00:00', '2026-09-20 17:00:00', '2026-08-21 23:59:59', NULL, 'Alexandria', '2026-07-22 10:00:00', '2026-09-02 06:30:34'),
-(100211, 100145, 104, 'Computer Vision Projects', 'A project_based training offered by Alexandria Digital Labs in Alexandria for 2 students. The program covers the most requested skills in Artificial Intelligence and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'onsite', 1, 0, NULL, 'EGP', NULL, 2, 'published', '2026-07-23 10:00:00', '2026-08-24 09:00:00', '2026-09-21 17:00:00', '2026-08-22 23:59:59', NULL, 'Alexandria', '2026-07-23 10:00:00', '2026-09-02 06:30:34'),
-(100212, 100145, 206, 'ML in Production (MLOps)', 'A project_based training offered by Alexandria Digital Labs in Alexandria for 2 students. The program covers the most requested skills in Machine Learning and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'remote', 0, 1, 3200.00, 'EGP', 10, 2, 'published', '2026-07-24 10:00:00', '2026-08-25 09:00:00', '2026-09-22 17:00:00', '2026-08-13 23:59:59', NULL, 'Alexandria', '2026-07-24 10:00:00', '2026-09-02 06:30:34'),
-(100213, 100146, 96, 'Clinical Rotation in Internal Medicine', 'A shadowing training offered by Cairo Medical Center in Cairo for 4 students. The program covers the most requested skills in General Medicine and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'shadowing', 'onsite', 0, 0, NULL, 'EGP', NULL, 4, 'closed', NULL, '2026-08-02 09:00:00', '2026-08-27 17:00:00', '2026-07-28 23:59:59', '2026-08-30 10:00:00', 'Cairo', '2026-09-08 10:00:00', '2026-09-02 06:30:34'),
-(100214, 100146, 98, 'Pediatrics Ward Shadowing', 'A shadowing training offered by Cairo Medical Center in Cairo for 3 students. The program covers the most requested skills in Pediatrics and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'shadowing', 'onsite', 1, 0, NULL, 'EGP', NULL, 3, 'published', '2026-07-26 10:00:00', '2026-08-27 09:00:00', '2026-09-24 17:00:00', '2026-08-15 23:59:59', NULL, 'Cairo', '2026-07-26 10:00:00', '2026-09-02 06:30:34'),
-(100215, 100146, 97, 'Surgical Theater Observership', 'A shadowing training offered by Cairo Medical Center in Cairo for 2 students. The program covers the most requested skills in Surgery and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'shadowing', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-07-27 10:00:00', '2026-08-28 09:00:00', '2026-09-25 17:00:00', '2026-08-16 23:59:59', NULL, 'Cairo', '2026-07-27 10:00:00', '2026-09-02 06:30:34'),
-(100216, 100147, 93, 'Intro to Structural Drafting', 'A hands_on training offered by Atlas Engineering in Giza for 4 students. The program covers the most requested skills in Civil Engineering and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 4, 'closed', NULL, '2026-07-30 09:00:00', '2026-08-24 17:00:00', '2026-07-25 23:59:59', '2026-08-27 10:00:00', 'Giza', '2026-09-11 10:00:00', '2026-09-02 06:30:34'),
-(100217, 100147, 92, 'Mechanical CAE Workshop', 'A hands_on training offered by Atlas Engineering in Giza for 3 students. The program covers the most requested skills in Mechanical Engineering and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 1, 1, 2000.00, 'EGP', 7, 3, 'published', '2026-07-29 10:00:00', '2026-08-30 09:00:00', '2026-09-27 17:00:00', '2026-08-18 23:59:59', NULL, 'Giza', '2026-07-29 10:00:00', '2026-09-02 06:30:34'),
-(100218, 100147, 93, 'Site Engineering Handbook', 'A hands_on training offered by Atlas Engineering in Giza for 3 students. The program covers the most requested skills in Civil Engineering and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 3, 'published', '2026-07-30 10:00:00', '2026-08-23 09:00:00', '2026-09-28 17:00:00', '2026-08-19 23:59:59', NULL, 'Giza', '2026-07-30 10:00:00', '2026-09-02 06:30:34'),
-(100219, 100147, 94, 'Electrical Systems for Buildings', 'A hands_on training offered by Atlas Engineering in Giza for 2 students. The program covers the most requested skills in Electrical Engineering and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-07-31 10:00:00', '2026-08-24 09:00:00', '2026-09-29 17:00:00', '2026-08-20 23:59:59', NULL, 'Giza', '2026-07-31 10:00:00', '2026-09-02 06:30:34'),
-(100220, 100148, 108, 'Growth Marketing Campaigns', 'A project_based training offered by BrightReach Marketing in Cairo for 3 students. The program covers the most requested skills in Marketing and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'hybrid', 1, 0, NULL, 'EGP', NULL, 3, 'closed', NULL, '2026-07-26 09:00:00', '2026-08-25 17:00:00', '2026-07-21 23:59:59', '2026-08-28 10:00:00', 'Cairo', '2026-09-15 10:00:00', '2026-09-02 06:30:34'),
-(100221, 100148, 118, 'Content Studio Intensive', 'A hands_on training offered by BrightReach Marketing in Cairo for 3 students. The program covers the most requested skills in Digital Marketing and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 3, 'published', '2026-08-02 10:00:00', '2026-08-26 09:00:00', '2026-10-01 17:00:00', '2026-08-22 23:59:59', NULL, 'Cairo', '2026-08-02 10:00:00', '2026-09-02 06:30:34'),
-(100222, 100148, 118, 'Digital Campaign Analytics', 'A project_based training offered by BrightReach Marketing in Cairo for 2 students. The program covers the most requested skills in Digital Marketing and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'remote', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-08-03 10:00:00', '2026-08-27 09:00:00', '2026-09-12 17:00:00', '2026-08-13 23:59:59', NULL, 'Cairo', '2026-08-03 10:00:00', '2026-09-02 06:30:34'),
-(100223, 100149, 100, 'Clinical Pharmacy Rotation', 'A shadowing training offered by Luxor Pharma in Alexandria for 3 students. The program covers the most requested skills in Clinical Pharmacy and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'shadowing', 'onsite', 1, 0, NULL, 'EGP', NULL, 3, 'published', '2026-08-04 10:00:00', '2026-08-28 09:00:00', '2026-09-13 17:00:00', '2026-08-14 23:59:59', NULL, 'Alexandria', '2026-08-04 10:00:00', '2026-09-02 06:30:34'),
-(100224, 100149, 102, 'Pharmacovigilance Fundamentals', 'A hands_on training offered by Luxor Pharma in Alexandria for 2 students. The program covers the most requested skills in Pharmacology and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 1, 1800.00, 'EGP', 7, 2, 'published', '2026-08-05 10:00:00', '2026-08-29 09:00:00', '2026-09-14 17:00:00', '2026-08-15 23:59:59', NULL, 'Alexandria', '2026-08-05 10:00:00', '2026-09-02 06:30:34'),
-(100225, 100150, 112, 'Corporate Contract Review', 'A project_based training offered by Themis Law Partners in Cairo for 2 students. The program covers the most requested skills in Corporate Law and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-08-06 10:00:00', '2026-08-30 09:00:00', '2026-09-15 17:00:00', '2026-08-16 23:59:59', NULL, 'Cairo', '2026-08-06 10:00:00', '2026-09-02 06:30:34'),
-(100226, 100150, 114, 'Commercial Law Clinic', 'A hands_on training offered by Themis Law Partners in Cairo for 3 students. The program covers the most requested skills in Commercial Law and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'hybrid', 1, 0, NULL, 'EGP', NULL, 3, 'published', '2026-08-07 10:00:00', '2026-08-23 09:00:00', '2026-09-16 17:00:00', '2026-08-17 23:59:59', NULL, 'Cairo', '2026-08-07 10:00:00', '2026-09-02 06:30:34'),
-(100227, 100151, 124, 'Junior Auditor Track', 'A project_based training offered by LedgerPro Accounting in Cairo for 3 students. The program covers the most requested skills in Auditing and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'onsite', 0, 0, NULL, 'EGP', NULL, 3, 'closed', NULL, '2026-07-29 09:00:00', '2026-08-28 17:00:00', '2026-07-24 23:59:59', '2026-08-31 10:00:00', 'Cairo', '2026-09-22 10:00:00', '2026-09-02 06:30:34'),
-(100228, 100151, 122, 'IFRS for SMEs', 'A hands_on training offered by LedgerPro Accounting in Cairo for 2 students. The program covers the most requested skills in Financial Accounting and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 1, 2200.00, 'EGP', 7, 2, 'published', '2026-08-09 10:00:00', '2026-08-25 09:00:00', '2026-09-18 17:00:00', '2026-08-19 23:59:59', NULL, 'Cairo', '2026-08-09 10:00:00', '2026-09-02 06:30:34'),
-(100229, 100151, 122, 'Bookkeeping Essentials', 'A hands_on training offered by LedgerPro Accounting in Cairo for 3 students. The program covers the most requested skills in Financial Accounting and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 1, 0, NULL, 'EGP', NULL, 3, 'published', '2026-08-10 10:00:00', '2026-08-26 09:00:00', '2026-09-19 17:00:00', '2026-08-20 23:59:59', NULL, 'Cairo', '2026-08-10 10:00:00', '2026-09-02 06:30:34'),
-(100230, 100152, 201, 'React Native Product Sprint', 'A project_based training offered by FutureWorks Software in New Cairo for 3 students. The program covers the most requested skills in Full Stack Development and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'hybrid', 0, 0, NULL, 'EGP', NULL, 3, 'published', '2026-08-11 10:00:00', '2026-08-27 09:00:00', '2026-09-20 17:00:00', '2026-08-21 23:59:59', NULL, 'New Cairo', '2026-08-11 10:00:00', '2026-09-02 06:30:34'),
-(100231, 100152, 203, 'Cloud Native Bootcamp', 'A hands_on training offered by FutureWorks Software in New Cairo for 2 students. The program covers the most requested skills in Cloud Computing and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'remote', 0, 1, 3500.00, 'EGP', 10, 2, 'published', '2026-08-12 10:00:00', '2026-08-28 09:00:00', '2026-09-21 17:00:00', '2026-08-22 23:59:59', NULL, 'New Cairo', '2026-08-12 10:00:00', '2026-09-02 06:30:34'),
-(100232, 100152, 201, 'TypeScript Full Stack Fellowship', 'A project_based training offered by FutureWorks Software in New Cairo for 2 students. The program covers the most requested skills in Full Stack Development and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'hybrid', 1, 0, NULL, 'EGP', NULL, 2, 'published', '2026-08-13 10:00:00', '2026-08-29 09:00:00', '2026-09-22 17:00:00', '2026-08-13 23:59:59', NULL, 'New Cairo', '2026-08-13 10:00:00', '2026-09-02 06:30:34'),
-(100233, 100153, 110, 'Retail Operations Management', 'A project_based training offered by GreenRetail Egypt in Giza for 3 students. The program covers the most requested skills in Business Administration and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'onsite', 0, 0, NULL, 'EGP', NULL, 3, 'published', '2026-08-14 10:00:00', '2026-08-30 09:00:00', '2026-09-23 17:00:00', '2026-08-14 23:59:59', NULL, 'Giza', '2026-08-14 10:00:00', '2026-09-02 06:30:34'),
-(100234, 100153, 110, 'Category Analytics Program', 'A hands_on training offered by GreenRetail Egypt in Giza for 2 students. The program covers the most requested skills in Business Administration and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-08-15 10:00:00', '2026-08-23 09:00:00', '2026-09-24 17:00:00', '2026-08-15 23:59:59', NULL, 'Giza', '2026-08-15 10:00:00', '2026-09-02 06:30:34'),
-(100235, 100154, 96, 'Founding Team: Lab Operations Draft', 'A hands_on training offered by MedPulse Diagnostics in Giza for 2 students. The program covers the most requested skills in General Medicine and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 1, 0, NULL, 'EGP', NULL, 2, 'draft', NULL, '2026-08-24 09:00:00', '2026-09-25 17:00:00', '2026-08-16 23:59:59', NULL, 'Giza', '2026-09-30 10:00:00', '2026-09-02 06:30:34'),
-(100236, 100156, 110, 'Freight Operations Trainee', 'A hands_on training offered by Nile Valley Logistics in Alexandria for 3 students. The program covers the most requested skills in Business Administration and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 3, 'published', '2026-08-17 10:00:00', '2026-08-25 09:00:00', '2026-09-26 17:00:00', '2026-08-17 23:59:59', NULL, 'Alexandria', '2026-08-17 10:00:00', '2026-09-02 06:30:34'),
-(100237, 100155, 92, 'Onshore Wind Site Inspection', 'A hands_on training offered by SolarOffshore Energy in Suez for 2 students. The program covers the most requested skills in Mechanical Engineering and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-08-18 10:00:00', '2026-08-26 09:00:00', '2026-09-27 17:00:00', '2026-08-18 23:59:59', NULL, 'Suez', '2026-08-18 10:00:00', '2026-09-02 06:30:34'),
-(100238, 100158, 109, 'Recruitment Sourcer Program', 'A project_based training offered by HR Partners Egypt in Cairo for 3 students. The program covers the most requested skills in Human Resources and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'hybrid', 1, 0, NULL, 'EGP', NULL, 3, 'published', '2026-08-19 10:00:00', '2026-08-27 09:00:00', '2026-09-28 17:00:00', '2026-08-19 23:59:59', NULL, 'Cairo', '2026-08-19 10:00:00', '2026-09-02 06:30:34'),
-(100239, 100158, 109, 'Employee Onboarding Design', 'A project_based training offered by HR Partners Egypt in Cairo for 2 students. The program covers the most requested skills in Human Resources and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-08-20 10:00:00', '2026-08-28 09:00:00', '2026-09-29 17:00:00', '2026-08-20 23:59:59', NULL, 'Cairo', '2026-08-20 10:00:00', '2026-09-02 06:30:34'),
-(100240, 100157, 121, 'In-House Design Review', 'A hands_on training offered by CleoFashion International in Cairo for 2 students. The program covers the most requested skills in Graphic Design and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'draft', NULL, '2026-08-29 09:00:00', '2026-09-30 17:00:00', '2026-08-21 23:59:59', NULL, 'Cairo', '2026-10-05 10:00:00', '2026-09-02 06:30:34');
+(100202, 100144, 199, 'Junior PHP Developer Track', 'A project_based training offered by NileTech Solutions in Giza for 3 students. The program covers the most requested skills in Backend Development and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'onsite', 1, 0, NULL, 'EGP', NULL, 3, 'closed', '2026-07-11 10:00:00', '2026-08-10 09:00:00', '2026-08-27 17:00:00', '2026-08-10 09:00:00', '2026-08-31 10:00:00', 'Giza', '2026-08-28 10:00:00', '2026-09-07 00:03:54'),
+(100203, 100144, 201, 'Full Stack Web Internship', 'A hands_on training offered by NileTech Solutions in Giza for 2 students. The program covers the most requested skills in Full Stack Development and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'hybrid', 0, 1, 2500.00, 'EGP', 7, 2, 'published', '2026-08-02 10:00:00', '2026-08-29 09:00:00', '2026-10-01 17:00:00', '2026-08-29 09:00:00', NULL, 'Giza', '2026-07-15 10:00:00', '2026-09-07 00:03:54'),
+(100204, 100144, 199, 'Scaling Laravel Applications', 'A project_based training offered by NileTech Solutions in Giza for 2 students. The program covers the most requested skills in Backend Development and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-07-31 10:00:00', '2026-08-28 09:00:00', '2026-10-01 17:00:00', '2026-08-28 09:00:00', NULL, 'Giza', '2026-07-16 10:00:00', '2026-09-07 00:03:54'),
+(100205, 100144, 200, 'Frontend Craftsmanship Program', 'A hands_on training offered by NileTech Solutions in Giza for 3 students. The program covers the most requested skills in Frontend Development and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'hybrid', 1, 0, NULL, 'EGP', NULL, 3, 'published', '2026-08-08 10:00:00', '2026-09-10 09:00:00', '2026-10-15 17:00:00', '2026-09-10 09:00:00', NULL, 'Giza', '2026-07-17 10:00:00', '2026-09-07 00:03:54'),
+(100206, 100144, 200, 'Mobile Banking UI Project', 'A project_based training offered by NileTech Solutions in Giza for 2 students. The program covers the most requested skills in Frontend Development and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-08-25 10:00:00', '2026-09-11 09:00:00', '2026-10-17 17:00:00', '2026-09-11 09:00:00', NULL, 'Giza', '2026-07-18 10:00:00', '2026-09-07 00:03:54'),
+(100207, 100144, 103, 'QA Automation Essentials', 'A hands_on training offered by NileTech Solutions in Giza for 2 students. The program covers the most requested skills in Software Engineering and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-08-24 10:00:00', '2026-09-12 09:00:00', '2026-10-19 17:00:00', '2026-09-12 09:00:00', NULL, 'Giza', '2026-07-19 10:00:00', '2026-09-07 00:03:54'),
+(100208, 100145, 205, 'Data Science Immersion', 'A project_based training offered by Alexandria Digital Labs in Alexandria for 3 students. The program covers the most requested skills in Data Analysis and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'hybrid', 1, 1, 3000.00, 'EGP', 7, 3, 'closed', '2026-07-05 10:00:00', '2026-08-04 09:00:00', '2026-08-27 17:00:00', '2026-08-04 09:00:00', '2026-08-30 10:00:00', 'Alexandria', '2026-09-03 10:00:00', '2026-09-07 00:03:54'),
+(100209, 100145, 206, 'Machine Learning Engineering Internship', 'A project_based training offered by Alexandria Digital Labs in Alexandria for 2 students. The program covers the most requested skills in Machine Learning and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-08-22 10:00:00', '2026-12-09 09:00:00', '2027-01-17 17:00:00', '2026-12-09 09:00:00', NULL, 'Alexandria', '2026-07-21 10:00:00', '2026-09-07 00:03:54'),
+(100210, 100145, 205, 'Business Analytics with Power BI', 'A hands_on training offered by Alexandria Digital Labs in Alexandria for 4 students. The program covers the most requested skills in Data Analysis and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'remote', 0, 0, NULL, 'EGP', NULL, 4, 'published', '2026-08-06 10:00:00', '2026-08-22 09:00:00', '2026-10-01 17:00:00', '2026-08-22 09:00:00', NULL, 'Alexandria', '2026-07-22 10:00:00', '2026-09-07 00:03:54'),
+(100211, 100145, 104, 'Computer Vision Projects', 'A project_based training offered by Alexandria Digital Labs in Alexandria for 2 students. The program covers the most requested skills in Artificial Intelligence and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'onsite', 1, 0, NULL, 'EGP', NULL, 2, 'published', '2026-08-04 10:00:00', '2026-08-21 09:00:00', '2026-10-01 17:00:00', '2026-08-21 09:00:00', NULL, 'Alexandria', '2026-07-23 10:00:00', '2026-09-07 00:03:54'),
+(100212, 100145, 206, 'ML in Production (MLOps)', 'A project_based training offered by Alexandria Digital Labs in Alexandria for 2 students. The program covers the most requested skills in Machine Learning and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'remote', 0, 1, 3200.00, 'EGP', 10, 2, 'published', '2026-08-19 10:00:00', '2026-09-17 09:00:00', '2026-10-29 17:00:00', '2026-09-17 09:00:00', NULL, 'Alexandria', '2026-07-24 10:00:00', '2026-09-07 00:03:54'),
+(100213, 100146, 96, 'Clinical Rotation in Internal Medicine', 'A shadowing training offered by Cairo Medical Center in Cairo for 4 students. The program covers the most requested skills in General Medicine and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'shadowing', 'onsite', 0, 0, NULL, 'EGP', NULL, 4, 'closed', '2026-06-30 10:00:00', '2026-07-30 09:00:00', '2026-08-27 17:00:00', '2026-07-30 09:00:00', '2026-08-30 10:00:00', 'Cairo', '2026-09-08 10:00:00', '2026-09-07 00:03:54'),
+(100214, 100146, 98, 'Pediatrics Ward Shadowing', 'A shadowing training offered by Cairo Medical Center in Cairo for 3 students. The program covers the most requested skills in Pediatrics and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'shadowing', 'onsite', 1, 0, NULL, 'EGP', NULL, 3, 'published', '2026-08-17 10:00:00', '2026-09-19 09:00:00', '2026-11-02 17:00:00', '2026-09-19 09:00:00', NULL, 'Cairo', '2026-07-26 10:00:00', '2026-09-07 00:03:54'),
+(100215, 100146, 97, 'Surgical Theater Observership', 'A shadowing training offered by Cairo Medical Center in Cairo for 2 students. The program covers the most requested skills in Surgery and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'shadowing', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-08-16 10:00:00', '2026-10-21 09:00:00', '2026-12-05 17:00:00', '2026-10-21 09:00:00', NULL, 'Cairo', '2026-07-27 10:00:00', '2026-09-07 00:03:54'),
+(100216, 100147, 93, 'Intro to Structural Drafting', 'A hands_on training offered by Atlas Engineering in Giza for 4 students. The program covers the most requested skills in Civil Engineering and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 4, 'closed', '2026-07-12 10:00:00', '2026-07-27 09:00:00', '2026-08-12 17:00:00', '2026-07-27 09:00:00', '2026-08-27 10:00:00', 'Giza', '2026-09-11 10:00:00', '2026-09-07 00:03:54'),
+(100217, 100147, 92, 'Mechanical CAE Workshop', 'A hands_on training offered by Atlas Engineering in Giza for 3 students. The program covers the most requested skills in Mechanical Engineering and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 1, 1, 2000.00, 'EGP', 7, 3, 'published', '2026-07-23 10:00:00', '2026-08-15 09:00:00', '2026-10-01 17:00:00', '2026-08-15 09:00:00', NULL, 'Giza', '2026-07-29 10:00:00', '2026-09-07 00:03:54'),
+(100218, 100147, 93, 'Site Engineering Handbook', 'A hands_on training offered by Atlas Engineering in Giza for 3 students. The program covers the most requested skills in Civil Engineering and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 3, 'published', '2026-07-21 10:00:00', '2026-08-14 09:00:00', '2026-10-01 17:00:00', '2026-08-14 09:00:00', NULL, 'Giza', '2026-07-30 10:00:00', '2026-09-07 00:03:54'),
+(100219, 100147, 94, 'Electrical Systems for Buildings', 'A hands_on training offered by Atlas Engineering in Giza for 2 students. The program covers the most requested skills in Electrical Engineering and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-08-12 10:00:00', '2026-09-24 09:00:00', '2026-11-12 17:00:00', '2026-09-24 09:00:00', NULL, 'Giza', '2026-07-31 10:00:00', '2026-09-07 00:03:54'),
+(100220, 100148, 108, 'Growth Marketing Campaigns', 'A project_based training offered by BrightReach Marketing in Cairo for 3 students. The program covers the most requested skills in Marketing and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'hybrid', 1, 0, NULL, 'EGP', NULL, 3, 'closed', '2026-07-08 10:00:00', '2026-07-23 09:00:00', '2026-08-12 17:00:00', '2026-07-23 09:00:00', '2026-08-28 10:00:00', 'Cairo', '2026-09-15 10:00:00', '2026-09-07 00:03:54'),
+(100221, 100148, 118, 'Content Studio Intensive', 'A hands_on training offered by BrightReach Marketing in Cairo for 3 students. The program covers the most requested skills in Digital Marketing and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 3, 'published', '2026-08-10 10:00:00', '2026-09-26 09:00:00', '2026-10-27 17:00:00', '2026-09-26 09:00:00', NULL, 'Cairo', '2026-08-02 10:00:00', '2026-09-07 00:03:54'),
+(100222, 100148, 118, 'Digital Campaign Analytics', 'A project_based training offered by BrightReach Marketing in Cairo for 2 students. The program covers the most requested skills in Digital Marketing and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'remote', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-08-09 10:00:00', '2026-10-28 09:00:00', '2026-11-29 17:00:00', '2026-10-28 09:00:00', NULL, 'Cairo', '2026-08-03 10:00:00', '2026-09-07 00:03:54'),
+(100223, 100149, 100, 'Clinical Pharmacy Rotation', 'A shadowing training offered by Luxor Pharma in Alexandria for 3 students. The program covers the most requested skills in Clinical Pharmacy and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'shadowing', 'onsite', 1, 0, NULL, 'EGP', NULL, 3, 'published', '2026-08-08 10:00:00', '2026-10-29 09:00:00', '2026-12-01 17:00:00', '2026-10-29 09:00:00', NULL, 'Alexandria', '2026-08-04 10:00:00', '2026-09-07 00:03:54'),
+(100224, 100149, 102, 'Pharmacovigilance Fundamentals', 'A hands_on training offered by Luxor Pharma in Alexandria for 2 students. The program covers the most requested skills in Pharmacology and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 1, 1800.00, 'EGP', 7, 2, 'published', '2026-08-16 10:00:00', '2026-08-28 09:00:00', '2026-10-01 17:00:00', '2026-08-28 09:00:00', NULL, 'Alexandria', '2026-08-05 10:00:00', '2026-09-07 00:03:54'),
+(100225, 100150, 112, 'Corporate Contract Review', 'A project_based training offered by Themis Law Partners in Cairo for 2 students. The program covers the most requested skills in Corporate Law and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-08-14 10:00:00', '2026-08-27 09:00:00', '2026-10-01 17:00:00', '2026-08-27 09:00:00', NULL, 'Cairo', '2026-08-06 10:00:00', '2026-09-07 00:03:54'),
+(100226, 100150, 114, 'Commercial Law Clinic', 'A hands_on training offered by Themis Law Partners in Cairo for 3 students. The program covers the most requested skills in Commercial Law and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'hybrid', 1, 0, NULL, 'EGP', NULL, 3, 'published', '2026-08-23 10:00:00', '2026-10-01 09:00:00', '2026-11-06 17:00:00', '2026-10-01 09:00:00', NULL, 'Cairo', '2026-08-07 10:00:00', '2026-09-07 00:03:54'),
+(100227, 100151, 124, 'Junior Auditor Track', 'A project_based training offered by LedgerPro Accounting in Cairo for 3 students. The program covers the most requested skills in Auditing and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'onsite', 0, 0, NULL, 'EGP', NULL, 3, 'closed', '2026-07-01 10:00:00', '2026-08-10 09:00:00', '2026-09-06 17:00:00', '2026-08-10 09:00:00', '2026-08-31 10:00:00', 'Cairo', '2026-09-22 10:00:00', '2026-09-07 00:03:54'),
+(100228, 100151, 122, 'IFRS for SMEs', 'A hands_on training offered by LedgerPro Accounting in Cairo for 2 students. The program covers the most requested skills in Financial Accounting and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 1, 2200.00, 'EGP', 7, 2, 'published', '2026-08-21 10:00:00', '2026-10-03 09:00:00', '2026-11-10 17:00:00', '2026-10-03 09:00:00', NULL, 'Cairo', '2026-08-09 10:00:00', '2026-09-07 00:03:54'),
+(100229, 100151, 122, 'Bookkeeping Essentials', 'A hands_on training offered by LedgerPro Accounting in Cairo for 3 students. The program covers the most requested skills in Financial Accounting and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 1, 0, NULL, 'EGP', NULL, 3, 'published', '2026-08-20 10:00:00', '2026-11-04 09:00:00', '2026-12-13 17:00:00', '2026-11-04 09:00:00', NULL, 'Cairo', '2026-08-10 10:00:00', '2026-09-07 00:03:54'),
+(100230, 100152, 201, 'React Native Product Sprint', 'A project_based training offered by FutureWorks Software in New Cairo for 3 students. The program covers the most requested skills in Full Stack Development and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'hybrid', 0, 0, NULL, 'EGP', NULL, 3, 'published', '2026-08-19 10:00:00', '2026-11-05 09:00:00', '2026-12-15 17:00:00', '2026-11-05 09:00:00', NULL, 'New Cairo', '2026-08-11 10:00:00', '2026-09-07 00:03:54'),
+(100231, 100152, 203, 'Cloud Native Bootcamp', 'A hands_on training offered by FutureWorks Software in New Cairo for 2 students. The program covers the most requested skills in Cloud Computing and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'remote', 0, 1, 3500.00, 'EGP', 10, 2, 'published', '2026-08-02 10:00:00', '2026-08-21 09:00:00', '2026-10-01 17:00:00', '2026-08-21 09:00:00', NULL, 'New Cairo', '2026-08-12 10:00:00', '2026-09-07 00:03:54'),
+(100232, 100152, 201, 'TypeScript Full Stack Fellowship', 'A project_based training offered by FutureWorks Software in New Cairo for 2 students. The program covers the most requested skills in Full Stack Development and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'hybrid', 1, 0, NULL, 'EGP', NULL, 2, 'published', '2026-07-31 10:00:00', '2026-08-20 09:00:00', '2026-10-01 17:00:00', '2026-08-20 09:00:00', NULL, 'New Cairo', '2026-08-13 10:00:00', '2026-09-07 00:03:54'),
+(100233, 100153, 110, 'Retail Operations Management', 'A project_based training offered by GreenRetail Egypt in Giza for 3 students. The program covers the most requested skills in Business Administration and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'onsite', 0, 0, NULL, 'EGP', NULL, 3, 'published', '2026-08-16 10:00:00', '2026-09-12 09:00:00', '2026-10-25 17:00:00', '2026-09-12 09:00:00', NULL, 'Giza', '2026-08-14 10:00:00', '2026-09-07 00:03:54'),
+(100234, 100153, 110, 'Category Analytics Program', 'A hands_on training offered by GreenRetail Egypt in Giza for 2 students. The program covers the most requested skills in Business Administration and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-08-15 10:00:00', '2026-09-13 09:00:00', '2026-10-27 17:00:00', '2026-09-13 09:00:00', NULL, 'Giza', '2026-08-15 10:00:00', '2026-09-07 00:03:54'),
+(100235, 100154, 96, 'Founding Team: Lab Operations Draft', 'A hands_on training offered by MedPulse Diagnostics in Giza for 2 students. The program covers the most requested skills in General Medicine and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 1, 0, NULL, 'EGP', NULL, 2, 'draft', NULL, '2026-10-21 09:00:00', '2026-12-05 17:00:00', '2026-10-21 09:00:00', NULL, 'Giza', '2026-09-30 10:00:00', '2026-09-07 00:03:54'),
+(100236, 100156, 110, 'Freight Operations Trainee', 'A hands_on training offered by Nile Valley Logistics in Alexandria for 3 students. The program covers the most requested skills in Business Administration and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 3, 'published', '2026-08-13 10:00:00', '2026-11-11 09:00:00', '2026-12-27 17:00:00', '2026-11-11 09:00:00', NULL, 'Alexandria', '2026-08-17 10:00:00', '2026-09-07 00:03:54'),
+(100237, 100155, 92, 'Onshore Wind Site Inspection', 'A hands_on training offered by SolarOffshore Energy in Suez for 2 students. The program covers the most requested skills in Mechanical Engineering and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-08-12 10:00:00', '2026-11-12 09:00:00', '2026-12-29 17:00:00', '2026-11-12 09:00:00', NULL, 'Suez', '2026-08-18 10:00:00', '2026-09-07 00:03:54'),
+(100238, 100158, 109, 'Recruitment Sourcer Program', 'A project_based training offered by HR Partners Egypt in Cairo for 3 students. The program covers the most requested skills in Human Resources and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'hybrid', 1, 0, NULL, 'EGP', NULL, 3, 'published', '2026-07-19 10:00:00', '2026-08-14 09:00:00', '2026-10-01 17:00:00', '2026-08-14 09:00:00', NULL, 'Cairo', '2026-08-19 10:00:00', '2026-09-07 00:03:54'),
+(100239, 100158, 109, 'Employee Onboarding Design', 'A project_based training offered by HR Partners Egypt in Cairo for 2 students. The program covers the most requested skills in Human Resources and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-07-17 10:00:00', '2026-08-13 09:00:00', '2026-10-01 17:00:00', '2026-08-13 09:00:00', NULL, 'Cairo', '2026-08-20 10:00:00', '2026-09-07 00:03:54'),
+(100240, 100157, 121, 'In-House Design Review', 'A hands_on training offered by CleoFashion International in Cairo for 2 students. The program covers the most requested skills in Graphic Design and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'draft', NULL, '2026-10-26 09:00:00', '2026-11-25 17:00:00', '2026-10-26 09:00:00', NULL, 'Cairo', '2026-10-05 10:00:00', '2026-09-07 00:03:54'),
+(100246, 100144, 199, 'Laravel REST API Mastery', 'A project-based program where trainees build a production-grade Laravel REST API from scratch: migrations, Eloquent relationships, form requests, API resources and optimized JSON responses. The training covers authentication with Laravel Sanctum, rate limiting, exception handling and writing PHPUnit feature tests so every endpoint is verified before shipping. Trainees deploy the finished API with Docker and document it, mirroring how NileTech ships backend services for its logistics and fintech clients.', 'project_based', 'onsite', 1, 1, 3000.00, 'EGP', 14, 6, 'published', '2026-08-10 10:00:00', '2026-08-26 09:00:00', '2026-10-01 17:00:00', '2026-08-26 09:00:00', NULL, 'Giza', '2026-08-17 10:00:00', '2026-09-07 00:03:54'),
+(100247, 100144, 199, 'PHP Performance & Caching Essentials', 'A hands-on training focused on making slow PHP backends fast. Trainees profile real request bottlenecks with Xdebug, apply opcode caching, tune OPcache and MySQL query plans with EXPLAIN, and introduce Redis-backed application caching with automatic invalidation. Each session includes a measurable performance benchmark before and after the change, so participants leave with a repeatable optimization workflow for Laravel and plain PHP applications.', 'hands_on', 'remote', 0, 1, 2200.00, 'EGP', 10, 8, 'published', '2026-08-20 10:00:00', '2026-09-26 09:00:00', '2026-11-02 17:00:00', '2026-09-26 09:00:00', NULL, 'Giza', '2026-08-16 10:00:00', '2026-09-07 00:03:54'),
+(100248, 100144, 199, 'Docker & Container Orchestration', 'A project-based training on containerized backend delivery. Trainees Dockerize a Laravel application, split it into multi-stage images, wire it up with docker-compose (nginx, PHP-FPM, MySQL, Redis) and then practice orchestration concepts: health checks, dependency ordering, volume management and rolling updates. The final deliverable is a repeatable container stack that starts, upgrades and rolls back reliably.', 'project_based', 'hybrid', 0, 1, 2600.00, 'EGP', 14, 5, 'published', '2026-08-19 10:00:00', '2026-09-27 09:00:00', '2026-11-04 17:00:00', '2026-09-27 09:00:00', NULL, 'Giza', '2026-08-15 10:00:00', '2026-09-07 00:03:54'),
+(100249, 100144, 199, 'MySQL Query Optimization', 'A shadowing training inside NileTech\'s data layer, where trainees observe senior engineers tuning the queries behind the company\'s logistics dashboards. Topics include index design, composite indexes, covering indexes, JOIN strategies, EXPLAIN analysis and query rewriting. Trainees review real slow-query logs and propose index/query changes that are then applied and measured against production-shaped data.', 'shadowing', 'onsite', 1, 0, NULL, 'EGP', NULL, 4, 'published', '2026-08-18 10:00:00', '2026-09-28 09:00:00', '2026-11-06 17:00:00', '2026-09-28 09:00:00', NULL, 'Giza', '2026-08-14 10:00:00', '2026-09-07 00:03:54'),
+(100250, 100144, 199, 'Secure API Authentication Patterns', 'A hands-on hybrid workshop covering the authentication and authorization decisions behind customer-facing APIs. Trainees implement registration, login, token refresh and password reset flows in PHP/Laravel, compare session-based and stateless JWT approaches, enforce role-based access control, and protect against common API security issues such as mass assignment, token leakage and brute-force login attempts. Code review of the finished endpoints closes the program.', 'hands_on', 'hybrid', 0, 0, NULL, 'EGP', NULL, 7, 'published', '2026-08-17 10:00:00', '2026-11-25 09:00:00', '2027-01-04 17:00:00', '2026-11-25 09:00:00', NULL, 'Giza', '2026-08-13 10:00:00', '2026-09-07 00:03:54'),
+(100251, 100144, 199, 'CI/CD Pipeline Automation', 'A project-based remote training on end-to-end delivery automation. Trainees write GitHub Actions workflows that run PHP_CodeSniffer, static analysis and PHPUnit, build Docker images, push them to a registry and deploy to a staging server, then promote the same artifact to production. The training stresses pipeline reliability: fast feedback, cached dependencies, secret handling and rollback-ready releases.', 'project_based', 'remote', 0, 1, 2400.00, 'EGP', 7, 6, 'published', '2026-08-16 10:00:00', '2026-11-26 09:00:00', '2027-01-06 17:00:00', '2026-11-26 09:00:00', NULL, 'Giza', '2026-08-12 10:00:00', '2026-09-07 00:03:54'),
+(100252, 100144, 199, 'Backend Unit Testing Essentials', 'An onsite hands-on training that turns trainees into confident test writers. Starting from pure unit tests in PHPUnit, it progresses through database-backed tests, Laravel factories and feature tests, covering test doubles, data providers and coverage reports. Trainees apply the practices to a real internal project while pairing with NileTech engineers, finishing with a green, meaningful test suite instead of tests written just to satisfy coverage.', 'hands_on', 'onsite', 1, 1, 1500.00, 'EGP', 7, 8, 'published', '2026-07-29 10:00:00', '2026-08-20 09:00:00', '2026-10-01 17:00:00', '2026-08-20 09:00:00', NULL, 'Giza', '2026-08-11 10:00:00', '2026-09-07 00:03:54'),
+(100253, 100144, 199, 'Redis for Scalable Backends', 'A shadowing training in which trainees follow backend engineers as they model a high-traffic checkout flow with Redis. They observe caching strategies, cache invalidation, Redis-backed sessions and queues in a live architecture, then re-create the patterns in guided labs. Participants learn when Redis is the right tool versus when a database or message queue fits better, and how to reason about data expiry and consistency.', 'shadowing', 'hybrid', 0, 0, NULL, 'EGP', NULL, 5, 'published', '2026-07-27 10:00:00', '2026-08-19 09:00:00', '2026-10-01 17:00:00', '2026-08-19 09:00:00', NULL, 'Giza', '2026-08-10 10:00:00', '2026-09-07 00:03:54'),
+(100254, 100152, 199, 'Node.js Microservices Architecture', 'A project-based training where trainees decompose a monolithic Node.js backend into small, independently deployable microservices connected by an internal message flow. The program covers Express.js service design, API contracts, Docker packaging of each service, PostgreSQL per-service data isolation and health/readiness endpoints. Trainees finish with a running multi-service stack they can start, scale and debug end to end.', 'project_based', 'remote', 0, 1, 3200.00, 'EGP', 14, 6, 'published', '2026-08-13 10:00:00', '2026-10-03 09:00:00', '2026-11-16 17:00:00', '2026-10-03 09:00:00', NULL, 'New Cairo', '2026-08-09 10:00:00', '2026-09-07 00:03:54'),
+(100255, 100152, 199, 'GraphQL API Design', 'A hands-on hybrid training on building a GraphQL API the right way. Trainees design the schema first, then bring it to life with Apollo Server on Node.js backed by MongoDB and TypeScript: resolvers, data loaders to avoid N+1 queries, input validators, subscriptions and field-level authorization. The training ends with schema-first documentation and a client-ready API contract.', 'hands_on', 'hybrid', 1, 1, 2800.00, 'EGP', 10, 6, 'published', '2026-08-12 10:00:00', '2026-10-04 09:00:00', '2026-11-18 17:00:00', '2026-10-04 09:00:00', NULL, 'New Cairo', '2026-08-08 10:00:00', '2026-09-07 00:03:54'),
+(100256, 100152, 199, 'PostgreSQL Power User Track', 'An onsite project-based training on PostgreSQL for production backends. Trainees design normalized and denormalized schemas, write correct migrations, use EXPLAIN to chase down slow queries, add functional and partial indexes, and implement stored procedures for reporting. Realistic data volumes make index choice and query planning matter, giving participants durable database instincts.', 'project_based', 'onsite', 0, 0, NULL, 'EGP', NULL, 5, 'published', '2026-08-11 10:00:00', '2026-09-09 09:00:00', '2026-10-25 17:00:00', '2026-09-09 09:00:00', NULL, 'New Cairo', '2026-08-07 10:00:00', '2026-09-07 00:03:54'),
+(100257, 100152, 199, 'TypeScript Backend Services', 'A hands-on remote training on writing backend services in TypeScript. Trainees scaffold an Express.js API from scratch: typed request/response contracts, DTOs, dependency injection, validation and PostgreSQL access via a typed query layer. The focus is on compile-time safety that catches integration bugs early, plus clean project structure that survives refactoring.', 'hands_on', 'remote', 0, 0, NULL, 'EGP', NULL, 8, 'published', '2026-08-10 10:00:00', '2026-12-02 09:00:00', '2027-01-18 17:00:00', '2026-12-02 09:00:00', NULL, 'New Cairo', '2026-08-06 10:00:00', '2026-09-07 00:03:54'),
+(100258, 100152, 199, 'MongoDB Data Modeling', 'A shadowing training at FutureWorks where trainees observe how data engineers model documents for high-read product surfaces. They analyze real collections, learn to decide between embedding and referencing, design aggregation pipelines and measure query plan performance. Participants then model a new feature end to end and defend the document design in review.', 'shadowing', 'hybrid', 1, 1, 1800.00, 'EGP', 7, 4, 'published', '2026-08-09 10:00:00', '2026-12-03 09:00:00', '2027-01-20 17:00:00', '2026-12-03 09:00:00', NULL, 'New Cairo', '2026-08-05 10:00:00', '2026-09-07 00:03:54'),
+(100259, 100152, 199, 'AWS Serverless Functions', 'A project-based remote training on running backend logic without managing servers. Trainees build and deploy AWS Lambda functions behind API Gateway, triggered both by HTTP and S3 events, with proper IAM policies, environment-based configuration and CloudWatch monitoring. The capstone ties functions into a CI/CD pipeline so a merge deploys a tested, live endpoint.', 'project_based', 'remote', 0, 0, NULL, 'EGP', NULL, 7, 'published', '2026-07-15 10:00:00', '2026-08-13 09:00:00', '2026-10-01 17:00:00', '2026-08-13 09:00:00', NULL, 'New Cairo', '2026-08-04 10:00:00', '2026-09-07 00:03:54'),
+(100260, 100152, 199, 'Express.js API Deep Dive', 'An onsite hands-on training that goes beyond toy examples and into the complexities of real Express.js APIs. Trainees implement middleware chains, request validation, centralized error handling, file uploads, pagination and idempotent endpoints, then battle-test the API with stress requests. The result is a clean, well-structured Express service ready for production hardening.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 8, 'published', '2026-08-20 10:00:00', '2026-09-01 09:00:00', '2026-10-01 17:00:00', '2026-09-01 09:00:00', NULL, 'New Cairo', '2026-08-03 10:00:00', '2026-09-07 00:03:54'),
+(100261, 100145, 199, 'Python Backend Data Services', 'A project-based onsite training for backend engineers who want to serve data over HTTP with Python. Trainees build a service layer in Python that reads from PostgreSQL, applies business logic and exposes RESTful endpoints, packaged with Docker and version controlled with Git. Emphasis is placed on clean function boundaries, typed interfaces and readable, testable code.', 'project_based', 'onsite', 1, 0, NULL, 'EGP', NULL, 8, 'published', '2026-08-24 10:00:00', '2026-09-14 09:00:00', '2026-10-15 17:00:00', '2026-09-14 09:00:00', NULL, 'Alexandria', '2026-08-17 10:00:00', '2026-09-07 00:03:54'),
+(100262, 100145, 199, 'Machine Learning API Deployment', 'A project-based hybrid training on turning trained machine learning models into live APIs. Trainees bundle models with Docker, build a Python inference service with validation and monitoring endpoints, and deploy it to a cloud host with a CI/CD pipeline. The program covers model versioning, input schema contracts, latency budgets and graceful failure when the model is unavailable.', 'project_based', 'hybrid', 0, 1, 3600.00, 'EGP', 14, 5, 'published', '2026-08-23 10:00:00', '2026-09-15 09:00:00', '2026-10-17 17:00:00', '2026-09-15 09:00:00', NULL, 'Alexandria', '2026-08-16 10:00:00', '2026-09-07 00:03:54'),
+(100263, 100145, 199, 'Data Analytics Pipelines', 'A hands-on remote training on dependable data pipelines for analytics teams. Trainees build Python extraction/load/scoring jobs against PostgreSQL, add idempotency and retries, schedule them cleanly and surface quality checks. Participants learn how analytics pipelines feed dashboards and how to keep them correct and observable.', 'hands_on', 'remote', 0, 0, NULL, 'EGP', NULL, 9, 'published', '2026-08-22 10:00:00', '2026-09-16 09:00:00', '2026-10-19 17:00:00', '2026-09-16 09:00:00', NULL, 'Alexandria', '2026-08-15 10:00:00', '2026-09-07 00:03:54'),
+(100264, 100145, 199, 'Database Design for Analytics', 'A shadowing training at Alexandria Digital Labs centered on read-optimized database design. Trainees observe how star schemas, dimensions, facts and materialized views are designed for reporting, then design a small warehouse themselves. SQL exercises cover window functions, grouping and building the aggregation tables analysts rely on.', 'shadowing', 'onsite', 1, 0, NULL, 'EGP', NULL, 5, 'published', '2026-08-21 10:00:00', '2026-12-09 09:00:00', '2027-01-12 17:00:00', '2026-12-09 09:00:00', NULL, 'Alexandria', '2026-08-14 10:00:00', '2026-09-07 00:03:54'),
+(100265, 100145, 199, 'Secure Data APIs', 'A hands-on hybrid training on exposing internal data safely. Trainees wrap PostgreSQL datasets in a Python REST API with token authentication, per-route authorization, input sanitization and audit logging, then run security checks against the result. The training emphasizes API security controls that scale with the number of consumers.', 'hands_on', 'hybrid', 0, 1, 2600.00, 'EGP', 10, 6, 'published', '2026-08-20 10:00:00', '2026-10-16 09:00:00', '2026-11-20 17:00:00', '2026-10-16 09:00:00', NULL, 'Alexandria', '2026-08-13 10:00:00', '2026-09-07 00:03:54'),
+(100266, 100145, 199, 'Automated Testing for Data Services', 'A project-based remote training on keeping data services trustworthy. Trainees write unit tests for transformation logic, integration tests against a disposable PostgreSQL test database and smoke tests for deployed endpoints, all wired into a CI pipeline. The program values fast, deterministic tests over broad coverage and ends with a reviewed test suite on a live service.', 'project_based', 'remote', 0, 1, 2100.00, 'EGP', 7, 6, 'published', '2026-08-08 10:00:00', '2026-08-26 09:00:00', '2026-10-01 17:00:00', '2026-08-26 09:00:00', NULL, 'Alexandria', '2026-08-12 10:00:00', '2026-09-07 00:03:54'),
+(100267, 100145, 199, 'Linux Server Hardening for Backends', 'A shadowing onsite training inside Alexandria Digital Labs\' platform team. Trainees follow engineers as they harden application servers: SSH hardening, least-privilege users, firewall rules, fail2ban, file permissions and Docker daemon security. Each topic is demonstrated on a staging host and re-created by the trainee on a practice VM.', 'shadowing', 'onsite', 1, 0, NULL, 'EGP', NULL, 4, 'published', '2026-08-06 10:00:00', '2026-08-25 09:00:00', '2026-10-01 17:00:00', '2026-08-25 09:00:00', NULL, 'Alexandria', '2026-08-11 10:00:00', '2026-09-07 00:03:54'),
+(100275, 100161, 199, 'Backend Laravel Internship', 'Hands-on backend laravel internship program offered to students.', 'hands_on', 'remote', 0, 0, NULL, 'EGP', NULL, 10, 'published', '2026-09-08 00:16:59', '2026-09-18 00:16:59', '2026-12-17 00:16:59', '2026-09-18 00:16:59', NULL, NULL, '2026-09-08 00:16:59', '2026-09-08 03:30:15'),
+(100276, 100161, 103, 'Frontend React Internship', 'Hands-on frontend react internship program offered to students.', 'hands_on', 'hybrid', 0, 0, NULL, 'EGP', NULL, 10, 'published', '2026-09-08 00:16:59', '2026-09-18 00:16:59', '2026-12-17 00:16:59', '2026-09-18 00:16:59', NULL, NULL, '2026-09-08 00:16:59', '2026-09-08 03:30:15'),
+(100277, 100161, 92, 'Data Analytics Internship', 'Hands-on data analytics internship program offered to students.', 'project_based', 'hybrid', 0, 0, NULL, 'EGP', NULL, 10, 'published', '2026-09-08 00:16:59', '2026-09-18 00:16:59', '2026-12-17 00:16:59', '2026-09-18 00:16:59', NULL, NULL, '2026-09-08 00:16:59', '2026-09-08 03:30:16'),
+(100278, 100161, 110, 'DevOps Fundamentals', 'Hands-on devops fundamentals program offered to students.', 'hands_on', 'remote', 0, 0, NULL, 'EGP', NULL, 10, 'published', '2026-09-08 00:16:59', '2026-09-18 00:16:59', '2026-12-17 00:16:59', '2026-09-18 00:16:59', NULL, NULL, '2026-09-08 00:16:59', '2026-09-08 03:30:16'),
+(100279, 100161, 122, 'Mobile Flutter Internship', 'Hands-on mobile flutter internship program offered to students.', 'project_based', 'remote', 0, 0, NULL, 'EGP', NULL, 10, 'published', '2026-09-08 00:16:59', '2026-09-18 00:16:59', '2026-12-17 00:16:59', '2026-09-18 00:16:59', NULL, NULL, '2026-09-08 00:16:59', '2026-09-08 03:30:17'),
+(100280, 100161, 94, 'Cybersecurity Essentials', 'Hands-on cybersecurity essentials program offered to students.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 10, 'published', '2026-09-08 00:17:00', '2026-09-18 00:17:00', '2026-12-17 00:17:00', '2026-09-18 00:17:00', NULL, NULL, '2026-09-08 00:17:00', '2026-09-08 03:30:17');
 
 -- --------------------------------------------------------
 
@@ -3135,21 +3340,40 @@ CREATE TABLE `training_skills` (
 INSERT INTO `training_skills` (`training_id`, `skill_id`) VALUES
 (100202, 131),
 (100204, 131),
+(100246, 131),
+(100247, 131),
+(100250, 131),
+(100252, 131),
+(100253, 131),
 (100203, 132),
 (100205, 132),
 (100206, 132),
 (100207, 132),
 (100230, 132),
+(100254, 132),
+(100258, 132),
+(100260, 132),
 (100205, 133),
 (100232, 133),
+(100255, 133),
+(100257, 133),
 (100207, 134),
 (100208, 134),
 (100209, 134),
 (100211, 134),
 (100212, 134),
+(100261, 134),
+(100262, 134),
+(100263, 134),
+(100265, 134),
+(100266, 134),
 (100219, 136),
 (100202, 139),
 (100204, 139),
+(100246, 139),
+(100250, 139),
+(100252, 139),
+(100253, 139),
 (100203, 141),
 (100205, 141),
 (100206, 141),
@@ -3159,33 +3383,95 @@ INSERT INTO `training_skills` (`training_id`, `skill_id`) VALUES
 (100206, 146),
 (100203, 148),
 (100232, 148),
+(100254, 148),
+(100255, 148),
+(100257, 148),
+(100258, 148),
+(100259, 148),
+(100260, 148),
 (100203, 149),
+(100257, 149),
+(100260, 149),
 (100202, 150),
 (100203, 150),
 (100206, 150),
 (100230, 150),
+(100254, 150),
+(100262, 150),
+(100265, 150),
+(100255, 151),
 (100202, 152),
 (100204, 152),
 (100232, 152),
+(100246, 152),
+(100247, 152),
+(100249, 152),
+(100250, 152),
+(100252, 152),
+(100254, 153),
+(100256, 153),
+(100257, 153),
+(100261, 153),
+(100263, 153),
+(100264, 153),
+(100255, 154),
+(100258, 154),
+(100260, 154),
 (100204, 155),
+(100246, 155),
+(100247, 155),
+(100253, 155),
 (100202, 156),
 (100211, 156),
 (100230, 156),
 (100232, 156),
+(100246, 156),
+(100248, 156),
+(100252, 156),
+(100256, 156),
+(100261, 156),
+(100266, 156),
+(100267, 156),
+(100251, 157),
 (100204, 158),
 (100207, 158),
 (100212, 158),
 (100231, 158),
+(100248, 158),
+(100250, 158),
+(100251, 158),
+(100254, 158),
+(100259, 158),
+(100261, 158),
+(100262, 158),
+(100265, 158),
+(100266, 158),
+(100267, 158),
 (100231, 159),
+(100247, 159),
+(100248, 159),
+(100249, 159),
+(100251, 159),
+(100256, 159),
+(100265, 159),
+(100267, 159),
 (100212, 160),
 (100231, 160),
+(100248, 160),
+(100251, 160),
+(100259, 160),
+(100267, 160),
 (100231, 161),
+(100259, 161),
+(100262, 161),
 (100208, 164),
 (100209, 164),
 (100211, 164),
 (100222, 164),
 (100224, 164),
 (100234, 164),
+(100263, 164),
+(100264, 164),
 (100210, 165),
 (100208, 166),
 (100212, 166),
@@ -3241,6 +3527,11 @@ INSERT INTO `training_skills` (`training_id`, `skill_id`) VALUES
 (100226, 186),
 (100235, 186),
 (100208, 479),
+(100249, 479),
+(100256, 479),
+(100263, 479),
+(100264, 479),
+(100266, 479),
 (100210, 480),
 (100216, 480),
 (100222, 480),
@@ -3320,6 +3611,28 @@ INSERT INTO `training_specializations` (`training_id`, `specialization_id`) VALU
 (100227, 124),
 (100202, 199),
 (100204, 199),
+(100246, 199),
+(100247, 199),
+(100248, 199),
+(100249, 199),
+(100250, 199),
+(100251, 199),
+(100252, 199),
+(100253, 199),
+(100254, 199),
+(100255, 199),
+(100256, 199),
+(100257, 199),
+(100258, 199),
+(100259, 199),
+(100260, 199),
+(100261, 199),
+(100262, 199),
+(100263, 199),
+(100264, 199),
+(100265, 199),
+(100266, 199),
+(100267, 199),
 (100205, 200),
 (100206, 200),
 (100203, 201),
@@ -3458,7 +3771,8 @@ INSERT INTO `users` (`id`, `role`, `email`, `password_hash`, `status`, `email_ve
 (100580, 'company', 'careers@nilevalley-log.com', '$2y$12$OkQoJqfifBkQaMLakrrNOuYiOE8THmeCr5ylmqnz7I6RTjuhX8o0S', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
 (100581, 'company', 'jobs@cleofashion.com', '$2y$12$5k9UVJCUs.r07NEJcvYgGuDq1aVmUKm3tB8GT6J6NP25QIAMaZUfC', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
 (100582, 'company', 'hr@hrpartners.eg', '$2y$12$f8b9LxPiON112fqq/OzOi.Yz7qBls20Rbg1mWNYJYdP6RGBfSWqKS', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100588, 'student', 'mammuslim2003@gmail.com', '$2y$12$zRtZATQwPlzfYnSKuUKAl.PM7aRG6gTAb8eowQ03XKW1aqiGjYPHu', 'active', '2026-09-02 05:23:46', '2026-09-04 04:54:36', '2026-09-02 05:23:43', '2026-09-04 04:54:36', NULL);
+(100588, 'student', 'mammuslim2003@gmail.com', '$2y$12$zRtZATQwPlzfYnSKuUKAl.PM7aRG6gTAb8eowQ03XKW1aqiGjYPHu', 'active', '2026-09-02 05:23:46', '2026-09-09 05:49:56', '2026-09-02 05:23:43', '2026-09-09 05:49:56', NULL),
+(100595, 'company', 'company@test.local', '$2y$12$kYBqv.b34c//ynY6NI5YvuBVW5Ui29sPnLMjtQIjWTllAiSRGCUL6', 'active', '2026-09-08 00:16:40', '2026-09-08 03:42:02', '2026-09-08 00:16:40', '2026-09-08 03:42:02', NULL);
 
 -- --------------------------------------------------------
 
@@ -3819,7 +4133,7 @@ ALTER TABLE `application_answers`
 -- AUTO_INCREMENT for table `audit_logs`
 --
 ALTER TABLE `audit_logs`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1496;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1518;
 
 --
 -- AUTO_INCREMENT for table `auth_tokens`
@@ -3843,7 +4157,7 @@ ALTER TABLE `certificate_appeals`
 -- AUTO_INCREMENT for table `companies`
 --
 ALTER TABLE `companies`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100160;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100163;
 
 --
 -- AUTO_INCREMENT for table `company_work_fields`
@@ -3873,7 +4187,7 @@ ALTER TABLE `faculties`
 -- AUTO_INCREMENT for table `files`
 --
 ALTER TABLE `files`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=314;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=315;
 
 --
 -- AUTO_INCREMENT for table `messages`
@@ -3885,7 +4199,7 @@ ALTER TABLE `messages`
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1905;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2039;
 
 --
 -- AUTO_INCREMENT for table `oauth_states`
@@ -3903,13 +4217,13 @@ ALTER TABLE `password_resets`
 -- AUTO_INCREMENT for table `payments`
 --
 ALTER TABLE `payments`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=64;
 
 --
 -- AUTO_INCREMENT for table `refresh_tokens`
 --
 ALTER TABLE `refresh_tokens`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1060;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1082;
 
 --
 -- AUTO_INCREMENT for table `revoked_access_tokens`
@@ -3921,7 +4235,7 @@ ALTER TABLE `revoked_access_tokens`
 -- AUTO_INCREMENT for table `saved_trainings`
 --
 ALTER TABLE `saved_trainings`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=541;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=583;
 
 --
 -- AUTO_INCREMENT for table `skills`
@@ -3939,7 +4253,7 @@ ALTER TABLE `specializations`
 -- AUTO_INCREMENT for table `students`
 --
 ALTER TABLE `students`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1503;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1504;
 
 --
 -- AUTO_INCREMENT for table `study_fields`
@@ -3951,13 +4265,13 @@ ALTER TABLE `study_fields`
 -- AUTO_INCREMENT for table `training_applications`
 --
 ALTER TABLE `training_applications`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1848;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1988;
 
 --
 -- AUTO_INCREMENT for table `training_listings`
 --
 ALTER TABLE `training_listings`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100244;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100303;
 
 --
 -- AUTO_INCREMENT for table `training_questions`
@@ -3981,7 +4295,7 @@ ALTER TABLE `universities`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100594;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100603;
 
 --
 -- AUTO_INCREMENT for table `verification_tokens`

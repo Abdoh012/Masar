@@ -1,0 +1,18 @@
+$kind: http-request
+description: Requires Bearer token. Returns a public user profile. Only the requesting user (or an admin) may view the target profile; otherwise 403.
+url: "{{base_url}}/api/v1/users/{{user_id}}"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("User profile returned", function () {
+          pm.expect(pm.response.code).to.eql(200);
+          const json = pm.response.json();
+          pm.expect(json.success).to.eql(true);
+      });
+    language: text/javascript
+order: 3000

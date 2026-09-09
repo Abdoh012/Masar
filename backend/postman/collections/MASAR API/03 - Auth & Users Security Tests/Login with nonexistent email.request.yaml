@@ -1,0 +1,23 @@
+$kind: http-request
+description: Security test. Verifies a nonexistent email returns 401 with the same generic message as a wrong password.
+url: "{{base_url}}/api/v1/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+        "email": "nobody@test.local",
+        "password": "{{student_password}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Nonexistent email rejected", function () {
+          pm.expect(pm.response.code).to.eql(401);
+          const json = pm.response.json();
+          pm.expect(json.success).to.eql(false);
+      });
+    language: text/javascript
+order: 2000

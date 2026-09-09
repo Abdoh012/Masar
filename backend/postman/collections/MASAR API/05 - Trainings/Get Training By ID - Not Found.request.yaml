@@ -1,0 +1,20 @@
+$kind: http-request
+description: Security/error test. A non-existent training ID returns the normal MASAR error envelope with 404.
+url: "{{base_url}}/api/v1/trainings/details/999999999"
+method: GET
+headers:
+  Accept: application/json
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const json = pm.response.json();
+      pm.test('returns 404', function () { pm.response.to.have.status(404); });
+      pm.test('response is valid JSON', function () { pm.expect(json).to.be.an('object'); });
+      pm.test('success is false', function () { pm.expect(json.success).to.eql(false); });
+      pm.test('error message present', function () { pm.expect(json.message).to.be.a('string').and.not.empty; });
+    language: text/javascript
+order: 6000

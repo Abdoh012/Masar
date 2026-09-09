@@ -35,13 +35,57 @@ require_once __DIR__ . '/../services/training_service.php';
 | هذا يسمح بفتح صفحات التدريب العامة دون تسجيل دخول، مع الاحتفاظ
 | بحالة الطالب إذا كان المستخدم مسجلاً كطالب.
 |
+| عند تمرير $reject_invalid_token = true (يستخدم فقط في /trainings/list):
+|   1. لا توجد بيانات اعتماد   → زائر (null) ويبقى الكتالوج عاماً.
+|   2. بيانات اعتماد صالحة     → سياق الطالب المسجل.
+|   3. بيانات اعتماد مرفقة لكنها منتهية/ملغاة/غير صالحة
+|                               → 401 Unauthorized (بدون تنزيل الطلب
+|                                 إلى وضع الزائر حتى يستطيع العميل تنفيذ
+|                                 تدفق التحديث refresh).
+|
+| بدون هذه البارامتر (مثل /trainings/details/{id}) تبقى السلوكية القديمة:
+| فشل المصادقة → null (زائر) لصفحات التفاصيل العامة.
+|
 */
 
-function training_controller_student_context(): ?int
+function training_controller_has_auth_credentials(): bool
 {
+    if (
+        request_authorization() !== null
+    ) {
+        return true;
+    }
+
+    $remember_token =
+        request_cookie(
+            token_cookie_name()
+        );
+
+    return is_string($remember_token)
+        && trim($remember_token) !== '';
+}
+
+function training_controller_student_context(?bool $reject_invalid_token = false): ?int
+{
+    if (
+        $reject_invalid_token
+        &&
+        !training_controller_has_auth_credentials()
+    ) {
+        return null;
+    }
+
     if (
         !token_authenticate_request()
     ) {
+        if (
+            $reject_invalid_token
+        ) {
+            response_unauthorized(
+                'Invalid or expired access token.'
+            );
+        }
+
         return null;
     }
 
@@ -361,7 +405,9 @@ function training_controller_index(): void
     $result =
         training_service_list(
             $filters,
-            training_controller_student_context()
+            training_controller_student_context(
+                true
+            )
         );
 
 

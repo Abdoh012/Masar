@@ -170,6 +170,9 @@ function application_repository_find_with_details(
 
             t.title AS training_title,
             t.company_id AS training_company_id,
+            t.is_paid AS training_is_paid,
+            t.compensation_amount AS training_compensation_amount,
+            t.compensation_currency AS training_compensation_currency,
 
             s.id AS student_id,
             s.user_id AS student_user_id,
@@ -1325,7 +1328,8 @@ function application_repository_get_by_student(
     int $student_id,
     int $limit = 20,
     int $offset = 0,
-    ?string $status = null
+    ?string $status = null,
+    ?array $match_specialization_ids = null
 ): array {
 
     if ($student_id <= 0) {
@@ -1337,6 +1341,56 @@ function application_repository_get_by_student(
 
     if ($status === 'pending') {
         $status = 'submitted';
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Specialization Matching
+    |--------------------------------------------------------------------------
+    |
+    | Optional restriction to trainings whose single primary specialization
+    | (training_listings.specialization_id) is one of the given ids. Used by
+    | the Applied endpoint so a student only sees pending applications for
+    | trainings that match their own specialization. All ids are cast to int,
+    | so they are safe to inline in SQL.
+    |
+    */
+
+    $specialization_condition = '';
+
+    if (
+        is_array($match_specialization_ids)
+        &&
+        !empty($match_specialization_ids)
+    ) {
+
+        $clean_ids = [];
+
+        foreach (
+            $match_specialization_ids
+            as $match_specialization_id
+        ) {
+
+            $match_specialization_id =
+                (int) $match_specialization_id;
+
+            if ($match_specialization_id > 0) {
+
+                $clean_ids[$match_specialization_id] =
+                    true;
+            }
+        }
+
+        if (!empty($clean_ids)) {
+
+            $specialization_condition =
+                ' AND t.specialization_id IN ('
+                . implode(
+                    ', ',
+                    array_keys($clean_ids)
+                )
+                . ')';
+        }
     }
 
     if ($status !== null && trim($status) !== '') {
@@ -1363,6 +1417,7 @@ function application_repository_get_by_student(
             WHERE
                 a.student_id = ?
                 AND a.status = ?
+                {$specialization_condition}
 
             ORDER BY a.applied_at DESC
 
@@ -1399,7 +1454,7 @@ function application_repository_get_by_student(
             LEFT JOIN companies c
                 ON c.id = t.company_id
 
-            WHERE a.student_id = ?
+            WHERE a.student_id = ?{$specialization_condition}
 
             ORDER BY a.applied_at DESC
 
@@ -1421,13 +1476,107 @@ function application_repository_get_by_student(
 
 /*
 |--------------------------------------------------------------------------
+| Get Training Card Fields By IDs
+|--------------------------------------------------------------------------
+|
+| Returns a map of training_id => card fields (title, type, mode, paid,
+| dates, specialization name, company name and logo) used by the Applied
+| card DTO. Mirrors the joins used by the training card list so the card
+| values stay consistent with the training-card APIs.
+|
+*/
+
+function application_repository_get_training_card_fields_by_ids(
+    array $training_ids
+): array {
+
+    $training_ids = array_values(
+        array_filter(
+            array_map(
+                'intval',
+                $training_ids
+            ),
+            static function ($id): bool {
+                return $id > 0;
+            }
+        )
+    );
+
+    if (empty($training_ids)) {
+        return [];
+    }
+
+    $marks =
+        implode(
+            ', ',
+            array_fill(
+                0,
+                count($training_ids),
+                '?'
+            )
+        );
+
+    $sql = "
+        SELECT
+            t.id AS training_id,
+            t.title AS training_title,
+            t.training_type,
+            t.mode,
+            t.is_paid,
+            t.trial_period_days,
+            t.starts_at,
+            t.ends_at,
+            s.name AS specialization_name,
+            c.legal_name AS company_name,
+            c.company_logo AS company_logo,
+            c.bank_name,
+            c.bank_account_name,
+            c.bank_account_number,
+            c.bank_transfer_instructions
+
+        FROM training_listings t
+
+        LEFT JOIN specializations s
+            ON s.id = t.specialization_id
+
+        LEFT JOIN companies c
+            ON c.id = t.company_id
+
+        WHERE t.id IN ({$marks})
+    ";
+
+    $rows =
+        db_fetch_all(
+            $sql,
+            $training_ids
+        );
+
+    $map = [];
+
+    foreach (
+        is_array($rows)
+            ? $rows
+            : []
+        as $row
+    ) {
+        $map[(int) ($row['training_id'] ?? 0)] =
+            $row;
+    }
+
+    return $map;
+}
+
+
+/*
+|--------------------------------------------------------------------------
 | Count Student Applications
 |--------------------------------------------------------------------------
 */
 
 function application_repository_count_by_student(
     int $student_id,
-    ?string $status = null
+    ?string $status = null,
+    ?array $match_specialization_ids = null
 ): int {
 
     if ($student_id <= 0) {
@@ -1438,15 +1587,69 @@ function application_repository_count_by_student(
         $status = 'submitted';
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Specialization Matching
+    |--------------------------------------------------------------------------
+    |
+    | Mirrors application_repository_get_by_student() so the pagination total
+    | respects the same optional specialization restriction.
+    |
+    */
+
+    $specialization_join = '';
+    $specialization_condition = '';
+
+    if (
+        is_array($match_specialization_ids)
+        &&
+        !empty($match_specialization_ids)
+    ) {
+
+        $clean_ids = [];
+
+        foreach (
+            $match_specialization_ids
+            as $match_specialization_id
+        ) {
+
+            $match_specialization_id =
+                (int) $match_specialization_id;
+
+            if ($match_specialization_id > 0) {
+
+                $clean_ids[$match_specialization_id] =
+                    true;
+            }
+        }
+
+        if (!empty($clean_ids)) {
+
+            $specialization_join =
+                " INNER JOIN training_listings t
+                    ON t.id = a.training_id";
+
+            $specialization_condition =
+                ' AND t.specialization_id IN ('
+                . implode(
+                    ', ',
+                    array_keys($clean_ids)
+                )
+                . ')';
+        }
+    }
+
     if ($status !== null && trim($status) !== '') {
 
         $sql = "
             SELECT
                 COUNT(*) AS total
-            FROM training_applications
+            FROM training_applications a
+            {$specialization_join}
+
             WHERE
-                student_id = ?
-                AND status = ?
+                a.student_id = ?
+                AND a.status = ?{$specialization_condition}
         ";
 
         $row = db_fetch_one(
@@ -1462,8 +1665,10 @@ function application_repository_count_by_student(
         $sql = "
             SELECT
                 COUNT(*) AS total
-            FROM training_applications
-            WHERE student_id = ?
+            FROM training_applications a
+            {$specialization_join}
+
+            WHERE a.student_id = ?{$specialization_condition}
         ";
 
         $row = db_fetch_one(
@@ -1561,6 +1766,1133 @@ function application_repository_count_accepted(
         $row['total']
         ?? 0
     );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Get Student Accepted Applications
+|--------------------------------------------------------------------------
+|
+| Returns the accepted applications of one student, ordered by the
+| acceptance timestamp (reviewed_at) so the Accepted tab shows the most
+| recently accepted training first. Accepts the same optional specialization
+| matching used by the Applied endpoint so a student only sees accepted
+| trainings that match their own specialization.
+|
+*/
+
+function application_repository_get_accepted_by_student(
+    int $student_id,
+    int $limit = 20,
+    int $offset = 0,
+    ?array $match_specialization_ids = null
+): array {
+
+    if ($student_id <= 0) {
+        return [];
+    }
+
+    $limit = max(1, min($limit, 100));
+    $offset = max(0, $offset);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Specialization Matching
+    |--------------------------------------------------------------------------
+    |
+    | Same optional restriction as application_repository_get_by_student():
+    | trainings whose single primary specialization
+    | (training_listings.specialization_id) is one of the given ids. All ids
+    | are cast to int, so they are safe to inline in SQL.
+    |
+    */
+
+    $specialization_condition = '';
+
+    if (
+        is_array($match_specialization_ids)
+        &&
+        !empty($match_specialization_ids)
+    ) {
+
+        $clean_ids = [];
+
+        foreach (
+            $match_specialization_ids
+            as $match_specialization_id
+        ) {
+
+            $match_specialization_id =
+                (int) $match_specialization_id;
+
+            if ($match_specialization_id > 0) {
+
+                $clean_ids[$match_specialization_id] =
+                    true;
+            }
+        }
+
+        if (!empty($clean_ids)) {
+
+            $specialization_condition =
+                ' AND t.specialization_id IN ('
+                . implode(
+                    ', ',
+                    array_keys($clean_ids)
+                )
+                . ')';
+        }
+    }
+
+    $sql = "
+        SELECT
+            a.*,
+
+            t.title AS training_title,
+            t.company_id,
+            t.starts_at,
+            t.ends_at,
+            t.location,
+            c.legal_name AS company_name
+
+        FROM training_applications a
+
+        LEFT JOIN training_listings t
+            ON t.id = a.training_id
+
+        LEFT JOIN companies c
+            ON c.id = t.company_id
+
+        WHERE
+            a.student_id = ?
+            AND a.status = 'accepted'
+            {$specialization_condition}
+
+        ORDER BY a.reviewed_at DESC, a.applied_at DESC
+
+        LIMIT {$limit}
+        OFFSET {$offset}
+    ";
+
+    $result = db_fetch_all(
+        $sql,
+        [$student_id]
+    );
+
+    return is_array($result)
+        ? $result
+        : [];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Count Student Accepted Applications
+|--------------------------------------------------------------------------
+*/
+
+function application_repository_count_accepted_by_student(
+    int $student_id,
+    ?array $match_specialization_ids = null
+): int {
+
+    if ($student_id <= 0) {
+        return 0;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Specialization Matching
+    |--------------------------------------------------------------------------
+    |
+    | Mirrors application_repository_get_accepted_by_student() so the
+    | pagination total respects the same optional specialization restriction.
+    |
+    */
+
+    $specialization_join = '';
+    $specialization_condition = '';
+
+    if (
+        is_array($match_specialization_ids)
+        &&
+        !empty($match_specialization_ids)
+    ) {
+
+        $clean_ids = [];
+
+        foreach (
+            $match_specialization_ids
+            as $match_specialization_id
+        ) {
+
+            $match_specialization_id =
+                (int) $match_specialization_id;
+
+            if ($match_specialization_id > 0) {
+
+                $clean_ids[$match_specialization_id] =
+                    true;
+            }
+        }
+
+        if (!empty($clean_ids)) {
+
+            $specialization_join =
+                " INNER JOIN training_listings t
+                    ON t.id = a.training_id";
+
+            $specialization_condition =
+                ' AND t.specialization_id IN ('
+                . implode(
+                    ', ',
+                    array_keys($clean_ids)
+                )
+                . ')';
+        }
+    }
+
+    $sql = "
+        SELECT
+            COUNT(*) AS total
+        FROM training_applications a
+        {$specialization_join}
+
+        WHERE
+            a.student_id = ?
+            AND a.status = 'accepted'{$specialization_condition}
+    ";
+
+    $row = db_fetch_one(
+        $sql,
+        [$student_id]
+    );
+
+    return (int) (
+        $row['total']
+        ?? 0
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Get Student Rejected Applications
+|--------------------------------------------------------------------------
+|
+| Returns the rejected applications of one student, ordered by the rejection
+| timestamp (reviewed_at) so the Rejected tab shows the most recently
+| rejected training first. Accepts the same optional specialization matching
+| used by the Applied/Accepted endpoints so a student only sees rejected
+| trainings that match their own specialization. Only the columns needed to
+| build the Rejected Card DTO are selected — the raw application row is never
+| fetched by this endpoint.
+|
+*/
+
+function application_repository_get_rejected_by_student(
+    int $student_id,
+    int $limit = 20,
+    int $offset = 0,
+    ?array $match_specialization_ids = null
+): array {
+
+    if ($student_id <= 0) {
+        return [];
+    }
+
+    $limit = max(1, min($limit, 100));
+    $offset = max(0, $offset);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Specialization Matching
+    |--------------------------------------------------------------------------
+    |
+    | Same optional restriction as application_repository_get_accepted_by_student():
+    | trainings whose single primary specialization
+    | (training_listings.specialization_id) is one of the given ids. All ids
+    | are cast to int, so they are safe to inline in SQL.
+    |
+    */
+
+    $specialization_condition = '';
+
+    if (
+        is_array($match_specialization_ids)
+        &&
+        !empty($match_specialization_ids)
+    ) {
+
+        $clean_ids = [];
+
+        foreach (
+            $match_specialization_ids
+            as $match_specialization_id
+        ) {
+
+            $match_specialization_id =
+                (int) $match_specialization_id;
+
+            if ($match_specialization_id > 0) {
+
+                $clean_ids[$match_specialization_id] =
+                    true;
+            }
+        }
+
+        if (!empty($clean_ids)) {
+
+            $specialization_condition =
+                ' AND t.specialization_id IN ('
+                . implode(
+                    ', ',
+                    array_keys($clean_ids)
+                )
+                . ')';
+        }
+    }
+
+    $sql = "
+        SELECT
+            a.id,
+            a.training_id,
+            a.reviewed_at,
+            a.rejection_reason,
+            a.rejection_note,
+
+            t.title AS training_title,
+            c.legal_name AS company_name
+
+        FROM training_applications a
+
+        LEFT JOIN training_listings t
+            ON t.id = a.training_id
+
+        LEFT JOIN companies c
+            ON c.id = t.company_id
+
+        WHERE
+            a.student_id = ?
+            AND a.status = 'rejected'
+            {$specialization_condition}
+
+        ORDER BY a.reviewed_at DESC, a.applied_at DESC
+
+        LIMIT {$limit}
+        OFFSET {$offset}
+    ";
+
+    $result = db_fetch_all(
+        $sql,
+        [$student_id]
+    );
+
+    return is_array($result)
+        ? $result
+        : [];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Count Student Rejected Applications
+|--------------------------------------------------------------------------
+*/
+
+function application_repository_count_rejected_by_student(
+    int $student_id,
+    ?array $match_specialization_ids = null
+): int {
+
+    if ($student_id <= 0) {
+        return 0;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Specialization Matching
+    |--------------------------------------------------------------------------
+    |
+    | Mirrors application_repository_get_rejected_by_student() so the
+    | pagination total respects the same optional specialization restriction.
+    |
+    */
+
+    $specialization_join = '';
+    $specialization_condition = '';
+
+    if (
+        is_array($match_specialization_ids)
+        &&
+        !empty($match_specialization_ids)
+    ) {
+
+        $clean_ids = [];
+
+        foreach (
+            $match_specialization_ids
+            as $match_specialization_id
+        ) {
+
+            $match_specialization_id =
+                (int) $match_specialization_id;
+
+            if ($match_specialization_id > 0) {
+
+                $clean_ids[$match_specialization_id] =
+                    true;
+            }
+        }
+
+        if (!empty($clean_ids)) {
+
+            $specialization_join =
+                " INNER JOIN training_listings t
+                    ON t.id = a.training_id";
+
+            $specialization_condition =
+                ' AND t.specialization_id IN ('
+                . implode(
+                    ', ',
+                    array_keys($clean_ids)
+                )
+                . ')';
+        }
+    }
+
+    $sql = "
+        SELECT
+            COUNT(*) AS total
+        FROM training_applications a
+        {$specialization_join}
+
+        WHERE
+            a.student_id = ?
+            AND a.status = 'rejected'{$specialization_condition}
+    ";
+
+    $row = db_fetch_one(
+        $sql,
+        [$student_id]
+    );
+
+    return (int) (
+        $row['total']
+        ?? 0
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Get Student Withdrawn Applications
+|--------------------------------------------------------------------------
+*/
+
+function application_repository_get_withdrawn_by_student(
+    int $student_id,
+    int $limit = 20,
+    int $offset = 0,
+    ?array $match_specialization_ids = null
+): array {
+
+    if ($student_id <= 0) {
+        return [];
+    }
+
+    $limit = max(1, min($limit, 100));
+    $offset = max(0, $offset);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Specialization Matching
+    |--------------------------------------------------------------------------
+    |
+    | Same optional restriction as application_repository_get_rejected_by_student():
+    | only trainings whose single primary specialization
+    | (training_listings.specialization_id) is one of the given ids. All ids
+    | are cast to int, so they are safe to inline in SQL.
+    |
+    */
+
+    $specialization_condition = '';
+
+    if (
+        is_array($match_specialization_ids)
+        &&
+        !empty($match_specialization_ids)
+    ) {
+
+        $clean_ids = [];
+
+        foreach (
+            $match_specialization_ids
+            as $match_specialization_id
+        ) {
+
+            $match_specialization_id =
+                (int) $match_specialization_id;
+
+            if ($match_specialization_id > 0) {
+
+                $clean_ids[$match_specialization_id] =
+                    true;
+            }
+        }
+
+        if (!empty($clean_ids)) {
+
+            $specialization_condition =
+                ' AND t.specialization_id IN ('
+                . implode(
+                    ', ',
+                    array_keys($clean_ids)
+                )
+                . ')';
+        }
+    }
+
+    $sql = "
+        SELECT
+            a.id,
+            a.training_id,
+            a.withdrawn_at,
+
+            t.title AS training_title,
+            c.legal_name AS company_name
+
+        FROM training_applications a
+
+        LEFT JOIN training_listings t
+            ON t.id = a.training_id
+
+        LEFT JOIN companies c
+            ON c.id = t.company_id
+
+        WHERE
+            a.student_id = ?
+            AND a.status = 'withdrawn'
+            {$specialization_condition}
+
+        ORDER BY a.withdrawn_at DESC, a.applied_at DESC
+
+        LIMIT {$limit}
+        OFFSET {$offset}
+    ";
+
+    $result = db_fetch_all(
+        $sql,
+        [$student_id]
+    );
+
+    return is_array($result)
+        ? $result
+        : [];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Count Student Withdrawn Applications
+|--------------------------------------------------------------------------
+*/
+
+function application_repository_count_withdrawn_by_student(
+    int $student_id,
+    ?array $match_specialization_ids = null
+): int {
+
+    if ($student_id <= 0) {
+        return 0;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Specialization Matching
+    |--------------------------------------------------------------------------
+    |
+    | Mirrors application_repository_get_withdrawn_by_student() so the
+    | pagination total respects the same optional specialization restriction.
+    |
+    */
+
+    $specialization_join = '';
+    $specialization_condition = '';
+
+    if (
+        is_array($match_specialization_ids)
+        &&
+        !empty($match_specialization_ids)
+    ) {
+
+        $clean_ids = [];
+
+        foreach (
+            $match_specialization_ids
+            as $match_specialization_id
+        ) {
+
+            $match_specialization_id =
+                (int) $match_specialization_id;
+
+            if ($match_specialization_id > 0) {
+
+                $clean_ids[$match_specialization_id] =
+                    true;
+            }
+        }
+
+        if (!empty($clean_ids)) {
+
+            $specialization_join =
+                " INNER JOIN training_listings t
+                    ON t.id = a.training_id";
+
+            $specialization_condition =
+                ' AND t.specialization_id IN ('
+                . implode(
+                    ', ',
+                    array_keys($clean_ids)
+                )
+                . ')';
+        }
+    }
+
+    $sql = "
+        SELECT
+            COUNT(*) AS total
+        FROM training_applications a
+        {$specialization_join}
+
+        WHERE
+            a.student_id = ?
+            AND a.status = 'withdrawn'{$specialization_condition}
+    ";
+
+    $row = db_fetch_one(
+        $sql,
+        [$student_id]
+    );
+
+    return (int) (
+        $row['total']
+        ?? 0
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Get Student All Applications
+|--------------------------------------------------------------------------
+|
+| Returns EVERY application of one student across the four tab states
+| (submitted/pending -> Applied, accepted -> Accepted, rejected -> Rejected,
+| withdrawn -> Withdrawn) in one unified, paginated list. Accepts the same
+| optional specialization matching used by the Applied/Accepted/Rejected/
+| Withdrawn endpoints: only trainings whose single primary specialization
+| (training_listings.specialization_id) is one of the given ids qualify.
+| Only the columns needed to build the four existing card DTOs are selected —
+| the raw application row (with its PII) is never fetched.
+|
+| Ordering is deterministic newest-first by the most meaningful activity
+| timestamp for each status: withdrawn_at for withdrawn applications,
+| reviewed_at for accepted/rejected ones (when the company decided), and
+| applied_at for still-pending ones. Ties fall back to the application id so
+| pagination is stable.
+|
+*/
+
+function application_repository_get_all_by_student(
+    int $student_id,
+    int $limit = 20,
+    int $offset = 0,
+    ?array $match_specialization_ids = null
+): array {
+
+    if ($student_id <= 0) {
+        return [];
+    }
+
+    $limit = max(1, min($limit, 100));
+    $offset = max(0, $offset);
+
+    $specialization_condition = '';
+
+    if (
+        is_array($match_specialization_ids)
+        &&
+        !empty($match_specialization_ids)
+    ) {
+
+        $clean_ids = [];
+
+        foreach (
+            $match_specialization_ids
+            as $match_specialization_id
+        ) {
+
+            $match_specialization_id =
+                (int) $match_specialization_id;
+
+            if ($match_specialization_id > 0) {
+
+                $clean_ids[$match_specialization_id] =
+                    true;
+            }
+        }
+
+        if (!empty($clean_ids)) {
+
+            $specialization_condition =
+                ' AND t.specialization_id IN ('
+                . implode(
+                    ', ',
+                    array_keys($clean_ids)
+                )
+                . ')';
+        }
+    }
+
+    $sql = "
+        SELECT
+            a.id,
+            a.training_id,
+            a.student_id,
+            a.status,
+            a.applied_at,
+            a.reviewed_at,
+            a.withdrawn_at,
+            a.rejection_reason,
+            a.rejection_note,
+
+            t.title AS training_title,
+            c.legal_name AS company_name
+
+        FROM training_applications a
+
+        LEFT JOIN training_listings t
+            ON t.id = a.training_id
+
+        LEFT JOIN companies c
+            ON c.id = t.company_id
+
+        WHERE
+            a.student_id = ?
+            AND a.status IN (
+                'submitted',
+                'accepted',
+                'rejected',
+                'withdrawn'
+            )
+            {$specialization_condition}
+
+        ORDER BY
+            GREATEST(
+                COALESCE(a.withdrawn_at, a.applied_at),
+                COALESCE(a.reviewed_at, a.applied_at),
+                a.applied_at
+            ) DESC,
+            a.id DESC
+
+        LIMIT {$limit}
+        OFFSET {$offset}
+    ";
+
+    $result = db_fetch_all(
+        $sql,
+        [$student_id]
+    );
+
+    return is_array($result)
+        ? $result
+        : [];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Count Student All Applications
+|--------------------------------------------------------------------------
+*/
+
+function application_repository_count_all_by_student(
+    int $student_id,
+    ?array $match_specialization_ids = null
+): int {
+
+    if ($student_id <= 0) {
+        return 0;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Specialization Matching
+    |--------------------------------------------------------------------------
+    |
+    | Mirrors application_repository_get_all_by_student() so the pagination
+    | total respects the same optional specialization restriction.
+    |
+    */
+
+    $specialization_join = '';
+    $specialization_condition = '';
+
+    if (
+        is_array($match_specialization_ids)
+        &&
+        !empty($match_specialization_ids)
+    ) {
+
+        $clean_ids = [];
+
+        foreach (
+            $match_specialization_ids
+            as $match_specialization_id
+        ) {
+
+            $match_specialization_id =
+                (int) $match_specialization_id;
+
+            if ($match_specialization_id > 0) {
+
+                $clean_ids[$match_specialization_id] =
+                    true;
+            }
+        }
+
+        if (!empty($clean_ids)) {
+
+            $specialization_join =
+                " INNER JOIN training_listings t
+                    ON t.id = a.training_id";
+
+            $specialization_condition =
+                ' AND t.specialization_id IN ('
+                . implode(
+                    ', ',
+                    array_keys($clean_ids)
+                )
+                . ')';
+        }
+    }
+
+    $sql = "
+        SELECT
+            COUNT(*) AS total
+        FROM training_applications a
+        {$specialization_join}
+
+        WHERE
+            a.student_id = ?
+            AND a.status IN (
+                'submitted',
+                'accepted',
+                'rejected',
+                'withdrawn'
+            ){$specialization_condition}
+    ";
+
+    $row = db_fetch_one(
+        $sql,
+        [$student_id]
+    );
+
+    return (int) (
+        $row['total']
+        ?? 0
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Find Payment For Application
+|--------------------------------------------------------------------------
+|
+| Returns the most recent manual-payment row for an accepted application
+| (identified by its training + student). Used by the payment-confirmation
+| flow to keep the lifecycle idempotent: confirming twice never creates a
+| second payment row.
+|
+*/
+
+function application_repository_find_payment_for_application(
+    int $training_id,
+    int $student_id
+): ?array {
+
+    if ($training_id <= 0 || $student_id <= 0) {
+        return null;
+    }
+
+    $sql = "
+        SELECT
+            id,
+            training_id,
+            training_session_id,
+            student_id,
+            company_id,
+            amount,
+            currency,
+            platform_commission_rate,
+            platform_commission_amount,
+            company_amount,
+            payment_method,
+            status,
+            external_reference,
+            paid_at,
+            created_at,
+            updated_at
+        FROM payments
+        WHERE
+            training_id = ?
+            AND student_id = ?
+        ORDER BY id DESC
+        LIMIT 1
+    ";
+
+    return db_fetch_one(
+        $sql,
+        [
+            $training_id,
+            $student_id
+        ]
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Create Payment
+|--------------------------------------------------------------------------
+*/
+
+function application_repository_create_payment(
+    array $data
+): int|false {
+
+    if (empty($data)) {
+        return false;
+    }
+
+    $columns = [];
+    $placeholders = [];
+    $params = [];
+
+    foreach ($data as $column => $value) {
+        $columns[] = $column;
+        $placeholders[] = '?';
+        $params[] = $value;
+    }
+
+    $sql = "
+        INSERT INTO payments
+        (" . implode(', ', $columns) . ")
+        VALUES
+        (" . implode(', ', $placeholders) . ")
+    ";
+
+    db_execute(
+        $sql,
+        $params
+    );
+
+    return (int) db_last_insert_id();
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Confirm Payment
+|--------------------------------------------------------------------------
+|
+| Marks an existing payment row as paid with the current timestamp. Only
+| the payment-confirmation service calls this; statuses are validated
+| there before the row is touched.
+|
+*/
+
+function application_repository_confirm_payment(
+    int $payment_id
+): bool {
+
+    if ($payment_id <= 0) {
+        return false;
+    }
+
+    $statement = db_execute(
+        "
+            UPDATE payments
+            SET
+                status = 'paid',
+                paid_at = COALESCE(paid_at, NOW()),
+                updated_at = NOW()
+            WHERE id = ?
+            LIMIT 1
+        ",
+        [$payment_id]
+    );
+
+    return $statement->rowCount() > 0;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Update Payment Reference
+|--------------------------------------------------------------------------
+|
+| Stores the student-submitted bank transfer reference on an existing
+| payment row. Guarded to pending rows: a paid (or otherwise terminal)
+| row is never mutated by the student's submit-reference flow, and the
+| service performs all state checks before this is called.
+|
+*/
+
+function application_repository_update_payment_reference(
+    int $payment_id,
+    string $reference
+): bool {
+
+    if ($payment_id <= 0) {
+        return false;
+    }
+
+    $reference = trim($reference);
+
+    if ($reference === '') {
+        return false;
+    }
+
+    $statement = db_execute(
+        "
+            UPDATE payments
+            SET
+                external_reference = ?,
+                updated_at = NOW()
+            WHERE id = ?
+            AND status = 'pending'
+            LIMIT 1
+        ",
+        [
+            $reference,
+            $payment_id
+        ]
+    );
+
+    return $statement->rowCount() > 0;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Payment Map For Student
+|--------------------------------------------------------------------------
+|
+| Returns the latest payment row per training for one student, keyed by
+| training_id. Used by application_accepted_cards() so the Accepted ledger
+| can expose the manual-payment state (pending vs paid) without an N+1
+| lookup. Only rows for the given trainings are fetched.
+|
+*/
+
+function application_repository_get_payment_map_for_student(
+    int $student_id,
+    array $training_ids
+): array {
+
+    if ($student_id <= 0) {
+        return [];
+    }
+
+    $training_ids = array_values(
+        array_filter(
+            array_map(
+                'intval',
+                $training_ids
+            ),
+            static function ($id): bool {
+                return $id > 0;
+            }
+        )
+    );
+
+    if (empty($training_ids)) {
+        return [];
+    }
+
+    $marks =
+        implode(
+            ', ',
+            array_fill(
+                0,
+                count($training_ids),
+                '?'
+            )
+        );
+
+    $params =
+        array_merge(
+            [$student_id],
+            $training_ids
+        );
+
+    $sql = "
+        SELECT
+            training_id,
+            student_id,
+            status,
+            paid_at,
+            id AS payment_id
+        FROM payments
+        WHERE
+            student_id = ?
+            AND training_id IN ({$marks})
+        ORDER BY id DESC
+    ";
+
+    $rows =
+        db_fetch_all(
+            $sql,
+            $params
+        );
+
+    $map = [];
+
+    foreach (
+        is_array($rows)
+            ? $rows
+            : []
+        as $row
+    ) {
+
+        $training_id =
+            (int) ($row['training_id'] ?? 0);
+
+        if (
+            $training_id <= 0
+            ||
+            isset($map[$training_id])
+        ) {
+            continue;
+        }
+
+        $map[$training_id] = [
+            'status' =>
+                (string) ($row['status'] ?? 'pending'),
+            'paid_at' =>
+                ($row['paid_at'] ?? null)
+                ? (string) $row['paid_at']
+                : null,
+            'payment_id' =>
+                (int) ($row['payment_id'] ?? 0),
+        ];
+    }
+
+    return $map;
 }
 
 

@@ -67,18 +67,63 @@
             "type": "string"
         },
         {
+            "key": "accept_application_id",
+            "value": "1875",
+            "type": "string"
+        },
+        {
+            "key": "reject_application_id",
+            "value": "1876",
+            "type": "string"
+        },
+        {
+            "key": "withdraw_application_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "withdraw_application_original_status",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "accepted_application_id",
+            "value": "1878",
+            "type": "string"
+        },
+        {
+            "key": "rejected_application_id",
+            "value": "1879",
+            "type": "string"
+        },
+        {
+            "key": "invalid_reason_application_id",
+            "value": "1880",
+            "type": "string"
+        },
+        {
+            "key": "applied_application_id",
+            "value": "1881",
+            "type": "string"
+        },
+        {
+            "key": "foreign_pending_application_id",
+            "value": "1881",
+            "type": "string"
+        },
+        {
             "key": "notification_id",
             "value": "",
             "type": "string"
         },
         {
             "key": "student_email",
-            "value": "student@test.local",
+            "value": "mammuslim2003@gmail.com",
             "type": "string"
         },
         {
             "key": "student_password",
-            "value": "TestStudent@123",
+            "value": "Mosalem 2003",
             "type": "string"
         },
         {
@@ -89,6 +134,11 @@
         {
             "key": "company_password",
             "value": "TestCompany@123",
+            "type": "string"
+        },
+        {
+            "key": "company_token",
+            "value": "",
             "type": "string"
         },
         {
@@ -644,6 +694,7 @@
                                     "if (pm.response.code === 200) {",
                                     "    const json = pm.response.json();",
                                     "    pm.collectionVariables.set('access_token', json.data.token);",
+                                    "    pm.collectionVariables.set('company_token', json.data.token);",
                                     "    pm.collectionVariables.set('user_id', String(json.data.user.id));",
                                     "    pm.collectionVariables.set('user_role', json.data.user.role);",
                                     "    const csrf = pm.cookies.get('csrf_token');",
@@ -3005,16 +3056,6 @@
                                             "type": "text"
                                         },
                                         {
-                                            "key": "skills[]",
-                                            "value": "PHP",
-                                            "type": "text"
-                                        },
-                                        {
-                                            "key": "skills[]",
-                                            "value": "SQL",
-                                            "type": "text"
-                                        },
-                                        {
                                             "key": "cv",
                                             "type": "file",
                                             "src": ""
@@ -3065,7 +3106,7 @@
                             ]
                         },
                         {
-                            "name": "List My Applications",
+                            "name": "List Applied Applications",
                             "request": {
                                 "auth": {
                                     "type": "bearer",
@@ -3080,7 +3121,7 @@
                                 "method": "GET",
                                 "header": [],
                                 "url": {
-                                    "raw": "{{base_url}}/api/v1/applications/my",
+                                    "raw": "{{base_url}}/api/v1/applications/applied",
                                     "host": [
                                         "{{base_url}}"
                                     ],
@@ -3088,10 +3129,10 @@
                                         "api",
                                         "v1",
                                         "applications",
-                                        "my"
+                                        "applied"
                                     ]
                                 },
-                                "description": "Requires a student Bearer token. Returns the student's applications (paginated `data.items` + `data.pagination`). Captures `application_id` from the first item."
+                                "description": "Requires a student Bearer token. Dedicated endpoint for the frontend Applied tab: returns ONLY the student's pending/submitted applications scoped to the student's own specialization (training_listings.specialization_id matches the student's specialization, same rule as the Trainings List) and shaped as clean Applied Card DTO items (`data.items`, each item has 16 fields and `status = \"Applied\"`). Its test script also selects the first withdrawable item (`can_withdraw === true` and `status === \"Applied\"`) from the live response and stores its id in the collection variable `withdraw_application_id`, so the Withdraw Application request always targets a real, current pending application and never a hard-coded id."
                             },
                             "response": [],
                             "event": [
@@ -3099,24 +3140,567 @@
                                     "listen": "test",
                                     "script": {
                                         "exec": [
-                                            "pm.test(\"My applications listed\", function () {",
+                                            "pm.test(\"Applied applications listed\", function () {",
                                             "    pm.expect(pm.response.code).to.eql(200);",
                                             "    const json = pm.response.json();",
                                             "    pm.expect(json.success).to.eql(true);",
                                             "});",
                                             "const json = pm.response.json();",
-                                            "if (json.data && json.data.items && json.data.items.length && json.data.items[0].id) {",
-                                            "    pm.collectionVariables.set('application_id', String(json.data.items[0].id));",
+                                            "if (json.data && json.data.items && json.data.items.length) {",
+                                            "    pm.test(\"Applied items expose the Applied Card DTO\", function () {",
+                                            "        const required = ['id','training_id','training_title','status','specialization','company_name','company_logo','training_type','method','is_paid','may_lead_to_hire','applied_at','starts_at','ends_at','duration','can_withdraw'];",
+                                            "        const forbidden = ['full_name','email','phone','city','address','why_interested','what_to_learn','skills','rejection_reason','rejection_note','reviewed_at','withdrawn_at','reviewed_by','cv_file_id','faculty_id','university','applicant_type','academic_year','graduation_year','motivation'];",
+                                            "        const isoRe = /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2}|Z)$/;",
+                                            "        json.data.items.forEach(function (item) {",
+                                            "            required.forEach(function (key) { pm.expect(item).to.have.property(key); });",
+                                            "            forbidden.forEach(function (key) { pm.expect(item).to.not.have.property(key); });",
+                                            "            pm.expect(item.status).to.eql('Applied');",
+                                            "            pm.expect(item.may_lead_to_hire).to.eql(item.is_paid);",
+                                            "            pm.expect(typeof item.is_paid).to.eql('boolean');",
+                                            "            pm.expect(typeof item.can_withdraw).to.eql('boolean');",
+                                            "            if (item.applied_at !== null) { pm.expect(item.applied_at).to.match(isoRe); }",
+                                            "            if (item.starts_at !== null) { pm.expect(item.starts_at).to.match(isoRe); }",
+                                            "            if (item.ends_at !== null) { pm.expect(item.ends_at).to.match(isoRe); }",
+                                            "        });",
+                                            "    });",
+                                            "    const paid = json.data.items.filter(function (i) { return i.is_paid === true; });",
+                                            "    const free = json.data.items.filter(function (i) { return i.is_paid === false; });",
+                                            "    pm.test(\"Applied dataset has both paid and free items\", function () {",
+                                            "        pm.expect(paid.length).to.be.at.least(1);",
+                                            "        pm.expect(free.length).to.be.at.least(1);",
+                                            "    });",
+                                            "    const specializations = json.data.items.map(function (i) { return i.specialization; });",
+                                            "    pm.test(\"Applied items are scoped to a single student specialization\", function () {",
+                                            "        specializations.forEach(function (spec) { pm.expect(spec).to.be.a('string').and.to.have.length.above(0); });",
+                                            "        pm.expect(new Set(specializations).size).to.eql(1);",
+                                            "    });",
+                                            "    pm.test(\"Applied response has pagination\", function () {",
+                                            "        pm.expect(json.data).to.have.property('pagination');",
+                                            "        pm.expect(json.data.pagination.total).to.be.at.least(json.data.items.length);",
+                                            "    });",
                                             "}",
-                                            "pm.test(\"List exposes university as text\", function () {",
+                                            "// ---- Dynamic Withdraw target selection (source of truth: the live Applied response) ----",
+                                            "const jsel = pm.response.json();",
+                                            "const selItems = (jsel.data && jsel.data.items) || [];",
+                                            "const withdrawable = selItems.filter(function (app) {",
+                                            "    return app.can_withdraw === true && app.status === \"Applied\";",
+                                            "});",
+                                            "if (withdrawable.length) {",
+                                            "    const chosen = withdrawable[0];",
+                                            "    pm.collectionVariables.set(\"withdraw_application_id\", String(chosen.id));",
+                                            "    pm.collectionVariables.set(\"withdraw_application_original_status\", String(chosen.status));",
+                                            "} else {",
+                                            "    // Clear any stale value so an old id can never be reused by a later request.",
+                                            "    pm.collectionVariables.set(\"withdraw_application_id\", \"\");",
+                                            "    pm.collectionVariables.set(\"withdraw_application_original_status\", \"\");",
+                                            "}",
+                                            "pm.test(\"Found a withdrawable Applied application\", function () {",
+                                            "    pm.expect(withdrawable.length, \"No Applied application with can_withdraw=true was found. Do not fall back to a hard-coded ID.\").to.be.above(0);",
+                                            "});",
+                                            "if (withdrawable.length) {",
+                                            "    const chosen = withdrawable[0];",
+                                            "    pm.test(\"Selected application is Applied\", function () {",
+                                            "        pm.expect(chosen.status).to.eql(\"Applied\");",
+                                            "    });",
+                                            "    pm.test(\"Selected application can be withdrawn\", function () {",
+                                            "        pm.expect(chosen.can_withdraw).to.eql(true);",
+                                            "    });",
+                                            "    pm.test(\"Saved withdraw_application_id dynamically\", function () {",
+                                            "        pm.expect(pm.collectionVariables.get(\"withdraw_application_id\")).to.eql(String(chosen.id));",
+                                            "    });",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "List Accepted Applications",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{access_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/applications/accepted",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "applications",
+                                        "accepted"
+                                    ]
+                                },
+                                "description": "Requires a student Bearer token. Dedicated endpoint for the frontend Accepted tab: returns ONLY the student's accepted applications scoped to the student's own specialization (training_listings.specialization_id matches the student's specialization, same rule as the Trainings List) and shaped as clean Accepted Card DTO items (`data.items`, each item has status = \"Accepted\", accepted_at from reviewed_at, dynamic free_trial_days_remaining for paid trainings, a deterministic daily motivational_message, a manual payment lifecycle status (payment_status: not_required for free, pending/paid for paid), and the owning company's bank-transfer destination (bank_account object) when the paid training's company configured one)."
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Accepted applications listed\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
                                             "    const json = pm.response.json();",
-                                            "    if (json.data && json.data.items && json.data.items.length) {",
-                                            "        const item = json.data.items[0];",
-                                            "        pm.expect(item).to.not.have.property('university_id');",
-                                            "        if (item.university != null) {",
-                                            "            pm.expect(item.university).to.be.a('string');",
-                                            "        }",
-                                            "    }",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "});",
+                                            "const json = pm.response.json();",
+                                            "if (json.data && json.data.items && json.data.items.length) {",
+                                            "    pm.test(\"Accepted items expose the Accepted Card DTO\", function () {",
+                                            "        const required = ['id','training_id','training_title','status','specialization','company_name','company_logo','training_type','method','is_paid','may_lead_to_hire','accepted_at','starts_at','ends_at','duration','free_trial_days','free_trial_days_remaining','motivational_message','payment_status','bank_account'];",
+                                            "        const forbidden = ['full_name','email','phone','city','address','why_interested','what_to_learn','skills','rejection_reason','rejection_note','reviewed_at','withdrawn_at','reviewed_by','cv_file_id','faculty_id','university','applicant_type','academic_year','graduation_year','motivation','applied_at','can_withdraw'];",
+                                            "        const isoRe = /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2}|Z)$/;",
+                                            "        json.data.items.forEach(function (item) {",
+                                            "            required.forEach(function (key) { pm.expect(item).to.have.property(key); });",
+                                            "            forbidden.forEach(function (key) { pm.expect(item).to.not.have.property(key); });",
+                                            "            pm.expect(item.status).to.eql('Accepted');",
+                                            "            pm.expect(item.may_lead_to_hire).to.eql(item.is_paid);",
+                                            "            pm.expect(typeof item.is_paid).to.eql('boolean');",
+                                            "            if (item.is_paid) {",
+                                            "            pm.expect(['pending','paid']).to.include(item.payment_status);",
+                                            "            if (item.bank_account !== null) {",
+                                            "            pm.expect(item.bank_account).to.have.property('bank_name');",
+                                            "            pm.expect(item.bank_account).to.have.property('account_name');",
+                                            "            pm.expect(item.bank_account).to.have.property('account_number');",
+                                            "            pm.expect(item.bank_account).to.have.property('instructions');",
+                                            "            }",
+                                            "            } else {",
+                                            "            pm.expect(item.payment_status).to.eql('not_required');",
+                                            "            pm.expect(item.bank_account).to.eql(null);",
+                                            "            }",
+                                            "            pm.expect(typeof item.motivational_message).to.eql('string');",
+                                            "            pm.expect(item.motivational_message.length).to.be.above(0);",
+                                            "            if (item.accepted_at !== null) { pm.expect(item.accepted_at).to.match(isoRe); }",
+                                            "            if (item.starts_at !== null) { pm.expect(item.starts_at).to.match(isoRe); }",
+                                            "            if (item.ends_at !== null) { pm.expect(item.ends_at).to.match(isoRe); }",
+                                            "        });",
+                                            "    });",
+                                            "    pm.test(\"Accepted dataset has at least one paid item\", function () {",
+                                            "        const paid = json.data.items.filter(function (i) { return i.is_paid === true; });",
+                                            "        pm.expect(paid.length).to.be.at.least(1);",
+                                            "    });",
+                                            "    pm.test(\"Paid items carry free-trial fields, free items leave them null\", function () {",
+                                            "        json.data.items.forEach(function (item) {",
+                                            "            if (item.is_paid) {",
+                                            "                if (item.free_trial_days !== null) { pm.expect(item.free_trial_days).to.be.a('number'); }",
+                                            "                if (item.free_trial_days_remaining !== null) {",
+                                            "                    pm.expect(item.free_trial_days_remaining).to.be.a('number');",
+                                            "                    pm.expect(item.free_trial_days_remaining).to.be.at.least(0);",
+                                            "                }",
+                                            "            } else {",
+                                            "                pm.expect(item.free_trial_days).to.eql(null);",
+                                            "                pm.expect(item.free_trial_days_remaining).to.eql(null);",
+                                            "            }",
+                                            "        });",
+                                            "    });",
+                                            "    const specializations = json.data.items.map(function (i) { return i.specialization; });",
+                                            "    pm.test(\"Accepted items are scoped to a single student specialization\", function () {",
+                                            "        specializations.forEach(function (spec) { pm.expect(spec).to.be.a('string').and.to.have.length.above(0); });",
+                                            "        pm.expect(new Set(specializations).size).to.eql(1);",
+                                            "    });",
+                                            "    pm.test(\"Accepted response has pagination\", function () {",
+                                            "        pm.expect(json.data).to.have.property('pagination');",
+                                            "        pm.expect(json.data.pagination.total).to.be.at.least(json.data.items.length);",
+                                            "    });",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "List Rejected Applications",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{access_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/applications/rejected",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "applications",
+                                        "rejected"
+                                    ]
+                                },
+                                "description": "Requires a student Bearer token. Dedicated endpoint for the frontend Rejected tab: returns ONLY the student's rejected applications (training_applications.status = rejected) scoped to the student's own specialization (training_listings.specialization_id matches the student's specialization, same rule as Applied/Accepted), newest rejection first (reviewed_at DESC), shaped as clean Rejected Card DTO items (data.items). Each item has exactly 12 fields: id, training_id, training_title, status = \"Rejected\" (fixed frontend display value, never the DB value \"rejected\"), specialization, company_name, company_logo, training_type, method, rejected_at (ISO-8601 from reviewed_at), rejection_reason and rejection_note (may be null). No application PII/detail fields are exposed. A student with no specialization receives items: [] with the standard pagination envelope."
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Rejected applications listed\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "});",
+                                            "",
+                                            "// Guest (no credentials) -> 401",
+                                            "pm.sendRequest({",
+                                            "    url: pm.request.url,",
+                                            "    method: pm.request.method",
+                                            "}, function (err, res) {",
+                                            "    pm.test(\"Guest is rejected with 401\", function () {",
+                                            "        pm.expect(err ? 0 : res.code).to.eql(401);",
+                                            "    });",
+                                            "});",
+                                            "",
+                                            "// Company token -> 403",
+                                            "pm.sendRequest({",
+                                            "    url: pm.request.url,",
+                                            "    method: pm.request.method,",
+                                            "    header: [",
+                                            "        { key: \"Authorization\", value: \"Bearer {{company_token}}\", type: \"string\" }",
+                                            "    ]",
+                                            "}, function (err, res) {",
+                                            "    pm.test(\"Company is rejected with 403\", function () {",
+                                            "        pm.expect(err ? 0 : res.code).to.eql(403);",
+                                            "    });",
+                                            "});",
+                                            "",
+                                            "const json = pm.response.json();",
+                                            "if (json.data && json.data.items && json.data.items.length) {",
+                                            "    const required = [\"id\",\"training_id\",\"training_title\",\"status\",\"specialization\",\"company_name\",\"company_logo\",\"training_type\",\"method\",\"rejected_at\",\"rejection_reason\",\"rejection_note\"];",
+                                            "    const forbidden = [\"student_id\",\"company_id\",\"message\",\"full_name\",\"email\",\"phone\",\"city\",\"address\",\"why_interested\",\"what_to_learn\",\"skills\",\"reviewed_by\",\"cv_file_id\",\"faculty_id\",\"university\",\"applicant_type\",\"academic_year\",\"graduation_year\",\"motivation\",\"location\",\"starts_at\",\"ends_at\",\"withdrawn_at\",\"reviewed_at\",\"applied_at\",\"is_paid\",\"may_lead_to_hire\",\"can_withdraw\",\"payment_status\",\"bank_account\"];",
+                                            "    const isoRe = /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2}|Z)$/;",
+                                            "    pm.test(\"Rejected items expose exactly the 12-field DTO\", function () {",
+                                            "        json.data.items.forEach(function (item) {",
+                                            "            pm.expect(Object.keys(item).sort().join(\",\")).to.eql(required.slice().sort().join(\",\"));",
+                                            "        });",
+                                            "    });",
+                                            "    pm.test(\"Rejected items exclude all forbidden PII fields\", function () {",
+                                            "        json.data.items.forEach(function (item) {",
+                                            "            forbidden.forEach(function (key) { pm.expect(item).to.not.have.property(key); });",
+                                            "        });",
+                                            "    });",
+                                            "    pm.test(\"Every rejected item shows the fixed display status\", function () {",
+                                            "        json.data.items.forEach(function (item) { pm.expect(item.status).to.eql(\"Rejected\"); });",
+                                            "    });",
+                                            "    pm.test(\"Rejected items carry the student specialization\", function () {",
+                                            "        const specs = json.data.items.map(function (i) { return i.specialization; });",
+                                            "        specs.forEach(function (spec) { pm.expect(spec).to.be.a(\"string\").and.to.have.length.above(0); });",
+                                            "        pm.expect(new Set(specs).size).to.eql(1);",
+                                            "    });",
+                                            "    pm.test(\"rejected_at exists and is ISO-8601\", function () {",
+                                            "        json.data.items.forEach(function (item) {",
+                                            "            pm.expect(item).to.have.property(\"rejected_at\");",
+                                            "            pm.expect(item.rejected_at).to.be.a(\"string\");",
+                                            "            pm.expect(item.rejected_at).to.match(isoRe);",
+                                            "        });",
+                                            "    });",
+                                            "    pm.test(\"rejection_reason exists; rejection_note may be null\", function () {",
+                                            "        json.data.items.forEach(function (item) {",
+                                            "            pm.expect(item).to.have.property(\"rejection_reason\");",
+                                            "            pm.expect(item).to.have.property(\"rejection_note\");",
+                                            "            pm.expect(item.rejection_note === null || typeof item.rejection_note === \"string\").to.eql(true);",
+                                            "        });",
+                                            "    });",
+                                            "    pm.test(\"Rejected response has correct pagination\", function () {",
+                                            "        pm.expect(json.data).to.have.property(\"pagination\");",
+                                            "        const p = json.data.pagination;",
+                                            "        pm.expect(p.total).to.be.at.least(json.data.items.length);",
+                                            "        pm.expect(p.current_page).to.be.at.least(1);",
+                                            "        pm.expect(p.per_page).to.be.at.least(1);",
+                                            "        pm.expect(p.total_pages).to.eql(Math.ceil(p.total / p.per_page));",
+                                            "        pm.expect(typeof p.has_next_page).to.eql(\"boolean\");",
+                                            "        pm.expect(typeof p.has_previous_page).to.eql(\"boolean\");",
+                                            "    });",
+                                            "    pm.test(\"Rejected items are ordered newest first\", function () {",
+                                            "        const times = json.data.items.map(function (i) { return new Date(i.rejected_at).getTime(); });",
+                                            "        const sorted = times.slice().sort(function (a, b) { return b - a; });",
+                                            "        pm.expect(times).to.eql(sorted);",
+                                            "    });",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "List Withdrawn Applications",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{access_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/applications/withdrawn",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "applications",
+                                        "withdrawn"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Requires a student Bearer token. Dedicated Withdrawn tab endpoint GET /api/v1/applications/withdrawn: the student's withdrawn applications scoped to their specialization, exposed as the clean 12-field Withdrawn card DTO (id, training_id, training_title, status, specialization, company_name, company_logo, training_type, method, withdrawn_at, starts_at, ends_at)."
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Withdrawn applications listed\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "});",
+                                            "",
+                                            "// Guest (no credentials) -> 401",
+                                            "pm.sendRequest({",
+                                            "    url: pm.request.url,",
+                                            "    method: pm.request.method",
+                                            "}, function (err, res) {",
+                                            "    pm.test(\"Guest is rejected with 401\", function () {",
+                                            "        pm.expect(err ? 0 : res.code).to.eql(401);",
+                                            "    });",
+                                            "});",
+                                            "",
+                                            "// Company token -> 403",
+                                            "pm.sendRequest({",
+                                            "    url: pm.request.url,",
+                                            "    method: pm.request.method,",
+                                            "    header: [",
+                                            "        { key: \"Authorization\", value: \"Bearer {{company_token}}\", type: \"string\" }",
+                                            "    ]",
+                                            "}, function (err, res) {",
+                                            "    pm.test(\"Company is rejected with 403\", function () {",
+                                            "        pm.expect(err ? 0 : res.code).to.eql(403);",
+                                            "    });",
+                                            "});",
+                                            "",
+                                            "const json = pm.response.json();",
+                                            "if (json.data && json.data.items && json.data.items.length) {",
+                                            "    const required = [\"id\",\"training_id\",\"training_title\",\"status\",\"specialization\",\"company_name\",\"company_logo\",\"training_type\",\"method\",\"withdrawn_at\",\"starts_at\",\"ends_at\"];",
+                                            "    const forbidden = [\"student_id\",\"company_id\",\"message\",\"full_name\",\"email\",\"phone\",\"city\",\"address\",\"why_interested\",\"what_to_learn\",\"skills\",\"reviewed_by\",\"cv_file_id\",\"faculty_id\",\"university\",\"applicant_type\",\"academic_year\",\"graduation_year\",\"motivation\",\"location\",\"applied_at\",\"reviewed_at\",\"rejected_at\",\"rejection_reason\",\"rejection_note\",\"is_paid\",\"may_lead_to_hire\",\"can_withdraw\",\"payment_status\",\"bank_account\"];",
+                                            "    const isoRe = /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2}|Z)$/;",
+                                            "    pm.test(\"Withdrawn items expose exactly the 12-field DTO\", function () {",
+                                            "        json.data.items.forEach(function (item) {",
+                                            "            pm.expect(Object.keys(item).sort().join(\",\")).to.eql(required.slice().sort().join(\",\"));",
+                                            "        });",
+                                            "    });",
+                                            "    pm.test(\"Withdrawn items exclude all forbidden PII fields\", function () {",
+                                            "        json.data.items.forEach(function (item) {",
+                                            "            forbidden.forEach(function (key) { pm.expect(item).to.not.have.property(key); });",
+                                            "        });",
+                                            "    });",
+                                            "    pm.test(\"Every withdrawn item shows the fixed display status\", function () {",
+                                            "        json.data.items.forEach(function (item) { pm.expect(item.status).to.eql(\"Withdrawn\"); });",
+                                            "    });",
+                                            "    pm.test(\"Withdrawn items carry the student specialization\", function () {",
+                                            "        const specs = json.data.items.map(function (i) { return i.specialization; });",
+                                            "        specs.forEach(function (spec) { pm.expect(spec).to.be.a(\"string\").and.to.have.length.above(0); });",
+                                            "        pm.expect(new Set(specs).size).to.eql(1);",
+                                            "    });",
+                                            "    pm.test(\"withdrawn_at exists and is ISO-8601\", function () {",
+                                            "        json.data.items.forEach(function (item) {",
+                                            "            pm.expect(item).to.have.property(\"withdrawn_at\");",
+                                            "            pm.expect(item.withdrawn_at).to.be.a(\"string\");",
+                                            "            pm.expect(item.withdrawn_at).to.match(isoRe);",
+                                            "        });",
+                                            "    });",
+                                            "    pm.test(\"starts_at / ends_at exist and are ISO-8601\", function () {",
+                                            "        json.data.items.forEach(function (item) {",
+                                            "            pm.expect(item).to.have.property(\"starts_at\");",
+                                            "            pm.expect(item).to.have.property(\"ends_at\");",
+                                            "            pm.expect(item.starts_at).to.be.a(\"string\");",
+                                            "            pm.expect(item.ends_at).to.be.a(\"string\");",
+                                            "            pm.expect(item.starts_at).to.match(isoRe);",
+                                            "            pm.expect(item.ends_at).to.match(isoRe);",
+                                            "        });",
+                                            "    });",
+                                            "    pm.test(\"Withdrawn response has correct pagination\", function () {",
+                                            "        pm.expect(json.data).to.have.property(\"pagination\");",
+                                            "        const p = json.data.pagination;",
+                                            "        pm.expect(p.total).to.be.at.least(json.data.items.length);",
+                                            "        pm.expect(p.current_page).to.be.at.least(1);",
+                                            "        pm.expect(p.per_page).to.be.at.least(1);",
+                                            "        pm.expect(p.total_pages).to.eql(Math.ceil(p.total / p.per_page));",
+                                            "        pm.expect(typeof p.has_next_page).to.eql(\"boolean\");",
+                                            "        pm.expect(typeof p.has_previous_page).to.eql(\"boolean\");",
+                                            "    });",
+                                            "    pm.test(\"Withdrawn items are ordered newest first\", function () {",
+                                            "        const times = json.data.items.map(function (i) { return new Date(i.withdrawn_at).getTime(); });",
+                                            "        const sorted = times.slice().sort(function (a, b) { return b - a; });",
+                                            "        pm.expect(times).to.eql(sorted);",
+                                            "    });",
+                                            "}",
+                                            "",
+                                            "// Endpoint path is the dedicated /withdrawn route (no stale /my?status=withdrawn)",
+                                            "pm.test(\"Endpoint is GET /api/v1/applications/withdrawn\", function () {",
+                                            "    pm.expect(pm.request.method).to.eql(\"GET\");",
+                                            "    pm.expect(pm.request.url.toString().indexOf(\"/api/v1/applications/withdrawn\")).to.not.eql(-1);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "List All Applications",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{access_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/applications/all",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "applications",
+                                        "all"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Requires a student Bearer token. Unified All Applications tab endpoint GET /api/v1/applications/all: the student's entire application set across all four states (Applied, Accepted, Rejected, Withdrawn) scoped to their specialization, each item cast to its exact tab card DTO (16-field Applied / 20-field Accepted / 12-field Rejected / 12-field Withdrawn), ordered newest activity first, paginated with the standard envelope."
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "const KEYS = {",
+                                            "    Applied: [\"id\",\"training_id\",\"training_title\",\"status\",\"specialization\",\"company_name\",\"company_logo\",\"training_type\",\"method\",\"is_paid\",\"may_lead_to_hire\",\"applied_at\",\"starts_at\",\"ends_at\",\"duration\",\"can_withdraw\"],",
+                                            "    Accepted: [\"id\",\"training_id\",\"training_title\",\"status\",\"specialization\",\"company_name\",\"company_logo\",\"training_type\",\"method\",\"is_paid\",\"may_lead_to_hire\",\"accepted_at\",\"starts_at\",\"ends_at\",\"duration\",\"free_trial_days\",\"free_trial_days_remaining\",\"motivational_message\",\"payment_status\",\"bank_account\"],",
+                                            "    Rejected: [\"id\",\"training_id\",\"training_title\",\"status\",\"specialization\",\"company_name\",\"company_logo\",\"training_type\",\"method\",\"rejected_at\",\"rejection_reason\",\"rejection_note\"],",
+                                            "    Withdrawn: [\"id\",\"training_id\",\"training_title\",\"status\",\"specialization\",\"company_name\",\"company_logo\",\"training_type\",\"method\",\"withdrawn_at\",\"starts_at\",\"ends_at\"]",
+                                            "};",
+                                            "const TIME_KEY = { Applied: \"applied_at\", Accepted: \"accepted_at\", Rejected: \"rejected_at\", Withdrawn: \"withdrawn_at\" };",
+                                            "const FORBIDDEN = [\"student_id\",\"company_id\",\"message\",\"full_name\",\"email\",\"phone\",\"city\",\"address\",\"why_interested\",\"what_to_learn\",\"skills\",\"reviewed_by\",\"cv_file_id\",\"faculty_id\",\"university\",\"applicant_type\",\"academic_year\",\"graduation_year\",\"motivation\",\"location\",\"status_db\",\"reviewed_at\"];",
+                                            "const ISO = /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2}|Z)$/;",
+                                            "",
+                                            "pm.test(\"All applications listed\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "});",
+                                            "",
+                                            "// Guest (no credentials) -> 401",
+                                            "pm.sendRequest({",
+                                            "    url: pm.request.url,",
+                                            "    method: pm.request.method",
+                                            "}, function (err, res) {",
+                                            "    pm.test(\"Guest is rejected with 401\", function () {",
+                                            "        pm.expect(err ? 0 : res.code).to.eql(401);",
+                                            "    });",
+                                            "});",
+                                            "",
+                                            "// Company token -> 403",
+                                            "pm.sendRequest({",
+                                            "    url: pm.request.url,",
+                                            "    method: pm.request.method,",
+                                            "    header: [",
+                                            "        { key: \"Authorization\", value: \"Bearer {{company_token}}\", type: \"string\" }",
+                                            "    ]",
+                                            "}, function (err, res) {",
+                                            "    pm.test(\"Company is rejected with 403\", function () {",
+                                            "        pm.expect(err ? 0 : res.code).to.eql(403);",
+                                            "    });",
+                                            "});",
+                                            "",
+                                            "const json = pm.response.json();",
+                                            "if (json.data && json.data.items && json.data.items.length) {",
+                                            "    const seen = {};",
+                                            "    pm.test(\"All items use one of the four per-status card DTO key sets\", function () {",
+                                            "        json.data.items.forEach(function (item) {",
+                                            "            const expectKeys = KEYS[item.status];",
+                                            "            pm.expect(expectKeys, \"unexpected status \" + item.status).to.exist;",
+                                            "            pm.expect(Object.keys(item).sort().join(\",\")).to.eql(expectKeys.slice().sort().join(\",\"));",
+                                            "            seen[item.status] = true;",
+                                            "        });",
+                                            "    });",
+                                            "    pm.test(\"All items exclude forbidden raw/PII fields\", function () {",
+                                            "        json.data.items.forEach(function (item) {",
+                                            "            FORBIDDEN.forEach(function (key) { pm.expect(item).to.not.have.property(key); });",
+                                            "        });",
+                                            "    });",
+                                            "    pm.test(\"All four tab statuses are present in the merged list\", function () {",
+                                            "        pm.expect(seen.Applied).to.eql(true);",
+                                            "        pm.expect(seen.Accepted).to.eql(true);",
+                                            "        pm.expect(seen.Rejected).to.eql(true);",
+                                            "        pm.expect(seen.Withdrawn).to.eql(true);",
+                                            "    });",
+                                            "    pm.test(\"Status-specific timestamps exist and are ISO-8601\", function () {",
+                                            "        json.data.items.forEach(function (item) {",
+                                            "            const key = TIME_KEY[item.status];",
+                                            "            pm.expect(item).to.have.property(key);",
+                                            "            pm.expect(item[key]).to.be.a(\"string\");",
+                                            "            pm.expect(item[key]).to.match(ISO);",
+                                            "        });",
+                                            "    });",
+                                            "    pm.test(\"Items are ordered newest activity first (deterministic)\", function () {",
+                                            "        const times = json.data.items.map(function (i) { return new Date(i[TIME_KEY[i.status]]).getTime(); });",
+                                            "        for (let k = 1; k < times.length; k++) { pm.expect(times[k]).to.be.at.most(times[k - 1]); }",
+                                            "    });",
+                                            "    pm.test(\"All response has correct pagination\", function () {",
+                                            "        pm.expect(json.data).to.have.property(\"pagination\");",
+                                            "        const p = json.data.pagination;",
+                                            "        pm.expect(p.total).to.be.at.least(json.data.items.length);",
+                                            "        pm.expect(p.current_page).to.be.at.least(1);",
+                                            "        pm.expect(p.per_page).to.be.at.least(1);",
+                                            "        pm.expect(p.total_pages).to.eql(Math.ceil(p.total / p.per_page));",
+                                            "        pm.expect(typeof p.has_next_page).to.eql(\"boolean\");",
+                                            "        pm.expect(typeof p.has_previous_page).to.eql(\"boolean\");",
+                                            "    });",
+                                            "}",
+                                            "",
+                                            "// Endpoint path is the dedicated /all route (no stale /my?status=all)",
+                                            "pm.test(\"Endpoint is GET /api/v1/applications/all\", function () {",
+                                            "    pm.expect(pm.request.method).to.eql(\"GET\");",
+                                            "    pm.expect(pm.request.url.toString().indexOf(\"/api/v1/applications/all\")).to.not.eql(-1);",
                                             "});"
                                         ],
                                         "type": "text/javascript"
@@ -3195,7 +3779,7 @@
                                 "method": "POST",
                                 "header": [],
                                 "url": {
-                                    "raw": "{{base_url}}/api/v1/applications/withdraw?id={{application_id}}",
+                                    "raw": "{{base_url}}/api/v1/applications/withdraw?id={{withdraw_application_id}}",
                                     "host": [
                                         "{{base_url}}"
                                     ],
@@ -3204,9 +3788,479 @@
                                         "v1",
                                         "applications",
                                         "withdraw"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "id",
+                                            "value": "{{withdraw_application_id}}"
+                                        }
                                     ]
                                 },
-                                "description": "Requires a student Bearer token. Withdraws a pending application by its `id` query parameter. Only pending applications can be withdrawn (409 otherwise)."
+                                "description": "Requires a student Bearer token. Withdraws the pending application selected dynamically by the preceding \"List Applied Applications\" request (its id is stored in the collection variable `withdraw_application_id` and is never hard-coded). The application id is passed via the `id` query parameter, which is the backend contract for this endpoint. Only pending applications can be withdrawn (409 otherwise). After a successful withdraw the test also verifies, against the live APIs, that the application is no longer in Applied, appears in Withdrawn with status \"Withdrawn\", and that a second withdraw attempt is rejected with 409."
+                            },
+                            "response": [],
+                            "event": [
+                                    {
+                                        "listen": "test",
+                                        "script": {
+                                            "exec": [
+                                                "// The withdraw target is the application selected dynamically by 'List Applied Applications'.",
+                                                "const baseUrl = pm.collectionVariables.get('base_url');",
+                                                "const authHeader = pm.request.headers.get('Authorization') || ('Bearer ' + pm.collectionVariables.get('access_token'));",
+                                                "const withdrawId = Number(pm.collectionVariables.get('withdraw_application_id'));",
+                                                "",
+                                                "pm.test(\"withdraw_application_id is set from the Applied flow\", function () {",
+                                                "    pm.expect(withdrawId > 0, \"No withdrawable application selected. Run 'List Applied Applications' first and do not hard-code an application id.\").to.eql(true);",
+                                                "});",
+                                                "",
+                                                "if (pm.response.code === 200) {",
+                                                "    const json = pm.response.json();",
+                                                "    pm.test(\"Withdraw request succeeds\", function () {",
+                                                "        pm.expect(json.success).to.eql(true);",
+                                                "    });",
+                                                "    pm.test(\"Withdraw response is valid\", function () {",
+                                                "        pm.expect(json.data).to.have.property('id');",
+                                                "        pm.expect(Number(json.data.id)).to.eql(withdrawId);",
+                                                "    });",
+                                                "    pm.test(\"Application was withdrawn\", function () {",
+                                                "        pm.expect(json.data.status).to.eql('withdrawn');",
+                                                "    });",
+                                                "} else if (pm.response.code === 409) {",
+                                                "    const json = pm.response.json();",
+                                                "    pm.test(\"Application was already withdrawn on a previous run\", function () {",
+                                                "        pm.expect(json.success).to.eql(false);",
+                                                "        pm.expect(json.message).to.include('pending');",
+                                                "    });",
+                                                "} else {",
+                                                "    pm.test(\"Withdraw request returns the expected status\", function () {",
+                                                "        pm.expect(pm.response.code).to.be.oneOf([200, 409]);",
+                                                "    });",
+                                                "}",
+                                                "",
+                                                "if (pm.response.code === 200) {",
+                                                "    const appliedReq = {",
+                                                "        url: baseUrl + '/api/v1/applications/applied',",
+                                                "        method: 'GET',",
+                                                "        header: [{ key: 'Authorization', value: authHeader, type: 'string' }]",
+                                                "    };",
+                                                "    const withdrawnReq = {",
+                                                "        url: baseUrl + '/api/v1/applications/withdrawn',",
+                                                "        method: 'GET',",
+                                                "        header: [{ key: 'Authorization', value: authHeader, type: 'string' }]",
+                                                "    };",
+                                                "    const repeatReq = {",
+                                                "        url: baseUrl + '/api/v1/applications/withdraw?id=' + withdrawId,",
+                                                "        method: 'POST',",
+                                                "        header: [{ key: 'Authorization', value: authHeader, type: 'string' }]",
+                                                "    };",
+                                                "    pm.sendRequest(appliedReq, function (err, res) {",
+                                                "        pm.test(\"Withdrawn application is no longer in Applied\", function () {",
+                                                "            pm.expect(err ? -1 : res.code).to.eql(200);",
+                                                "            if (!err) {",
+                                                "                const body = res.json();",
+                                                "                const items = (body.data && body.data.items) || [];",
+                                                "                const stillApplied = items.some(function (app) { return Number(app.id) === withdrawId; });",
+                                                "                pm.expect(stillApplied).to.eql(false, 'Application ' + withdrawId + ' is still present in Applied.');",
+                                                "            }",
+                                                "        });",
+                                                "        pm.sendRequest(withdrawnReq, function (err2, res2) {",
+                                                "            pm.test(\"Withdrawn application appears in Withdrawn\", function () {",
+                                                "                pm.expect(err2 ? -1 : res2.code).to.eql(200);",
+                                                "                if (!err2) {",
+                                                "                    const body2 = res2.json();",
+                                                "                    const items2 = (body2.data && body2.data.items) || [];",
+                                                "                    const match = items2.filter(function (app) { return Number(app.id) === withdrawId; });",
+                                                "                    pm.expect(match.length, 'Application ' + withdrawId + ' did not appear in Withdrawn.').to.be.above(0);",
+                                                "                }",
+                                                "            });",
+                                                "            if (!err2) {",
+                                                "                const body2 = res2.json();",
+                                                "                const items2 = (body2.data && body2.data.items) || [];",
+                                                "                const match = items2.filter(function (app) { return Number(app.id) === withdrawId; });",
+                                                "                pm.test(\"Withdrawn application has status Withdrawn\", function () {",
+                                                "                    pm.expect(match.length).to.be.above(0);",
+                                                "                    if (match.length) { pm.expect(match[0].status).to.eql('Withdrawn'); }",
+                                                "                });",
+                                                "                // The Withdrawn card DTO deliberately does not expose can_withdraw;",
+                                                "                // the state transition is proven by the status and the membership checks above.",
+                                                "            }",
+                                                "            pm.sendRequest(repeatReq, function (err3, res3) {",
+                                                "                pm.test(\"Second withdrawal is rejected\", function () {",
+                                                "                    pm.expect(err3 ? -1 : res3.code).to.eql(409);",
+                                                "                    if (!err3) {",
+                                                "                        const body3 = res3.json();",
+                                                "                        pm.expect(body3.success).to.eql(false);",
+                                                "                    }",
+                                                "                });",
+                                                "                pm.test(\"Second withdrawal returns 4xx\", function () {",
+                                                "                    const code = err3 ? -1 : res3.code;",
+                                                "                    pm.expect(code).to.be.at.least(400);",
+                                                "                    pm.expect(code).to.be.below(500);",
+                                                "                });",
+                                                "                if (!err3) {",
+                                                "                    const body3 = res3.json();",
+                                                "                    pm.test(\"Second withdrawal error is meaningful\", function () {",
+                                                "                        pm.expect(body3.message).to.include('pending');",
+                                                "                    });",
+                                                "                }",
+                                                "            });",
+                                                "        });",
+                                                "    });",
+                                                "}"
+                                            ],
+                                            "type": "text/javascript"
+                                        }
+                                    }
+                                ]
+                            },
+                        {
+                            "name": "Accept Application",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{company_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/applications/accept?id={{accept_application_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "applications",
+                                        "accept"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "id",
+                                            "value": "{{accept_application_id}}"
+                                        }
+                                    ]
+                                },
+                                "description": "Requires a company Bearer token (`{{company_token}}`, set by Login (Company)). Accepts a pending application submitted to one of the company's trainings. Targets the seeded `{{accept_application_id}}`. 200 on success; 409 when the application is no longer pending (e.g. on a re-run).",
+                                "response": [],
+                                "event": [
+                                    {
+                                        "listen": "test",
+                                        "script": {
+                                            "exec": [
+                                                "pm.test(\"Accept application responds\", function () {",
+                                                "    pm.expect(pm.response.code).to.be.oneOf([200, 409]);",
+                                                "});",
+                                                "if (pm.response.code === 200) {",
+                                                "    const json = pm.response.json();",
+                                                "    pm.test(\"Accept success confirms status\", function () {",
+                                                "        pm.expect(json.success).to.eql(true);",
+                                                "        pm.expect(json.data.status).to.eql('accepted');",
+                                                "    });",
+                                                "}"
+                                            ],
+                                            "type": "text/javascript"
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "name": "Reject Application",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{company_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"rejection_reason\": \"Candidate did not meet minimum requirements\",\n    \"rejection_note\": \"Requires more hands-on project work in the applied stack.\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/applications/reject?id={{reject_application_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "applications",
+                                        "reject"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "id",
+                                            "value": "{{reject_application_id}}"
+                                        }
+                                    ]
+                                },
+                                "description": "Requires a company Bearer token (`{{company_token}}`). Rejects a pending application with a free-text `rejection_reason` (validated server-side) and an optional note. Targets the seeded `{{reject_application_id}}`. 200 on success; 409 when the application is no longer pending.",
+                                "response": [],
+                                "event": [
+                                    {
+                                        "listen": "test",
+                                        "script": {
+                                            "exec": [
+                                                "pm.test(\"Reject application responds\", function () {",
+                                                "    pm.expect(pm.response.code).to.be.oneOf([200, 409]);",
+                                                "});",
+                                                "if (pm.response.code === 200) {",
+                                                "    const json = pm.response.json();",
+                                                "    pm.test(\"Reject success confirms status and reason\", function () {",
+                                                "        pm.expect(json.success).to.eql(true);",
+                                                "        pm.expect(json.data.status).to.eql('rejected');",
+                                                "        pm.expect(json.data.rejection_reason).to.include('requirements_not_met');",
+                                                "    });",
+                                                "}"
+                                            ],
+                                            "type": "text/javascript"
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "name": "Accept Already Accepted Application (409)",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{company_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/applications/accept?id={{accepted_application_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "applications",
+                                        "accept"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "id",
+                                            "value": "{{accepted_application_id}}"
+                                        }
+                                    ]
+                                },
+                                "description": "Negative: accepts an already-accepted application (seeded `{{accepted_application_id}}`). Expects HTTP 409 `Only pending applications can be accepted.`",
+                                "response": [],
+                                "event": [
+                                    {
+                                        "listen": "test",
+                                        "script": {
+                                            "exec": [
+                                                "pm.test(\"Accept already-accepted returns 409\", function () {",
+                                                "    pm.expect(pm.response.code).to.eql(409);",
+                                                "    const json = pm.response.json();",
+                                                "    pm.expect(json.success).to.eql(false);",
+                                                "});"
+                                            ],
+                                            "type": "text/javascript"
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "name": "Reject Already Rejected Application (409)",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{company_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"rejection_reason\": \"Training program discontinued\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/applications/reject?id={{rejected_application_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "applications",
+                                        "reject"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "id",
+                                            "value": "{{rejected_application_id}}"
+                                        }
+                                    ]
+                                },
+                                "description": "Negative: rejects an already-rejected application (seeded `{{rejected_application_id}}`). Expects HTTP 409 `Only pending applications can be rejected.`",
+                                "response": [],
+                                "event": [
+                                    {
+                                        "listen": "test",
+                                        "script": {
+                                            "exec": [
+                                                "pm.test(\"Reject already-rejected returns 409\", function () {",
+                                                "    pm.expect(pm.response.code).to.eql(409);",
+                                                "    const json = pm.response.json();",
+                                                "    pm.expect(json.success).to.eql(false);",
+                                                "});"
+                                            ],
+                                            "type": "text/javascript"
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "name": "Reject Application With Invalid Reason (422)",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{company_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"rejection_reason\": \"Not a real reason\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/applications/reject?id={{invalid_reason_application_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "applications",
+                                        "reject"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "id",
+                                            "value": "{{invalid_reason_application_id}}"
+                                        }
+                                    ]
+                                },
+                                "description": "Negative: rejects a pending application (seeded `{{invalid_reason_application_id}}`) with an unrecognized reason. Expects HTTP 422. The application remains pending afterwards.",
+                                "response": [],
+                                "event": [
+                                    {
+                                        "listen": "test",
+                                        "script": {
+                                            "exec": [
+                                                "pm.test(\"Reject with invalid reason returns 422\", function () {",
+                                                "    pm.expect(pm.response.code).to.eql(422);",
+                                                "    const json = pm.response.json();",
+                                                "    pm.expect(json.success).to.eql(false);",
+                                                "    pm.expect(json.errors).to.have.property('rejection_reason');",
+                                                "});"
+                                            ],
+                                            "type": "text/javascript"
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "name": "Accept Another Company's Application (403)",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{company_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/applications/accept?id={{foreign_pending_application_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "applications",
+                                        "accept"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "id",
+                                            "value": "{{foreign_pending_application_id}}"
+                                        }
+                                    ]
+                                },
+                                "description": "Negative: the test company (`{{company_token}}`) tries to accept `{{foreign_pending_application_id}}`, a pending application owned by a DIFFERENT company. Expects HTTP 403; the application is not modified."
                             },
                             "response": [],
                             "event": [
@@ -3214,8 +4268,10 @@
                                     "listen": "test",
                                     "script": {
                                         "exec": [
-                                            "pm.test(\"Withdraw application responds\", function () {",
-                                            "    pm.expect(pm.response.code).to.be.oneOf([200, 409]);",
+                                            "pm.test(\"Foreign application accept returns 403\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(403);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(false);",
                                             "});"
                                         ],
                                         "type": "text/javascript"
@@ -4014,7 +5070,7 @@
             "name": "06 - Search",
             "item": [
                 {
-                    "name": "Search Trainings",
+                    "name": "Search And Filter Trainings",
                     "request": {
                         "auth": {
                             "type": "bearer",
@@ -4034,7 +5090,7 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/api/v1/search/trainings?q={{search_query}}",
+                            "raw": "{{base_url}}/api/v1/search/trainings?q={{search_query}}&training_type=&mode=&paid=&sort=newest&page=1&limit=20",
                             "host": [
                                 "{{base_url}}"
                             ],
@@ -4048,11 +5104,41 @@
                                 {
                                     "key": "q",
                                     "value": "{{search_query}}",
-                                    "description": "Search training title, description, location, company name, skills, and the single primary specialization name."
+                                    "description": "Optional keyword. Matches training title, description, location, company name, skills, and the single primary specialization name. Omitting it turns the request into a filter-only listing."
+                                },
+                                {
+                                    "key": "training_type",
+                                    "value": "",
+                                    "description": "Optional training type filter. Allowed values: shadowing, hands_on, project_based. Omit/blank for all training types."
+                                },
+                                {
+                                    "key": "mode",
+                                    "value": "",
+                                    "description": "Optional training mode filter. Allowed values: onsite, remote, hybrid. Omit/blank for all modes."
+                                },
+                                {
+                                    "key": "paid",
+                                    "value": "",
+                                    "description": "Optional price filter. 0 = free, 1 = paid. Omit/blank for all price categories."
+                                },
+                                {
+                                    "key": "sort",
+                                    "value": "newest",
+                                    "description": "Optional sorting. Allowed values: newest, oldest, price_asc, price_desc, duration_asc, duration_desc (plus the legacy relevance, date, created_at, updated_at, name, title values which fall back to newest)."
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1",
+                                    "description": "Optional page number. Defaults to 1."
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20",
+                                    "description": "Optional number of results per page. Defaults to 20. Maximum 100."
                                 }
                             ]
                         },
-                        "description": "Search by training title keyword. Matches any published training whose title contains the term."
+                        "description": "Unified Search + Filters API. Searches published trainings by keyword (`q`) and/or filters them by training_type, mode and paid, with whitelisted sorting and pagination. All parameters are optional and combine with AND. Examples: `?q=php&mode=remote&paid=1&sort=newest`. When `q` is omitted the request behaves like the previous filter-only API. Authorization scope: an authenticated STUDENT only receives trainings whose specialization_id EXACTLY equals the student's own students.specialization_id (enforced server-side, so the client cannot bypass it; do NOT send a client-controlled specialization_id). Guests and non-student authenticated users (company/admin/trainer) see all published trainings. The training card response shape (is_saved, skills, specialization, duration) is unchanged."
                     },
                     "event": [
                         {
@@ -4068,7 +5154,6 @@
                                     "    pm.expect(json.data.total).to.be.a('number');",
                                     "    pm.expect(json.data.page).to.be.a('number');",
                                     "    pm.expect(json.data.limit).to.be.a('number');",
-                                    "    pm.expect(json.data.query).to.be.a('string');",
                                     "});",
                                     "pm.test('training card contains all expected fields', function () {",
                                     "    const items = json.data.items;",
@@ -4118,148 +5203,9 @@
                                     "        }",
                                     "    });",
                                     "});",
-"pm.test('request is authenticated as a student (save state context = student)', function () {",
-"    pm.expect(json.data.save_state_context).to.eql('student');",
-"});"
-                                ]
-                            }
-                        }
-                    ],
-                    "response": [],
-                    "description": "Search published trainings by keyword. Matches title, description, location, company name, skill names, and the single primary specialization name. Authorization scope: an authenticated STUDENT only receives trainings whose specialization_id EXACTLY equals the student's own students.specialization_id (enforced server-side in the query, so the client cannot bypass it; do NOT send a client-controlled specialization_id). Guests and non-student authenticated users (company/admin/trainer) see all published trainings."
-                },
-                {
-                    "name": "Filter Trainings",
-                    "request": {
-                        "auth": {
-                            "type": "bearer",
-                            "bearer": [
-                                {
-                                    "key": "token",
-                                    "value": "{{access_token}}",
-                                    "type": "string"
-                                }
-                            ]
-                        },
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{base_url}}/api/v1/search/trainings/filters?training_type=hands_on&mode=hybrid&paid=1&sort=newest&page=1&limit=20",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "search",
-                                "trainings",
-                                "filters"
-                            ],
-                            "query": [
-                                {
-                                    "key": "training_type",
-                                    "value": "hands_on",
-                                    "description": "Optional training type filter. Allowed values: shadowing, hands_on, project_based. Omit for all training types."
-                                },
-                                {
-                                    "key": "mode",
-                                    "value": "hybrid",
-                                    "description": "Optional training mode filter. Allowed values: onsite, remote, hybrid. Omit for all modes."
-                                },
-                                {
-                                    "key": "paid",
-                                    "value": "1",
-                                    "description": "Optional price filter. 0 = free, 1 = paid. Omit for all price categories."
-                                },
-                                {
-                                    "key": "sort",
-                                    "value": "newest",
-                                    "description": "Optional sorting. Allowed values: newest, oldest, price_asc, price_desc, duration_asc, duration_desc."
-                                },
-                                {
-                                    "key": "page",
-                                    "value": "1",
-                                    "description": "Optional page number. Defaults to 1."
-                                },
-                                {
-                                    "key": "limit",
-                                    "value": "20",
-                                    "description": "Optional number of results per page. Defaults to 20. Maximum 100."
-                                }
-                            ]
-                        },
-                        "description": "Training Filters API: filter published trainings by training_type + mode + paid with whitelisted sorting and pagination. Omitted parameters mean ALL/ANY (no filter on that dimension). Canonical database values - training_type: shadowing | hands_on | project_based; mode: onsite | remote | hybrid; paid: 0 (free) | 1 (paid). Keyword search is NOT part of this endpoint; use Search Trainings (?q=) instead. Authorization scope: an authenticated STUDENT only receives trainings whose specialization_id EXACTLY equals the student's own students.specialization_id; this is enforced server-side, so the client cannot bypass it by sending a specialization_id parameter. Guests and non-student authenticated users (company/admin/trainer) see all published trainings."
-                    },
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "type": "text/javascript",
-                                "exec": [
-                                    "const json = pm.response.json();",
-                                    "pm.test('returns 200', function () { pm.response.to.have.status(200); });",
-                                    "pm.test('success is true', function () { pm.expect(json.success).to.eql(true); });",
-                                    "pm.test('items is an array', function () { pm.expect(json.data.items).to.be.an('array'); });",
-                                    "pm.test('pagination metadata present', function () {",
-                                    "    pm.expect(json.data.total).to.be.a('number');",
-                                    "    pm.expect(json.data.page).to.be.a('number');",
-                                    "    pm.expect(json.data.limit).to.be.a('number');",
-                                    "});",
-                                    "pm.test('training card contains all expected fields', function () {",
-                                    "    json.data.items.forEach(function (item) {",
-                                    "        pm.expect(item).to.have.property('id');",
-                                    "        pm.expect(item).to.have.property('company_id');",
-                                    "        pm.expect(item).to.have.property('title');",
-                                    "        pm.expect(item).to.have.property('description');",
-                                    "        pm.expect(item).to.have.property('training_type');",
-                                    "        pm.expect(item).to.have.property('mode');",
-                                    "        pm.expect(item).to.have.property('may_lead_to_employment');",
-                                    "        pm.expect(item).to.have.property('is_paid');",
-                                    "        pm.expect(item).to.have.property('compensation_amount');",
-                                    "        pm.expect(item).to.have.property('compensation_currency');",
-                                    "        pm.expect(item).to.have.property('capacity');",
-                                    "        pm.expect(item).to.have.property('status');",
-                                    "        pm.expect(item).to.have.property('starts_at');",
-                                    "        pm.expect(item).to.have.property('ends_at');",
-                                    "        pm.expect(item).to.have.property('application_deadline');",
-                                    "        pm.expect(item).to.have.property('location');",
-                                    "        pm.expect(item).to.have.property('created_at');",
-                                    "        pm.expect(item).to.have.property('updated_at');",
-                                    "        pm.expect(item).to.have.property('company_name');",
-                                    "        pm.expect(item).to.have.property('company_city');",
-                                    "        pm.expect(item).to.have.property('company_logo');",
-                                    "        pm.expect(item).to.have.property('is_saved');",
-                                    "        pm.expect(item).to.have.property('duration');",
-                                    "        pm.expect(item.skills).to.be.an('array');",
-                                    "        pm.expect(item.specialization).to.be.an('object');",
-                                    "        pm.expect(item.specialization).to.have.property('id');",
-                                    "        pm.expect(item.specialization).to.have.property('name');",
-                                    "    });",
-                                    "});",
-                                    "pm.test('duration is a non-negative integer or null', function () {",
-                                    "    json.data.items.forEach(function (item) {",
-                                    "        const d = item.duration;",
-                                    "        if (d !== null) {",
-                                    "            pm.expect(d).to.be.a('number');",
-                                    "            pm.expect(d).to.be.at.least(0);",
-                                    "        }",
-                                    "    });",
-                                    "});",
-                                    "pm.test('is_saved is a live per-user value (0 or 1), never hardcoded', function () {",
-                                    "    json.data.items.forEach(function (item) {",
-                                    "        if (item.is_saved !== 0 && item.is_saved !== 1) {",
-                                    "            pm.expect(item.is_saved).to.be.oneOf([0, 1]);",
-                                    "        }",
-                                    "    });",
-                                    "});",
-"pm.test('request is authenticated as a student (save state context = student)', function () {",
-"    pm.expect(json.data.save_state_context).to.eql('student');",
-"});"
+                                    "pm.test('request is authenticated as a student (save state context = student)', function () {",
+                                    "    pm.expect(json.data.save_state_context).to.eql('student');",
+                                    "});"
                                 ]
                             }
                         }
@@ -4267,7 +5213,7 @@
                     "response": []
                 }
             ],
-            "description": "Search and filter APIs. Search uses q; filters use optional training_type, mode, paid, sort, page, and limit parameters."
+            "description": "Search and filter APIs. The unified training endpoint supports keyword search (q) and optional filters: training_type, mode, paid, sort, page, and limit, combined together."
         },
         {
             "name": "07 - Saved Training - Multi User Regression",
@@ -4524,7 +5470,7 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/api/v1/search/trainings/filters?sort=newest&page=1&limit=50",
+                            "raw": "{{base_url}}/api/v1/search/trainings?sort=newest&page=1&limit=50",
                             "host": [
                                 "{{base_url}}"
                             ],
@@ -4532,8 +5478,7 @@
                                 "api",
                                 "v1",
                                 "search",
-                                "trainings",
-                                "filters"
+                                "trainings"
                             ],
                             "query": [
                                 {
@@ -4550,7 +5495,7 @@
                                 }
                             ]
                         },
-                        "description": "Expect is_saved = 1 via the Training Filters endpoint after Student A saves. Broad filter so the regression training appears."
+                        "description": "Expect is_saved = 1 via the unified Training Search + Filters endpoint (filter-only mode) after Student A saves. Broad filter so the regression training appears."
                     },
                     "response": [],
                     "event": [
@@ -4721,7 +5666,7 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/api/v1/search/trainings/filters?sort=newest&page=1&limit=50",
+                            "raw": "{{base_url}}/api/v1/search/trainings?sort=newest&page=1&limit=50",
                             "host": [
                                 "{{base_url}}"
                             ],
@@ -4729,8 +5674,7 @@
                                 "api",
                                 "v1",
                                 "search",
-                                "trainings",
-                                "filters"
+                                "trainings"
                             ],
                             "query": [
                                 {
@@ -4747,7 +5691,7 @@
                                 }
                             ]
                         },
-                        "description": "Expect is_saved = 0 via Training Filters BEFORE Student B saves."
+                        "description": "Expect is_saved = 0 via the unified Training Search + Filters endpoint (filter-only mode) BEFORE Student B saves."
                     },
                     "response": [],
                     "event": [
@@ -4914,7 +5858,7 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/api/v1/search/trainings/filters?sort=newest&page=1&limit=50",
+                            "raw": "{{base_url}}/api/v1/search/trainings?sort=newest&page=1&limit=50",
                             "host": [
                                 "{{base_url}}"
                             ],
@@ -4922,8 +5866,7 @@
                                 "api",
                                 "v1",
                                 "search",
-                                "trainings",
-                                "filters"
+                                "trainings"
                             ],
                             "query": [
                                 {
@@ -4940,7 +5883,7 @@
                                 }
                             ]
                         },
-                        "description": "Expect is_saved = 1 via Training Filters after Student B saves."
+                        "description": "Expect is_saved = 1 via the unified Training Search + Filters endpoint (filter-only mode) after Student B saves."
                     },
                     "response": [],
                     "event": [
@@ -5171,7 +6114,7 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/api/v1/search/trainings/filters?sort=newest&page=1&limit=50",
+                            "raw": "{{base_url}}/api/v1/search/trainings?sort=newest&page=1&limit=50",
                             "host": [
                                 "{{base_url}}"
                             ],
@@ -5179,8 +6122,7 @@
                                 "api",
                                 "v1",
                                 "search",
-                                "trainings",
-                                "filters"
+                                "trainings"
                             ],
                             "query": [
                                 {
@@ -5197,7 +6139,7 @@
                                 }
                             ]
                         },
-                        "description": "Expect is_saved = 0 via Training Filters after Student A unsaves."
+                        "description": "Expect is_saved = 0 via the unified Training Search + Filters endpoint (filter-only mode) after Student A unsaves."
                     },
                     "response": [],
                     "event": [
@@ -5294,6 +6236,245 @@
                 }
             ],
             "description": "Validates that is_saved in Search and Filter is computed live from the saved_trainings relationship (student_id + training_id) and is independent per student. Data-safe: baseline captures original saved state before any mutation; a final Restore re-establishes it. No TRUNCATE/delete of unrelated records. Uses separate student_a_token/student_b_token so the logins never overwrite each other. is_saved is NEVER hard-coded as request data."
+        },
+        {
+            "name": "08 - Manual Payment (Company)",
+            "description": "Company confirms receipt of the manual (bank transfer) payment for an accepted paid training. Auth: company Bearer token ({{company_token}}). Lifecycle: paid accepted applications start as payment_status \"pending\" in the Accepted ledger (with the owning company bank_account destination) and become \"paid\" after this endpoint runs. A successful confirm creates or marks exactly one payments row (status \"paid\", method \"manual\"). Safe to run repeatedly: the second call returns the same payment_id with already_confirmed=true.",
+            "item": [
+                {
+                    "name": "Confirm Manual Payment",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{company_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/applications/{{accepted_application_id}}/payment/confirm",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "applications",
+                                "{{accepted_application_id}}",
+                                "payment",
+                                "confirm"
+                            ]
+                        },
+                        "description": "Requires a company Bearer token. The acting company must be the OWNER of the paid training (403 otherwise), the application must already be accepted (409 otherwise), and the training must be paid (422 for free trainings). A successful confirm creates/marks a single payments row (status \"paid\", method \"manual\") and flips that training payment_status in the student Accepted ledger from \"pending\" to \"paid\"."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Confirm manual payment accepted\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(200);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(true);",
+                                    "});",
+                                    "const json = pm.response.json();",
+                                    "if (json.data) {",
+                                    "    pm.test(\"Confirm returns the paid lifecycle state\", function () {",
+                                    "        pm.expect(json.data.status).to.eql(\"paid\");",
+                                    "        pm.expect(json.data.payment_method).to.eql(\"manual\");",
+                                    "        pm.expect(json.data.payment_id).to.be.a(\"number\");",
+                                    "        pm.expect(json.data.application_id).to.be.a(\"number\");",
+                                    "    });",
+                                    "}",
+                                    "pm.test(\"Confirm is idempotent on a second call\", function () {",
+                                    "    pm.sendRequest({",
+                                    "        url: pm.request.url,",
+                                    "        method: \"POST\",",
+                                    "        header: { Authorization: pm.request.headers.get(\"Authorization\") },",
+                                    "    }, function (err, res) {",
+                                    "        pm.expect(res.code).to.eql(200);",
+                                    "        const again = res.json();",
+                                    "        pm.expect(again.data.already_confirmed).to.eql(true);",
+                                    "        pm.expect(again.data.payment_id).to.eql(json.data.payment_id);",
+                                    "    });",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "09 - Manual Payment (Student)",
+            "description": "Student side of the manual (bank transfer) lifecycle for an accepted paid training. Auth: student Bearer token ({{access_token}}). Lifecycle: the student transfers the fee to the owning company's bank_account (shown in the Accepted ledger), submits the transfer reference (POST .../payment) which creates/updates exactly one payments row as status \"pending\", and then reads the state (GET .../payment). The owning company verifies the transfer with 'Confirm Manual Payment', which promotes the pending row to \"paid\". Safe to run repeatedly: re-submitting for a pending row updates the reference on the same row and never duplicates it; once the row is paid, submitting again returns 409.",
+            "item": [
+                {
+                    "name": "Submit Payment Reference",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"reference\": \"TRANSFER-{{$timestamp}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/applications/{{accepted_application_id}}/payment",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "applications",
+                                "{{accepted_application_id}}",
+                                "payment"
+                            ]
+                        },
+                        "description": "Requires a student Bearer token. The authenticated student must OWN the application (403 otherwise), the application must be accepted (409 otherwise), and the training must be paid with a configured fee (422 for free trainings). Creates/updates the single payments row as status=\"pending\" with the submitted reference (external_reference). It never sets paid -- only the owning company's confirm endpoint does. Once the row is paid, submitting again returns 409."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "const appId = Number(pm.collectionVariables.get('accepted_application_id'));",
+                                    "pm.test(\"accepted_application_id is set\", function () {",
+                                    "    pm.expect(appId > 0, \"Set the accepted_application_id collection variable to an accepted paid application and do not hard-code ids.\").to.eql(true);",
+                                    "});",
+                                    "const authHeader = pm.request.headers.get('Authorization') || ('Bearer ' + pm.collectionVariables.get('access_token'));",
+                                    "",
+                                    "pm.test(\"Submit payment reference accepted\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(200);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(true);",
+                                    "});",
+                                    "",
+                                    "const json = pm.response.json();",
+                                    "if (pm.response.code === 200 && json.data) {",
+                                    "    pm.test(\"Reference stays pending until company verification\", function () {",
+                                    "        pm.expect(json.data.status).to.eql('pending');",
+                                    "        pm.expect(json.data.payment_method).to.eql('manual');",
+                                    "        pm.expect(json.data.payment_id).to.be.a('number');",
+                                    "        pm.expect(json.data.reference).to.be.a('string');",
+                                    "        pm.expect(json.data.paid_at).to.eql(null);",
+                                    "    });",
+                                    "    pm.test(\"Re-submitting the reference keeps the same pending row\", function () {",
+                                    "        pm.sendRequest({",
+                                    "            url: pm.request.url,",
+                                    "            method: \"POST\",",
+                                    "            header: { Authorization: authHeader, \"Content-Type\": \"application/json\" },",
+                                    "            body: { mode: \"raw\", raw: \"{\\\"reference\\\": \\\"TRANSFER-RERUN-{{$timestamp}}\\\"}\" },",
+                                    "        }, function (err, res) {",
+                                    "            pm.expect(res.code).to.eql(200);",
+                                    "            const again = res.json();",
+                                    "            pm.expect(again.data.payment_id).to.eql(json.data.payment_id);",
+                                    "            pm.expect(again.data.status).to.eql('pending');",
+                                    "            pm.expect(again.data.reference).to.be.a('string');",
+                                    "        });",
+                                    "    });",
+                                    "} else if (pm.response.code === 409) {",
+                                    "    pm.test(\"Paid payment blocks reference changes\", function () {",
+                                    "        const err = pm.response.json();",
+                                    "        pm.expect(err.success).to.eql(false);",
+                                    "        pm.expect(err.message).to.include('already been confirmed');",
+                                    "    });",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Payment State",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/applications/{{accepted_application_id}}/payment",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "applications",
+                                "{{accepted_application_id}}",
+                                "payment"
+                            ]
+                        },
+                        "description": "Requires a student Bearer token. The authenticated student must OWN the application (403 otherwise). Returns the manual payment lifecycle state for the application's training: payment_id (0 before any reference is submitted), status (pending/paid), reference (external_reference or null), amount, currency, paid_at and a submitted boolean. Before the student submits any reference there is no row yet: status=\"pending\", reference=null, submitted=false."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Get payment state accepted\", function () {",
+                                    "    pm.expect(pm.response.code).to.eql(200);",
+                                    "    const json = pm.response.json();",
+                                    "    pm.expect(json.success).to.eql(true);",
+                                    "});",
+                                    "const json = pm.response.json();",
+                                    "if (json.data) {",
+                                    "    pm.test(\"Payment state shape is valid\", function () {",
+                                    "        pm.expect(json.data.application_id).to.be.a('number');",
+                                    "        pm.expect(json.data.training_id).to.be.a('number');",
+                                    "        pm.expect(json.data.payment_id).to.be.a('number');",
+                                    "        pm.expect(['pending','paid']).to.include(json.data.status);",
+                                    "        pm.expect(json.data.payment_method).to.eql('manual');",
+                                    "        pm.expect(json.data.reference === null || typeof json.data.reference === 'string').to.eql(true);",
+                                    "        pm.expect(json.data.amount).to.be.a('number');",
+                                    "        pm.expect(typeof json.data.submitted).to.eql('boolean');",
+                                    "    });",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
         }
     ]
 }

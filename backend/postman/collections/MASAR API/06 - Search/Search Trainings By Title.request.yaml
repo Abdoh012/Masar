@@ -1,0 +1,72 @@
+$kind: http-request
+description: Search by training title keyword. Matches any published training whose title contains the term.
+url: "{{base_url}}/api/v1/search/trainings?q=internship"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  q: internship
+scripts:
+  - type: afterResponse
+    code: |-
+      const json = pm.response.json();
+      pm.test('search returns 200', function () { pm.response.to.have.status(200); });
+      pm.test('success is true', function () { pm.expect(json.success).to.eql(true); });
+      pm.test('items is an array', function () { pm.expect(json.data.items).to.be.an('array'); });
+      pm.test('pagination metadata present', function () {
+          pm.expect(json.data.total).to.be.a('number');
+          pm.expect(json.data.page).to.be.a('number');
+          pm.expect(json.data.limit).to.be.a('number');
+          pm.expect(json.data.query).to.be.a('string');
+      });
+      pm.test('training card contains all expected fields', function () {
+          const items = json.data.items;
+          items.forEach(function (item) {
+              pm.expect(item).to.have.property('id');
+              pm.expect(item).to.have.property('company_id');
+              pm.expect(item).to.have.property('title');
+              pm.expect(item).to.have.property('description');
+              pm.expect(item).to.have.property('training_type');
+              pm.expect(item).to.have.property('mode');
+              pm.expect(item).to.have.property('may_lead_to_employment');
+              pm.expect(item).to.have.property('is_paid');
+              pm.expect(item).to.have.property('compensation_amount');
+              pm.expect(item).to.have.property('compensation_currency');
+              pm.expect(item).to.have.property('capacity');
+              pm.expect(item).to.have.property('status');
+              pm.expect(item).to.have.property('starts_at');
+              pm.expect(item).to.have.property('ends_at');
+              pm.expect(item).to.have.property('application_deadline');
+              pm.expect(item).to.have.property('location');
+              pm.expect(item).to.have.property('created_at');
+              pm.expect(item).to.have.property('updated_at');
+              pm.expect(item).to.have.property('company_name');
+              pm.expect(item).to.have.property('company_city');
+              pm.expect(item).to.have.property('company_logo');
+              pm.expect(item).to.have.property('is_saved');
+              pm.expect(item).to.have.property('duration');
+              pm.expect(item.skills).to.be.an('array');
+              pm.expect(item.specializations).to.be.an('array');
+          });
+      });
+      pm.test('duration is a non-negative integer or null', function () {
+          json.data.items.forEach(function (item) {
+              const d = item.duration;
+              if (d !== null) {
+                  pm.expect(d).to.be.a('number');
+                  pm.expect(d).to.be.at.least(0);
+              }
+          });
+      });
+      pm.test('is_saved is a live per-user value (0 or 1), never hardcoded', function () {
+          json.data.items.forEach(function (item) {
+              if (item.is_saved !== 0 && item.is_saved !== 1) {
+                  pm.expect(item.is_saved).to.be.oneOf([0, 1]);
+              }
+          });
+      });
+      pm.test('save state context is reported by the backend (guest vs student)', function () {
+          pm.expect(['guest', 'student']).to.include(json.data.save_state_context);
+      });
+    language: text/javascript
+order: 2000

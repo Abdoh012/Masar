@@ -83,11 +83,31 @@ function search_service_limit(mixed $limit, int $default = 20, int $maximum = 10
     return min($limit > 0 ? $limit : $default, $maximum);
 }
 
+function search_service_search_sort(array $filters): string {
+    /*
+     * Normalizes the sort parameter for the training search path.
+     * Preserves the training filter sort values (newest, oldest,
+     * price_asc, price_desc, duration_asc, duration_desc) so search and
+     * filters work together, while keeping the legacy search sort values
+     * (relevance, date, created_at, updated_at, name, title) accepted.
+     */
+    $sort = trim((string) ($filters['sort'] ?? 'relevance'));
+
+    $training_filter_sorts = ['newest', 'oldest', 'price_asc', 'price_desc', 'duration_asc', 'duration_desc'];
+    if (in_array($sort, $training_filter_sorts, true)) {
+        return $sort;
+    }
+
+    return in_array($sort, ['relevance', 'date', 'created_at', 'updated_at', 'name', 'title'], true)
+        ? $sort
+        : 'relevance';
+}
+
 function search_service_search(string $query, array $filters = []): array {
     $query = search_service_normalize_query($query);
     $filters['page'] = max(1, (int) ($filters['page'] ?? 1));
     $filters['limit'] = search_service_limit($filters['limit'] ?? 20);
-    $filters['sort'] = in_array(($filters['sort'] ?? 'relevance'), ['relevance', 'date', 'created_at', 'updated_at', 'name', 'title'], true) ? ($filters['sort'] ?? 'relevance') : 'relevance';
+    $filters['sort'] = search_service_search_sort($filters);
     $filters['order'] = in_array(strtoupper((string) ($filters['order'] ?? 'DESC')), ['ASC', 'DESC'], true) ? strtoupper((string) ($filters['order'] ?? 'DESC')) : 'DESC';
     if (!search_service_valid_query($query)) return ['items' => [], 'total' => 0, 'page' => 1, 'limit' => 20, 'query' => $query];
     if (($filters['type'] ?? '') === 'trainings') {
@@ -125,6 +145,54 @@ function search_service_trainings_filters(array $filters = []): array {
     ]);
     $items = is_array($result['items'] ?? null) ? array_values($result['items']) : [];
     return ['items' => $items, 'total' => (int) ($result['total'] ?? count($items)), 'page' => $page, 'limit' => $limit, 'save_state_context' => ((int) ($filters['student_id'] ?? 0)) > 0 ? 'student' : 'guest'];
+}
+
+function search_service_trainings(array $filters = []): array {
+    /*
+     * Unified Training Search + Filters entry point used by the single
+     * GET /api/v1/search/trainings endpoint.
+     *
+     * Accepts a keyword (q / query / search) and the training filter
+     * dimensions together: training_type, mode, paid, sort, page, limit.
+     *
+     * - When a valid keyword is present the result is scoped through the
+     *   keyword search repository (which now also applies training_type /
+     *   mode / paid filters and the sort clause).
+     * - When no keyword is present the request behaves exactly like the
+     *   previous filter-only API (search_repository_trainings_filters).
+     *
+     * Both paths keep the student specialization scope and the same card
+     * response shape (is_saved, skills, specialization, duration).
+     */
+    $query = search_service_normalize_query(
+        (string) ($filters['query'] ?? $filters['search'] ?? '')
+    );
+
+    $page = max(1, (int) ($filters['page'] ?? 1));
+    $limit = search_service_limit($filters['limit'] ?? 20);
+
+    $filters = search_service_apply_training_scope(
+        array_merge($filters, ['type' => 'trainings'])
+    );
+
+    if (!empty($filters['training_scope_blocked'])) {
+        return ['items' => [], 'total' => 0, 'page' => $page, 'limit' => $limit];
+    }
+
+    if ($query !== '' && search_service_valid_query($query)) {
+        $result = search_repository_trainings($query, $filters);
+    } else {
+        $result = search_repository_trainings_filters($filters);
+    }
+
+    $items = is_array($result['items'] ?? null) ? array_values($result['items']) : [];
+    return [
+        'items' => $items,
+        'total' => (int) ($result['total'] ?? count($items)),
+        'page' => $page,
+        'limit' => $limit,
+        'save_state_context' => ((int) ($filters['student_id'] ?? 0)) > 0 ? 'student' : 'guest',
+    ];
 }
 
 function search_service_suggestions(string $query, array $options = []): array {

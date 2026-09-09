@@ -1,0 +1,4 @@
+$kind: collection
+name: 00 - Environment / Setup
+description: Connectivity and environment checks. All requests in this folder are public and require no authentication.
+order: 1000
