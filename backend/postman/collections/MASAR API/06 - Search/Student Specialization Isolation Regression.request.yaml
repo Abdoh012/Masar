@@ -1,0 +1,85 @@
+$kind: http-request
+description: >-
+  Security regression test: an authenticated STUDENT must only see trainings
+  whose training_specializations include at least one of the student's own
+  specialization(s). The scope is enforced server-side in the SQL query
+  (search_repository_specialization_scope via EXISTS), so it cannot be bypassed
+  by omitting the parameter. This test logs in as the student referenced by
+  {{student_email}}/{{student_password}}, then asserts every returned training
+  shares the student's specialization. If the student has no specialization the
+  result must be empty (no fallback to "show everything").
+url: "{{base_url}}/api/v1/search/trainings?q=internship"
+method: GET
+headers:
+  Accept: application/json
+scripts:
+  - type: beforeRequest
+    code: |-
+      const studentEmail = '{{student_email}}';
+      const studentPassword = '{{student_password}}';
+      const login = {
+          url: '{{base_url}}/api/v1/auth/login',
+          method: 'POST',
+          header: { 'Content-Type': 'application/json' },
+          body: { mode: 'raw', raw: JSON.stringify({ email: studentEmail, password: studentPassword }) }
+      };
+      pm.sendRequest(login, async function (err, res) {
+          if (err || res.code !== 200) {
+              pm.test('student login succeeds', function () { pm.expect(res && res.code).to.eql(200); });
+              return;
+          }
+          const token = res.json().data.token;
+          pm.collectionVariables.set('student_access_token', token);
+
+          const profile = {
+              url: '{{base_url}}/api/v1/students/profile',
+              method: 'GET',
+              header: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
+          };
+          let studentSpecs = [];
+          await new Promise((resolve) => {
+              pm.sendRequest(profile, function (perr, pres) {
+                  if (!perr && pres.code === 200) {
+                      const sp = pres.json().data && pres.json().data.specialization;
+                      studentSpecs = sp ? [Number(sp)] : [];
+                  }
+                  resolve();
+              });
+          });
+          pm.collectionVariables.set('student_specs', JSON.stringify(studentSpecs));
+
+          const search = {
+              url: '{{base_url}}/api/v1/search/trainings?q=internship',
+              method: 'GET',
+              header: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
+          };
+          pm.sendRequest(search, function (serr, sres) {
+              pm.test('student search returns 200', function () {
+                  pm.expect(serr ? null : sres.code).to.eql(200);
+              });
+              if (serr || sres.code !== 200) { return; }
+              const json = sres.json().data;
+              pm.test('search response shape', function () {
+                  pm.expect(json).to.have.property('items');
+                  pm.expect(json).to.have.property('total');
+              });
+              if (studentSpecs.length === 0) {
+                  pm.test('student with no specialization sees no trainings (no fallback to all)', function () {
+                      pm.expect(json.total).to.eql(0);
+                      pm.expect(json.items).to.have.lengthOf(0);
+                  });
+                  return;
+              }
+              pm.test('every returned training matches the student specialization', function () {
+                  json.items.forEach(function (item) {
+                      const itemSpecs = (item.specializations || []).map(function (s) {
+                          return s.id !== undefined ? Number(s.id) : Number(s.specialization_id);
+                      });
+                      const intersects = itemSpecs.some(function (id) { return studentSpecs.indexOf(id) !== -1; });
+                      pm.expect(intersects, 'training ' + item.id + ' shares a specialization with the student').to.eql(true);
+                  });
+              });
+          });
+      });
+    language: text/javascript
+order: 9000

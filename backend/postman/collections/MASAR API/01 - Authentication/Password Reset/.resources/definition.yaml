@@ -1,0 +1,3 @@
+$kind: collection
+description: "Complete password reset flow: request OTP -> verify OTP -> reset password -> verify login with the new password."
+order: 3000
