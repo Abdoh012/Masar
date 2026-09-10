@@ -1,0 +1,34 @@
+$kind: http-request
+description: Security test. The backend requires an explicit confirmation (`confirm_deletion` or `confirmation_token`). Sending an empty payload must be rejected with 400 and a `confirmation_token` error.
+url: "{{base_url}}/api/v1/users/me"
+method: DELETE
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: "{}"
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+scripts:
+  - type: beforeRequest
+    code: |-
+      let csrf = pm.cookies.get('csrf_token');
+      if (!csrf) {
+          csrf = pm.collectionVariables.get('csrf_token');
+      }
+      if (csrf) {
+          pm.request.headers.upsert({ key: 'X-CSRF-Token', value: csrf });
+      }
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test("Delete without confirmation is rejected", function () {
+          pm.expect(pm.response.code).to.eql(400);
+          const json = pm.response.json();
+          pm.expect(json.success).to.eql(false);
+          pm.expect(json.errors).to.have.property('confirmation_token');
+      });
+    language: text/javascript
+order: 25000

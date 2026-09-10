@@ -1,0 +1,3 @@
+$kind: collection
+description: "Dedicated Search module. GET /api/v1/search/trainings searches PUBLISHED training listings by the `q` parameter (aliases accepted by the controller: query, search; primary parameter: q). One term matches training title, description and location, plus company legal_name (companies), skill names (training_skills -> skills) and specialization names (training_specializations -> specializations) via EXISTS subqueries, so results contain no duplicates and pagination counts stay correct. Returns {items, total, page, limit, query}. Works without a token."
+order: 8000

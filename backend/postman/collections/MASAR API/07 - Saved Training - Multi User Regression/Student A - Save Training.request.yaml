@@ -1,0 +1,19 @@
+$kind: http-request
+description: Student A saves the discovered regression training (idempotent). Uses the dedicated student token. Never sends client-provided student_id; the backend resolves identity from the bearer token.
+url: '{{base_url}}/api/v1/trainings/save/{{regression_training_id}}'
+method: POST
+headers:
+  Content-Type: application/json
+auth:
+  type: bearer
+  credentials:
+    token: '{{student_a_token}}'
+scripts:
+- type: afterResponse
+  code: |-
+    const json = pm.response.json();
+    pm.test('Student A save returns 200/201', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 201]);
+    });
+    pm.test('Student A save success true', function () { pm.expect(json.success).to.eql(true); });
+order: 3000

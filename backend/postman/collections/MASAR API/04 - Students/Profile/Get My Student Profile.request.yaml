@@ -1,0 +1,24 @@
+$kind: http-request
+description: Requires a student Bearer token. Returns the authenticated student's profile (student row plus extended profile including skills). Captures `student_id` for later requests.
+url: "{{base_url}}/api/v1/students/me"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Get my student profile succeeds", function () {
+          pm.expect(pm.response.code).to.eql(200);
+          const json = pm.response.json();
+          pm.expect(json.success).to.eql(true);
+          pm.expect(json.data.student).to.have.property('id');
+      });
+      const json = pm.response.json();
+      const studentId = (json.data && json.data.student && json.data.student.id) || (json.data && json.data.profile && json.data.profile.student_id) || '';
+      if (studentId) {
+          pm.collectionVariables.set('student_id', String(studentId));
+      }
+    language: text/javascript
+order: 1000

@@ -1,0 +1,17 @@
+$kind: http-request
+description: An empty q is rejected by the Search API with a 400 error envelope ("Search query is required."). The Training List endpoint remains the way to browse without a search term.
+url: "{{base_url}}/api/v1/search/trainings?q="
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  q: ""
+scripts:
+  - type: afterResponse
+    code: |-
+      const json = pm.response.json();
+      pm.test('empty q is rejected with 400', function () { pm.response.to.have.status(400); });
+      pm.test('success is false', function () { pm.expect(json.success).to.eql(false); });
+      pm.test('error message present', function () { pm.expect(json.message).to.be.a('string').and.not.empty; });
+    language: text/javascript
+order: 8000

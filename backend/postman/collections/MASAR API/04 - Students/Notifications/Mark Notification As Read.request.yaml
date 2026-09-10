@@ -1,0 +1,18 @@
+$kind: http-request
+description: Requires a Bearer token. Marks the authenticated user's notification as read.
+url: "{{base_url}}/api/v1/notifications/{{notification_id}}/read"
+method: POST
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Notification marked as read", function () {
+          pm.expect(pm.response.code).to.eql(200);
+          const json = pm.response.json();
+          pm.expect(json.success).to.eql(true);
+      });
+    language: text/javascript
+order: 3000

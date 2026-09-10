@@ -1,0 +1,40 @@
+$kind: http-request
+description: "Requires a student Bearer token. Creates the student profile. Academic fields are NAME-based: `field` (User Field, resolved against `study_fields`) and `specialization` (resolved against `specializations`). University is NOT required and is ignored. Expected: 201 (or 409 if a profile already exists for this user)."
+url: "{{base_url}}/api/v1/students/profile"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+        "full_name": "Test Student",
+        "field": "Business",
+        "specialization": "Accounting",
+        "degree": "Bachelor of Business Administration",
+        "bio": "Motivated student interested in business and accounting.",
+        "skills": [
+            "PHP",
+            "Laravel",
+            "MySQL"
+        ]
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Create student profile responds", function () {
+          pm.expect(pm.response.code).to.be.oneOf([201, 409]);
+      });
+      if (pm.response.code === 201) {
+          const json = pm.response.json();
+          pm.expect(json.success).to.eql(true);
+          if (json.data && json.data.student && json.data.student.id) {
+              pm.collectionVariables.set('student_id', String(json.data.student.id));
+          }
+      }
+    language: text/javascript
+order: 2000

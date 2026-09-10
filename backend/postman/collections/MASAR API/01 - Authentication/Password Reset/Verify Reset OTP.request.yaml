@@ -1,0 +1,23 @@
+$kind: http-request
+description: "Public. Verifies the reset OTP for the given email before allowing the password reset. Expected: 200 when the OTP is valid."
+url: "{{base_url}}/api/v1/auth/verify-reset-otp"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+        "email": "{{student_email}}",
+        "token": "{{reset_token}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Reset OTP is verified", function () {
+          pm.expect(pm.response.code).to.eql(200);
+          const json = pm.response.json();
+          pm.expect(json.success).to.eql(true);
+      });
+    language: text/javascript
+order: 3000

@@ -1,0 +1,21 @@
+$kind: http-request
+description: Security test. Attempts to override the authenticated identity with an `X-User-Id` header. The backend derives identity from the JWT only, so the header is ignored and the real user is returned.
+url: "{{base_url}}/api/v1/users/me"
+method: GET
+headers:
+  X-User-Id: "99999"
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("User identity override via header is ignored", function () {
+          pm.expect(pm.response.code).to.eql(200);
+          const json = pm.response.json();
+          pm.expect(json.success).to.eql(true);
+          pm.expect(String(json.data.id)).to.not.eql('99999');
+      });
+    language: text/javascript
+order: 9000

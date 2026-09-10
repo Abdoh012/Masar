@@ -1,0 +1,30 @@
+$kind: http-request
+description: Student registration validation. Only `student` and `company` are registrable. A client-provided role outside that set must be rejected with 422.
+url: "{{base_url}}/api/v1/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+        "full_name": "Validation Student",
+        "email": "val.badrole@test.local",
+        "password": "Student@12345",
+        "password_confirmation": "Student@12345",
+        "accept_terms": true,
+        "role": "moderator",
+        "field": "Engineering",
+        "specialization": "Mechanical Engineering"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Invalid role is rejected with 422", function () {
+          pm.expect(pm.response.code).to.eql(422);
+          const json = pm.response.json();
+          pm.expect(json.success).to.eql(false);
+          pm.expect(json.errors).to.have.property('role');
+      });
+    language: text/javascript
+order: 8000

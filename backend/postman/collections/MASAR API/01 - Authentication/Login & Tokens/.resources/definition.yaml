@@ -1,0 +1,3 @@
+$kind: collection
+description: Login and token lifecycle. Login captures tokens; Refresh rotates them; Logout revokes them.
+order: 2000

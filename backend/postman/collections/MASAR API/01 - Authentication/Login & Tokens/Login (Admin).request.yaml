@@ -1,0 +1,33 @@
+$kind: http-request
+description: "Public. Logs in an admin account. Expected: 200."
+url: "{{base_url}}/api/v1/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+        "email": "{{admin_email}}",
+        "password": "{{admin_password}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Admin login succeeds", function () {
+          pm.expect(pm.response.code).to.eql(200);
+          const json = pm.response.json();
+          pm.expect(json.success).to.eql(true);
+          pm.collectionVariables.set('access_token', json.data.token);
+          pm.collectionVariables.set('admin_token', json.data.token);
+          pm.collectionVariables.set('user_id', String(json.data.user.id));
+          pm.collectionVariables.set('user_role', json.data.user.role);
+      });
+      if (pm.response.code === 200) {
+          const csrf = pm.cookies.get('csrf_token');
+          if (csrf) {
+              pm.collectionVariables.set('csrf_token', csrf);
+          }
+      }
+    language: text/javascript
+order: 3000
