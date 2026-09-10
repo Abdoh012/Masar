@@ -1,0 +1,3 @@
+$kind: collection
+description: Account creation. Both roles use the same `POST /api/v1/auth/register` endpoint; the required fields differ by role.
+order: 1000

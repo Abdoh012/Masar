@@ -1,0 +1,31 @@
+$kind: http-request
+description: "Public. Logs in a company account. Expected: 200 when approved, 403 when the company registration is pending/rejected."
+url: "{{base_url}}/api/v1/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+        "email": "{{company_email}}",
+        "password": "{{company_password}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Company login succeeds or reports pending approval", function () {
+          pm.expect(pm.response.code).to.be.oneOf([200, 403]);
+      });
+      if (pm.response.code === 200) {
+          const json = pm.response.json();
+          pm.collectionVariables.set('access_token', json.data.token);
+          pm.collectionVariables.set('user_id', String(json.data.user.id));
+          pm.collectionVariables.set('user_role', json.data.user.role);
+          const csrf = pm.cookies.get('csrf_token');
+          if (csrf) {
+              pm.collectionVariables.set('csrf_token', csrf);
+          }
+      }
+    language: text/javascript
+order: 2000

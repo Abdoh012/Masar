@@ -1,0 +1,25 @@
+$kind: http-request
+description: Read-only baseline BEFORE any mutation. Discovers the shared regression training id and records Student A's original is_saved into `initial_student_a_saved`.
+url: '{{base_url}}/api/v1/search/trainings'
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+- key: q
+  value: '{{regression_search_query}}'
+  disabled: true
+auth:
+  type: bearer
+  credentials:
+    token: '{{student_a_token}}'
+scripts:
+- type: afterResponse
+  code: |-
+    const json = pm.response.json();
+    pm.test('baseline returns 200', function () { pm.response.to.have.status(200); });
+    pm.test('search finds at least one training', function () { pm.expect(json.data.items.length).to.be.above(0); });
+    const item = json.data.items[0];
+    pm.collectionVariables.set('regression_training_id', String(item.id));
+    pm.collectionVariables.set('initial_student_a_saved', String(item.is_saved));
+    pm.test('captured regression_training_id = ' + item.id + ' and initial_student_a_saved = ' + item.is_saved, function () { pm.expect(true).to.eql(true); });
+order: 2000

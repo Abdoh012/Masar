@@ -1,0 +1,15 @@
+$kind: http-request
+description: Public. Returns basic API metadata (name, version, documentation).
+url: "{{base_url}}/api/v1"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("API info returned", function () {
+          pm.expect(pm.response.code).to.eql(200);
+          const json = pm.response.json();
+          pm.expect(json.success).to.eql(true);
+          pm.expect(json.data.name).to.eql('MASAR API');
+      });
+    language: text/javascript
+order: 2000
