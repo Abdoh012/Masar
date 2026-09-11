@@ -14,6 +14,7 @@ export const ACTIVE_TRAINING: ActiveApplication = {
   company: "Hala Bank",
   listingTitle: "Software Engineering Trainee",
   mode: "paid_trial",
+  trialDays: 14,
   trialDaysRemaining: 12,
   startedOn: "2026-07-20",
 };
@@ -22,6 +23,7 @@ export const ACTIVE_TRAINING: ActiveApplication = {
 export const ACTIVE_TRAINING_FULL_TIME: ActiveApplication = {
   ...ACTIVE_TRAINING,
   mode: "full_time",
+  trialDays: undefined,
   trialDaysRemaining: undefined,
 };
 

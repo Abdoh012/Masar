@@ -7,40 +7,76 @@ export interface ActiveApplication {
   company: string;
   listingTitle: string;
   mode: TrainingMode;
+  /** Full trial length in days — the countdown ring's denominator. */
+  trialDays?: number;
   trialDaysRemaining?: number;
   startedOn: string;
 }
 
 export type ApplicationStatus = "Applied" | "Accepted" | "Rejected" | "Withdrawn";
 
-// Trial state for an accepted application to a paid listing. Present only for
-// the accepted+paid case (data-model.md presence rules); "Continue past trial"
-// is a display-only note, never an action.
-export interface ApplicationTrial {
-  daysRemaining: number;
-  continuePastTrial?: boolean;
+// The five My Applications tabs. Values map 1:1 to the backend endpoints
+// (all/applied/accepted/rejected/withdrawn) — see student/api.ts.
+export type TabValue = "all" | "applied" | "accepted" | "rejected" | "withdrawn";
+
+// Manual bank-transfer lifecycle on the Accepted card: free trainings never
+// require one ("not_required"), paid trainings are "pending" until the company
+// confirms the transfer, then "paid".
+export type PaymentStatus = "not_required" | "pending" | "paid";
+
+// Company transfer destination shown once the free trial ends on a paid
+// accepted training. `bank_account` is null for free trainings and for paid
+// trainings whose company has not configured banking details yet.
+export interface BankAccount {
+  bankName: string | null;
+  accountName: string | null;
+  accountNumber: string;
+  instructions: string | null;
 }
 
-// One application card on the My Applications page (data-model.md).
-// Status dates follow presence rules: each application always has appliedOn,
-// plus the date of its current status when that status is terminal
-// (acceptedOn for Accepted, rejectedOn for Rejected, withdrawnOn for
-// Withdrawn). Applied keeps appliedOn only.
+// Free-trial state for an accepted application to a paid training. Both fields
+// are null for free trainings. `daysRemaining` counts down from the full trial
+// once the training starts and floors at 0 (trial over).
+export interface ApplicationTrial {
+  days: number | null;
+  daysRemaining: number | null;
+}
+
+// One application card on the My Applications page. Mirrors the backend card
+// DTOs (backend docs §1.1–§1.5, built by application_cards.php): every card
+// carries the common fields + exactly the status-specific fields of its own
+// state — timestamps (`appliedOn` for Applied, `acceptedOn` for Accepted,
+// `rejectedOn` for Rejected, `withdrawnOn` for Withdrawn), the trial/payment
+// block for Accepted-paid, and rejection info for Rejected. Applied-only:
+// `canWithdraw`. Presence reflects the API: absent fields stay undefined.
 export interface MyApplication {
-  id: string;
-  listingId: string;
+  id: number;
+  trainingId: number;
   listingTitle: string;
   companyName: string;
+  companyLogo: string | null;
   status: ApplicationStatus;
+  specialization: string;
+  /** Present on every card (the backend always sends applied_at). */
   appliedOn: string;
   acceptedOn?: string;
   rejectedOn?: string;
   withdrawnOn?: string;
-  /** Training program length, e.g. "3 months". UI-only display string. */
-  duration?: string;
-  rejectionReason?: string;
+  startsAt?: string;
+  endsAt?: string;
+  /** Remaining calendar days until ends_at (0 once ended, null when absent). */
+  duration: number | null;
+  isPaid: boolean;
+  /** Present (true) only on Applied/Accepted cards; absent on other statuses. */
   mayLeadToHire?: boolean;
+  /** Pending applications only — drives the Withdraw entry point. */
+  canWithdraw?: boolean;
+  rejectionReasonCode?: string;
+  rejectionNote?: string | null;
   trial?: ApplicationTrial;
+  motivationalMessage?: string;
+  paymentStatus?: PaymentStatus;
+  bankAccount?: BankAccount | null;
 }
 
 export interface StatusCounts {

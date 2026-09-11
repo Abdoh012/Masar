@@ -1,5 +1,7 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+
 import { serverFetch } from "@/services/api";
 import type { ActionState } from "@/types/server-action";
 
@@ -71,4 +73,74 @@ export async function submitApplication(
     success: true,
     message: result.message,
   };
+}
+
+// withdrawApplication: withdraws an applied training via
+// POST /api/v1/applications/withdraw?id=<applicationId> (query param, per the
+// backend controller). The backend rejects withdrawals it doesn't allow; its
+// message flows back through ActionState (toasted by useFormFeedback).
+// revalidatePath("/applications") re-renders the page server-side so the
+// withdrawn card disappears (and tab counts adjust) without client refetching.
+export async function withdrawApplication(
+  applicationId: number,
+): Promise<ActionState> {
+  const result = await serverFetch({
+    url: `applications/withdraw?id=${applicationId}`,
+    method: "POST",
+    body: {},
+  });
+
+  if (!result.success) {
+    return {
+      success: false,
+      error: result.error ?? "Could not withdraw the application.",
+    };
+  }
+
+  revalidatePath("/applications");
+  return { success: true, message: result.message };
+}
+
+// reportPayment: reports a manual bank transfer for an accepted paid
+// application via POST /api/v1/applications/{id}/payment. Native form action
+// (structure rules §10): reads the named fields off FormData — application_id
+// from the hidden input, reference from the uncontrolled input — and relays
+// them to the backend, which is the source of truth for validation (a blank
+// reference comes back as fieldErrors.reference; length limits are
+// backend-enforced too). Resubmitting for a row still pending verification
+// only updates the reference (idempotent); submitting for an already-confirmed
+// payment returns 409. revalidatePath("/applications") + Next's automatic
+// route refresh re-render the server ReportPaymentZone, whose fetchPaymentStatus
+// read then shows the "Payment reported" panel — no client success state.
+// Pure relay — no business rules live here.
+export async function reportPayment(
+  prevState: ActionState | null,
+  formData: FormData,
+): Promise<ActionState> {
+  const applicationId = Number.parseInt(
+    String(formData.get("application_id") ?? ""),
+    10,
+  );
+  const reference = String(formData.get("reference") ?? "").trim();
+
+  if (!Number.isFinite(applicationId)) {
+    return { success: false, error: "Missing application id." };
+  }
+
+  const result = await serverFetch({
+    url: `applications/${applicationId}/payment`,
+    method: "POST",
+    body: { reference },
+  });
+
+  if (!result.success) {
+    return {
+      success: false,
+      error: result.error ?? "Could not report the payment.",
+      fieldErrors: result.errors,
+    };
+  }
+
+  revalidatePath("/applications");
+  return { success: true, message: result.message };
 }

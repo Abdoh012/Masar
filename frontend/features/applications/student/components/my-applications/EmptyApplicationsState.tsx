@@ -23,7 +23,7 @@ export function EmptyApplicationsState({
   ctaLabel,
 }: EmptyApplicationsStateProps) {
   return (
-    <div className="rounded-xl border border-dashed border-border p-10 text-center">
+    <div className="rounded-xl border border-dashed border-border p-10 text-center shadow">
       <p className="font-sans text-base font-semibold text-foreground">{title}</p>
       <p className="mt-1 text-sm text-muted-foreground">{message}</p>
       {ctaHref && ctaLabel ? (

@@ -8,5 +8,6 @@
 
 export { ActiveTraining } from "./student/components/active-training/ActiveTraining";
 export { ApplicationsSnapshot } from "./student/components/applications-snapshot/ApplicationsSnapshot";
+export { ApplicationsSkeleton } from "./student/components/my-applications/ApplicationsSkeleton";
 export { MyApplicationsPage } from "./student/components/my-applications/MyApplicationsPage";
 export { TrainingApplicationContainer } from "./student/components/training-application/TrainingApplicationContainer";

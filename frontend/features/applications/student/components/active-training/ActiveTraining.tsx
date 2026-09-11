@@ -51,8 +51,13 @@ export function ActiveTraining() {
           </p>
 
           {/* Trial countdown */}
-          {isTrial && active.trialDaysRemaining ? (
-            <TrialCountdown daysRemaining={active.trialDaysRemaining} />
+          {isTrial &&
+          active.trialDaysRemaining != null &&
+          active.trialDays != null ? (
+            <TrialCountdown
+              daysRemaining={active.trialDaysRemaining}
+              totalDays={active.trialDays}
+            />
           ) : null}
 
           <Link
