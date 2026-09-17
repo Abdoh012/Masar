@@ -178,18 +178,18 @@ try {
     $savedFlags = array_column($r['items'], 'is_saved');
     check('is_saved values are 0 or 1', count(array_filter($savedFlags, fn ($v) => !in_array($v, [0, 1], true))) === 0);
 
-    // The chosen backend student has saved listing 100204 (Backend Dev, published).
-    $r = backend_search(['query' => 'Scaling']);
+    // The chosen backend student has saved listing 100304 (visible Backend Dev fixture).
+    $r = backend_search(['query' => 'Bootcamp']);
     $targetFound = false;
     foreach ($r['items'] as $it) {
-        if ((int) $it['id'] === 100204) {
+        if ((int) $it['id'] === 100304) {
             $targetFound = true;
-            check('saved listing 100204 returns is_saved=1 for the student', (int) $it['is_saved'] === 1);
+            check('saved listing 100304 returns is_saved=1 for the student', (int) $it['is_saved'] === 1);
             break;
         }
     }
     if (!$targetFound) {
-        check('saved listing 100204 returned by q=Scaling', false);
+        check('saved listing 100304 returned by q=Bootcamp', false);
     }
 
     echo "\n" . ($failures === 0 ? 'ALL CHECKS PASSED' : "{$failures} CHECK(S) FAILED") . "\n";

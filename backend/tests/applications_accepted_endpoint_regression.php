@@ -17,8 +17,9 @@
  *           Accepted Card DTO: no PII/detail fields, accepted_at from
  *           reviewed_at, paid-only free-trial fields, a deterministic daily
  *           motivational message, a manual payment lifecycle state
- *           (payment_status) and a company bank_account that must both match
- *           the database (paid trainings) or be absent (free trainings).
+ *           (payment_status) and a status-aware company bank_account: null
+ *           once payment_status is "paid" (and for free trainings), otherwise
+ *           the owning company's configured destination when one exists.
  *
  * Run from the backend root:
  *     php tests/applications_accepted_endpoint_regression.php
@@ -355,8 +356,11 @@ foreach ($accepted_items as $item) {
     /*
     | Manual payment lifecycle + bank destination must both match the DB:
     |   free training      -> bank_account null,  payment_status 'not_required'
+    |   paid (confirmed)   -> bank_account null,  payment_status 'paid'
     |   paid, no row       -> bank_account per company, payment_status 'pending'
-    |   paid + confirmation-> bank_account per company, payment_status from row
+    |   paid pending/failed-> bank_account per company, payment_status from row
+    | (bank_account is only exposed while a transfer may still be needed:
+    |  pending/failed/no-row show the configured destination, paid never does.)
     */
     $item_is_paid = (bool) ($item['is_paid'] ?? false);
     if (!$item_is_paid) {
@@ -367,10 +371,25 @@ foreach ($accepted_items as $item) {
             $payment_status_ok = false;
         }
     } elseif (is_array($row)) {
+        $db_payment = db_fetch_one(
+            "SELECT status FROM payments
+             WHERE training_id = ? AND student_id = ?
+             ORDER BY id DESC LIMIT 1",
+            [$training_id, (int) ($student['student_id'] ?? 0)]
+        );
+        $expected_status = is_array($db_payment) ? (string) $db_payment['status'] : 'pending';
+        if (($item['payment_status'] ?? '') !== $expected_status) {
+            $payment_status_ok = false;
+        }
+
         $db_bank_number = $row['bank_account_number'] ?? null;
         $db_bank_number = $db_bank_number !== null ? trim((string) $db_bank_number) : '';
 
-        if ($db_bank_number === '') {
+        if ($expected_status === 'paid') {
+            if ($item['bank_account'] !== null) {
+                $bank_ok = false;
+            }
+        } elseif ($db_bank_number === '') {
             if ($item['bank_account'] !== null) {
                 $bank_ok = false;
             }
@@ -391,17 +410,6 @@ foreach ($accepted_items as $item) {
                     }
                 }
             }
-        }
-
-        $db_payment = db_fetch_one(
-            "SELECT status FROM payments
-             WHERE training_id = ? AND student_id = ?
-             ORDER BY id DESC LIMIT 1",
-            [$training_id, (int) ($student['student_id'] ?? 0)]
-        );
-        $expected_status = is_array($db_payment) ? (string) $db_payment['status'] : 'pending';
-        if (($item['payment_status'] ?? '') !== $expected_status) {
-            $payment_status_ok = false;
         }
     }
 
@@ -458,10 +466,14 @@ foreach ($accepted_items as $item) {
             $db_trial = (int) $row['trial_period_days'];
         }
 
-        if (($item['free_trial_days'] ?? 'x') !== $db_trial) {
+        $item_trial_days = array_key_exists('free_trial_days', $item) ? $item['free_trial_days'] : 'x';
+        if ($item_trial_days !== $db_trial) {
             $trial_ok = false;
         }
-        if (($item['free_trial_days_remaining'] ?? 'x') !== application_free_trial_days_remaining($db_trial, $row['starts_at'] ?? null)) {
+        $item_trial_remaining = array_key_exists('free_trial_days_remaining', $item)
+            ? $item['free_trial_days_remaining']
+            : 'x';
+        if ($item_trial_remaining !== application_free_trial_days_remaining($db_trial, $row['starts_at'] ?? null)) {
             $trial_ok = false;
         }
         if ((bool)($item['is_paid'] ?? false) !== $db_is_paid) {
@@ -471,11 +483,11 @@ foreach ($accepted_items as $item) {
         $title_ok = false;
     }
 
-    $ends = db_fetch_one(
-        "SELECT ends_at FROM training_listings WHERE id = ? LIMIT 1",
+    $span = db_fetch_one(
+        "SELECT starts_at, ends_at FROM training_listings WHERE id = ? LIMIT 1",
         [$training_id]
     );
-    $expected_duration = is_array($ends) ? training_calculate_duration($ends['ends_at'] ?? null) : null;
+    $expected_duration = is_array($span) ? training_calculate_duration($span['starts_at'] ?? null, $span['ends_at'] ?? null) : null;
     if (!is_int($expected_duration) || (int)($item['duration'] ?? -1) !== $expected_duration) {
         $duration_ok = false;
     }
@@ -491,11 +503,89 @@ check('accepted training_title matches DB', $title_ok);
 check('accepted specialization matches DB', $spec_ok);
 check('accepted company_name matches DB', $company_ok);
 check('accepted free-trial fields match the DB training (null for free, trial days/countdown for paid)', $trial_ok);
-check('accepted bank_account matches each training/company row (paid) or is null (free)', $bank_ok);
-check('accepted payment_status matches each training/company row (not_required for free; pending/paid for paid)', $payment_status_ok);
+check('accepted bank_account follows the payment status (null for paid/free, destination otherwise)', $bank_ok);
+check('accepted payment_status matches each training/company row (not_required for free; pending/paid/failed for paid)', $payment_status_ok);
 check('accepted motivational_message is non-empty and equals the daily helper', $message_ok);
 check('accepted motivational_message is the same for every item today', $message_same);
 check('accepted dataset contains at least one paid item', $paid_items >= 1);
+
+echo "\n== Case 5: bank_account rule for the four seeded paid-payment states ==\n";
+
+function item_by_id(array $items, int $id): ?array
+{
+    foreach ($items as $item) {
+        if ((int) ($item['id'] ?? 0) === $id) {
+            return is_array($item) ? $item : null;
+        }
+    }
+
+    return null;
+}
+
+$case_1882 = item_by_id($accepted_items, 1882);
+check('1882 (pending + submitted) present in the accepted list', is_array($case_1882));
+check('1882 payment_submitted=true', is_array($case_1882) && ($case_1882['payment_submitted'] ?? null) === true);
+check('1882 payment_status=pending', is_array($case_1882) && ($case_1882['payment_status'] ?? '') === 'pending');
+check('1882 bank_account present (payment pending verification)', is_array($case_1882) && is_array($case_1882['bank_account'] ?? null));
+
+$case_2009 = item_by_id($accepted_items, 2009);
+check('2009 (paid) present in the accepted list', is_array($case_2009));
+check('2009 payment_status=paid', is_array($case_2009) && ($case_2009['payment_status'] ?? '') === 'paid');
+check('2009 bank_account null (payment already confirmed)', is_array($case_2009) && ($case_2009['bank_account'] ?? null) === null);
+
+$case_2010 = item_by_id($accepted_items, 2010);
+check('2010 (failed) present in the accepted list', is_array($case_2010));
+check('2010 payment_status=failed', is_array($case_2010) && ($case_2010['payment_status'] ?? '') === 'failed');
+check('2010 bank_account present (failed -> retry)', is_array($case_2010) && is_array($case_2010['bank_account'] ?? null));
+
+$case_2011 = item_by_id($accepted_items, 2011);
+check('2011 (not submitted) present in the accepted list', is_array($case_2011));
+check('2011 payment_submitted=false', is_array($case_2011) && ($case_2011['payment_submitted'] ?? null) === false);
+check('2011 payment_status=pending', is_array($case_2011) && ($case_2011['payment_status'] ?? '') === 'pending');
+check('2011 bank_account present (transfer destination needed)', is_array($case_2011) && is_array($case_2011['bank_account'] ?? null));
+
+echo "\n== Case 6: Free Accepted fixture (spec 199, is_paid=false) ==\n";
+
+$free_items = array_values(array_filter(
+    $accepted_items,
+    static fn ($item) => is_array($item) && ($item['is_paid'] ?? null) === false
+));
+$free_case = $free_items[0] ?? null;
+
+check('accepted list contains at least one free (is_paid=false) application', is_array($free_case));
+check('free accepted payment_status=not_required', is_array($free_case) && ($free_case['payment_status'] ?? '') === 'not_required');
+check('free accepted payment_submitted=false', is_array($free_case) && ($free_case['payment_submitted'] ?? 'x') === false);
+check('free accepted payment_reference=null', is_array($free_case) && array_key_exists('payment_reference', $free_case) && $free_case['payment_reference'] === null);
+check('free accepted payment_amount=null', is_array($free_case) && array_key_exists('payment_amount', $free_case) && $free_case['payment_amount'] === null);
+check('free accepted payment_currency=null', is_array($free_case) && array_key_exists('payment_currency', $free_case) && $free_case['payment_currency'] === null);
+check('free accepted payment_paid_at=null', is_array($free_case) && array_key_exists('payment_paid_at', $free_case) && $free_case['payment_paid_at'] === null);
+check('free accepted payment_method=null', is_array($free_case) && array_key_exists('payment_method', $free_case) && $free_case['payment_method'] === null);
+check('free accepted bank_account=null', is_array($free_case) && array_key_exists('bank_account', $free_case) && $free_case['bank_account'] === null);
+
+echo "\n== Free training never exposes a bank account (card DTO invariant) ==\n";
+
+/*
+| The student's accepted endpoint is specialization-scoped. The Free Accepted
+| fixture (accepted app on the free TestHire training #100303) now lives in
+| spec 199 and Case 6 verifies its full payment state through the real
+| endpoint. This synthetic free row additionally pins the card-layer invariant
+| deterministically: a free row that deliberately carries company bank fields
+| must still ignore them because is_paid is false.
+*/
+$free_card = application_accepted_card([
+    'id' => 999999,
+    'training_id' => 100303,
+    'status' => 'accepted',
+    'is_paid' => false,
+    'payment_submitted' => false,
+    'payment_status' => null,
+    'bank_account_number' => 'DEMO-FREE-SHOULD-NOT-LEAK',
+    'bank_name' => 'Should Not Leak Bank',
+    'bank_account_name' => 'Should Not Leak',
+    'bank_transfer_instructions' => 'Should not leak.',
+]);
+check('free training bank_account is null even when company bank fields exist', ($free_card['bank_account'] ?? null) === null);
+check('free training payment_status is not_required', ($free_card['payment_status'] ?? '') === 'not_required');
 
 echo "\n== Accepted DTO free-trial helpers (pure-function invariants) ==\n";
 
@@ -504,6 +594,29 @@ check('free_trial_days_remaining is null when starts_at is missing', application
 check('free_trial_days_remaining is full before the training starts', application_free_trial_days_remaining(10, '2099-01-01 09:00:00') === 10);
 check('free_trial_days_remaining is 0 long after the trial ended', application_free_trial_days_remaining(10, '2000-01-01 09:00:00') === 0);
 check('daily motivational message is a non-empty string', is_string(application_daily_motivational_message()) && trim(application_daily_motivational_message()) !== '');
+
+/*
+| The accepted list is paginated (per_page=20). When the student's
+| in-specialization accepted set spans multiple pages (the certificate
+| dataset keeps it above 20), the completeness assertions need the whole
+| list: fetch it with limit=100 in one request.
+*/
+$full_resp = run_scenario('bearer', $valid_token ?? '', '/api/v1/applications/accepted?page=1&limit=100');
+$all_accepted_items = items($full_resp);
+
+$returned_training_ids = [];
+foreach ($all_accepted_items as $item) {
+    if (!is_array($item)) {
+        continue;
+    }
+    $tid = (int) ($item['training_id'] ?? 0);
+    if ($tid > 0) {
+        $returned_training_ids[] = $tid;
+    }
+    if ((string) ($item['specialization'] ?? '') !== $student_spec_name) {
+        $spec_matches_student = false;
+    }
+}
 
 sort($returned_training_ids);
 $missing_matches = array_diff($expected_match_trainings, $returned_training_ids);
@@ -519,7 +632,7 @@ if (is_array($student)) {
     );
     $expected_items = is_array($expected['data'] ?? null) ? ($expected['data']['items'] ?? []) : [];
     $expected_count = (int) ($expected['success'] ? count($expected_items) : -1);
-    check('accepted count matches the specialization-scoped accepted service count', count($accepted_items) === $expected_count);
+    check('accepted count matches the specialization-scoped accepted service count', count($all_accepted_items) === $expected_count);
 }
 
 echo "\n== Result ==\n";

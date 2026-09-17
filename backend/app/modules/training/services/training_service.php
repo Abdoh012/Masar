@@ -34,16 +34,71 @@ require_once __DIR__ . '/../../../core/database/transaction.php';
 
 /*
 |--------------------------------------------------------------------------
-| Calculate Training Duration (Days Remaining)
+| Calculate Training Duration (Fixed Total Days)
 |--------------------------------------------------------------------------
 |
-| Returns the number of calendar days remaining until the training
-| ends_at date. On or after the end date the value is 0.
-| Returns null when ends_at is missing or invalid.
+| Returns the fixed, total calendar-day length of the training computed
+| from its starts_at and ends_at dates (whole-day DATEDIFF semantics). It
+| does not change as time passes: a training that starts on 2026-09-15 and
+| ends on 2026-10-17 has a duration of 32 days whether it is viewed before,
+| during or after it runs. This is deliberately NOT the countdown - the
+| remaining time until the end date is the separate `remaining_days` field.
+| Returns null when either date is missing or invalid, and 0 when the two
+| dates are equal (or the interval is inverted).
 |
 */
 
 function training_calculate_duration(
+    ?string $starts_at,
+    ?string $ends_at
+): ?int {
+
+    if (
+        empty($starts_at)
+        ||
+        empty($ends_at)
+    ) {
+        return null;
+    }
+
+    $start_timestamp = @strtotime($starts_at);
+
+    $end_timestamp = @strtotime($ends_at);
+
+    if (
+        $start_timestamp === false
+        ||
+        $end_timestamp === false
+    ) {
+        return null;
+    }
+
+    $start_day = new DateTime(
+        date('Y-m-d', $start_timestamp)
+    );
+
+    $end_day = new DateTime(
+        date('Y-m-d', $end_timestamp)
+    );
+
+    $days = (int) $start_day->diff($end_day)->format('%r%a');
+
+    return $days > 0 ? $days : 0;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Calculate Training Remaining Days (Countdown)
+|--------------------------------------------------------------------------
+|
+| Returns the number of calendar days remaining until the training
+| ends_at date (the countdown). On or after the end date the value is 0.
+| Returns null when ends_at is missing or invalid.
+|
+*/
+
+function training_calculate_remaining_days(
     ?string $ends_at
 ): ?int {
 
@@ -78,9 +133,9 @@ function training_calculate_duration(
 | Attach Duration To Training Items
 |--------------------------------------------------------------------------
 |
-| Enriches an array of training items with a calculated duration field.
-| Works on both associative arrays (single item) and indexed arrays
-| (list of items).
+| Enriches an array of training items with the fixed duration (total
+| calendar-day length) and the remaining_days countdown fields. Works on
+| both associative arrays (single item) and indexed arrays (list of items).
 |
 */
 
@@ -96,6 +151,12 @@ function training_attach_duration_to_items(
 
         $items[$index]['duration'] =
             training_calculate_duration(
+                $item['starts_at'] ?? null,
+                $item['ends_at'] ?? null
+            );
+
+        $items[$index]['remaining_days'] =
+            training_calculate_remaining_days(
                 $item['ends_at'] ?? null
             );
     }
@@ -561,6 +622,12 @@ function training_service_find(
 
     $details['duration'] =
         training_calculate_duration(
+            $details['starts_at'] ?? null,
+            $details['ends_at'] ?? null
+        );
+
+    $details['remaining_days'] =
+        training_calculate_remaining_days(
             $details['ends_at'] ?? null
         );
 

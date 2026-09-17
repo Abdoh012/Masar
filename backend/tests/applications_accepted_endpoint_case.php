@@ -50,8 +50,14 @@ $request_uri = (string) ($argv[3] ?? '/api/v1/applications/accepted');
 
 $_SERVER['REQUEST_METHOD'] = 'GET';
 $_SERVER['REQUEST_URI']    = $request_uri;
-$_SERVER['QUERY_STRING']   = 'page=1&limit=20';
-$_GET = ['page' => '1', 'limit' => '20'];
+if (is_string($_SERVER['REQUEST_URI'])) {
+    $query_part = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY) ?? '';
+    $_SERVER['QUERY_STRING'] = $query_part !== '' ? $query_part : 'page=1&limit=20';
+    parse_str($_SERVER['QUERY_STRING'], $_GET);
+} else {
+    $_SERVER['QUERY_STRING'] = 'page=1&limit=20';
+    $_GET = ['page' => '1', 'limit' => '20'];
+}
 $_COOKIE = [];
 
 if ($scenario === 'bearer') {

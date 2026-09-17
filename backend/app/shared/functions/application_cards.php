@@ -68,6 +68,48 @@ function application_iso8601(
 
 /*
 |--------------------------------------------------------------------------
+| Application Status Message
+|--------------------------------------------------------------------------
+|
+| Deterministic user-facing message for a card's canonical status. The raw
+| status value is never changed; this only provides the human-readable
+| sentence shown next to it.
+|
+*/
+
+function application_status_message(
+    mixed $status
+): string {
+
+    switch (
+        strtolower(
+            trim(
+                (string) $status
+            )
+        )
+    ) {
+
+        case 'submitted':
+        case 'pending':
+            return 'Your application has been submitted and is waiting for review.';
+
+        case 'accepted':
+            return 'Congratulations! Your application has been accepted.';
+
+        case 'rejected':
+            return 'Unfortunately, your application was not accepted this time.';
+
+        case 'withdrawn':
+            return 'You have withdrawn this application.';
+
+        default:
+            return 'Your application is being processed.';
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
 | Applied Application Card
 |--------------------------------------------------------------------------
 |
@@ -139,7 +181,18 @@ function application_applied_card(
 
         'duration' =>
             training_calculate_duration(
+                $item['starts_at'] ?? null,
                 $item['ends_at'] ?? null
+            ),
+
+        'remaining_days' =>
+            training_calculate_remaining_days(
+                $item['ends_at'] ?? null
+            ),
+
+        'status_message' =>
+            application_status_message(
+                $item['status'] ?? 'submitted'
             ),
 
         'can_withdraw' =>
@@ -362,13 +415,29 @@ function application_accepted_card(
     |--------------------------------------------------------------------------
     |
     | Free trainings never require a payment ("not_required"). Paid trainings
-    | enter the manual bank-transfer lifecycle: pending (no money received
-    | yet) -> paid (the company confirmed the transfer). The remaining trial
-    | countdown runs independently of this state; a student whose trial
-    | expired but has not paid is simply blocked from continuing, never
-    | auto-withdrawn.
+    | enter the manual bank-transfer lifecycle. Four states are distinguished
+    | without contradicting combinations:
+    |
+    |   - No payment created  : payment_submitted = false, status "pending"
+    |                            (the canonical no-record representation, same
+    |                            as GET /applications/{id}/payment), all
+    |                            payment detail fields null.
+    |   - Pending verification: payment_submitted = true, status "pending",
+    |                            a reference exists.
+    |   - Paid                : payment_submitted = true, status "paid",
+    |                            paid_at exists.
+    |   - Failed / rejected   : payment_submitted = true, status "failed"
+    |                            (one of the canonical stored payment statuses).
+    |
+    | The remaining trial countdown runs independently of this state; a
+    | student whose trial expired but has not paid is simply blocked from
+    | continuing, never auto-withdrawn. bank_account below tells the student
+    | WHERE to pay; it is never a confirmation on its own.
     |
     */
+
+    $payment_submitted =
+        (bool) ($item['payment_submitted'] ?? false);
 
     $payment_status =
         $is_paid
@@ -385,23 +454,62 @@ function application_accepted_card(
             )
             : 'not_required';
 
+    $payment_amount =
+        $is_paid
+        && $payment_submitted
+        && $item['payment_amount'] !== null
+        && trim(
+            (string) $item['payment_amount']
+        ) !== ''
+            ? (float) $item['payment_amount']
+            : null;
+
+    $payment_currency =
+        $is_paid
+        && $payment_submitted
+        && $item['payment_currency'] !== null
+        && trim(
+            (string) $item['payment_currency']
+        ) !== ''
+            ? (string) $item['payment_currency']
+            : null;
+
+    $payment_paid_at =
+        $is_paid
+        && $payment_submitted
+            ? application_iso8601(
+                $item['payment_paid_at'] ?? null
+            )
+            : null;
+
     /*
     |--------------------------------------------------------------------------
     | Company Bank Account
     |--------------------------------------------------------------------------
     |
-    | Only a paid accepted training owned by a company that has actually
-    | configured its transfer destination exposes a bank_account object
-    | (built from the company's own stored banking fields). Free trainings
-    | and paid trainings whose company never set up banking details keep it
-    | null. The values always come from the OWNING company's companies row
-    | and are never mixed with another company's data.
+    | The bank_account object is the student's manual transfer destination.
+    | It is only relevant while a transfer may still be needed, so it follows
+    | the payment lifecycle exactly:
+    |
+    |   paid (confirmed)     -> null (nothing left to pay)
+    |   pending / failed /
+    |     not submitted      -> owning company's configured destination
+    |                           (built from its own stored banking fields;
+    |                           null when the company never configured one)
+    |   free (is_paid false) -> null (no payment exists at all)
+    |
+    | The values always come from the OWNING company's companies row and are
+    | never mixed with another company's data.
     |
     */
 
     $bank_account = null;
 
-    if ($is_paid) {
+    if (
+        $is_paid
+        &&
+        $payment_status !== 'paid'
+    ) {
 
         $bank_account_number =
             $item['bank_account_number'] ?? null;
@@ -470,6 +578,11 @@ function application_accepted_card(
         'status' =>
             'Accepted',
 
+        'status_message' =>
+            application_status_message(
+                $item['status'] ?? 'accepted'
+            ),
+
         'specialization' =>
             (string) ($item['specialization_name'] ?? ''),
 
@@ -512,6 +625,12 @@ function application_accepted_card(
 
         'duration' =>
             training_calculate_duration(
+                $item['starts_at'] ?? null,
+                $item['ends_at'] ?? null
+            ),
+
+        'remaining_days' =>
+            training_calculate_remaining_days(
                 $item['ends_at'] ?? null
             ),
 
@@ -528,17 +647,133 @@ function application_accepted_card(
             application_daily_motivational_message(),
 
         /*
-        | Manual bank-transfer destination (paid + company configured) and the
-        | manual payment lifecycle state. bank_account is NOT a confirmation:
-        | it tells the student WHERE to pay. payment_status is the lifecycle.
+        | Manual bank-transfer destination (paid + company configured + not yet
+        | confirmed) and the manual payment lifecycle state. bank_account is
+        | NOT a confirmation: it tells the student WHERE to pay and disappears
+        | once the payment_status is "paid". payment_status + payment_submitted
+        | describe the lifecycle state exactly.
         */
         'payment_status' =>
             $payment_status,
+
+        'payment_submitted' =>
+            $payment_submitted,
+
+        'payment_reference' =>
+            $is_paid && $payment_submitted
+                ? (
+                    $item['payment_reference'] ?? null
+                )
+                : null,
+
+        'payment_amount' =>
+            $payment_amount,
+
+        'payment_currency' =>
+            $payment_currency,
+
+        'payment_paid_at' =>
+            $payment_paid_at,
+
+        'payment_method' =>
+            $is_paid && $payment_submitted
+                ? (
+                    $item['payment_method'] ?? null
+                )
+                : null,
 
         'bank_account' =>
             $bank_account,
 
     ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Merge Accepted Payment State
+|--------------------------------------------------------------------------
+|
+| Merges one manual-payment row (from the student payment map) onto an
+| accepted application item so the accepted card can expose the payment
+| lifecycle fully. A missing row keeps the canonical "no payment created"
+| representation: status "pending" with payment_submitted = false and all
+| detail fields null - the same shape GET /applications/{id}/payment returns
+| before the student submits a reference.
+|
+*/
+
+function application_merge_accepted_payment(
+    array $item,
+    ?array $payment
+): array {
+
+    $is_paid =
+        (bool) ($item['is_paid'] ?? false);
+
+    if (!$is_paid) {
+
+        $item['payment_status'] =
+            'not_required';
+
+        $item['payment_submitted'] =
+            false;
+
+        $item['payment_reference'] =
+            null;
+
+        $item['payment_amount'] =
+            null;
+
+        $item['payment_currency'] =
+            null;
+
+        $item['payment_paid_at'] =
+            null;
+
+        $item['payment_method'] =
+            null;
+
+        return $item;
+    }
+
+    $submitted =
+        is_array($payment);
+
+    $item['payment_status'] =
+        $submitted
+            ? (string) ($payment['status'] ?? 'pending')
+            : 'pending';
+
+    $item['payment_submitted'] =
+        $submitted;
+
+    $item['payment_reference'] =
+        $submitted
+            ? ($payment['reference'] ?? null)
+            : null;
+
+    $item['payment_amount'] =
+        $submitted
+            ? ($payment['amount'] ?? null)
+            : null;
+
+    $item['payment_currency'] =
+        $submitted
+            ? ($payment['currency'] ?? null)
+            : null;
+
+    $item['payment_paid_at'] =
+        $submitted
+            ? ($payment['paid_at'] ?? null)
+            : null;
+
+    $item['payment_method'] =
+        $submitted
+            ? ($payment['method'] ?? null)
+            : null;
+
+    return $item;
 }
 
 
@@ -604,15 +839,11 @@ function application_accepted_cards(
                 ? array_merge($item, $card_fields[$training_id])
                 : $item;
 
-        $merged['payment_status'] =
-            ($merged['is_paid'] ?? false)
-            && isset($payment_map[$training_id])
-                ? $payment_map[$training_id]['status']
-                : (
-                    ($merged['is_paid'] ?? false)
-                        ? 'pending'
-                        : 'not_required'
-                );
+        $merged =
+            application_merge_accepted_payment(
+                $merged,
+                $payment_map[$training_id] ?? null
+            );
 
         $cards[] =
             application_accepted_card($merged);
@@ -652,6 +883,11 @@ function application_rejected_card(
 
         'status' =>
             'Rejected',
+
+        'status_message' =>
+            application_status_message(
+                $item['status'] ?? 'rejected'
+            ),
 
         'specialization' =>
             (string) ($item['specialization_name'] ?? ''),
@@ -702,6 +938,27 @@ function application_rejected_card(
             )
                 ? (string) $item['rejection_note']
                 : null,
+
+        'starts_at' =>
+            application_iso8601(
+                $item['starts_at'] ?? null
+            ),
+
+        'ends_at' =>
+            application_iso8601(
+                $item['ends_at'] ?? null
+            ),
+
+        'duration' =>
+            training_calculate_duration(
+                $item['starts_at'] ?? null,
+                $item['ends_at'] ?? null
+            ),
+
+        'remaining_days' =>
+            training_calculate_remaining_days(
+                $item['ends_at'] ?? null
+            ),
     ];
 }
 
@@ -766,9 +1023,9 @@ function application_rejected_cards(
 | Withdrawn Application Card
 |--------------------------------------------------------------------------
 |
-| Clean student-facing card for a withdrawn application. Exposes exactly
-| 12 keys: no application PII, no internal fields (student_id, company_id,
-| message, skills, rejection_*, apply/review timestamps, etc.).
+| Clean student-facing card for a withdrawn application. No application PII
+| and no internal fields (student_id, company_id, message, skills,
+| rejection_*, apply/review timestamps, etc.).
 |
 */
 
@@ -789,6 +1046,11 @@ function application_withdrawn_card(
 
         'status' =>
             'Withdrawn',
+
+        'status_message' =>
+            application_status_message(
+                $item['status'] ?? 'withdrawn'
+            ),
 
         'specialization' =>
             (string) ($item['specialization_name'] ?? ''),
@@ -822,6 +1084,17 @@ function application_withdrawn_card(
 
         'ends_at' =>
             application_iso8601(
+                $item['ends_at'] ?? null
+            ),
+
+        'duration' =>
+            training_calculate_duration(
+                $item['starts_at'] ?? null,
+                $item['ends_at'] ?? null
+            ),
+
+        'remaining_days' =>
+            training_calculate_remaining_days(
                 $item['ends_at'] ?? null
             ),
     ];
@@ -969,15 +1242,11 @@ function application_all_cards(
 
         if ($raw_status === 'accepted') {
 
-            $merged['payment_status'] =
-                ($merged['is_paid'] ?? false)
-                && isset($payment_map[$training_id])
-                    ? $payment_map[$training_id]['status']
-                    : (
-                        ($merged['is_paid'] ?? false)
-                            ? 'pending'
-                            : 'not_required'
-                    );
+            $merged =
+                application_merge_accepted_payment(
+                    $merged,
+                    $payment_map[$training_id] ?? null
+                );
 
             $cards[] =
                 application_accepted_card($merged);

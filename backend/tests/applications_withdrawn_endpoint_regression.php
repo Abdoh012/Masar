@@ -210,6 +210,11 @@ check('student specialization resolved', $student_spec_id > 0 && $student_spec_n
 
 $fixture_in_spec_id = 0;
 $fixture_out_spec_id = 0;
+// Fixture activity is anchored to NOW() (in-spec newest, out-of-spec one minute
+// older) instead of a fixed calendar date: the live row-set gains newer
+// withdrawn_at values as real time passes, so a fixed date would time-drift.
+$anchor = date('Y-m-d H:i:s');
+$anchor_min = static fn (int $m): string => date('Y-m-d H:i:s', strtotime($anchor . " -{$m} minutes"));
 
 if (is_array($student) && $student_spec_id > 0) {
     $in_training = pick_fresh_training($sid, $student_spec_id);
@@ -249,7 +254,7 @@ if (is_array($student) && $student_spec_id > 0) {
                 $created_ids[] = $created;
                 db_execute(
                     "UPDATE training_applications SET withdrawn_at = ? WHERE id = ?",
-                    ['2026-09-09 05:00:00', $created]
+                    [$which === 'in' ? $anchor : $anchor_min(1), $created]
                 );
                 if ($which === 'in') {
                     $fixture_in_spec_id = $created;
@@ -300,19 +305,20 @@ check('withdrawn pagination envelope is identical to Applied/Accepted/Rejected (
 
 $withdrawn_items = items($withdrawn);
 
-// Pure DTO invariant: even an empty raw row shapes into exactly the 12 keys.
+// Pure DTO invariant: even an empty raw row shapes into exactly the 15 keys.
 $empty_dto = application_withdrawn_card([
     'id' => null, 'training_id' => null, 'training_title' => null,
     'specialization_name' => null, 'company_name' => null, 'company_logo' => null,
     'training_type' => null, 'mode' => null, 'withdrawn_at' => null,
     'starts_at' => null, 'ends_at' => null,
 ]);
-check('withdrawn card shapes an empty row into exactly the 12 DTO keys', is_array($empty_dto) && count($empty_dto) === 12);
+check('withdrawn card shapes an empty row into exactly the 15 DTO keys', is_array($empty_dto) && count($empty_dto) === 15);
 
 $required_keys = [
-    'id', 'training_id', 'training_title', 'status', 'specialization',
-    'company_name', 'company_logo', 'training_type', 'method',
-    'withdrawn_at', 'starts_at', 'ends_at',
+    'id', 'training_id', 'training_title', 'status', 'status_message',
+    'specialization', 'company_name', 'company_logo', 'training_type',
+    'method', 'withdrawn_at', 'starts_at', 'ends_at', 'duration',
+    'remaining_days',
 ];
 $forbidden_keys = [
     'student_id', 'company_id', 'message', 'full_name', 'email', 'phone',
@@ -322,7 +328,7 @@ $forbidden_keys = [
     'applied_at', 'reviewed_at', 'rejected_at', 'rejection_reason', 'rejection_note',
     'status_db', 'can_withdraw', 'is_paid', 'may_lead_to_hire',
     'payment_status', 'bank_account', 'free_trial_days', 'free_trial_days_remaining',
-    'duration', 'accepted_at', 'motivational_message',
+    'accepted_at', 'motivational_message',
 ];
 $iso_regex = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([+-]\d{2}:\d{2}|Z)$/';
 
@@ -374,7 +380,7 @@ check('student has at least one withdrawn application OUTSIDE their specializati
 
 echo "\n== Cases 4-14: Withdrawn Card DTO contract ==\n";
 
-$key_ok = true;            // exactly the 12 required keys, nothing else
+$key_ok = true;            // exactly the 15 required keys, nothing else
 $forbidden_present = [];
 $status_ok = true;
 $spec_matches_student = true;
@@ -488,7 +494,7 @@ foreach ($withdrawn_items as $item) {
     }
 }
 
-check('withdrawn only exposes exactly the 12 required DTO keys', $key_ok);
+check('withdrawn only exposes exactly the 15 required DTO keys', $key_ok);
 check('withdrawn excludes all forbidden PII/raw/internal keys', $forbidden_present === []);
 check('withdrawn item status equals "Withdrawn" (never the DB value withdrawn)', $status_ok);
 check('withdrawn every training specialization matches student specialization (name too)', $spec_matches_student);

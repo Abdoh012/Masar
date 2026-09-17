@@ -1204,6 +1204,35 @@ function application_controller_all_applications(): void
 
 /*
 |--------------------------------------------------------------------------
+| Issued Certificates (Applications tab)
+|--------------------------------------------------------------------------
+|
+| GET /api/v1/applications/certificates
+|
+| The Applications module's "Certificates / Issued Certificates" tab shows the
+| EXACT same issued dataset as GET /api/v1/certificates/issued. This handler
+| delegates to the existing certificate controller's issued handler
+| (certificate controller -> service -> repository -> presenter), so the two
+| endpoints are guaranteed to be byte-identical: same envelope, item structure,
+| field names, grades, capabilities, student object, and student scope.
+|
+| Certificates remain the source of truth - no application DTO is applied and
+| no certificate data is copied into applications. A client-supplied
+| student_id (or any other query parameter) is never trusted; the scope is
+| derived only from the authenticated user by certificate_service_issued.
+|
+*/
+
+function application_controller_issued_certificates(): void
+{
+    require_once __DIR__ . '/../../certificates/controllers/certificate_controller.php';
+
+    certificate_controller_issued();
+}
+
+
+/*
+|--------------------------------------------------------------------------
 | Get Company Applications
 |--------------------------------------------------------------------------
 */

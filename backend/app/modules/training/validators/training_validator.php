@@ -660,6 +660,24 @@ function training_validator_update(
     }
 
 
+    if (
+        array_key_exists(
+            'application_deadline',
+            $data
+        )
+        &&
+        !empty($data['application_deadline'])
+        &&
+        !training_validator_is_date(
+            $data['application_deadline']
+        )
+    ) {
+
+        $errors['application_deadline'] =
+            'Application deadline must be a valid date.';
+    }
+
+
     /*
     |--------------------------------------------------------------------------
     | Date Order

@@ -350,7 +350,33 @@ function to_pending_or_submitted(?string $status): bool
 
 echo "\n== Transitions ==\n";
 
-// Accept workflow stays submitted until the Postman run.
+// The three workflow targets must remain "ready for the Accept / Reject /
+// Withdraw flow" on every run. create_or_reuse_application() is idempotent,
+// but if a prior run already drove a target to a terminal state (accepted,
+// rejected or withdrawn), a second apply is rejected as a duplicate by the
+// real service. Instead of reusing the terminal row or creating a duplicate,
+// the existing row is reset to submitted so the workflow fixtures stay the
+// sole owners of the ready-for-flow state.
+foreach (['workflow_accept', 'workflow_reject', 'workflow_withdraw'] as $wf) {
+    if (to_pending_or_submitted($apps[$wf]['status'] ?? null)) {
+        continue;
+    }
+    $appId = (int) ($apps[$wf]['id'] ?? 0);
+    if ($appId > 0) {
+        db_execute(
+            "UPDATE training_applications
+             SET status = 'submitted', withdrawn_at = NULL,
+                 reviewed_at = NULL, rejection_reason = NULL, rejection_note = NULL
+             WHERE id = ?",
+            [$appId]
+        );
+        $apps[$wf]['status'] = 'submitted';
+        seed_check("{$wf} reseeded to submitted (terminal row reset)", true);
+    } else {
+        seed_check("{$wf} reseed failed (no application row)", false);
+    }
+}
+
 seed_check('workflow_accept is submitted (ready for Accept flow)',
     to_pending_or_submitted($apps['workflow_accept']['status'] ?? null));
 seed_check('workflow_reject is submitted (ready for Reject flow)',

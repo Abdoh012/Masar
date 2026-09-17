@@ -336,11 +336,11 @@ foreach ($applied_items as $item) {
         $title_ok = false;
     }
 
-    $ends = db_fetch_one(
-        "SELECT ends_at FROM training_listings WHERE id = ? LIMIT 1",
+    $span = db_fetch_one(
+        "SELECT starts_at, ends_at FROM training_listings WHERE id = ? LIMIT 1",
         [$training_id]
     );
-    $expected_duration = is_array($ends) ? training_calculate_duration($ends['ends_at'] ?? null) : null;
+    $expected_duration = is_array($span) ? training_calculate_duration($span['starts_at'] ?? null, $span['ends_at'] ?? null) : null;
     if (!is_int($expected_duration) || (int)($item['duration'] ?? -1) !== $expected_duration) {
         $duration_ok = false;
     }

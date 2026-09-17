@@ -361,12 +361,7 @@ if (is_array($accepted['data']) && is_array($accepted['data']['items'] ?? null) 
 }
 check('accepted ledger contains the confirmed training', is_array($ledger_item));
 check('accepted ledger payment_status=paid for the confirmed training', is_array($ledger_item) && ($ledger_item['payment_status'] ?? '') === 'paid');
-if ($owner_has_bank) {
-    check('accepted ledger exposes the company bank_account object', is_array($ledger_item) && is_array($ledger_item['bank_account'] ?? null));
-    check('accepted ledger bank account number matches the owning company', is_array($ledger_item) && trim((string) ($ledger_item['bank_account']['account_number'] ?? '')) === trim((string) ($paid_app['bank_account_number'] ?? '')));
-} else {
-    echo "SKIP (owning company has no bank details configured; bank_account object covered by accepted-endpoint regression)\n";
-}
+check('accepted ledger bank_account null once payment_status is paid (nothing left to pay)', is_array($ledger_item) && ($ledger_item['bank_account'] ?? null) === null);
 
 echo "\n== Case 8: idempotency (repeat confirm) ==\n";
 

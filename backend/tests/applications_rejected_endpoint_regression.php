@@ -177,29 +177,31 @@ check('rejected pagination envelope is identical to Applied/Accepted (key set)',
 
 $rejected_items = items($rejected);
 
-// Pure DTO invariant: even an empty raw row shapes into exactly the 12 keys.
+// Pure DTO invariant: even an empty raw row shapes into exactly the 17 keys.
 $empty_dto = application_rejected_card([
     'id' => null, 'training_id' => null, 'training_title' => null,
     'specialization_name' => null, 'company_name' => null, 'company_logo' => null,
     'training_type' => null, 'mode' => null, 'reviewed_at' => null,
     'rejection_reason' => null, 'rejection_note' => null,
+    'starts_at' => null, 'ends_at' => null,
 ]);
-check('rejected card shapes an empty row into exactly the 12 DTO keys', is_array($empty_dto) && count($empty_dto) === 12);
+check('rejected card shapes an empty row into exactly the 17 DTO keys', is_array($empty_dto) && count($empty_dto) === 17);
 
 $required_keys = [
-    'id', 'training_id', 'training_title', 'status', 'specialization',
-    'company_name', 'company_logo', 'training_type', 'method',
-    'rejected_at', 'rejection_reason', 'rejection_note',
+    'id', 'training_id', 'training_title', 'status', 'status_message',
+    'specialization', 'company_name', 'company_logo', 'training_type',
+    'method', 'rejected_at', 'rejection_reason', 'rejection_note',
+    'starts_at', 'ends_at', 'duration', 'remaining_days',
 ];
 $forbidden_keys = [
     'student_id', 'company_id', 'message', 'full_name', 'email', 'phone',
     'city', 'address', 'why_interested', 'what_to_learn', 'skills',
     'reviewed_by', 'cv_file_id', 'faculty_id', 'university', 'applicant_type',
     'academic_year', 'graduation_year', 'motivation', 'location',
-    'starts_at', 'ends_at', 'withdrawn_at', 'reviewed_at', 'applied_at',
+    'withdrawn_at', 'reviewed_at', 'applied_at',
     'status_db', 'can_withdraw', 'is_paid', 'may_lead_to_hire',
     'payment_status', 'bank_account', 'free_trial_days', 'free_trial_days_remaining',
-    'duration', 'accepted_at', 'motivational_message',
+    'accepted_at', 'motivational_message',
 ];
 $iso_regex = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([+-]\d{2}:\d{2}|Z)$/';
 
@@ -256,7 +258,7 @@ check('student has at least one rejected application OUTSIDE their specializatio
 
 echo "\n== Case 4-10: Rejected Card DTO contract ==\n";
 
-$key_ok = true;          // exactly the 12 required keys, nothing else
+$key_ok = true;          // exactly the 17 required keys, nothing else
 $forbidden_present = [];
 $status_ok = true;
 $spec_matches_student = true;
@@ -379,7 +381,7 @@ foreach ($rejected_items as $item) {
     }
 }
 
-check('rejected only exposes exactly the 12 required DTO keys', $key_ok);
+check('rejected only exposes exactly the 17 required DTO keys', $key_ok);
 check('rejected excludes all forbidden PII/raw keys', $forbidden_present === []);
 check('rejected item status equals "Rejected" (never the DB value rejected)', $status_ok);
 check('rejected every training specialization matches student specialization', $spec_matches_student);

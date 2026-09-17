@@ -25,6 +25,19 @@ require_once __DIR__ . '/../repositories/certificate_repository.php';
 require_once __DIR__ . '/../../../core/database/transaction.php';
 require_once __DIR__ . '/../../../core/validation/validator.php';
 
+/*
+ * Notification helpers are loaded when available so certificate lifecycle
+ * events can notify the affected user without breaking module isolation.
+ */
+
+if (
+    file_exists(
+        __DIR__ . '/../../notifications/services/notification_service.php'
+    )
+) {
+    require_once __DIR__ . '/../../notifications/services/notification_service.php';
+}
+
 
 /*
  |--------------------------------------------------------------------------
@@ -277,6 +290,1152 @@ function certificate_service_user_scope(
 
 /*
  |--------------------------------------------------------------------------
+ | View Model / Presenter
+ |--------------------------------------------------------------------------
+ |
+ | Maps a raw certificate row to the API-facing shape. Derives the
+ | capability flags (can_request / can_view) that drive the student and
+ | company dashboards. can_download is ALWAYS false: certificates are
+ | view-only and the download endpoint no longer exists.
+ |
+|  Issued-only fields (certificate_number, issued_at) are exposed ONLY
+ |  once the certificate actually reaches the issued state. A pending
+ |  certificate stores its code internally but never leaks it.
+ |
+ |  A revoked certificate keeps its history: certificate_number (stable,
+ |  never regenerated) and the original issued_at stay visible alongside
+ |  revocation_reason and revoked_at — always with status='revoked', never
+ |  as an active/valid issued certificate.
+ |
+ |  Company / training / specialization names and the student profile come
+ |  from the existing DB relationships (joined by the repository), never
+ |  from the request body. A pending request therefore carries:
+ |  status, company_name, training_title, specialization_id/name,
+ |  is_paid, requested_at, student and view/download capabilities.
+ |
+ */
+
+function certificate_service_status_is_issued(
+    ?string $status
+): bool {
+
+    return in_array(
+        strtolower((string) $status),
+        [
+            'issued',
+            'active',
+            'valid'
+        ],
+        true
+    );
+}
+
+
+function certificate_service_present(
+    array $certificate,
+    array $user
+): array {
+
+    $status =
+        strtolower(
+            (string) (
+                $certificate['status']
+                ?? ''
+            )
+        );
+
+    $issued =
+        certificate_service_status_is_issued(
+            $status
+        );
+
+    $presented = [
+        'id'                 => (int) (
+            $certificate['id']
+            ?? 0
+        ),
+
+        'certificate_id'     => (int) (
+            $certificate['id']
+            ?? 0
+        ),
+
+        'status'             => $status,
+
+        'student_id'         => isset($certificate['student_id'])
+            ? (int) $certificate['student_id']
+            : null,
+
+        'company_id'         => isset($certificate['company_id'])
+            ? (int) $certificate['company_id']
+            : null,
+
+        'company_name'       => $certificate['company_name']
+            ?? null,
+
+        'training_id'        => isset($certificate['training_id'])
+            ? (int) $certificate['training_id']
+            : null,
+
+        'training_title'     => $certificate['training_title']
+            ?? null,
+
+        'specialization_id'  => isset($certificate['specialization_id'])
+            ? (int) $certificate['specialization_id']
+            : null,
+
+        'specialization_name' => $certificate['specialization_name']
+            ?? null,
+
+        'is_paid'            => (bool) (
+            $certificate['is_paid']
+            ?? false
+        ),
+
+        'training_session_id' => isset($certificate['training_session_id'])
+            ? (int) $certificate['training_session_id']
+            : null,
+
+        'title'              => $certificate['title']
+            ?? null,
+
+        'grade'              => $certificate['grade']
+            ?? null,
+
+        'grade_label'        => $certificate['grade_label']
+            ?? null,
+
+        'start_date'         => $certificate['start_date']
+            ?? null,
+
+        'end_date'           => $certificate['end_date']
+            ?? null,
+
+        'requested_at'       => $certificate['requested_at']
+            ?? $certificate['created_at']
+            ?? null,
+
+        'reviewed_at'        => $certificate['reviewed_at']
+            ?? null,
+
+        'reviewed_by'        => isset($certificate['reviewed_by'])
+            ? (int) $certificate['reviewed_by']
+            : null,
+
+        'employment_eligible' => isset($certificate['employment_eligible'])
+            ? (int) $certificate['employment_eligible']
+            : null,
+
+        'can_request'        => false,
+
+        'can_view'           => true,
+
+        'can_download'       => false,
+
+        'student'            => [
+            'id'             => (int) (
+                $certificate['student_id']
+                ?? 0
+            ),
+
+            'full_name'      => $certificate['student_name']
+                ?? null,
+
+            'email'          => $certificate['student_email']
+                ?? null,
+
+            'phone'          => $certificate['student_phone']
+                ?? null,
+
+            'city'           => $certificate['student_city']
+                ?? null,
+
+            'university'     => $certificate['student_university']
+                ?? null,
+
+            'field'          => $certificate['student_field']
+                ?? null,
+
+            'specialization' => $certificate['student_specialization']
+                ?? null,
+        ],
+    ];
+
+    if ($issued) {
+
+        $presented['certificate_number'] =
+            $certificate['certificate_code']
+            ?? null;
+
+        $presented['issued_at'] =
+            $certificate['approved_at']
+            ?? null;
+    }
+
+    if ($status === 'pending') {
+
+        $presented['requested_at'] =
+            $certificate['requested_at']
+            ?? $certificate['created_at']
+            ?? null;
+    }
+
+    if ($status === 'revoked') {
+
+        /*
+         * A revoked certificate keeps its history: the original (stable)
+         * certificate_number and issued_at remain visible next to the
+         * revocation fields. status stays 'revoked' — it is never presented
+         * as an active/valid issued certificate.
+         */
+
+        $presented['revocation_reason'] =
+            $certificate['revocation_reason']
+            ?? null;
+
+        $presented['revoked_at'] =
+            $certificate['revoked_at']
+            ?? null;
+
+        $presented['certificate_number'] =
+            $certificate['certificate_code']
+            ?? null;
+
+        $presented['issued_at'] =
+            $certificate['approved_at']
+            ?? null;
+    }
+
+    if ($status === 'rejected') {
+
+        $presented['rejection_reason'] =
+            $certificate['rejection_reason']
+            ?? null;
+    }
+
+    return $presented;
+}
+
+
+/*
+ |--------------------------------------------------------------------------
+ | Eligible Certificates
+ |--------------------------------------------------------------------------
+ |
+ | Returns the trainings for which the authenticated user may request a
+ | certificate:
+ |
+ |   - Student : own accepted + completed trainings with no certificate.
+ |   - Company : every eligible student across the company's trainings.
+ |   - Admin   : the union, scoped by optional filters.
+ |
+ | Each item carries `is_paid` (true/false) mirroring the owning
+ | training_listings.is_paid flag, matching the Training API semantics.
+ |
+ */
+
+function certificate_service_eligible(
+    array $user,
+    array $filters = []
+): array {
+
+    $user_id =
+        certificate_service_user_id($user);
+
+    if ($user_id === null) {
+        return certificate_service_error(
+            'Invalid authenticated user.',
+            [],
+            401
+        );
+    }
+
+    $role =
+        certificate_service_role($user);
+
+    if ($role === 'student') {
+
+        $student_id =
+            certificate_service_user_student_id(
+                $user_id
+            );
+
+        if ($student_id === null) {
+            return certificate_service_success(
+                [],
+                'Eligible certificates retrieved successfully.'
+            );
+        }
+
+        $filters['student_id'] =
+            $student_id;
+
+    } elseif ($role === 'company') {
+
+        $company_id =
+            certificate_service_user_company_id(
+                $user_id
+            );
+
+        if ($company_id === null) {
+            return certificate_service_success(
+                [],
+                'Eligible certificates retrieved successfully.'
+            );
+        }
+
+        $filters['company_id'] =
+            $company_id;
+
+    } elseif (
+        !certificate_service_is_admin($user)
+    ) {
+        return certificate_service_error(
+            'You are not authorized to view eligible certificates.',
+            [],
+            403
+        );
+    }
+
+    $rows =
+        certificate_repository_eligible(
+            $filters
+        );
+
+    $items = [];
+
+    foreach ($rows as $row) {
+
+        $items[] = [
+            'status'              => 'eligible',
+
+            'training_id'         => (int) (
+                $row['training_id']
+                ?? 0
+            ),
+
+            'training_title'      => $row['training_title']
+                ?? null,
+
+            'company_id'          => (int) (
+                $row['company_id']
+                ?? 0
+            ),
+
+            'company_name'        => $row['company_name']
+                ?? null,
+
+            'training_session_id' => (int) (
+                $row['training_session_id']
+                ?? 0
+            ),
+
+            'is_paid'             => (bool) (
+                $row['is_paid']
+                ?? false
+            ),
+
+            'start_date'          => isset($row['started_on'])
+                ? date(
+                    'Y-m-d',
+                    strtotime(
+                        (string) $row['started_on']
+                    )
+                )
+                : null,
+
+            'end_date'            => isset($row['ended_on'])
+                ? date(
+                    'Y-m-d',
+                    strtotime(
+                        (string) $row['ended_on']
+                    )
+                )
+                : null,
+
+            'completed_on'        => $row['completed_on']
+                ?? null,
+
+            'can_request'         => true,
+
+            'can_view'            => false,
+
+            'can_download'        => false,
+        ];
+    }
+
+return certificate_service_success(
+        $items,
+        'Certificates retrieved successfully.'
+    );
+}
+
+
+/*
+ |--------------------------------------------------------------------------
+ | Pending Certificates
+ |--------------------------------------------------------------------------
+ |
+ | Dedicated endpoint for the PENDING state only: GET /certificates/pending.
+ |
+ | Uses the module's existing list + presenter logic
+ | (certificate_repository_list + certificate_service_present) with the
+ | status filter pinned to `pending`, and user scope derived from the
+ | authenticated user:
+ |
+ |   - Student : only the authenticated student's pending certificates.
+ |   - Company : pending certificates across the company's own trainings.
+ |   - Admin   : all pending certificates.
+ |
+ | Scope is always derived from the auth context (certificate_service_user_scope);
+ | a client-supplied student_id is never trusted here.
+ |
+ */
+
+function certificate_service_pending(
+    array $user,
+    array $filters = []
+): array {
+
+    $user_id =
+        certificate_service_user_id($user);
+
+    if ($user_id === null) {
+        return certificate_service_error(
+            'Invalid authenticated user.',
+            [],
+            401
+        );
+    }
+
+    $filters['status'] =
+        'pending';
+
+    if (!certificate_service_is_admin($user)) {
+
+        $filters =
+            certificate_service_user_scope(
+                $user,
+                $filters
+            );
+
+        if ($filters === null) {
+
+            return certificate_service_success(
+                [],
+                'Pending certificates retrieved successfully.'
+            );
+        }
+    }
+
+    $result =
+        certificate_repository_list(
+            $filters
+        );
+
+    if (
+        !is_array($result)
+    ) {
+        return certificate_service_error(
+            'Unable to retrieve pending certificates.',
+            [],
+            500
+        );
+    }
+
+    $items = [];
+
+    foreach ($result as $row) {
+
+        if (is_array($row)) {
+            $items[] =
+                certificate_service_present(
+                    $row,
+                    $user
+                );
+        }
+    }
+
+    return certificate_service_success(
+        $items,
+        'Pending certificates retrieved successfully.'
+    );
+}
+
+
+/*
+ |--------------------------------------------------------------------------
+ | Issued Certificates
+ |--------------------------------------------------------------------------
+ |
+ | Dedicated endpoint for the ISSUED state only: GET /certificates/issued.
+ |
+ | Uses the module's existing list + presenter logic
+ | (certificate_repository_list + certificate_service_present) with the
+ | status filter pinned to `issued`, and user scope derived from the
+ | authenticated user:
+ |
+ |   - Student : only the authenticated student's issued certificates.
+ |   - Company : issued certificates across the company's own trainings.
+ |   - Admin   : all issued certificates.
+ |
+ | Scope is always derived from the auth context (certificate_service_user_scope);
+ | a client-supplied student_id is never trusted here.
+ |
+ */
+
+function certificate_service_issued(
+    array $user,
+    array $filters = []
+): array {
+
+    $user_id =
+        certificate_service_user_id($user);
+
+    if ($user_id === null) {
+        return certificate_service_error(
+            'Invalid authenticated user.',
+            [],
+            401
+        );
+    }
+
+    $filters['status'] =
+        'issued';
+
+    if (!certificate_service_is_admin($user)) {
+
+        $filters =
+            certificate_service_user_scope(
+                $user,
+                $filters
+            );
+
+        if ($filters === null) {
+
+            return certificate_service_success(
+                [],
+                'Issued certificates retrieved successfully.'
+            );
+        }
+    }
+
+    $result =
+        certificate_repository_list(
+            $filters
+        );
+
+    if (
+        !is_array($result)
+    ) {
+        return certificate_service_error(
+            'Unable to retrieve issued certificates.',
+            [],
+            500
+        );
+    }
+
+    $items = [];
+
+    foreach ($result as $row) {
+
+        if (is_array($row)) {
+            $items[] =
+                certificate_service_present(
+                    $row,
+                    $user
+                );
+        }
+    }
+
+    return certificate_service_success(
+        $items,
+        'Issued certificates retrieved successfully.'
+    );
+}
+
+
+/*
+ |--------------------------------------------------------------------------
+ | Revoked Certificates
+ |--------------------------------------------------------------------------
+ |
+ | Dedicated endpoint for the REVOKED state only: GET /certificates/revoked.
+ |
+ | Uses the module's existing list + presenter logic
+ | (certificate_repository_list + certificate_service_present) with the
+ | status filter pinned to `revoked`, and user scope derived from the
+ | authenticated user:
+ |
+ |   - Student : only the authenticated student's revoked certificates.
+ |   - Company : revoked certificates across the company's own trainings.
+ |   - Admin   : all revoked certificates.
+ |
+ | Scope is always derived from the auth context (certificate_service_user_scope);
+ | a client-supplied student_id is never trusted here.
+ |
+ */
+
+function certificate_service_revoked(
+    array $user,
+    array $filters = []
+): array {
+
+    $user_id =
+        certificate_service_user_id($user);
+
+    if ($user_id === null) {
+        return certificate_service_error(
+            'Invalid authenticated user.',
+            [],
+            401
+        );
+    }
+
+    $filters['status'] =
+        'revoked';
+
+    if (!certificate_service_is_admin($user)) {
+
+        $filters =
+            certificate_service_user_scope(
+                $user,
+                $filters
+            );
+
+        if ($filters === null) {
+
+            return certificate_service_success(
+                [],
+                'Revoked certificates retrieved successfully.'
+            );
+        }
+    }
+
+    $result =
+        certificate_repository_list(
+            $filters
+        );
+
+    if (
+        !is_array($result)
+    ) {
+        return certificate_service_error(
+            'Unable to retrieve revoked certificates.',
+            [],
+            500
+        );
+    }
+
+    $items = [];
+
+    foreach ($result as $row) {
+
+        if (is_array($row)) {
+            $items[] =
+                certificate_service_present(
+                    $row,
+                    $user
+                );
+        }
+    }
+
+    return certificate_service_success(
+        $items,
+        'Revoked certificates retrieved successfully.'
+    );
+}
+
+
+/*
+ |--------------------------------------------------------------------------
+ | Get Certificate
+ |--------------------------------------------------------------------------
+ |
+ | Creates a PENDING certificate. Approved for:
+ |
+ |   - Students who completed the training (derived from auth).
+ |   - The training's owning company on behalf of a student.
+ |   - Admins on behalf of a student.
+ |
+ | Duplicate requests are rejected at the service layer: every
+ | (student, training) pair may only ever have ONE certificate row,
+ | regardless of its state.
+ |
+ */
+
+function certificate_service_request(
+    array $user,
+    array $data
+): array {
+
+    $user_id =
+        certificate_service_user_id($user);
+
+    if ($user_id === null) {
+        return certificate_service_error(
+            'Invalid authenticated user.',
+            [],
+            401
+        );
+    }
+
+    $role =
+        certificate_service_role($user);
+
+    if (
+        !in_array(
+            $role,
+            [
+                'student',
+                'company',
+                'admin'
+            ],
+            true
+        )
+    ) {
+        return certificate_service_error(
+            'You are not authorized to request certificates.',
+            [],
+            403
+        );
+    }
+
+    $training_id =
+        (int) (
+            $data['training_id']
+            ?? 0
+        );
+
+    if ($training_id <= 0) {
+        return certificate_service_error(
+            'Valid training_id is required.',
+            [
+                'training_id' =>
+                    'A valid training ID is required to request a certificate.'
+            ],
+            422
+        );
+    }
+
+    /*
+     * Derive the affected student and company from the authenticated
+     * user whenever possible. Never trust client-supplied identities.
+     */
+
+    $student_id = 0;
+    $company_id = 0;
+
+    if ($role === 'student') {
+
+        $student_id =
+            certificate_service_user_student_id(
+                $user_id
+            );
+
+        if ($student_id === null) {
+            return certificate_service_error(
+                'No student profile is linked to this account.',
+                [],
+                403
+            );
+        }
+
+    } elseif ($role === 'company') {
+
+        $company_id =
+            certificate_service_user_company_id(
+                $user_id
+            );
+
+        if ($company_id === null) {
+            return certificate_service_error(
+                'No company profile is linked to this account.',
+                [],
+                403
+            );
+        }
+
+        $training =
+            certificate_repository_find_training_listing(
+                $training_id
+            );
+
+        if (
+            !$training
+            ||
+            (int) ($training['company_id'] ?? 0)
+                !== $company_id
+        ) {
+            return certificate_service_error(
+                'You are not authorized to request certificates for this training.',
+                [],
+                403
+            );
+        }
+
+        $student_id =
+            (int) (
+                $data['student_id']
+                ?? 0
+            );
+
+        if ($student_id <= 0) {
+            return certificate_service_error(
+                'Valid student_id is required when requesting on behalf of a student.',
+                [
+                    'student_id' =>
+                        'A valid student ID is required.'
+                ],
+                422
+            );
+        }
+
+    } else {
+
+        $student_id =
+            (int) (
+                $data['student_id']
+                ?? 0
+            );
+
+        if ($student_id <= 0) {
+            return certificate_service_error(
+                'Valid student_id is required.',
+                [
+                    'student_id' =>
+                        'A valid student ID is required.'
+                ],
+                422
+            );
+        }
+    }
+
+    /*
+     * Duplicate protection: one certificate per (student, training)
+     * regardless of state (pending, issued, revoked, ...).
+     */
+
+    $existing =
+        certificate_repository_find_by_student_training(
+            $student_id,
+            $training_id
+        );
+
+    if ($existing) {
+        return certificate_service_error(
+            'A certificate has already been requested for this training.',
+            [],
+            409
+        );
+    }
+
+    /*
+     * Eligibility: accepted application + completed session + no certificate
+     * + the training itself has already ended (training_listings.ends_at
+     * <= current server time). This is what keeps a still-running training
+     * ineligible regardless of other state.
+     */
+
+    $eligible =
+        certificate_repository_eligible([
+            'student_id'  => $student_id,
+            'training_id' => $training_id
+        ]);
+
+    if (empty($eligible)) {
+        return certificate_service_error(
+            'This training must be accepted and completed before requesting a certificate.',
+            [],
+            422
+        );
+    }
+
+    $window = $eligible[0];
+
+    $result =
+        certificate_repository_create([
+            'certificate_code' =>
+                certificate_repository_generate_number(),
+
+            'student_id' =>
+                (int) $student_id,
+
+            'company_id' =>
+                (int) (
+                    $company_id > 0
+                        ? $company_id
+                        : ($window['company_id'] ?? 0)
+                ),
+
+            'training_id' =>
+                (int) $training_id,
+
+            'training_session_id' =>
+                (int) (
+                    $window['training_session_id']
+                    ?? 0
+                ),
+
+            'status' =>
+                'pending',
+
+            'title' =>
+                'Certificate of Completion - '
+                . ($window['training_title'] ?? 'Training'),
+
+            'start_date' =>
+                date(
+                    'Y-m-d',
+                    strtotime(
+                        (string) (
+                            $window['started_on']
+                            ?? ''
+                        )
+                    )
+                ),
+
+            'end_date' =>
+                date(
+                    'Y-m-d',
+                    strtotime(
+                        (string) (
+                            $window['ended_on']
+                            ?? ''
+                        )
+                    )
+                ),
+
+            'employment_eligible' =>
+                0
+        ]);
+
+    if (!$result) {
+        return certificate_service_error(
+            'Unable to request certificate.',
+            [],
+            500
+        );
+    }
+
+    $certificate =
+        is_array($result)
+            ? $result
+            : certificate_repository_find(
+                (int) $result
+            );
+
+    if (!$certificate) {
+        return certificate_service_error(
+            'Unable to load the requested certificate.',
+            [],
+            500
+        );
+    }
+
+    /*
+     * Notify the student that the request is awaiting approval.
+     */
+
+    $student_user_id =
+        certificate_repository_student_user_id(
+            $student_id
+        );
+
+    if (
+        $student_user_id
+        &&
+        function_exists(
+            'notification_service_notify_user'
+        )
+    ) {
+        notification_service_notify_user(
+            (int) $student_user_id,
+            'Certificate Requested',
+            'Your certificate request is awaiting approval.',
+            'certificate',
+            [
+                'certificate_id' =>
+                    (int) $certificate['id'],
+                'event' => 'requested'
+            ]
+        );
+    }
+
+    return certificate_service_success(
+        certificate_service_present(
+            $certificate,
+            $user
+        ),
+        'Certificate requested successfully.'
+    );
+}
+
+
+/*
+ |--------------------------------------------------------------------------
+ | Confirm Certificate
+ |--------------------------------------------------------------------------
+ |
+ | Approves a PENDING certificate, moving it to ISSUED. Allowed for the
+ | training's owning company or an admin. Stamps reviewed_at,
+ | approved_at and reviewed_by. The mapped issued_at is approved_at.
+ |
+ */
+
+function certificate_service_confirm(
+    array $user,
+    int $certificate_id,
+    array $data = []
+): array {
+
+    $user_id =
+        certificate_service_user_id($user);
+
+    if ($user_id === null) {
+        return certificate_service_error(
+            'Invalid authenticated user.',
+            [],
+            401
+        );
+    }
+
+    if ($certificate_id <= 0) {
+        return certificate_service_error(
+            'Invalid certificate ID.',
+            [],
+            422
+        );
+    }
+
+    $certificate =
+        certificate_repository_find(
+            $certificate_id
+        );
+
+    if (!$certificate) {
+        return certificate_service_error(
+            'Certificate not found.',
+            [],
+            404
+        );
+    }
+
+    /*
+     * Only the owning company or an admin may confirm.
+     */
+
+    if (!certificate_service_is_admin($user)) {
+
+        if (
+            certificate_service_role($user)
+            !== 'company'
+        ) {
+            return certificate_service_error(
+                'You are not authorized to confirm certificates.',
+                [],
+                403
+            );
+        }
+
+        $company_id =
+            certificate_service_user_company_id(
+                $user_id
+            );
+
+        if (
+            $company_id === null
+            ||
+            (int) ($certificate['company_id'] ?? 0)
+                !== $company_id
+        ) {
+            return certificate_service_error(
+                'You are not authorized to confirm this certificate.',
+                [],
+                403
+            );
+        }
+    }
+
+    $status =
+        strtolower(
+            (string) (
+                $certificate['status']
+                ?? ''
+            )
+        );
+
+    if ($status !== 'pending') {
+        return certificate_service_error(
+            'Only pending certificates can be confirmed.',
+            [],
+            409
+        );
+    }
+
+    $result =
+        certificate_repository_confirm(
+            $certificate_id,
+            $user_id
+        );
+
+    if (!$result) {
+        return certificate_service_error(
+            'Unable to confirm certificate.',
+            [],
+            500
+        );
+    }
+
+    $updated =
+        certificate_repository_find(
+            $certificate_id
+        );
+
+    /*
+     * Notify the student that the certificate has been issued.
+     */
+
+    $student_user_id =
+        certificate_repository_student_user_id(
+            (int) (
+                $certificate['student_id']
+                ?? 0
+            )
+        );
+
+    if (
+        $student_user_id
+        &&
+        function_exists(
+            'notification_service_notify_user'
+        )
+    ) {
+        notification_service_notify_user(
+            (int) $student_user_id,
+            'Certificate Issued',
+            'Your certificate has been issued successfully.',
+            'certificate',
+            [
+                'certificate_id' =>
+                    (int) $certificate_id,
+                'event' => 'issued'
+            ]
+        );
+    }
+
+    return certificate_service_success(
+        certificate_service_present(
+            $updated,
+            $user
+        ),
+        'Certificate confirmed and issued successfully.'
+    );
+}
+
+
+/*
+ |--------------------------------------------------------------------------
  | Certificate Status Transition Matrix
  |--------------------------------------------------------------------------
  */
@@ -351,8 +1510,21 @@ function certificate_service_list(
         );
     }
 
+    $items = [];
+
+    foreach ($result as $row) {
+
+        if (is_array($row)) {
+            $items[] =
+                certificate_service_present(
+                    $row,
+                    $user
+                );
+        }
+    }
+
     return certificate_service_success(
-        $result,
+        $items,
         'Certificates retrieved successfully.'
     );
 }
@@ -410,7 +1582,10 @@ function certificate_service_get(
     }
 
     return certificate_service_success(
-        $certificate,
+        certificate_service_present(
+            $certificate,
+            $user
+        ),
         'Certificate retrieved successfully.'
     );
 }
@@ -451,6 +1626,37 @@ function certificate_service_can_access(
     }
 
     /*
+     * Company accounts access certificates associated
+     * with their company.
+     */
+
+    if (
+        certificate_service_role($user)
+        === 'company'
+    ) {
+
+        $company_id =
+            $certificate['company_id']
+            ?? null;
+
+        if (
+            $company_id !== null
+            &&
+            function_exists(
+                'certificate_repository_company_belongs_to_user'
+            )
+        ) {
+            return (bool)
+                certificate_repository_company_belongs_to_user(
+                    (int) $company_id,
+                    $user_id
+                );
+        }
+
+        return false;
+    }
+
+    /*
      * If the certificate belongs to a student,
      * ask the repository to verify ownership.
      */
@@ -462,34 +1668,9 @@ function certificate_service_can_access(
             'certificate_repository_student_belongs_to_user'
         )
     ) {
-
         return (bool)
             certificate_repository_student_belongs_to_user(
                 (int) $student_id,
-                $user_id
-            );
-    }
-
-    /*
-     * Companies may access certificates associated
-     * with their company.
-     */
-
-    $company_id =
-        $certificate['company_id']
-        ?? null;
-
-    if (
-        $company_id !== null
-        &&
-        function_exists(
-            'certificate_repository_company_belongs_to_user'
-        )
-    ) {
-
-        return (bool)
-            certificate_repository_company_belongs_to_user(
-                (int) $company_id,
                 $user_id
             );
     }
@@ -820,13 +2001,8 @@ function certificate_service_revoke(
         );
     }
 
-    if (!certificate_service_is_admin($user)) {
-        return certificate_service_error(
-            'You are not authorized to revoke certificates.',
-            [],
-            403
-        );
-    }
+    $user_id =
+        certificate_service_user_id($user);
 
     $certificate =
         certificate_repository_find(
@@ -839,6 +2015,42 @@ function certificate_service_revoke(
             [],
             404
         );
+    }
+
+    /*
+     * Only the owning company or an admin may revoke.
+     */
+
+    if (!certificate_service_is_admin($user)) {
+
+        if (
+            certificate_service_role($user)
+            !== 'company'
+        ) {
+            return certificate_service_error(
+                'You are not authorized to revoke certificates.',
+                [],
+                403
+            );
+        }
+
+        $company_id =
+            certificate_service_user_company_id(
+                $user_id ?? 0
+            );
+
+        if (
+            $company_id === null
+            ||
+            (int) ($certificate['company_id'] ?? 0)
+                !== $company_id
+        ) {
+            return certificate_service_error(
+                'You are not authorized to revoke this certificate.',
+                [],
+                403
+            );
+        }
     }
 
     $status =
@@ -903,8 +2115,6 @@ function certificate_service_revoke(
                 [
                     'status' => 'revoked',
                     'revocation_reason' => $reason,
-                    'revoked_by' =>
-                        certificate_service_user_id($user),
                     'revoked_at' =>
                         date('Y-m-d H:i:s')
                 ]
@@ -919,24 +2129,37 @@ function certificate_service_revoke(
         );
     }
 
-    /*
-     * Create notification for certificate revocation.
-     * Notify the certificate owner (student) and the admin.
+    /**
+     * Notify the student that the certificate was revoked.
      */
-    $student_id = $certificate['student_id'] ?? null;
 
-    if ($student_id) {
-        notification_service_create([
-            'user_id' => $student_id,
-            'title' => 'Certificate Revoked',
-            'body' => 'Your certificate has been revoked.',
-            'type' => 'certificate',
-            'data' => [
-                'certificate_id' => $certificate['id'],
-                'event' => 'revoked',
+    $student_user_id =
+        certificate_repository_student_user_id(
+            (int) (
+                $certificate['student_id']
+                ?? 0
+            )
+        );
+
+    if (
+        $student_user_id
+        &&
+        function_exists(
+            'notification_service_notify_user'
+        )
+    ) {
+        notification_service_notify_user(
+            (int) $student_user_id,
+            'Certificate Revoked',
+            'Your certificate has been revoked.',
+            'certificate',
+            [
+                'certificate_id' =>
+                    (int) ($certificate['id'] ?? 0),
+                'event'  => 'revoked',
                 'reason' => $reason
             ]
-        ]);
+        );
     }
 
     $updated =
@@ -945,7 +2168,10 @@ function certificate_service_revoke(
         );
 
     return certificate_service_success(
-        $updated,
+        certificate_service_present(
+            $updated,
+            $user
+        ),
         'Certificate revoked successfully.'
     );
 }
@@ -1038,126 +2264,6 @@ function certificate_service_verify(
         $valid
             ? 'Certificate is valid.'
             : 'Certificate is not valid.'
-    );
-}
-
-
-/*
- |--------------------------------------------------------------------------
- | Download Certificate
- |--------------------------------------------------------------------------
- */
-
-function certificate_service_download(
-    array $user,
-    int $certificate_id
-): array {
-
-    if ($certificate_id <= 0) {
-        return certificate_service_error(
-            'Invalid certificate ID.',
-            [],
-            422
-        );
-    }
-
-    $certificate =
-        certificate_repository_find(
-            $certificate_id
-        );
-
-    if (!$certificate) {
-        return certificate_service_error(
-            'Certificate not found.',
-            [],
-            404
-        );
-    }
-
-    if (
-        !certificate_service_is_admin($user)
-        &&
-        !certificate_service_can_access(
-            $user,
-            $certificate
-        )
-    ) {
-        return certificate_service_error(
-            'You are not authorized to download this certificate.',
-            [],
-            403
-        );
-    }
-
-    /*
-     * Repository may already resolve the certificate
-     * file path.
-     */
-
-    if (
-        function_exists(
-            'certificate_repository_get_file'
-        )
-    ) {
-
-        $file =
-            certificate_repository_get_file(
-                $certificate_id
-            );
-
-        if (!$file) {
-            return certificate_service_error(
-                'Certificate file not found.',
-                [],
-                404
-            );
-        }
-
-        return certificate_service_success(
-            [
-                'file' => $file
-            ],
-            'Certificate file prepared successfully.'
-        );
-    }
-
-    /*
-     * Fallback to a stored file path.
-     */
-
-    $path =
-        $certificate['file_path']
-        ?? $certificate['certificate_path']
-        ?? null;
-
-    if (
-        !$path
-        ||
-        !is_file($path)
-    ) {
-        return certificate_service_error(
-            'Certificate file not found.',
-            [],
-            404
-        );
-    }
-
-    return certificate_service_success(
-        [
-            'file' => [
-                'path' =>
-                    $path,
-
-                'name' =>
-                    $certificate['file_name']
-                    ?? basename($path),
-
-                'mime' =>
-                    $certificate['mime_type']
-                    ?? 'application/pdf'
-            ]
-        ],
-        'Certificate file prepared successfully.'
     );
 }
 
@@ -1346,8 +2452,21 @@ function certificate_service_search(
         );
     }
 
+    $items = [];
+
+    foreach ($result as $row) {
+
+        if (is_array($row)) {
+            $items[] =
+                certificate_service_present(
+                    $row,
+                    $user
+                );
+        }
+    }
+
     return certificate_service_success(
-        $result,
+        $items,
         'Certificate search completed successfully.'
     );
 }

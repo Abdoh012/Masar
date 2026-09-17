@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Sep 09, 2026 at 02:57 AM
+-- Generation Time: Sep 16, 2026 at 06:04 PM
 -- Server version: 9.1.0
 -- PHP Version: 8.4.5
 
@@ -1027,7 +1027,24 @@ INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `entity_type`, `entity_id`,
 (1514, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-09 04:49:11'),
 (1515, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-09 05:06:41'),
 (1516, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-09 05:09:14'),
-(1517, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-09 05:49:57');
+(1517, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-09 05:49:57'),
+(1518, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-09 06:43:52'),
+(1519, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.0', '2026-09-10 00:27:00'),
+(1520, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.2', '2026-09-11 01:46:59'),
+(1521, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.2', '2026-09-11 01:57:55'),
+(1522, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.2', '2026-09-11 02:21:55'),
+(1523, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.5.2', '2026-09-14 00:21:18'),
+(1524, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', NULL, '2026-09-14 00:55:41'),
+(1525, 100595, 'login_success', 'user', 100595, '[]', '{\"ip\": \"::1\", \"role\": \"company\"}', '::1', NULL, '2026-09-14 00:55:44'),
+(1526, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.6.0', '2026-09-14 01:14:20'),
+(1527, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.6.0', '2026-09-14 06:26:09'),
+(1528, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.6.0', '2026-09-15 01:28:20'),
+(1529, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.6.0', '2026-09-15 03:43:38'),
+(1530, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.6.0', '2026-09-15 04:09:02'),
+(1531, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.6.0', '2026-09-16 01:40:37'),
+(1532, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.6.0', '2026-09-16 04:43:59'),
+(1533, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.6.0', '2026-09-16 19:54:54'),
+(1534, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.6.0', '2026-09-16 20:57:58');
 
 -- --------------------------------------------------------
 
@@ -1068,7 +1085,7 @@ CREATE TABLE `certificates` (
   `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `start_date` date NOT NULL,
   `end_date` date NOT NULL,
-  `grade` decimal(5,2) DEFAULT NULL,
+  `grade` varchar(10) DEFAULT NULL,
   `grade_label` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `employment_eligible` tinyint(1) NOT NULL DEFAULT '0',
   `requested_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1087,12 +1104,26 @@ CREATE TABLE `certificates` (
 --
 
 INSERT INTO `certificates` (`id`, `certificate_code`, `student_id`, `company_id`, `training_id`, `training_session_id`, `status`, `title`, `start_date`, `end_date`, `grade`, `grade_label`, `employment_eligible`, `requested_at`, `reviewed_at`, `approved_at`, `revoked_at`, `reviewed_by`, `rejection_reason`, `revocation_reason`, `created_at`, `updated_at`) VALUES
-(27, 'MASAR-2026-DEMO0001', 1458, 100144, 100202, 225, 'valid', 'Certificate of Completion - Junior PHP Developer Track', '2026-08-08', '2026-08-23', 71.50, 'Very Good', 1, '2026-08-18 13:00:00', '2026-08-21 10:00:00', '2026-08-23 10:00:00', NULL, 100526, NULL, NULL, '2026-08-18 10:00:00', '2026-08-23 10:00:00'),
-(28, 'MASAR-2026-DEMO0002', 1476, 100145, 100208, 231, 'valid', 'Certificate of Completion - Data Science Immersion', '2026-08-08', '2026-08-23', 71.50, 'Very Good', 1, '2026-08-18 13:00:00', '2026-08-21 10:00:00', '2026-08-23 10:00:00', NULL, 100526, NULL, NULL, '2026-08-18 10:00:00', '2026-08-23 10:00:00'),
-(29, 'MASAR-2026-DEMO0003', 1484, 100146, 100213, 236, 'valid', 'Certificate of Completion - Clinical Rotation in Internal Medicine', '2026-08-08', '2026-08-23', 71.50, 'Very Good', 1, '2026-08-18 13:00:00', '2026-08-21 10:00:00', '2026-08-23 10:00:00', NULL, 100526, NULL, NULL, '2026-08-18 10:00:00', '2026-08-23 10:00:00'),
-(30, 'MASAR-2026-DEMO0004', 1472, 100147, 100216, 239, 'valid', 'Certificate of Completion - Intro to Structural Drafting', '2026-08-08', '2026-08-23', 71.50, 'Very Good', 1, '2026-08-18 13:00:00', '2026-08-21 10:00:00', '2026-08-23 10:00:00', NULL, 100526, NULL, NULL, '2026-08-18 10:00:00', '2026-08-23 10:00:00'),
-(31, 'MASAR-2026-DEMO0005', 1470, 100148, 100220, 243, 'valid', 'Certificate of Completion - Growth Marketing Campaigns', '2026-08-08', '2026-08-23', 71.50, 'Very Good', 1, '2026-08-18 13:00:00', '2026-08-21 10:00:00', '2026-08-23 10:00:00', NULL, 100526, NULL, NULL, '2026-08-18 10:00:00', '2026-08-23 10:00:00'),
-(32, 'MASAR-2026-DEMO0006', 1458, 100151, 100227, 250, 'valid', 'Certificate of Completion - Junior Auditor Track', '2026-08-08', '2026-08-23', 71.50, 'Very Good', 1, '2026-08-18 13:00:00', '2026-08-21 10:00:00', '2026-08-23 10:00:00', NULL, 100526, NULL, NULL, '2026-08-18 10:00:00', '2026-08-23 10:00:00');
+(27, 'MASAR-2026-DEMO0001', 1458, 100144, 100202, 225, 'valid', 'Certificate of Completion - Junior PHP Developer Track', '2026-08-08', '2026-08-23', '71.50', 'Very Good', 1, '2026-08-18 13:00:00', '2026-08-21 10:00:00', '2026-08-23 10:00:00', NULL, 100526, NULL, NULL, '2026-08-18 10:00:00', '2026-08-23 10:00:00'),
+(28, 'MASAR-2026-DEMO0002', 1476, 100145, 100208, 231, 'valid', 'Certificate of Completion - Data Science Immersion', '2026-08-08', '2026-08-23', '71.50', 'Very Good', 1, '2026-08-18 13:00:00', '2026-08-21 10:00:00', '2026-08-23 10:00:00', NULL, 100526, NULL, NULL, '2026-08-18 10:00:00', '2026-08-23 10:00:00'),
+(29, 'MASAR-2026-DEMO0003', 1484, 100146, 100213, 236, 'valid', 'Certificate of Completion - Clinical Rotation in Internal Medicine', '2026-08-08', '2026-08-23', '71.50', 'Very Good', 1, '2026-08-18 13:00:00', '2026-08-21 10:00:00', '2026-08-23 10:00:00', NULL, 100526, NULL, NULL, '2026-08-18 10:00:00', '2026-08-23 10:00:00'),
+(30, 'MASAR-2026-DEMO0004', 1472, 100147, 100216, 239, 'valid', 'Certificate of Completion - Intro to Structural Drafting', '2026-08-08', '2026-08-23', '71.50', 'Very Good', 1, '2026-08-18 13:00:00', '2026-08-21 10:00:00', '2026-08-23 10:00:00', NULL, 100526, NULL, NULL, '2026-08-18 10:00:00', '2026-08-23 10:00:00'),
+(31, 'MASAR-2026-DEMO0005', 1470, 100148, 100220, 243, 'valid', 'Certificate of Completion - Growth Marketing Campaigns', '2026-08-08', '2026-08-23', '71.50', 'Very Good', 1, '2026-08-18 13:00:00', '2026-08-21 10:00:00', '2026-08-23 10:00:00', NULL, 100526, NULL, NULL, '2026-08-18 10:00:00', '2026-08-23 10:00:00'),
+(32, 'MASAR-2026-DEMO0006', 1458, 100151, 100227, 250, 'valid', 'Certificate of Completion - Junior Auditor Track', '2026-08-08', '2026-08-23', '71.50', 'Very Good', 1, '2026-08-18 13:00:00', '2026-08-21 10:00:00', '2026-08-23 10:00:00', NULL, 100526, NULL, NULL, '2026-08-18 10:00:00', '2026-08-23 10:00:00'),
+(127, 'MASAR-2026-343DC6A1', 1498, 100161, 100408, 294, 'pending', 'Certificate of Completion - Real-Time Notification Systems', '2026-07-14', '2026-09-01', NULL, NULL, 0, '2026-09-16 04:14:53', NULL, NULL, NULL, NULL, NULL, NULL, '2026-09-16 04:14:53', '2026-09-16 04:14:53'),
+(128, 'MASAR-2026-9C8B9C18', 1498, 100161, 100409, 295, 'pending', 'Certificate of Completion - API Rate Limiting & Queues', '2026-07-11', '2026-08-22', NULL, NULL, 0, '2026-09-16 04:14:54', NULL, NULL, NULL, NULL, NULL, NULL, '2026-09-16 04:14:54', '2026-09-16 04:14:54'),
+(129, 'MASAR-2026-F1FE1BC2', 1498, 100161, 100410, 296, 'pending', 'Certificate of Completion - Secure Authentication Flows', '2026-06-12', '2026-08-07', NULL, NULL, 0, '2026-09-16 04:14:54', NULL, NULL, NULL, NULL, NULL, NULL, '2026-09-16 04:14:54', '2026-09-16 04:14:54'),
+(130, 'MASAR-2026-0B0FAD4E', 1498, 100161, 100411, 297, 'pending', 'Certificate of Completion - Redis Caching Patterns', '2026-08-01', '2026-09-05', NULL, NULL, 0, '2026-09-16 04:14:55', NULL, NULL, NULL, NULL, NULL, NULL, '2026-09-16 04:14:55', '2026-09-16 04:14:55'),
+(131, 'MASAR-2026-EF9FD48D', 1498, 100161, 100412, 298, 'pending', 'Certificate of Completion - Serverless Backend Functions', '2026-06-27', '2026-08-15', NULL, NULL, 0, '2026-09-16 04:14:55', NULL, NULL, NULL, NULL, NULL, NULL, '2026-09-16 04:14:55', '2026-09-16 04:14:55'),
+(132, 'MASAR-2026-32D66712', 1498, 100161, 100413, 299, 'issued', 'Certificate of Completion - Database Sharding Fundamentals', '2026-05-31', '2026-07-26', 'A+', 'Excellent', 0, '2026-09-16 04:14:56', '2026-09-16 04:14:56', '2026-09-16 04:14:56', NULL, 100595, NULL, NULL, '2026-09-16 04:14:56', '2026-09-16 20:26:46'),
+(133, 'MASAR-2026-E45443B0', 1498, 100161, 100414, 300, 'issued', 'Certificate of Completion - Backend Refactoring Carousel', '2026-06-16', '2026-08-18', 'A', 'Excellent', 0, '2026-09-16 04:14:56', '2026-09-16 04:14:57', '2026-09-16 04:14:57', NULL, 100595, NULL, NULL, '2026-09-16 04:14:56', '2026-09-16 20:26:46'),
+(134, 'MASAR-2026-1F0246CF', 1498, 100161, 100415, 301, 'issued', 'Certificate of Completion - Test-Driven Backend Design', '2026-07-20', '2026-08-31', 'B+', 'Very Good', 0, '2026-09-16 04:14:58', '2026-09-16 04:14:58', '2026-09-16 04:14:58', NULL, 100595, NULL, NULL, '2026-09-16 04:14:58', '2026-09-16 20:26:46'),
+(135, 'MASAR-2026-6D297876', 1498, 100161, 100416, 302, 'issued', 'Certificate of Completion - Cloud-Native Monolith Migration', '2026-05-14', '2026-07-30', 'B', 'Very Good', 0, '2026-09-16 04:14:59', '2026-09-16 04:15:00', '2026-09-16 04:15:00', NULL, 100595, NULL, NULL, '2026-09-16 04:14:59', '2026-09-16 20:26:46'),
+(136, 'MASAR-2026-713D3634', 1498, 100161, 100417, 303, 'issued', 'Certificate of Completion - Distributed Systems Patterns', '2026-05-31', '2026-08-09', 'C+', 'Good', 0, '2026-09-16 04:15:00', '2026-09-16 04:15:00', '2026-09-16 04:15:00', NULL, 100595, NULL, NULL, '2026-09-16 04:15:00', '2026-09-16 20:26:47'),
+(137, 'MASAR-2026-E645E5D4', 1498, 100161, 100418, 304, 'issued', 'Certificate of Completion - Performance Budgeting for APIs', '2026-07-15', '2026-09-02', 'C', 'Good', 0, '2026-09-16 04:15:00', '2026-09-16 04:15:01', '2026-09-16 04:15:01', NULL, 100595, NULL, NULL, '2026-09-16 04:15:00', '2026-09-16 20:26:47'),
+(138, 'MASAR-2026-0AFDDD93', 1498, 100161, 100419, 305, 'revoked', 'Certificate of Completion - Incident Response Runbooks', '2026-06-15', '2026-07-20', 'A', 'Excellent', 0, '2026-09-16 04:15:55', '2026-09-16 04:15:57', '2026-09-16 04:15:57', '2026-09-16 04:15:59', 100595, NULL, 'Administrative verification failed', '2026-09-16 04:15:55', '2026-09-16 20:26:47'),
+(139, 'MASAR-2026-D94D0487', 1498, 100161, 100420, 306, 'revoked', 'Certificate of Completion - WebSockets & Streaming APIs', '2026-06-10', '2026-08-05', 'B+', 'Very Good', 0, '2026-09-16 04:15:59', '2026-09-16 04:16:00', '2026-09-16 04:16:00', '2026-09-16 04:16:00', 100595, NULL, 'Duplicate certificate issued', '2026-09-16 04:15:59', '2026-09-16 20:26:47'),
+(140, 'MASAR-2026-DA9CB143', 1498, 100161, 100421, 307, 'revoked', 'Certificate of Completion - Multi-Tenancy Backend Course', '2026-05-14', '2026-07-16', 'C+', 'Good', 0, '2026-09-16 04:16:01', '2026-09-16 04:16:01', '2026-09-16 04:16:01', '2026-09-16 04:16:02', 100595, NULL, 'Training records could not be verified', '2026-09-16 04:16:01', '2026-09-16 20:26:47');
 
 -- --------------------------------------------------------
 
@@ -1143,7 +1174,7 @@ CREATE TABLE `companies` (
 --
 
 INSERT INTO `companies` (`id`, `user_id`, `legal_name`, `description`, `website`, `phone`, `city`, `company_logo`, `address`, `bank_name`, `bank_account_name`, `bank_account_number`, `bank_transfer_instructions`, `approval_status`, `approved_at`, `approved_by`, `rejection_reason`, `created_at`, `updated_at`) VALUES
-(100144, 100568, 'NileTech Solutions', 'Software house in Giza building logistics, e-commerce and fintech platforms, with 40+ engineers.', 'https://www.niletech.eg', '01011122231', 'Giza', NULL, 'Giza', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
+(100144, 100568, 'NileTech Solutions', 'Software house in Giza building logistics, e-commerce and fintech platforms, with 40+ engineers.', 'https://www.niletech.eg', '01011122231', 'Giza', NULL, 'Giza', 'Nile Commercial Bank', 'NileTech Solutions', 'DEMO-001-2211-4688-7', 'Place the applicant full name in the transfer reference. Confirmations are posted within one business day.', 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-09-15 02:22:35'),
 (100145, 100569, 'Alexandria Digital Labs', 'Applied AI and data analytics lab serving manufacturing clients across the Delta.', 'https://www.alexdilabs.com', '01122233332', 'Alexandria', NULL, 'Alexandria', 'Alexandria Bank of Industry', 'Alexandria Digital Labs', 'DEMO-002-3155-7788-2', 'Place the applicant full name in the transfer reference. Confirmations are posted within one business day.', 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-09-08 06:45:45'),
 (100146, 100570, 'Cairo Medical Center', 'Multi-specialty hospital in downtown Cairo with 200 beds and a dedicated training floor.', 'https://www.cairomed.eg', '01533344433', 'Cairo', NULL, 'Cairo', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
 (100147, 100571, 'Atlas Engineering', 'Mechanical and civil engineering consultancy with projects across the Nile Delta and the new administrative capital.', 'https://www.atlaseng.eg', '01044455534', 'Giza', NULL, 'Giza', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
@@ -1151,14 +1182,14 @@ INSERT INTO `companies` (`id`, `user_id`, `legal_name`, `description`, `website`
 (100149, 100573, 'Luxor Pharma', 'Pharmaceutical manufacturer and distributor, accredited by the Egyptian Drug Authority.', 'https://www.luxorpharma.com', '01566677736', 'Alexandria', NULL, 'Alexandria', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
 (100150, 100574, 'Themis Law Partners', 'Corporate law firm advising startups and listed companies on contracts and compliance.', 'https://www.themis-law.com', '01077788837', 'Cairo', NULL, 'Cairo', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
 (100151, 100575, 'LedgerPro Accounting', 'Audit and bookkeeping firm serving SMEs in Greater Cairo and the Delta.', 'https://www.ledgerpro.eg', '01188899938', 'Cairo', NULL, 'Cairo', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
-(100152, 100576, 'FutureWorks Software', 'Product engineering studio in New Cairo building web and mobile products for international clients.', 'https://www.futureworks.io', '01599900039', 'New Cairo', NULL, 'New Cairo', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
+(100152, 100576, 'FutureWorks Software', 'Product engineering studio in New Cairo building web and mobile products for international clients.', 'https://www.futureworks.io', '01599900039', 'New Cairo', NULL, 'New Cairo', 'Future Horizon Bank', 'FutureWorks Software', 'DEMO-003-8855-1199-4', 'Place the applicant full name in the transfer reference. Confirmations are posted within one business day.', 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-09-15 02:22:35'),
 (100153, 100577, 'GreenRetail Egypt', 'Specialty retail chain with 15 branches across Cairo and Giza.', 'https://www.greenretail.eg', '01011122230', 'Giza', NULL, 'Giza', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
 (100154, 100578, 'MedPulse Diagnostics', 'New medical diagnostics laboratory opening in Dokki, currently onboarding its founding team.', 'https://www.medpulse-dx.com', '01122233331', 'Giza', NULL, 'Giza', NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
 (100155, 100579, 'SolarOffshore Energy', 'Renewable energy developer installing solar and onshore wind projects in the Suez region.', 'https://www.solaroffshore.eg', '01533344432', 'Suez', NULL, 'Suez', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
 (100156, 100580, 'Nile Valley Logistics', 'Freight and warehousing operator covering the Alexandria economic corridor.', 'https://www.nilevalley-log.com', '01044455533', 'Alexandria', NULL, 'Alexandria', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
 (100157, 100581, 'CleoFashion International', 'Garment and mixed-use real estate group in Cairo with an in-house design studio.', 'https://www.cleofashion.com', '01155566634', 'Cairo', NULL, 'Cairo', NULL, NULL, NULL, NULL, 'rejected', NULL, NULL, 'Incomplete business license documentation (commercial register and tax card missing).', '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
 (100158, 100582, 'HR Partners Egypt', 'Human resources outsourcing and recruitment firm headquartered in Maadi.', 'https://www.hrpartners.eg', '01566677735', 'Cairo', NULL, 'Cairo', NULL, NULL, NULL, NULL, 'approved', '2026-07-04 10:00:00', 100526, NULL, '2026-06-24 10:00:00', '2026-06-24 10:00:00'),
-(100161, 100595, 'TestHire Solutions', 'Test company account used to exercise the Accept, Reject and Withdraw application workflows through the API.', NULL, '01000000000', 'Alexandria', NULL, NULL, NULL, NULL, NULL, NULL, 'approved', '2026-09-08 00:16:40', NULL, NULL, '2026-09-08 00:16:40', '2026-09-08 00:16:40');
+(100161, 100595, 'TestHire Solutions', 'Test company account used to exercise the Accept, Reject and Withdraw application workflows through the API.', NULL, '01000000000', 'Alexandria', NULL, NULL, 'Cairo Business Bank', 'TestHire Solutions', 'DEMO-004-9472-3300-6', 'Place the applicant full name in the transfer reference. Confirmations are posted within one business day.', 'approved', '2026-09-08 00:16:40', NULL, NULL, '2026-09-08 00:16:40', '2026-09-15 02:22:35');
 
 -- --------------------------------------------------------
 
@@ -1434,7 +1465,14 @@ INSERT INTO `files` (`id`, `user_id`, `type`, `original_name`, `stored_name`, `p
 (311, 100588, 'cv', 'مووردين.xlsx', '20260902_3a48534bcfdf26a627aa1cff4979d6d1.xlsx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260902_3a48534bcfdf26a627aa1cff4979d6d1.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 12625, '2026-09-02 08:22:26'),
 (312, 100588, 'cv', 'مووردين.xlsx', '20260902_580a7b9a0b3f74cbef70604d80e2676d.xlsx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260902_580a7b9a0b3f74cbef70604d80e2676d.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 12625, '2026-09-02 08:22:42'),
 (313, 100588, 'cv', '46f4ccf6-719f-4f0a-a002-57c7d5cdbda6 (2).docx', '20260902_7801f454e1ff4ad6f0d6c7b6ac8b996c.docx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260902_7801f454e1ff4ad6f0d6c7b6ac8b996c.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 404214, '2026-09-02 08:25:30'),
-(314, 100588, 'cv', '46f4ccf6-719f-4f0a-a002-57c7d5cdbda6 (2).docx', '20260906_6d3f09c1af32b37a1d2981c4dbf4bcde.docx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260906_6d3f09c1af32b37a1d2981c4dbf4bcde.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 404214, '2026-09-07 00:41:10');
+(314, 100588, 'cv', '46f4ccf6-719f-4f0a-a002-57c7d5cdbda6 (2).docx', '20260906_6d3f09c1af32b37a1d2981c4dbf4bcde.docx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260906_6d3f09c1af32b37a1d2981c4dbf4bcde.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 404214, '2026-09-07 00:41:10'),
+(315, 100588, 'cv', '46f4ccf6-719f-4f0a-a002-57c7d5cdbda6 (2).docx', '20260909_ba003f11e380b94d83b2a153a5b0ba9c.docx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260909_ba003f11e380b94d83b2a153a5b0ba9c.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 404214, '2026-09-10 00:32:08'),
+(316, 100588, 'cv', '46f4ccf6-719f-4f0a-a002-57c7d5cdbda6 (2).docx', '20260909_c3e0289e10568f47eb4d50175614cf7b.docx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260909_c3e0289e10568f47eb4d50175614cf7b.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 404214, '2026-09-10 00:36:46'),
+(317, 100588, 'cv', '46f4ccf6-719f-4f0a-a002-57c7d5cdbda6 (2).docx', '20260910_d766d29bd0923ed93240aa7cb56432b4.docx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260910_d766d29bd0923ed93240aa7cb56432b4.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 404214, '2026-09-11 01:50:45'),
+(318, 100588, 'cv', '46f4ccf6-719f-4f0a-a002-57c7d5cdbda6 (2).docx', '20260910_83ec3e16011dc6975a884af563b47576.docx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260910_83ec3e16011dc6975a884af563b47576.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 404214, '2026-09-11 01:51:13'),
+(319, 100588, 'cv', '46f4ccf6-719f-4f0a-a002-57c7d5cdbda6 (2).docx', '20260910_084d100c909ea82633c88ab99f96ecf0.docx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260910_084d100c909ea82633c88ab99f96ecf0.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 404214, '2026-09-11 01:51:36'),
+(320, 100588, 'cv', '46f4ccf6-719f-4f0a-a002-57c7d5cdbda6 (2).docx', '20260910_f444dd23ad2de32fc698280b9579c0c5.docx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260910_f444dd23ad2de32fc698280b9579c0c5.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 404214, '2026-09-11 01:51:59'),
+(321, 100588, 'cv', '46f4ccf6-719f-4f0a-a002-57c7d5cdbda6 (2).docx', '20260910_5bd72f6dc18c9065555d73e6037da7b6.docx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260910_5bd72f6dc18c9065555d73e6037da7b6.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 404214, '2026-09-11 01:58:37');
 
 -- --------------------------------------------------------
 
@@ -1960,7 +1998,92 @@ INSERT INTO `notifications` (`id`, `user_id`, `type`, `title`, `body`, `entity_t
 (2035, 100588, 'application', 'Application Withdrawn', 'Your application has been withdrawn.', 'application', 1881, 0, NULL, NULL, '2026-09-09 04:45:25'),
 (2036, 100588, 'application', 'Application Withdrawn', 'Your application has been withdrawn.', 'application', 1881, 0, NULL, NULL, '2026-09-09 04:50:27'),
 (2037, 100588, 'application', 'Application Withdrawn', 'Your application has been withdrawn.', 'application', 1875, 0, NULL, NULL, '2026-09-09 05:01:18'),
-(2038, 100588, 'application', 'Application Withdrawn', 'Your application has been withdrawn.', 'application', 1875, 0, NULL, NULL, '2026-09-09 05:08:05');
+(2038, 100588, 'application', 'Application Withdrawn', 'Your application has been withdrawn.', 'application', 1875, 0, NULL, NULL, '2026-09-09 05:08:05'),
+(2039, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1988, 0, NULL, NULL, '2026-09-10 00:36:47'),
+(2040, 100588, 'application', 'Application Withdrawn', 'Your application has been withdrawn.', 'application', 1988, 0, NULL, NULL, '2026-09-10 00:38:03'),
+(2041, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1989, 0, NULL, NULL, '2026-09-11 01:52:00'),
+(2042, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1990, 0, NULL, NULL, '2026-09-11 01:58:38'),
+(2043, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1991, 0, NULL, NULL, '2026-09-14 00:59:08'),
+(2044, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 1992, 0, NULL, NULL, '2026-09-14 01:01:58'),
+(2045, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2005, 0, NULL, NULL, '2026-09-14 01:08:43'),
+(2046, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2006, 0, NULL, NULL, '2026-09-14 01:08:43'),
+(2047, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2007, 0, NULL, NULL, '2026-09-14 01:08:44'),
+(2048, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2008, 0, NULL, NULL, '2026-09-14 01:08:44'),
+(2049, 100588, 'application', 'Application Withdrawn', 'Your application has been withdrawn.', 'application', 1990, 0, NULL, NULL, '2026-09-14 01:22:59'),
+(2050, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2013, 0, NULL, NULL, '2026-09-14 02:25:01'),
+(2051, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2026, 0, NULL, NULL, '2026-09-14 02:29:20'),
+(2052, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2027, 0, NULL, NULL, '2026-09-14 02:29:20'),
+(2053, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2028, 0, NULL, NULL, '2026-09-14 02:29:20'),
+(2054, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2029, 0, NULL, NULL, '2026-09-14 02:29:21'),
+(2055, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2035, 0, NULL, NULL, '2026-09-14 05:04:16'),
+(2056, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2055, 0, NULL, NULL, '2026-09-14 06:09:01'),
+(2057, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2056, 0, NULL, NULL, '2026-09-14 06:09:01'),
+(2058, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2057, 0, NULL, NULL, '2026-09-14 06:09:01'),
+(2059, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2058, 0, NULL, NULL, '2026-09-14 06:09:01'),
+(2060, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2059, 0, NULL, NULL, '2026-09-14 06:09:02'),
+(2061, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2060, 0, NULL, NULL, '2026-09-14 06:09:02'),
+(2062, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2061, 0, NULL, NULL, '2026-09-14 06:09:02'),
+(2063, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2062, 0, NULL, NULL, '2026-09-14 06:09:03'),
+(2064, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2063, 0, NULL, NULL, '2026-09-14 06:09:32'),
+(2065, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2064, 0, NULL, NULL, '2026-09-14 06:09:33'),
+(2066, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2072, 0, NULL, NULL, '2026-09-14 06:14:52'),
+(2067, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2073, 0, NULL, NULL, '2026-09-14 06:14:52'),
+(2068, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2074, 0, NULL, NULL, '2026-09-14 06:14:52'),
+(2069, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2075, 0, NULL, NULL, '2026-09-14 06:14:52'),
+(2070, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2076, 0, NULL, NULL, '2026-09-14 06:15:06'),
+(2071, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2077, 0, NULL, NULL, '2026-09-14 06:19:04'),
+(2072, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2090, 0, NULL, NULL, '2026-09-14 06:58:27'),
+(2073, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2091, 0, NULL, NULL, '2026-09-14 06:58:27'),
+(2074, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2092, 0, NULL, NULL, '2026-09-14 06:58:28'),
+(2075, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2093, 0, NULL, NULL, '2026-09-14 06:58:28'),
+(2076, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2101, 0, NULL, NULL, '2026-09-14 06:59:33'),
+(2077, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2102, 0, NULL, NULL, '2026-09-14 06:59:33'),
+(2078, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2103, 0, NULL, NULL, '2026-09-14 06:59:34'),
+(2079, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2104, 0, NULL, NULL, '2026-09-14 06:59:34'),
+(2080, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2105, 0, NULL, NULL, '2026-09-14 06:59:49'),
+(2081, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2114, 0, NULL, NULL, '2026-09-15 02:25:31'),
+(2082, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2115, 0, NULL, NULL, '2026-09-15 02:25:31'),
+(2083, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2116, 0, NULL, NULL, '2026-09-15 02:25:32'),
+(2084, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2117, 0, NULL, NULL, '2026-09-15 02:25:32'),
+(2085, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2118, 0, NULL, NULL, '2026-09-15 02:30:05'),
+(2108, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2121, 0, NULL, NULL, '2026-09-15 03:20:30'),
+(2109, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2122, 0, NULL, NULL, '2026-09-15 03:20:42'),
+(2110, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2130, 0, NULL, NULL, '2026-09-15 03:21:18'),
+(2111, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2131, 0, NULL, NULL, '2026-09-15 03:21:18'),
+(2112, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2132, 0, NULL, NULL, '2026-09-15 03:21:18'),
+(2113, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2133, 0, NULL, NULL, '2026-09-15 03:21:18'),
+(2308, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2143, 0, NULL, NULL, '2026-09-16 03:07:36'),
+(2309, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2144, 0, NULL, NULL, '2026-09-16 03:07:47'),
+(2343, 100588, 'certificate', 'Certificate Requested', 'Your certificate request is awaiting approval.', 'certificate', 127, 0, NULL, NULL, '2026-09-16 04:14:54'),
+(2344, 100588, 'certificate', 'Certificate Requested', 'Your certificate request is awaiting approval.', 'certificate', 128, 0, NULL, NULL, '2026-09-16 04:14:54'),
+(2345, 100588, 'certificate', 'Certificate Requested', 'Your certificate request is awaiting approval.', 'certificate', 129, 0, NULL, NULL, '2026-09-16 04:14:54'),
+(2346, 100588, 'certificate', 'Certificate Requested', 'Your certificate request is awaiting approval.', 'certificate', 130, 0, NULL, NULL, '2026-09-16 04:14:55'),
+(2347, 100588, 'certificate', 'Certificate Requested', 'Your certificate request is awaiting approval.', 'certificate', 131, 0, NULL, NULL, '2026-09-16 04:14:55'),
+(2348, 100588, 'certificate', 'Certificate Requested', 'Your certificate request is awaiting approval.', 'certificate', 132, 0, NULL, NULL, '2026-09-16 04:14:56'),
+(2349, 100588, 'certificate', 'Certificate Issued', 'Your certificate has been issued successfully.', 'certificate', 132, 0, NULL, NULL, '2026-09-16 04:14:56'),
+(2350, 100588, 'certificate', 'Certificate Requested', 'Your certificate request is awaiting approval.', 'certificate', 133, 0, NULL, NULL, '2026-09-16 04:14:57'),
+(2351, 100588, 'certificate', 'Certificate Issued', 'Your certificate has been issued successfully.', 'certificate', 133, 0, NULL, NULL, '2026-09-16 04:14:57'),
+(2352, 100588, 'certificate', 'Certificate Requested', 'Your certificate request is awaiting approval.', 'certificate', 134, 0, NULL, NULL, '2026-09-16 04:14:58'),
+(2353, 100588, 'certificate', 'Certificate Issued', 'Your certificate has been issued successfully.', 'certificate', 134, 0, NULL, NULL, '2026-09-16 04:14:59'),
+(2354, 100588, 'certificate', 'Certificate Requested', 'Your certificate request is awaiting approval.', 'certificate', 135, 0, NULL, NULL, '2026-09-16 04:15:00'),
+(2355, 100588, 'certificate', 'Certificate Issued', 'Your certificate has been issued successfully.', 'certificate', 135, 0, NULL, NULL, '2026-09-16 04:15:00'),
+(2356, 100588, 'certificate', 'Certificate Requested', 'Your certificate request is awaiting approval.', 'certificate', 136, 0, NULL, NULL, '2026-09-16 04:15:00'),
+(2357, 100588, 'certificate', 'Certificate Issued', 'Your certificate has been issued successfully.', 'certificate', 136, 0, NULL, NULL, '2026-09-16 04:15:00'),
+(2358, 100588, 'certificate', 'Certificate Requested', 'Your certificate request is awaiting approval.', 'certificate', 137, 0, NULL, NULL, '2026-09-16 04:15:00'),
+(2359, 100588, 'certificate', 'Certificate Issued', 'Your certificate has been issued successfully.', 'certificate', 137, 0, NULL, NULL, '2026-09-16 04:15:01'),
+(2360, 100588, 'certificate', 'Certificate Requested', 'Your certificate request is awaiting approval.', 'certificate', 138, 0, NULL, NULL, '2026-09-16 04:15:56'),
+(2361, 100588, 'certificate', 'Certificate Issued', 'Your certificate has been issued successfully.', 'certificate', 138, 0, NULL, NULL, '2026-09-16 04:15:58'),
+(2362, 100588, 'certificate', 'Certificate Revoked', 'Your certificate has been revoked.', 'certificate', 138, 0, NULL, NULL, '2026-09-16 04:15:59'),
+(2363, 100588, 'certificate', 'Certificate Requested', 'Your certificate request is awaiting approval.', 'certificate', 139, 0, NULL, NULL, '2026-09-16 04:15:59'),
+(2364, 100588, 'certificate', 'Certificate Issued', 'Your certificate has been issued successfully.', 'certificate', 139, 0, NULL, NULL, '2026-09-16 04:16:00'),
+(2365, 100588, 'certificate', 'Certificate Revoked', 'Your certificate has been revoked.', 'certificate', 139, 0, NULL, NULL, '2026-09-16 04:16:00'),
+(2366, 100588, 'certificate', 'Certificate Requested', 'Your certificate request is awaiting approval.', 'certificate', 140, 0, NULL, NULL, '2026-09-16 04:16:01'),
+(2367, 100588, 'certificate', 'Certificate Issued', 'Your certificate has been issued successfully.', 'certificate', 140, 0, NULL, NULL, '2026-09-16 04:16:01'),
+(2368, 100588, 'certificate', 'Certificate Revoked', 'Your certificate has been revoked.', 'certificate', 140, 0, NULL, NULL, '2026-09-16 04:16:02'),
+(2390, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2175, 0, NULL, NULL, '2026-09-16 04:27:59'),
+(2391, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2176, 0, NULL, NULL, '2026-09-16 04:28:00'),
+(2392, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2177, 0, NULL, NULL, '2026-09-16 04:28:00'),
+(2393, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2178, 0, NULL, NULL, '2026-09-16 04:28:01');
 
 -- --------------------------------------------------------
 
@@ -2025,7 +2148,9 @@ INSERT INTO `payments` (`id`, `training_id`, `training_session_id`, `student_id`
 (48, 100224, 247, 1468, 100149, 1800.00, 'EGP', 10.00, 180.00, 1620.00, 'manual', 'pending', 'MANUAL-20260902-00004', NULL, '2026-08-24 15:00:00', '2026-08-24 15:00:00'),
 (49, 100228, 251, 1466, 100151, 2200.00, 'EGP', 10.00, 220.00, 1980.00, 'paymob', 'pending', 'PAYMOB-00000005', NULL, '2026-08-24 15:00:00', '2026-08-24 15:00:00'),
 (50, 100231, 254, 1456, 100152, 3500.00, 'EGP', 10.00, 350.00, 3150.00, 'manual', 'pending', 'MANUAL-20260902-00006', NULL, '2026-08-24 15:00:00', '2026-08-24 15:00:00'),
-(63, 100262, NULL, 1498, 100145, 3600.00, 'EGP', 0.00, 0.00, 3600.00, 'manual', 'pending', 'TRANSFER-RERUN-{{$timestamp}}', NULL, '2026-09-09 05:55:20', '2026-09-09 05:55:21');
+(63, 100262, NULL, 1498, 100145, 3600.00, 'EGP', 0.00, 0.00, 3600.00, 'manual', 'pending', 'TRANSFER-SEEDED-PENDING', NULL, '2026-09-09 05:55:20', '2026-09-16 04:28:04'),
+(64, 100304, NULL, 1498, 100161, 2500.00, 'EGP', 0.00, 0.00, 2500.00, 'manual', 'paid', 'TRANSFER-SEEDED-PAID', '2026-09-09 14:30:00', '2026-09-14 02:18:07', '2026-09-15 02:22:35'),
+(65, 100258, NULL, 1498, 100152, 1800.00, 'EGP', 0.00, 0.00, 1800.00, 'manual', 'failed', 'TRANSFER-SEEDED-FAILED', NULL, '2026-09-14 02:18:07', '2026-09-15 02:22:35');
 
 -- --------------------------------------------------------
 
@@ -2049,8 +2174,8 @@ INSERT INTO `refresh_tokens` (`id`, `user_id`, `token_hash`, `expires_at`, `revo
 (1045, 100526, '396696d4416b5f2ee60b539828970ce22b8ad9c3a47866d6bb8727857c82eb5e', '2026-10-02 01:18:05', NULL, '2026-09-02 04:18:06'),
 (1052, 100528, '4103cf549ec8dfb9ef3ed7cae70510ada4487c3796c75f9aa947d19dfaafbc1a', '2026-10-02 03:02:39', NULL, '2026-09-02 06:02:40'),
 (1053, 100568, '149d0ef4051abda64eccd31521e2abce377735cfbd22b202d20fbc54e2fb6a2a', '2026-10-02 03:03:53', NULL, '2026-09-02 06:03:53'),
-(1068, 100595, '2b3cfb41cb3becb1f2055738a3752dac1997ca4780a6ba27fed7db85095ca74b', '2026-10-08 00:42:02', NULL, '2026-09-08 03:42:02'),
-(1081, 100588, '7cf0c53cb5a0e5925d2498f96ed656d47b8a40e2723d7a2434909b31d3ff0492', '2026-10-09 02:49:56', NULL, '2026-09-09 05:49:56');
+(1089, 100595, 'fa0665440ee23a578d90393b3915de918a87131bb024dc0bf06f32550f87a3ed', '2026-10-13 21:55:44', NULL, '2026-09-14 00:55:44'),
+(1098, 100588, '3585a36eccd082ecf273d47f6b8961a853aa7859de47aa53bea75ba72f6d7f5c', '2026-10-16 17:57:57', NULL, '2026-09-16 20:57:57');
 
 -- --------------------------------------------------------
 
@@ -2152,7 +2277,8 @@ INSERT INTO `saved_trainings` (`id`, `student_id`, `training_id`, `created_at`) 
 (534, 1498, 100237, '2026-09-02 08:06:18'),
 (535, 1498, 100236, '2026-09-02 08:06:25'),
 (537, 1498, 100238, '2026-09-02 08:06:37'),
-(540, 1498, 100204, '2026-09-02 08:15:25');
+(540, 1498, 100204, '2026-09-02 08:15:25'),
+(586, 1498, 100304, '2026-09-14 02:18:07');
 
 -- --------------------------------------------------------
 
@@ -2926,7 +3052,6 @@ INSERT INTO `training_applications` (`id`, `training_id`, `student_id`, `company
 (1846, 100239, 1488, 100158, 'I am Mariam Tarek Nabil and I would like to join this training.', 'Mariam Tarek Nabil', 'mariam.tarek@gmail.com', '01188899996', '6 October City', '6 October City', 'I want to deepen my practical skills in Human Resources.', 'Hands-on knowledge of Human Resources and the workflows used by HR Partners Egypt.', 'Figma, UI Design, UX Design, Adobe Photoshop, Creativity, Communication', 'rejected', 'other', 'The committee selected candidates whose skills aligned more closely with the program requirements.', '2026-08-03 14:00:00', '2026-07-31 11:30:00', NULL, 100582, NULL, 648, 'Cairo University', 'student', 'Class of 2027', '2027', 'Looking to convert academic knowledge in UI/UX Design into professional competence.'),
 (1847, 100239, 1490, 100158, 'I am Yasmin Ahmed Talaat and I would like to join this training.', 'Yasmin Ahmed Talaat', 'yasmin.talaat@gmail.com', '01011122298', 'Maadi', 'Maadi', 'I want to deepen my practical skills in Human Resources.', 'Hands-on knowledge of Human Resources and the workflows used by HR Partners Egypt.', 'Excel, Power BI, Business Analysis, Communication, Problem Solving, Time Management', 'withdrawn', NULL, NULL, '2026-08-02 14:00:00', NULL, '2026-08-17 09:00:00', NULL, NULL, 61, 'Cairo University', 'student', 'Class of 2026', '2026', 'Looking to convert academic knowledge in Auditing into professional competence.'),
 (1864, 100261, 1498, 100145, 'I am interested in this training.', 'Ahmed Mohamed', 'ahmed@example.com', '01000000000', 'Alexandria', 'Alexandria', 'I want to join this training and improve my practical skills.', 'I want to improve my PHP and SQL skills.', '[]', 'submitted', NULL, NULL, '2026-09-07 00:41:10', NULL, NULL, NULL, 314, NULL, 'Alexandria University', 'student', '3rd year', NULL, NULL),
-(1875, 100275, 1498, 100161, 'I am a motivated student eager to learn from the team.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Alexandria', 'Alexandria, Egypt', 'I want practical experience building real products in a professional team.', 'Hands-on tools, workflows and best practices used in production.', '[\"PHP\",\"SQL\",\"Teamwork\"]', 'withdrawn', NULL, NULL, '2026-09-08 03:20:16', NULL, '2026-09-09 05:08:05', NULL, 314, NULL, 'Alexandria University', 'student', '3rd year', NULL, 'Looking forward to joining this training.'),
 (1876, 100276, 1498, 100161, 'I am a motivated student eager to learn from the team.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Alexandria', 'Alexandria, Egypt', 'I want practical experience building real products in a professional team.', 'Hands-on tools, workflows and best practices used in production.', '[\"PHP\",\"SQL\",\"Teamwork\"]', 'submitted', NULL, NULL, '2026-09-08 03:20:19', NULL, NULL, NULL, 314, NULL, 'Alexandria University', 'student', '3rd year', NULL, 'Looking forward to joining this training.'),
 (1877, 100277, 1498, 100161, 'I am a motivated student eager to learn from the team.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Alexandria', 'Alexandria, Egypt', 'I want practical experience building real products in a professional team.', 'Hands-on tools, workflows and best practices used in production.', '[\"PHP\",\"SQL\",\"Teamwork\"]', 'submitted', NULL, NULL, '2026-09-08 03:20:19', NULL, NULL, NULL, 314, NULL, 'Alexandria University', 'student', '3rd year', NULL, 'Looking forward to joining this training.'),
 (1878, 100278, 1498, 100161, 'I am a motivated student eager to learn from the team.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Alexandria', 'Alexandria, Egypt', 'I want practical experience building real products in a professional team.', 'Hands-on tools, workflows and best practices used in production.', '[\"PHP\",\"SQL\",\"Teamwork\"]', 'accepted', NULL, NULL, '2026-09-08 03:20:19', '2026-09-08 03:20:22', NULL, 100595, 314, NULL, 'Alexandria University', 'student', '3rd year', NULL, 'Looking forward to joining this training.'),
@@ -2936,7 +3061,36 @@ INSERT INTO `training_applications` (`id`, `training_id`, `student_id`, `company
 (1882, 100262, 1498, 100145, 'I am a motivated student eager to learn from the team.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Alexandria', 'Alexandria, Egypt', 'I want practical experience building real products in a professional team.', 'Hands-on tools, workflows and best practices used in production.', '[\"PHP\",\"SQL\",\"Teamwork\"]', 'accepted', NULL, NULL, '2026-09-08 03:20:20', '2026-09-08 03:20:22', NULL, 100569, 314, NULL, 'Alexandria University', 'student', '3rd year', NULL, 'Looking forward to joining this training.'),
 (1883, 100264, 1498, 100145, 'I am a motivated student eager to learn from the team.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Alexandria', 'Alexandria, Egypt', 'I want practical experience building real products in a professional team.', 'Hands-on tools, workflows and best practices used in production.', '[\"PHP\",\"SQL\",\"Teamwork\"]', 'rejected', 'training_closed', 'This training has been discontinued.', '2026-09-08 03:20:20', '2026-09-08 03:20:22', NULL, 100569, 314, NULL, 'Alexandria University', 'student', '3rd year', NULL, 'Looking forward to joining this training.'),
 (1884, 100256, 1498, 100152, 'I am a motivated student eager to learn from the team.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Alexandria', 'Alexandria, Egypt', 'I want practical experience building real products in a professional team.', 'Hands-on tools, workflows and best practices used in production.', '[\"PHP\",\"SQL\",\"Teamwork\"]', 'withdrawn', NULL, NULL, '2026-09-08 03:20:21', NULL, '2026-09-08 03:20:23', NULL, 314, NULL, 'Alexandria University', 'student', '3rd year', NULL, 'Looking forward to joining this training.'),
-(1885, 100255, 1498, 100152, 'I am a motivated student eager to learn from the team.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Alexandria', 'Alexandria, Egypt', 'I want practical experience building real products in a professional team.', 'Hands-on tools, workflows and best practices used in production.', '[\"PHP\",\"SQL\",\"Teamwork\"]', 'withdrawn', NULL, NULL, '2026-09-08 03:20:21', NULL, '2026-09-08 03:20:23', NULL, 314, NULL, 'Alexandria University', 'student', '3rd year', NULL, 'Looking forward to joining this training.');
+(1885, 100255, 1498, 100152, 'I am a motivated student eager to learn from the team.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Alexandria', 'Alexandria, Egypt', 'I want practical experience building real products in a professional team.', 'Hands-on tools, workflows and best practices used in production.', '[\"PHP\",\"SQL\",\"Teamwork\"]', 'withdrawn', NULL, NULL, '2026-09-08 03:20:21', NULL, '2026-09-08 03:20:23', NULL, 314, NULL, 'Alexandria University', 'student', '3rd year', NULL, 'Looking forward to joining this training.'),
+(1988, 100275, 1498, 100161, 'I am interested in this training.', 'Ahmed Mohamed', 'ahmed@example.com', '01000000000', 'Alexandria', 'Alexandria', 'I want to join this training and improve my practical skills.', 'I want to improve my PHP and SQL skills.', '[]', 'submitted', NULL, NULL, '2026-09-10 00:36:46', NULL, NULL, NULL, 316, NULL, 'Alexandria University', 'student', '3rd year', NULL, NULL),
+(1989, 100248, 1498, 100144, 'I am interested in this training.', 'Ahmed Mohamed', 'ahmed@example.com', '01000000000', 'Alexandria', 'Alexandria', 'I want to join this training and improve my practical skills.', 'I want to improve my PHP and SQL skills.', '[]', 'submitted', NULL, NULL, '2026-09-11 01:51:59', NULL, NULL, NULL, 320, NULL, 'Alexandria University', 'student', '3rd year', NULL, NULL),
+(2009, 100304, 1498, 100161, 'Accepted for the 100304 training (payment-state demo).', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Cairo', 'Cairo', 'I want to deepen my backend engineering skills through hands-on production practice.', 'Production-grade backend APIs, databases and team workflows.', 'PHP, Laravel, MySQL, Git', 'accepted', NULL, NULL, '2026-08-14 09:00:00', '2026-08-19 11:00:00', NULL, NULL, NULL, NULL, 'Test Data University', 'student', '3rd', NULL, NULL),
+(2010, 100258, 1498, 100152, 'Accepted for the 100258 training (payment-state demo).', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Cairo', 'Cairo', 'I want to deepen my backend engineering skills through hands-on production practice.', 'Production-grade backend APIs, databases and team workflows.', 'PHP, Laravel, MySQL, Git', 'accepted', NULL, NULL, '2026-08-14 09:00:00', '2026-08-19 11:00:00', NULL, NULL, NULL, NULL, 'Test Data University', 'student', '3rd', NULL, NULL),
+(2011, 100246, 1498, 100144, 'Accepted for the 100246 training (payment-state demo).', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Cairo', 'Cairo', 'I want to deepen my backend engineering skills through hands-on production practice.', 'Production-grade backend APIs, databases and team workflows.', 'PHP, Laravel, MySQL, Git', 'accepted', NULL, NULL, '2026-08-14 09:00:00', '2026-08-19 11:00:00', NULL, NULL, NULL, NULL, 'Test Data University', 'student', '3rd', NULL, NULL),
+(2106, 100303, 1498, 100161, 'Accepted for the 100303 training (payment-state demo).', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', '01000000000', 'Cairo', 'Cairo', 'I want to deepen my backend engineering skills through hands-on production practice.', 'Production-grade backend APIs, databases and team workflows.', 'PHP, Laravel, MySQL, Git', 'accepted', NULL, NULL, '2026-08-15 09:00:00', '2026-08-20 11:00:00', NULL, NULL, NULL, NULL, 'Test Data University', 'student', '3rd', NULL, NULL),
+(2145, 100400, 1498, 100161, 'I want to sharpen my backend skills through a supervised Backend Services Integration Sprint program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-06-02 01:14:45', '2026-06-04 01:14:45', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.'),
+(2146, 100401, 1498, 100161, 'I want to sharpen my backend skills through a supervised REST API Security Hardening program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-06-15 01:14:45', '2026-06-17 01:14:45', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.'),
+(2147, 100402, 1498, 100161, 'I want to sharpen my backend skills through a supervised Event-Driven Architecture Workshop program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-07-12 01:14:45', '2026-07-14 01:14:45', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.'),
+(2148, 100403, 1498, 100161, 'I want to sharpen my backend skills through a supervised MySQL Query Optimization Lab program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-07-31 01:14:46', '2026-08-02 01:14:46', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.'),
+(2149, 100404, 1498, 100161, 'I want to sharpen my backend skills through a supervised Dockerized Backend Deployment Bootcamp program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-05-21 01:14:46', '2026-05-23 01:14:46', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.'),
+(2150, 100405, 1498, 100161, 'I want to sharpen my backend skills through a supervised High-Performance Laravel Systems program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-06-24 01:14:47', '2026-06-26 01:14:47', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.'),
+(2151, 100406, 1498, 100161, 'I want to sharpen my backend skills through a supervised Kubernetes Orchestration Essentials program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-06-22 01:14:47', '2026-06-24 01:14:47', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.'),
+(2152, 100407, 1498, 100161, 'I want to sharpen my backend skills through a supervised Scalable Data Pipelines Practicum program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-06-15 01:14:48', '2026-06-17 01:14:48', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.'),
+(2153, 100408, 1498, 100161, 'I want to sharpen my backend skills through a supervised Real-Time Notification Systems program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-07-11 01:14:48', '2026-07-13 01:14:48', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.'),
+(2154, 100409, 1498, 100161, 'I want to sharpen my backend skills through a supervised API Rate Limiting & Queues program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-07-08 01:14:48', '2026-07-10 01:14:48', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.'),
+(2155, 100410, 1498, 100161, 'I want to sharpen my backend skills through a supervised Secure Authentication Flows program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-06-09 01:14:48', '2026-06-11 01:14:48', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.'),
+(2156, 100411, 1498, 100161, 'I want to sharpen my backend skills through a supervised Redis Caching Patterns program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-07-29 01:14:49', '2026-07-31 01:14:49', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.'),
+(2157, 100412, 1498, 100161, 'I want to sharpen my backend skills through a supervised Serverless Backend Functions program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-06-24 01:14:49', '2026-06-26 01:14:49', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.'),
+(2158, 100413, 1498, 100161, 'I want to sharpen my backend skills through a supervised Database Sharding Fundamentals program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-05-28 01:14:49', '2026-05-30 01:14:49', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.'),
+(2159, 100414, 1498, 100161, 'I want to sharpen my backend skills through a supervised Backend Refactoring Carousel program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-06-13 01:14:50', '2026-06-15 01:14:50', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.'),
+(2160, 100415, 1498, 100161, 'I want to sharpen my backend skills through a supervised Test-Driven Backend Design program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-07-17 01:14:50', '2026-07-19 01:14:50', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.'),
+(2161, 100416, 1498, 100161, 'I want to sharpen my backend skills through a supervised Cloud-Native Monolith Migration program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-05-11 01:14:50', '2026-05-13 01:14:50', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.'),
+(2162, 100417, 1498, 100161, 'I want to sharpen my backend skills through a supervised Distributed Systems Patterns program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-05-28 01:14:51', '2026-05-30 01:14:51', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.'),
+(2163, 100418, 1498, 100161, 'I want to sharpen my backend skills through a supervised Performance Budgeting for APIs program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-07-12 01:14:51', '2026-07-14 01:14:51', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.'),
+(2164, 100419, 1498, 100161, 'I want to sharpen my backend skills through a supervised Incident Response Runbooks program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-06-12 01:14:52', '2026-06-14 01:14:52', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.'),
+(2165, 100420, 1498, 100161, 'I want to sharpen my backend skills through a supervised WebSockets & Streaming APIs program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-06-07 01:14:52', '2026-06-09 01:14:52', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.'),
+(2166, 100421, 1498, 100161, 'I want to sharpen my backend skills through a supervised Multi-Tenancy Backend Course program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-05-11 01:14:52', '2026-05-13 01:14:52', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.'),
+(2167, 100422, 1498, 100161, 'I want to sharpen my backend skills through a supervised Cache Invalidation Strategies Sprint program.', 'Mohamed Ahmed', 'mammuslim2003@gmail.com', NULL, NULL, NULL, 'Hands-on practice in production-grade backend engineering with real mentorship.', 'Design, build and ship a complete backend module using the course stack.', 'PHP, Laravel, MySQL, REST APIs, Git, Docker', 'accepted', NULL, NULL, '2026-08-01 01:14:53', '2026-08-03 01:14:53', NULL, 100161, NULL, NULL, NULL, 'student', NULL, NULL, 'Looking for structured experience with measurable outcomes before graduation.');
 
 -- --------------------------------------------------------
 
@@ -3012,13 +3166,13 @@ INSERT INTO `training_listings` (`id`, `company_id`, `specialization_id`, `title
 (100238, 100158, 109, 'Recruitment Sourcer Program', 'A project_based training offered by HR Partners Egypt in Cairo for 3 students. The program covers the most requested skills in Human Resources and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'hybrid', 1, 0, NULL, 'EGP', NULL, 3, 'published', '2026-07-19 10:00:00', '2026-08-14 09:00:00', '2026-10-01 17:00:00', '2026-08-14 09:00:00', NULL, 'Cairo', '2026-08-19 10:00:00', '2026-09-07 00:03:54'),
 (100239, 100158, 109, 'Employee Onboarding Design', 'A project_based training offered by HR Partners Egypt in Cairo for 2 students. The program covers the most requested skills in Human Resources and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'project_based', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'published', '2026-07-17 10:00:00', '2026-08-13 09:00:00', '2026-10-01 17:00:00', '2026-08-13 09:00:00', NULL, 'Cairo', '2026-08-20 10:00:00', '2026-09-07 00:03:54'),
 (100240, 100157, 121, 'In-House Design Review', 'A hands_on training offered by CleoFashion International in Cairo for 2 students. The program covers the most requested skills in Graphic Design and includes mentoring, hands-on deliverables and a final evaluation with a certificate for those who complete the session.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 2, 'draft', NULL, '2026-10-26 09:00:00', '2026-11-25 17:00:00', '2026-10-26 09:00:00', NULL, 'Cairo', '2026-10-05 10:00:00', '2026-09-07 00:03:54'),
-(100246, 100144, 199, 'Laravel REST API Mastery', 'A project-based program where trainees build a production-grade Laravel REST API from scratch: migrations, Eloquent relationships, form requests, API resources and optimized JSON responses. The training covers authentication with Laravel Sanctum, rate limiting, exception handling and writing PHPUnit feature tests so every endpoint is verified before shipping. Trainees deploy the finished API with Docker and document it, mirroring how NileTech ships backend services for its logistics and fintech clients.', 'project_based', 'onsite', 1, 1, 3000.00, 'EGP', 14, 6, 'published', '2026-08-10 10:00:00', '2026-08-26 09:00:00', '2026-10-01 17:00:00', '2026-08-26 09:00:00', NULL, 'Giza', '2026-08-17 10:00:00', '2026-09-07 00:03:54'),
+(100246, 100144, 199, 'Laravel REST API Mastery', 'A project-based program where trainees build a production-grade Laravel REST API from scratch: migrations, Eloquent relationships, form requests, API resources and optimized JSON responses. The training covers authentication with Laravel Sanctum, rate limiting, exception handling and writing PHPUnit feature tests so every endpoint is verified before shipping. Trainees deploy the finished API with Docker and document it, mirroring how NileTech ships backend services for its logistics and fintech clients.', 'project_based', 'onsite', 1, 1, 3000.00, 'EGP', 14, 6, 'published', '2026-08-10 10:00:00', '2026-09-17 09:00:00', '2026-10-20 17:00:00', '2026-09-17 09:00:00', NULL, 'Giza', '2026-08-17 10:00:00', '2026-09-15 02:22:35'),
 (100247, 100144, 199, 'PHP Performance & Caching Essentials', 'A hands-on training focused on making slow PHP backends fast. Trainees profile real request bottlenecks with Xdebug, apply opcode caching, tune OPcache and MySQL query plans with EXPLAIN, and introduce Redis-backed application caching with automatic invalidation. Each session includes a measurable performance benchmark before and after the change, so participants leave with a repeatable optimization workflow for Laravel and plain PHP applications.', 'hands_on', 'remote', 0, 1, 2200.00, 'EGP', 10, 8, 'published', '2026-08-20 10:00:00', '2026-09-26 09:00:00', '2026-11-02 17:00:00', '2026-09-26 09:00:00', NULL, 'Giza', '2026-08-16 10:00:00', '2026-09-07 00:03:54'),
 (100248, 100144, 199, 'Docker & Container Orchestration', 'A project-based training on containerized backend delivery. Trainees Dockerize a Laravel application, split it into multi-stage images, wire it up with docker-compose (nginx, PHP-FPM, MySQL, Redis) and then practice orchestration concepts: health checks, dependency ordering, volume management and rolling updates. The final deliverable is a repeatable container stack that starts, upgrades and rolls back reliably.', 'project_based', 'hybrid', 0, 1, 2600.00, 'EGP', 14, 5, 'published', '2026-08-19 10:00:00', '2026-09-27 09:00:00', '2026-11-04 17:00:00', '2026-09-27 09:00:00', NULL, 'Giza', '2026-08-15 10:00:00', '2026-09-07 00:03:54'),
 (100249, 100144, 199, 'MySQL Query Optimization', 'A shadowing training inside NileTech\'s data layer, where trainees observe senior engineers tuning the queries behind the company\'s logistics dashboards. Topics include index design, composite indexes, covering indexes, JOIN strategies, EXPLAIN analysis and query rewriting. Trainees review real slow-query logs and propose index/query changes that are then applied and measured against production-shaped data.', 'shadowing', 'onsite', 1, 0, NULL, 'EGP', NULL, 4, 'published', '2026-08-18 10:00:00', '2026-09-28 09:00:00', '2026-11-06 17:00:00', '2026-09-28 09:00:00', NULL, 'Giza', '2026-08-14 10:00:00', '2026-09-07 00:03:54'),
 (100250, 100144, 199, 'Secure API Authentication Patterns', 'A hands-on hybrid workshop covering the authentication and authorization decisions behind customer-facing APIs. Trainees implement registration, login, token refresh and password reset flows in PHP/Laravel, compare session-based and stateless JWT approaches, enforce role-based access control, and protect against common API security issues such as mass assignment, token leakage and brute-force login attempts. Code review of the finished endpoints closes the program.', 'hands_on', 'hybrid', 0, 0, NULL, 'EGP', NULL, 7, 'published', '2026-08-17 10:00:00', '2026-11-25 09:00:00', '2027-01-04 17:00:00', '2026-11-25 09:00:00', NULL, 'Giza', '2026-08-13 10:00:00', '2026-09-07 00:03:54'),
 (100251, 100144, 199, 'CI/CD Pipeline Automation', 'A project-based remote training on end-to-end delivery automation. Trainees write GitHub Actions workflows that run PHP_CodeSniffer, static analysis and PHPUnit, build Docker images, push them to a registry and deploy to a staging server, then promote the same artifact to production. The training stresses pipeline reliability: fast feedback, cached dependencies, secret handling and rollback-ready releases.', 'project_based', 'remote', 0, 1, 2400.00, 'EGP', 7, 6, 'published', '2026-08-16 10:00:00', '2026-11-26 09:00:00', '2027-01-06 17:00:00', '2026-11-26 09:00:00', NULL, 'Giza', '2026-08-12 10:00:00', '2026-09-07 00:03:54'),
-(100252, 100144, 199, 'Backend Unit Testing Essentials', 'An onsite hands-on training that turns trainees into confident test writers. Starting from pure unit tests in PHPUnit, it progresses through database-backed tests, Laravel factories and feature tests, covering test doubles, data providers and coverage reports. Trainees apply the practices to a real internal project while pairing with NileTech engineers, finishing with a green, meaningful test suite instead of tests written just to satisfy coverage.', 'hands_on', 'onsite', 1, 1, 1500.00, 'EGP', 7, 8, 'published', '2026-07-29 10:00:00', '2026-08-20 09:00:00', '2026-10-01 17:00:00', '2026-08-20 09:00:00', NULL, 'Giza', '2026-08-11 10:00:00', '2026-09-07 00:03:54'),
+(100252, 100144, 199, 'Backend Unit Testing Essentials', 'An onsite hands-on training that turns trainees into confident test writers. Starting from pure unit tests in PHPUnit, it progresses through database-backed tests, Laravel factories and feature tests, covering test doubles, data providers and coverage reports. Trainees apply the practices to a real internal project while pairing with NileTech engineers, finishing with a green, meaningful test suite instead of tests written just to satisfy coverage.', 'hands_on', 'onsite', 1, 1, 1500.00, 'EGP', 7, 8, 'published', '2026-07-29 10:00:00', '2026-09-17 09:00:00', '2026-10-22 17:00:00', '2026-09-17 09:00:00', NULL, 'Giza', '2026-08-11 10:00:00', '2026-09-15 02:22:35'),
 (100253, 100144, 199, 'Redis for Scalable Backends', 'A shadowing training in which trainees follow backend engineers as they model a high-traffic checkout flow with Redis. They observe caching strategies, cache invalidation, Redis-backed sessions and queues in a live architecture, then re-create the patterns in guided labs. Participants learn when Redis is the right tool versus when a database or message queue fits better, and how to reason about data expiry and consistency.', 'shadowing', 'hybrid', 0, 0, NULL, 'EGP', NULL, 5, 'published', '2026-07-27 10:00:00', '2026-08-19 09:00:00', '2026-10-01 17:00:00', '2026-08-19 09:00:00', NULL, 'Giza', '2026-08-10 10:00:00', '2026-09-07 00:03:54'),
 (100254, 100152, 199, 'Node.js Microservices Architecture', 'A project-based training where trainees decompose a monolithic Node.js backend into small, independently deployable microservices connected by an internal message flow. The program covers Express.js service design, API contracts, Docker packaging of each service, PostgreSQL per-service data isolation and health/readiness endpoints. Trainees finish with a running multi-service stack they can start, scale and debug end to end.', 'project_based', 'remote', 0, 1, 3200.00, 'EGP', 14, 6, 'published', '2026-08-13 10:00:00', '2026-10-03 09:00:00', '2026-11-16 17:00:00', '2026-10-03 09:00:00', NULL, 'New Cairo', '2026-08-09 10:00:00', '2026-09-07 00:03:54'),
 (100255, 100152, 199, 'GraphQL API Design', 'A hands-on hybrid training on building a GraphQL API the right way. Trainees design the schema first, then bring it to life with Apollo Server on Node.js backed by MongoDB and TypeScript: resolvers, data loaders to avoid N+1 queries, input validators, subscriptions and field-level authorization. The training ends with schema-first documentation and a client-ready API contract.', 'hands_on', 'hybrid', 1, 1, 2800.00, 'EGP', 10, 6, 'published', '2026-08-12 10:00:00', '2026-10-04 09:00:00', '2026-11-18 17:00:00', '2026-10-04 09:00:00', NULL, 'New Cairo', '2026-08-08 10:00:00', '2026-09-07 00:03:54'),
@@ -3039,7 +3193,36 @@ INSERT INTO `training_listings` (`id`, `company_id`, `specialization_id`, `title
 (100277, 100161, 92, 'Data Analytics Internship', 'Hands-on data analytics internship program offered to students.', 'project_based', 'hybrid', 0, 0, NULL, 'EGP', NULL, 10, 'published', '2026-09-08 00:16:59', '2026-09-18 00:16:59', '2026-12-17 00:16:59', '2026-09-18 00:16:59', NULL, NULL, '2026-09-08 00:16:59', '2026-09-08 03:30:16'),
 (100278, 100161, 110, 'DevOps Fundamentals', 'Hands-on devops fundamentals program offered to students.', 'hands_on', 'remote', 0, 0, NULL, 'EGP', NULL, 10, 'published', '2026-09-08 00:16:59', '2026-09-18 00:16:59', '2026-12-17 00:16:59', '2026-09-18 00:16:59', NULL, NULL, '2026-09-08 00:16:59', '2026-09-08 03:30:16'),
 (100279, 100161, 122, 'Mobile Flutter Internship', 'Hands-on mobile flutter internship program offered to students.', 'project_based', 'remote', 0, 0, NULL, 'EGP', NULL, 10, 'published', '2026-09-08 00:16:59', '2026-09-18 00:16:59', '2026-12-17 00:16:59', '2026-09-18 00:16:59', NULL, NULL, '2026-09-08 00:16:59', '2026-09-08 03:30:17'),
-(100280, 100161, 94, 'Cybersecurity Essentials', 'Hands-on cybersecurity essentials program offered to students.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 10, 'published', '2026-09-08 00:17:00', '2026-09-18 00:17:00', '2026-12-17 00:17:00', '2026-09-18 00:17:00', NULL, NULL, '2026-09-08 00:17:00', '2026-09-08 03:30:17');
+(100280, 100161, 94, 'Cybersecurity Essentials', 'Hands-on cybersecurity essentials program offered to students.', 'hands_on', 'onsite', 0, 0, NULL, 'EGP', NULL, 10, 'published', '2026-09-08 00:17:00', '2026-09-18 00:17:00', '2026-12-17 00:17:00', '2026-09-18 00:17:00', NULL, NULL, '2026-09-08 00:17:00', '2026-09-08 03:30:17'),
+(100303, 100161, 199, 'Backend PHP Micro-Internship', 'A short, free hands-on internship at TestHire where juniors pair with the backend team on PHP endpoints: PSR-standard structure, input validation and clean database access. Trainees ship one small production-shaped feature end to end and get direct code review. Purpose: short remaining duration for duration_asc sorting and a free apply/accept target.', 'hands_on', 'onsite', 1, 0, NULL, 'EGP', NULL, 10, 'published', '2026-08-31 08:00:00', '2026-09-22 09:00:00', '2026-09-29 17:00:00', '2026-09-22 09:00:00', NULL, 'Alexandria', '2026-09-13 21:54:51', '2026-09-15 02:22:35'),
+(100304, 100161, 199, 'Backend API & Database Bootcamp', 'A paid project-based bootcamp covering the full backend stack at TestHire: REST API design, authentication, SQL schema design and deployment. Trainees build a complete service and present it in review. Purpose: paid training for the application + manual payment (reference -> confirm) lifecycle. Fee is charged to accepted students per MASAR rules.', 'project_based', 'remote', 1, 1, 2500.00, 'EGP', 14, 8, 'published', '2026-08-31 08:00:00', '2026-10-09 09:00:00', '2026-11-13 17:00:00', '2026-10-09 09:00:00', NULL, 'Alexandria', '2026-09-13 21:54:52', '2026-09-15 02:22:35'),
+(100305, 100161, 199, 'Backend Monolith Refactoring Sprint', 'A fixture published training whose ends_at has already passed so the tester can observe an expired-but-published listing (fixed duration still computed, remaining_days = 0) and then extend it with PUT /api/v1/trainings/update?id=... { \"end_date\": ... }. The close_expired_trainings cron only removes it after it flips to closed; before that run the company can extend it and bring it back to a live countdown.', 'project_based', 'hybrid', 1, 0, NULL, 'EGP', NULL, 6, 'published', '2026-07-21 08:00:00', '2026-08-05 09:00:00', '2026-09-11 17:00:00', '2026-08-05 09:00:00', NULL, 'Alexandria', '2026-09-13 21:54:52', '2026-09-15 02:22:35'),
+(100307, 100161, 199, 'Backend Senior Mentorship Circle', 'A long, free remote mentorship at TestHire where a senior engineer guides a small group through architecture reviews, incident postmortems and career-grade project work over several months. Purpose: long remaining duration for duration_desc sorting and a large countdown value.', 'shadowing', 'remote', 1, 0, NULL, 'EGP', NULL, 4, 'published', '2026-08-31 08:00:00', '2026-09-19 09:00:00', '2026-12-18 17:00:00', '2026-09-19 09:00:00', NULL, 'Alexandria', '2026-09-13 21:54:52', '2026-09-15 02:22:35'),
+(100308, 100161, 199, 'Backend GraphQL Gateway Draft', 'A DRAFT fixture owned by TestHire. Only drafts can be deleted, so this is the target for DELETE /api/v1/trainings/delete?id=... (409 for published/closed rows, 403 for other companies). NOT published, so it never appears in student discovery.', 'hands_on', 'remote', 0, 0, NULL, 'EGP', NULL, 5, 'draft', NULL, '2026-09-24 09:00:00', '2026-10-24 17:00:00', '2026-09-24 09:00:00', NULL, 'Alexandria', '2026-09-14 06:13:15', '2026-09-15 02:22:35'),
+(100400, 100161, 199, 'Backend Services Integration Sprint', 'A \"TestHire Certified\" hands-on program for free backend development practice: Backend Services Integration Sprint.', 'project_based', 'hybrid', 1, 0, NULL, 'EGP', 7, 16, 'published', '2026-05-16 01:14:40', '2026-06-05 17:29:40', '2026-09-04 17:29:40', '2026-06-02 17:29:40', NULL, 'Cairo, Egypt', '2026-09-16 04:14:40', '2026-09-16 20:29:40'),
+(100401, 100161, 199, 'REST API Security Hardening', 'A \"TestHire Certified\" hands-on program for free backend development practice: REST API Security Hardening.', 'hands_on', 'remote', 0, 0, NULL, 'EGP', 7, 12, 'published', '2026-05-29 01:14:41', '2026-06-18 17:29:40', '2026-08-13 17:29:40', '2026-06-15 17:29:40', NULL, 'Remote', '2026-09-16 04:14:41', '2026-09-16 20:29:40'),
+(100402, 100161, 199, 'Event-Driven Architecture Workshop', 'A \"TestHire Certified\" hands-on program for free backend development practice: Event-Driven Architecture Workshop.', 'hands_on', 'hybrid', 1, 0, NULL, 'EGP', 7, 20, 'published', '2026-06-25 01:14:41', '2026-07-15 17:29:40', '2026-08-26 17:29:40', '2026-07-12 17:29:40', NULL, 'Giza, Egypt', '2026-09-16 04:14:41', '2026-09-16 20:29:40'),
+(100403, 100161, 199, 'MySQL Query Optimization Lab', 'A \"TestHire Certified\" hands-on program for free backend development practice: MySQL Query Optimization Lab.', 'project_based', 'onsite', 0, 0, NULL, 'EGP', 7, 10, 'published', '2026-07-14 01:14:41', '2026-08-03 17:29:40', '2026-09-07 17:29:40', '2026-07-31 17:29:40', NULL, 'Cairo, Egypt', '2026-09-16 04:14:41', '2026-09-16 20:29:40'),
+(100404, 100161, 199, 'Dockerized Backend Deployment Bootcamp', 'A \"TestHire Certified\" hands-on program for paid backend development practice: Dockerized Backend Deployment Bootcamp.', 'project_based', 'remote', 1, 1, 1500.00, 'EGP', 14, 14, 'published', '2026-05-04 01:14:41', '2026-05-24 17:29:41', '2026-08-02 17:29:41', '2026-05-21 17:29:41', NULL, 'Remote', '2026-09-16 04:14:41', '2026-09-16 20:29:41'),
+(100405, 100161, 199, 'High-Performance Laravel Systems', 'A \"TestHire Certified\" hands-on program for paid backend development practice: High-Performance Laravel Systems.', 'hands_on', 'hybrid', 0, 1, 1200.00, 'EGP', 7, 12, 'published', '2026-06-07 01:14:42', '2026-06-27 17:29:41', '2026-08-29 17:29:41', '2026-06-24 17:29:41', NULL, 'Alexandria, Egypt', '2026-09-16 04:14:42', '2026-09-16 20:29:41'),
+(100406, 100161, 199, 'Kubernetes Orchestration Essentials', 'A \"TestHire Certified\" hands-on program for paid backend development practice: Kubernetes Orchestration Essentials.', 'hands_on', 'remote', 1, 1, 2000.00, 'EGP', 14, 18, 'published', '2026-06-05 01:14:42', '2026-06-25 17:29:41', '2026-08-20 17:29:41', '2026-06-22 17:29:41', NULL, 'Remote', '2026-09-16 04:14:42', '2026-09-16 20:29:41'),
+(100407, 100161, 199, 'Backend Data Pipelines Practicum', 'A \"TestHire Certified\" hands-on program for paid backend development practice: Backend Data Pipelines Practicum.', 'project_based', 'hybrid', 1, 1, 1800.00, 'EGP', 7, 10, 'published', '2026-05-29 01:14:42', '2026-06-18 17:29:41', '2026-09-10 17:29:41', '2026-06-15 17:29:41', NULL, 'Cairo, Egypt', '2026-09-16 04:14:42', '2026-09-16 20:29:41'),
+(100408, 100161, 199, 'Real-Time Notification Systems', 'A \"TestHire Certified\" hands-on program for free backend development practice: Real-Time Notification Systems.', 'hands_on', 'remote', 0, 0, NULL, 'EGP', 7, 15, 'published', '2026-06-24 01:14:42', '2026-07-14 17:29:42', '2026-09-01 17:29:42', '2026-07-11 17:29:42', NULL, 'Remote', '2026-09-16 04:14:42', '2026-09-16 20:29:42'),
+(100409, 100161, 199, 'API Rate Limiting & Queues', 'A \"TestHire Certified\" hands-on program for free backend development practice: API Rate Limiting & Queues.', 'hands_on', 'hybrid', 0, 0, NULL, 'EGP', 7, 12, 'published', '2026-06-21 01:14:43', '2026-07-11 17:29:42', '2026-08-22 17:29:42', '2026-07-08 17:29:42', NULL, 'Cairo, Egypt', '2026-09-16 04:14:43', '2026-09-16 20:29:42'),
+(100410, 100161, 199, 'Secure Authentication Flows', 'A \"TestHire Certified\" hands-on program for paid backend development practice: Secure Authentication Flows.', 'project_based', 'remote', 1, 1, 1400.00, 'EGP', 14, 14, 'published', '2026-05-23 01:14:43', '2026-06-12 17:29:42', '2026-08-07 17:29:42', '2026-06-09 17:29:42', NULL, 'Remote', '2026-09-16 04:14:43', '2026-09-16 20:29:42'),
+(100411, 100161, 199, 'Redis Caching Patterns', 'A \"TestHire Certified\" hands-on program for paid backend development practice: Redis Caching Patterns.', 'hands_on', 'onsite', 1, 1, 1100.00, 'EGP', 7, 10, 'published', '2026-07-12 01:14:43', '2026-08-01 17:29:42', '2026-09-05 17:29:42', '2026-07-29 17:29:42', NULL, 'Giza, Egypt', '2026-09-16 04:14:43', '2026-09-16 20:29:42'),
+(100412, 100161, 199, 'Serverless Backend Functions', 'A \"TestHire Certified\" hands-on program for paid backend development practice: Serverless Backend Functions.', 'project_based', 'remote', 0, 1, 1700.00, 'EGP', 14, 16, 'published', '2026-06-07 01:14:43', '2026-06-27 17:29:43', '2026-08-15 17:29:43', '2026-06-24 17:29:43', NULL, 'Remote', '2026-09-16 04:14:43', '2026-09-16 20:29:43'),
+(100413, 100161, 199, 'Database Sharding Fundamentals', 'A \"TestHire Certified\" hands-on program for free backend development practice: Database Sharding Fundamentals.', 'hands_on', 'hybrid', 0, 0, NULL, 'EGP', 7, 13, 'published', '2026-05-11 01:14:43', '2026-05-31 17:29:43', '2026-07-26 17:29:43', '2026-05-28 17:29:43', NULL, 'Cairo, Egypt', '2026-09-16 04:14:43', '2026-09-16 20:29:43'),
+(100414, 100161, 199, 'Backend Refactoring Carousel', 'A \"TestHire Certified\" hands-on program for free backend development practice: Backend Refactoring Carousel.', 'project_based', 'remote', 1, 0, NULL, 'EGP', 7, 11, 'published', '2026-05-27 01:14:43', '2026-06-16 17:29:43', '2026-08-18 17:29:43', '2026-06-13 17:29:43', NULL, 'Remote', '2026-09-16 04:14:43', '2026-09-16 20:29:43'),
+(100415, 100161, 199, 'Test-Driven Backend Design', 'A \"TestHire Certified\" hands-on program for free backend development practice: Test-Driven Backend Design.', 'hands_on', 'hybrid', 0, 0, NULL, 'EGP', 7, 12, 'published', '2026-06-30 01:14:44', '2026-07-20 17:29:43', '2026-08-31 17:29:43', '2026-07-17 17:29:43', NULL, 'Alexandria, Egypt', '2026-09-16 04:14:44', '2026-09-16 20:29:43'),
+(100416, 100161, 199, 'Cloud-Native Monolith Migration', 'A \"TestHire Certified\" hands-on program for paid backend development practice: Cloud-Native Monolith Migration.', 'project_based', 'remote', 1, 1, 2200.00, 'EGP', 14, 14, 'published', '2026-04-24 01:14:44', '2026-05-14 17:29:43', '2026-07-30 17:29:43', '2026-05-11 17:29:43', NULL, 'Remote', '2026-09-16 04:14:44', '2026-09-16 20:29:43'),
+(100417, 100161, 199, 'Distributed Systems Patterns', 'A \"TestHire Certified\" hands-on program for paid backend development practice: Distributed Systems Patterns.', 'hands_on', 'hybrid', 1, 1, 1900.00, 'EGP', 14, 15, 'published', '2026-05-11 01:14:44', '2026-05-31 17:29:44', '2026-08-09 17:29:44', '2026-05-28 17:29:44', NULL, 'Cairo, Egypt', '2026-09-16 04:14:44', '2026-09-16 20:29:44'),
+(100418, 100161, 199, 'Performance Budgeting for APIs', 'A \"TestHire Certified\" hands-on program for paid backend development practice: Performance Budgeting for APIs.', 'project_based', 'remote', 0, 1, 1300.00, 'EGP', 7, 10, 'published', '2026-06-25 01:14:44', '2026-07-15 17:29:44', '2026-09-02 17:29:44', '2026-07-12 17:29:44', NULL, 'Remote', '2026-09-16 04:14:44', '2026-09-16 20:29:44'),
+(100419, 100161, 199, 'Incident Response Runbooks', 'A \"TestHire Certified\" hands-on program for free backend development practice: Incident Response Runbooks.', 'hands_on', 'hybrid', 0, 0, NULL, 'EGP', 7, 12, 'published', '2026-05-26 01:14:44', '2026-06-15 17:29:44', '2026-07-20 17:29:44', '2026-06-12 17:29:44', NULL, 'Cairo, Egypt', '2026-09-16 04:14:44', '2026-09-16 20:29:44'),
+(100420, 100161, 199, 'WebSockets & Streaming APIs', 'A \"TestHire Certified\" hands-on program for free backend development practice: WebSockets & Streaming APIs.', 'project_based', 'remote', 1, 0, NULL, 'EGP', 7, 14, 'published', '2026-05-21 01:14:44', '2026-06-10 17:29:44', '2026-08-05 17:29:44', '2026-06-07 17:29:44', NULL, 'Remote', '2026-09-16 04:14:44', '2026-09-16 20:29:44');
+INSERT INTO `training_listings` (`id`, `company_id`, `specialization_id`, `title`, `description`, `training_type`, `mode`, `may_lead_to_employment`, `is_paid`, `compensation_amount`, `compensation_currency`, `trial_period_days`, `capacity`, `status`, `published_at`, `starts_at`, `ends_at`, `application_deadline`, `closed_at`, `location`, `created_at`, `updated_at`) VALUES
+(100421, 100161, 199, 'Multi-Tenancy Backend Course', 'A \"TestHire Certified\" hands-on program for paid backend development practice: Multi-Tenancy Backend Course.', 'hands_on', 'hybrid', 1, 1, 1600.00, 'EGP', 14, 11, 'published', '2026-04-24 01:14:44', '2026-05-14 17:29:45', '2026-07-16 17:29:45', '2026-05-11 17:29:45', NULL, 'Giza, Egypt', '2026-09-16 04:14:44', '2026-09-16 20:29:45'),
+(100422, 100161, 199, 'Cache Invalidation Strategies Sprint', 'A \"TestHire Certified\" hands-on program for paid backend development practice: Cache Invalidation Strategies Sprint.', 'project_based', 'remote', 1, 1, 1250.00, 'EGP', 7, 12, 'published', '2026-07-15 01:14:45', '2026-08-04 17:29:45', '2026-10-06 17:29:45', '2026-08-01 17:29:45', NULL, 'Remote', '2026-09-16 04:14:45', '2026-09-16 20:29:45');
 
 -- --------------------------------------------------------
 
@@ -3321,7 +3504,30 @@ INSERT INTO `training_sessions` (`id`, `application_id`, `training_id`, `student
 (258, 1830, 100236, 1456, 100156, 'continuing', '2026-08-27 09:00:00', '2026-08-28 09:00:00', '2026-08-23 18:00:00', '2026-08-30 12:00:00', NULL, 0, '2026-08-28 09:00:00', '2026-08-28 09:00:00'),
 (259, 1835, 100237, 1466, 100155, 'continuing', '2026-08-27 09:00:00', '2026-08-28 09:00:00', '2026-08-23 18:00:00', '2026-08-30 12:00:00', NULL, 0, '2026-08-28 09:00:00', '2026-08-28 09:00:00'),
 (260, 1840, 100238, 1476, 100158, 'continuing', '2026-08-27 09:00:00', '2026-08-28 09:00:00', '2026-08-23 18:00:00', '2026-08-30 12:00:00', NULL, 0, '2026-08-28 09:00:00', '2026-08-28 09:00:00'),
-(261, 1845, 100239, 1486, 100158, 'continuing', '2026-08-27 09:00:00', '2026-08-28 09:00:00', '2026-08-23 18:00:00', '2026-08-30 12:00:00', NULL, 0, '2026-08-28 09:00:00', '2026-08-28 09:00:00');
+(261, 1845, 100239, 1486, 100158, 'continuing', '2026-08-27 09:00:00', '2026-08-28 09:00:00', '2026-08-23 18:00:00', '2026-08-30 12:00:00', NULL, 0, '2026-08-28 09:00:00', '2026-08-28 09:00:00'),
+(286, 2145, 100400, 1498, 100161, 'completed', '2026-06-05 01:14:45', '2026-06-05 01:14:45', '2026-06-12 01:14:45', '2026-06-19 01:14:45', '2026-09-04 01:14:45', 1, '2026-09-16 04:14:45', '2026-09-16 04:14:45'),
+(287, 2146, 100401, 1498, 100161, 'completed', '2026-06-18 01:14:45', '2026-06-18 01:14:45', '2026-06-25 01:14:45', '2026-07-02 01:14:45', '2026-08-13 01:14:45', 0, '2026-09-16 04:14:45', '2026-09-16 04:14:45'),
+(288, 2147, 100402, 1498, 100161, 'completed', '2026-07-15 01:14:46', '2026-07-15 01:14:46', '2026-07-22 01:14:46', '2026-07-29 01:14:46', '2026-08-26 01:14:46', 1, '2026-09-16 04:14:46', '2026-09-16 04:14:46'),
+(289, 2148, 100403, 1498, 100161, 'completed', '2026-08-03 01:14:46', '2026-08-03 01:14:46', '2026-08-10 01:14:46', '2026-08-17 01:14:46', '2026-09-07 01:14:46', 0, '2026-09-16 04:14:46', '2026-09-16 04:14:46'),
+(290, 2149, 100404, 1498, 100161, 'completed', '2026-05-24 01:14:46', '2026-05-24 01:14:46', '2026-06-07 01:14:46', '2026-06-21 01:14:46', '2026-08-02 01:14:46', 1, '2026-09-16 04:14:46', '2026-09-16 04:14:46'),
+(291, 2150, 100405, 1498, 100161, 'completed', '2026-06-27 01:14:47', '2026-06-27 01:14:47', '2026-07-04 01:14:47', '2026-07-11 01:14:47', '2026-08-29 01:14:47', 0, '2026-09-16 04:14:47', '2026-09-16 04:14:47'),
+(292, 2151, 100406, 1498, 100161, 'completed', '2026-06-25 01:14:47', '2026-06-25 01:14:47', '2026-07-09 01:14:47', '2026-07-23 01:14:47', '2026-08-20 01:14:47', 1, '2026-09-16 04:14:47', '2026-09-16 04:14:47'),
+(293, 2152, 100407, 1498, 100161, 'completed', '2026-06-18 01:14:48', '2026-06-18 01:14:48', '2026-06-25 01:14:48', '2026-07-02 01:14:48', '2026-09-10 01:14:48', 1, '2026-09-16 04:14:48', '2026-09-16 04:14:48'),
+(294, 2153, 100408, 1498, 100161, 'completed', '2026-07-14 01:14:48', '2026-07-14 01:14:48', '2026-07-21 01:14:48', '2026-07-28 01:14:48', '2026-09-01 01:14:48', 0, '2026-09-16 04:14:48', '2026-09-16 04:14:48'),
+(295, 2154, 100409, 1498, 100161, 'completed', '2026-07-11 01:14:48', '2026-07-11 01:14:48', '2026-07-18 01:14:48', '2026-07-25 01:14:48', '2026-08-22 01:14:48', 0, '2026-09-16 04:14:48', '2026-09-16 04:14:48'),
+(296, 2155, 100410, 1498, 100161, 'completed', '2026-06-12 01:14:49', '2026-06-12 01:14:49', '2026-06-26 01:14:49', '2026-07-10 01:14:49', '2026-08-07 01:14:49', 1, '2026-09-16 04:14:49', '2026-09-16 04:14:49'),
+(297, 2156, 100411, 1498, 100161, 'completed', '2026-08-01 01:14:49', '2026-08-01 01:14:49', '2026-08-08 01:14:49', '2026-08-15 01:14:49', '2026-09-05 01:14:49', 1, '2026-09-16 04:14:49', '2026-09-16 04:14:49'),
+(298, 2157, 100412, 1498, 100161, 'completed', '2026-06-27 01:14:49', '2026-06-27 01:14:49', '2026-07-11 01:14:49', '2026-07-25 01:14:49', '2026-08-15 01:14:49', 0, '2026-09-16 04:14:49', '2026-09-16 04:14:49'),
+(299, 2158, 100413, 1498, 100161, 'completed', '2026-05-31 01:14:49', '2026-05-31 01:14:49', '2026-06-07 01:14:49', '2026-06-14 01:14:49', '2026-07-26 01:14:49', 0, '2026-09-16 04:14:49', '2026-09-16 04:14:49'),
+(300, 2159, 100414, 1498, 100161, 'completed', '2026-06-16 01:14:50', '2026-06-16 01:14:50', '2026-06-23 01:14:50', '2026-06-30 01:14:50', '2026-08-18 01:14:50', 1, '2026-09-16 04:14:50', '2026-09-16 04:14:50'),
+(301, 2160, 100415, 1498, 100161, 'completed', '2026-07-20 01:14:50', '2026-07-20 01:14:50', '2026-07-27 01:14:50', '2026-08-03 01:14:50', '2026-08-31 01:14:50', 0, '2026-09-16 04:14:50', '2026-09-16 04:14:50'),
+(302, 2161, 100416, 1498, 100161, 'completed', '2026-05-14 01:14:51', '2026-05-14 01:14:51', '2026-05-28 01:14:51', '2026-06-11 01:14:51', '2026-07-30 01:14:51', 1, '2026-09-16 04:14:51', '2026-09-16 04:14:51'),
+(303, 2162, 100417, 1498, 100161, 'completed', '2026-05-31 01:14:51', '2026-05-31 01:14:51', '2026-06-14 01:14:51', '2026-06-28 01:14:51', '2026-08-09 01:14:51', 1, '2026-09-16 04:14:51', '2026-09-16 04:14:51'),
+(304, 2163, 100418, 1498, 100161, 'completed', '2026-07-15 01:14:51', '2026-07-15 01:14:51', '2026-07-22 01:14:51', '2026-07-29 01:14:51', '2026-09-02 01:14:51', 0, '2026-09-16 04:14:51', '2026-09-16 04:14:51'),
+(305, 2164, 100419, 1498, 100161, 'completed', '2026-06-15 01:14:52', '2026-06-15 01:14:52', '2026-06-22 01:14:52', '2026-06-29 01:14:52', '2026-07-20 01:14:52', 0, '2026-09-16 04:14:52', '2026-09-16 04:14:52'),
+(306, 2165, 100420, 1498, 100161, 'completed', '2026-06-10 01:14:52', '2026-06-10 01:14:52', '2026-06-17 01:14:52', '2026-06-24 01:14:52', '2026-08-05 01:14:52', 1, '2026-09-16 04:14:52', '2026-09-16 04:14:52'),
+(307, 2166, 100421, 1498, 100161, 'completed', '2026-05-14 01:14:53', '2026-05-14 01:14:53', '2026-05-28 01:14:53', '2026-06-11 01:14:53', '2026-07-16 01:14:53', 1, '2026-09-16 04:14:53', '2026-09-16 04:14:53'),
+(308, 2167, 100422, 1498, 100161, 'completed', '2026-08-04 01:14:53', '2026-08-04 01:14:53', '2026-08-11 01:14:53', '2026-08-18 01:14:53', '2026-09-11 01:14:53', 1, '2026-09-16 04:14:53', '2026-09-16 04:14:53');
 
 -- --------------------------------------------------------
 
@@ -3345,6 +3551,10 @@ INSERT INTO `training_skills` (`training_id`, `skill_id`) VALUES
 (100250, 131),
 (100252, 131),
 (100253, 131),
+(100303, 131),
+(100304, 131),
+(100305, 131),
+(100307, 131),
 (100203, 132),
 (100205, 132),
 (100206, 132),
@@ -3374,6 +3584,7 @@ INSERT INTO `training_skills` (`training_id`, `skill_id`) VALUES
 (100250, 139),
 (100252, 139),
 (100253, 139),
+(100304, 139),
 (100203, 141),
 (100205, 141),
 (100206, 141),
@@ -3389,6 +3600,8 @@ INSERT INTO `training_skills` (`training_id`, `skill_id`) VALUES
 (100258, 148),
 (100259, 148),
 (100260, 148),
+(100306, 148),
+(100308, 148),
 (100203, 149),
 (100257, 149),
 (100260, 149),
@@ -3400,6 +3613,8 @@ INSERT INTO `training_skills` (`training_id`, `skill_id`) VALUES
 (100262, 150),
 (100265, 150),
 (100255, 151),
+(100306, 151),
+(100308, 151),
 (100202, 152),
 (100204, 152),
 (100232, 152),
@@ -3408,12 +3623,17 @@ INSERT INTO `training_skills` (`training_id`, `skill_id`) VALUES
 (100249, 152),
 (100250, 152),
 (100252, 152),
+(100303, 152),
+(100304, 152),
+(100305, 152),
 (100254, 153),
 (100256, 153),
 (100257, 153),
 (100261, 153),
 (100263, 153),
 (100264, 153),
+(100306, 153),
+(100308, 153),
 (100255, 154),
 (100258, 154),
 (100260, 154),
@@ -3421,6 +3641,7 @@ INSERT INTO `training_skills` (`training_id`, `skill_id`) VALUES
 (100246, 155),
 (100247, 155),
 (100253, 155),
+(100303, 155),
 (100202, 156),
 (100211, 156),
 (100230, 156),
@@ -3432,6 +3653,9 @@ INSERT INTO `training_skills` (`training_id`, `skill_id`) VALUES
 (100261, 156),
 (100266, 156),
 (100267, 156),
+(100303, 156),
+(100304, 156),
+(100305, 156),
 (100251, 157),
 (100204, 158),
 (100207, 158),
@@ -3447,6 +3671,7 @@ INSERT INTO `training_skills` (`training_id`, `skill_id`) VALUES
 (100265, 158),
 (100266, 158),
 (100267, 158),
+(100304, 158),
 (100231, 159),
 (100247, 159),
 (100248, 159),
@@ -3633,6 +3858,12 @@ INSERT INTO `training_specializations` (`training_id`, `specialization_id`) VALU
 (100265, 199),
 (100266, 199),
 (100267, 199),
+(100303, 199),
+(100304, 199),
+(100305, 199),
+(100306, 199),
+(100307, 199),
+(100308, 199),
 (100205, 200),
 (100206, 200),
 (100203, 201),
@@ -3771,8 +4002,8 @@ INSERT INTO `users` (`id`, `role`, `email`, `password_hash`, `status`, `email_ve
 (100580, 'company', 'careers@nilevalley-log.com', '$2y$12$OkQoJqfifBkQaMLakrrNOuYiOE8THmeCr5ylmqnz7I6RTjuhX8o0S', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
 (100581, 'company', 'jobs@cleofashion.com', '$2y$12$5k9UVJCUs.r07NEJcvYgGuDq1aVmUKm3tB8GT6J6NP25QIAMaZUfC', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
 (100582, 'company', 'hr@hrpartners.eg', '$2y$12$f8b9LxPiON112fqq/OzOi.Yz7qBls20Rbg1mWNYJYdP6RGBfSWqKS', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100588, 'student', 'mammuslim2003@gmail.com', '$2y$12$zRtZATQwPlzfYnSKuUKAl.PM7aRG6gTAb8eowQ03XKW1aqiGjYPHu', 'active', '2026-09-02 05:23:46', '2026-09-09 05:49:56', '2026-09-02 05:23:43', '2026-09-09 05:49:56', NULL),
-(100595, 'company', 'company@test.local', '$2y$12$kYBqv.b34c//ynY6NI5YvuBVW5Ui29sPnLMjtQIjWTllAiSRGCUL6', 'active', '2026-09-08 00:16:40', '2026-09-08 03:42:02', '2026-09-08 00:16:40', '2026-09-08 03:42:02', NULL);
+(100588, 'student', 'mammuslim2003@gmail.com', '$2y$12$zRtZATQwPlzfYnSKuUKAl.PM7aRG6gTAb8eowQ03XKW1aqiGjYPHu', 'active', '2026-09-02 05:23:46', '2026-09-16 20:57:57', '2026-09-02 05:23:43', '2026-09-16 20:57:57', NULL),
+(100595, 'company', 'company@test.local', '$2y$12$kYBqv.b34c//ynY6NI5YvuBVW5Ui29sPnLMjtQIjWTllAiSRGCUL6', 'active', '2026-09-08 00:16:40', '2026-09-14 00:55:44', '2026-09-08 00:16:40', '2026-09-14 00:55:44', NULL);
 
 -- --------------------------------------------------------
 
@@ -4133,7 +4364,7 @@ ALTER TABLE `application_answers`
 -- AUTO_INCREMENT for table `audit_logs`
 --
 ALTER TABLE `audit_logs`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1518;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1535;
 
 --
 -- AUTO_INCREMENT for table `auth_tokens`
@@ -4145,7 +4376,7 @@ ALTER TABLE `auth_tokens`
 -- AUTO_INCREMENT for table `certificates`
 --
 ALTER TABLE `certificates`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=172;
 
 --
 -- AUTO_INCREMENT for table `certificate_appeals`
@@ -4157,7 +4388,7 @@ ALTER TABLE `certificate_appeals`
 -- AUTO_INCREMENT for table `companies`
 --
 ALTER TABLE `companies`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100163;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100164;
 
 --
 -- AUTO_INCREMENT for table `company_work_fields`
@@ -4187,7 +4418,7 @@ ALTER TABLE `faculties`
 -- AUTO_INCREMENT for table `files`
 --
 ALTER TABLE `files`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=315;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=322;
 
 --
 -- AUTO_INCREMENT for table `messages`
@@ -4199,7 +4430,7 @@ ALTER TABLE `messages`
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2039;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2436;
 
 --
 -- AUTO_INCREMENT for table `oauth_states`
@@ -4217,13 +4448,13 @@ ALTER TABLE `password_resets`
 -- AUTO_INCREMENT for table `payments`
 --
 ALTER TABLE `payments`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=64;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=66;
 
 --
 -- AUTO_INCREMENT for table `refresh_tokens`
 --
 ALTER TABLE `refresh_tokens`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1082;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1099;
 
 --
 -- AUTO_INCREMENT for table `revoked_access_tokens`
@@ -4235,7 +4466,7 @@ ALTER TABLE `revoked_access_tokens`
 -- AUTO_INCREMENT for table `saved_trainings`
 --
 ALTER TABLE `saved_trainings`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=583;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=618;
 
 --
 -- AUTO_INCREMENT for table `skills`
@@ -4265,13 +4496,13 @@ ALTER TABLE `study_fields`
 -- AUTO_INCREMENT for table `training_applications`
 --
 ALTER TABLE `training_applications`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1988;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2213;
 
 --
 -- AUTO_INCREMENT for table `training_listings`
 --
 ALTER TABLE `training_listings`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100303;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100432;
 
 --
 -- AUTO_INCREMENT for table `training_questions`
@@ -4283,7 +4514,7 @@ ALTER TABLE `training_questions`
 -- AUTO_INCREMENT for table `training_sessions`
 --
 ALTER TABLE `training_sessions`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=262;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=319;
 
 --
 -- AUTO_INCREMENT for table `universities`

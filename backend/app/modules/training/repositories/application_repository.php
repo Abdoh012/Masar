@@ -173,6 +173,9 @@ function application_repository_find_with_details(
             t.is_paid AS training_is_paid,
             t.compensation_amount AS training_compensation_amount,
             t.compensation_currency AS training_compensation_currency,
+            t.starts_at AS training_starts_at,
+            t.ends_at AS training_ends_at,
+            t.application_deadline AS training_application_deadline,
 
             s.id AS student_id,
             s.user_id AS student_user_id,
@@ -2846,6 +2849,10 @@ function application_repository_get_payment_map_for_student(
             student_id,
             status,
             paid_at,
+            amount,
+            currency,
+            payment_method,
+            external_reference,
             id AS payment_id
         FROM payments
         WHERE
@@ -2886,6 +2893,18 @@ function application_repository_get_payment_map_for_student(
             'paid_at' =>
                 ($row['paid_at'] ?? null)
                 ? (string) $row['paid_at']
+                : null,
+            'amount' =>
+                ($row['amount'] ?? null)
+                ? (string) $row['amount']
+                : null,
+            'currency' =>
+                (string) ($row['currency'] ?? 'EGP'),
+            'method' =>
+                (string) ($row['payment_method'] ?? 'manual'),
+            'reference' =>
+                ($row['external_reference'] ?? null)
+                ? (string) $row['external_reference']
                 : null,
             'payment_id' =>
                 (int) ($row['payment_id'] ?? 0),

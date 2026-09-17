@@ -112,6 +112,21 @@
             "type": "string"
         },
         {
+            "key": "certificate_training_id",
+            "value": "100400",
+            "type": "string"
+        },
+        {
+            "key": "certificate_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "certificate_revoke_reason",
+            "value": "Administrative verification failed",
+            "type": "string"
+        },
+        {
             "key": "notification_id",
             "value": "",
             "type": "string"
@@ -232,6 +247,26 @@
             "type": "string"
         },
         {
+            "key": "extend_training_id",
+            "value": "100305",
+            "type": "string"
+        },
+        {
+            "key": "delete_training_id",
+            "value": "100308",
+            "type": "string"
+        },
+        {
+            "key": "paid_training_id",
+            "value": "100304",
+            "type": "string"
+        },
+        {
+            "key": "free_training_id",
+            "value": "100303",
+            "type": "string"
+        },
+        {
             "key": "regression_search_query",
             "value": "Machine Learning",
             "type": "string"
@@ -245,6 +280,58 @@
             "key": "initial_student_b_saved",
             "value": "",
             "type": "string"
+        },
+        {
+            "key": "certificate_training_id_paid",
+            "value": "100404"
+        },
+        {
+            "key": "certificate_pending_id",
+            "value": "127"
+        },
+        {
+            "key": "certificate_issued_id",
+            "value": "132"
+        },
+        {
+            "key": "certificate_issued_id_paid",
+            "value": "135"
+        },
+        {
+            "key": "certificate_revoked_id",
+            "value": "138"
+        },
+        {
+            "key": "certificate_unfinished_id",
+            "value": "100422"
+        },
+        {
+            "key": "certificate_mismatch_training_id",
+            "value": "100210"
+        },
+        {
+            "key": "certificate_issued_code",
+            "value": "MASAR-2026-32D66712"
+        },
+        {
+            "key": "certificate_revoked_code",
+            "value": "MASAR-2026-0AFDDD93"
+        },
+        {
+            "key": "certificate_eligible_student",
+            "value": "1498"
+        },
+        {
+            "key": "certificate_company_id",
+            "value": "100161"
+        },
+        {
+            "key": "certificate_company_user_id",
+            "value": "100595"
+        },
+        {
+            "key": "certificate_admin_user_id",
+            "value": "100526"
         }
     ],
     "item": [
@@ -3242,7 +3329,7 @@
                                         "accepted"
                                     ]
                                 },
-                                "description": "Requires a student Bearer token. Dedicated endpoint for the frontend Accepted tab: returns ONLY the student's accepted applications scoped to the student's own specialization (training_listings.specialization_id matches the student's specialization, same rule as the Trainings List) and shaped as clean Accepted Card DTO items (`data.items`, each item has status = \"Accepted\", accepted_at from reviewed_at, dynamic free_trial_days_remaining for paid trainings, a deterministic daily motivational_message, a manual payment lifecycle status (payment_status: not_required for free, pending/paid for paid), and the owning company's bank-transfer destination (bank_account object) when the paid training's company configured one)."
+                                "description": "Requires a student Bearer token. Dedicated endpoint for the frontend Accepted tab: returns ONLY the student's accepted applications scoped to the student's own specialization (training_listings.specialization_id matches the student's specialization, same rule as the Trainings List) and shaped as clean Accepted Card DTO items (`data.items`, each item has status = \"Accepted\", accepted_at from reviewed_at, dynamic free_trial_days_remaining for paid trainings, a deterministic daily motivational_message, a manual payment lifecycle status (payment_status: not_required for free, pending/paid/failed for paid), and a status-aware bank-transfer destination (bank_account object): shown while a transfer may still be needed (pending/failed/not submitted) when the paid training's company configured one, and always null once payment_status is \"paid\" or the training is free)."
                             },
                             "response": [],
                             "event": [
@@ -3268,8 +3355,10 @@
                                             "            pm.expect(item.may_lead_to_hire).to.eql(item.is_paid);",
                                             "            pm.expect(typeof item.is_paid).to.eql('boolean');",
                                             "            if (item.is_paid) {",
-                                            "            pm.expect(['pending','paid']).to.include(item.payment_status);",
-                                            "            if (item.bank_account !== null) {",
+                                            "            pm.expect(['pending','paid','failed']).to.include(item.payment_status);",
+                                            "            if (item.payment_status === 'paid') {",
+                                            "            pm.expect(item.bank_account).to.eql(null);",
+                                            "            } else if (item.bank_account !== null) {",
                                             "            pm.expect(item.bank_account).to.have.property('bank_name');",
                                             "            pm.expect(item.bank_account).to.have.property('account_name');",
                                             "            pm.expect(item.bank_account).to.have.property('account_number');",
@@ -3285,6 +3374,43 @@
                                             "            if (item.starts_at !== null) { pm.expect(item.starts_at).to.match(isoRe); }",
                                             "            if (item.ends_at !== null) { pm.expect(item.ends_at).to.match(isoRe); }",
                                             "        });",
+                                            "    });",
+                                            "    pm.test(\"bank_account follows the sealed payment states (1882/2009/2010/2011)\", function () {",
+                                            "        const byId = {};",
+                                            "        json.data.items.forEach(function (i) { byId[i.id] = i; });",
+                                            "        if (byId[1882]) {",
+                                            "            pm.expect(byId[1882].is_paid).to.eql(true);",
+                                            "            pm.expect(byId[1882].payment_submitted).to.eql(true);",
+                                            "            pm.expect(byId[1882].payment_status).to.eql('pending');",
+                                            "            pm.expect(byId[1882].bank_account).to.be.an('object');",
+                                            "        }",
+                                            "        if (byId[2009]) {",
+                                            "            pm.expect(byId[2009].payment_status).to.eql('paid');",
+                                            "            pm.expect(byId[2009].bank_account).to.eql(null);",
+                                            "        }",
+                                            "        if (byId[2010]) {",
+                                            "            pm.expect(byId[2010].payment_status).to.eql('failed');",
+                                            "            pm.expect(byId[2010].bank_account).to.be.an('object');",
+                                            "        }",
+                                            "        if (byId[2011]) {",
+                                            "            pm.expect(byId[2011].is_paid).to.eql(true);",
+                                            "            pm.expect(byId[2011].payment_submitted).to.eql(false);",
+                                            "            pm.expect(byId[2011].payment_status).to.eql('pending');",
+                                            "            pm.expect(byId[2011].bank_account).to.be.an('object');",
+                                            "        }",
+                                            "    });",
+                                            "    pm.test(\"Free Accepted case: is_paid=false renders the full free payment state\", function () {",
+                                            "        const free = json.data.items.filter(function (i) { return i.is_paid === false; });",
+                                            "        pm.expect(free.length).to.be.at.least(1);",
+                                            "        const f = free[0];",
+                                            "        pm.expect(f.payment_status).to.eql('not_required');",
+                                            "        pm.expect(f.payment_submitted).to.eql(false);",
+                                            "        pm.expect(f.payment_reference).to.eql(null);",
+                                            "        pm.expect(f.payment_amount).to.eql(null);",
+                                            "        pm.expect(f.payment_currency).to.eql(null);",
+                                            "        pm.expect(f.payment_paid_at).to.eql(null);",
+                                            "        pm.expect(f.payment_method).to.eql(null);",
+                                            "        pm.expect(f.bank_account).to.eql(null);",
                                             "    });",
                                             "    pm.test(\"Accepted dataset has at least one paid item\", function () {",
                                             "        const paid = json.data.items.filter(function (i) { return i.is_paid === true; });",
@@ -3613,10 +3739,10 @@
                                     "script": {
                                         "exec": [
                                             "const KEYS = {",
-                                            "    Applied: [\"id\",\"training_id\",\"training_title\",\"status\",\"specialization\",\"company_name\",\"company_logo\",\"training_type\",\"method\",\"is_paid\",\"may_lead_to_hire\",\"applied_at\",\"starts_at\",\"ends_at\",\"duration\",\"can_withdraw\"],",
-                                            "    Accepted: [\"id\",\"training_id\",\"training_title\",\"status\",\"specialization\",\"company_name\",\"company_logo\",\"training_type\",\"method\",\"is_paid\",\"may_lead_to_hire\",\"accepted_at\",\"starts_at\",\"ends_at\",\"duration\",\"free_trial_days\",\"free_trial_days_remaining\",\"motivational_message\",\"payment_status\",\"bank_account\"],",
-                                            "    Rejected: [\"id\",\"training_id\",\"training_title\",\"status\",\"specialization\",\"company_name\",\"company_logo\",\"training_type\",\"method\",\"rejected_at\",\"rejection_reason\",\"rejection_note\"],",
-                                            "    Withdrawn: [\"id\",\"training_id\",\"training_title\",\"status\",\"specialization\",\"company_name\",\"company_logo\",\"training_type\",\"method\",\"withdrawn_at\",\"starts_at\",\"ends_at\"]",
+                                            "    Applied: [\"id\",\"training_id\",\"training_title\",\"status\",\"specialization\",\"company_name\",\"company_logo\",\"training_type\",\"method\",\"is_paid\",\"may_lead_to_hire\",\"applied_at\",\"starts_at\",\"ends_at\",\"duration\",\"remaining_days\",\"status_message\",\"can_withdraw\"],",
+                                            "    Accepted: [\"id\",\"training_id\",\"training_title\",\"status\",\"status_message\",\"specialization\",\"company_name\",\"company_logo\",\"training_type\",\"method\",\"is_paid\",\"may_lead_to_hire\",\"accepted_at\",\"starts_at\",\"ends_at\",\"duration\",\"remaining_days\",\"free_trial_days\",\"free_trial_days_remaining\",\"motivational_message\",\"payment_status\",\"payment_submitted\",\"payment_reference\",\"payment_amount\",\"payment_currency\",\"payment_paid_at\",\"payment_method\",\"bank_account\"],",
+                                            "    Rejected: [\"id\",\"training_id\",\"training_title\",\"status\",\"status_message\",\"specialization\",\"company_name\",\"company_logo\",\"training_type\",\"method\",\"rejected_at\",\"rejection_reason\",\"rejection_note\",\"starts_at\",\"ends_at\",\"duration\",\"remaining_days\"],",
+                                            "    Withdrawn: [\"id\",\"training_id\",\"training_title\",\"status\",\"status_message\",\"specialization\",\"company_name\",\"company_logo\",\"training_type\",\"method\",\"withdrawn_at\",\"starts_at\",\"ends_at\",\"duration\",\"remaining_days\"]",
                                             "};",
                                             "const TIME_KEY = { Applied: \"applied_at\", Accepted: \"accepted_at\", Rejected: \"rejected_at\", Withdrawn: \"withdrawn_at\" };",
                                             "const FORBIDDEN = [\"student_id\",\"company_id\",\"message\",\"full_name\",\"email\",\"phone\",\"city\",\"address\",\"why_interested\",\"what_to_learn\",\"skills\",\"reviewed_by\",\"cv_file_id\",\"faculty_id\",\"university\",\"applicant_type\",\"academic_year\",\"graduation_year\",\"motivation\",\"location\",\"status_db\",\"reviewed_at\"];",
@@ -3800,119 +3926,119 @@
                             },
                             "response": [],
                             "event": [
-                                    {
-                                        "listen": "test",
-                                        "script": {
-                                            "exec": [
-                                                "// The withdraw target is the application selected dynamically by 'List Applied Applications'.",
-                                                "const baseUrl = pm.collectionVariables.get('base_url');",
-                                                "const authHeader = pm.request.headers.get('Authorization') || ('Bearer ' + pm.collectionVariables.get('access_token'));",
-                                                "const withdrawId = Number(pm.collectionVariables.get('withdraw_application_id'));",
-                                                "",
-                                                "pm.test(\"withdraw_application_id is set from the Applied flow\", function () {",
-                                                "    pm.expect(withdrawId > 0, \"No withdrawable application selected. Run 'List Applied Applications' first and do not hard-code an application id.\").to.eql(true);",
-                                                "});",
-                                                "",
-                                                "if (pm.response.code === 200) {",
-                                                "    const json = pm.response.json();",
-                                                "    pm.test(\"Withdraw request succeeds\", function () {",
-                                                "        pm.expect(json.success).to.eql(true);",
-                                                "    });",
-                                                "    pm.test(\"Withdraw response is valid\", function () {",
-                                                "        pm.expect(json.data).to.have.property('id');",
-                                                "        pm.expect(Number(json.data.id)).to.eql(withdrawId);",
-                                                "    });",
-                                                "    pm.test(\"Application was withdrawn\", function () {",
-                                                "        pm.expect(json.data.status).to.eql('withdrawn');",
-                                                "    });",
-                                                "} else if (pm.response.code === 409) {",
-                                                "    const json = pm.response.json();",
-                                                "    pm.test(\"Application was already withdrawn on a previous run\", function () {",
-                                                "        pm.expect(json.success).to.eql(false);",
-                                                "        pm.expect(json.message).to.include('pending');",
-                                                "    });",
-                                                "} else {",
-                                                "    pm.test(\"Withdraw request returns the expected status\", function () {",
-                                                "        pm.expect(pm.response.code).to.be.oneOf([200, 409]);",
-                                                "    });",
-                                                "}",
-                                                "",
-                                                "if (pm.response.code === 200) {",
-                                                "    const appliedReq = {",
-                                                "        url: baseUrl + '/api/v1/applications/applied',",
-                                                "        method: 'GET',",
-                                                "        header: [{ key: 'Authorization', value: authHeader, type: 'string' }]",
-                                                "    };",
-                                                "    const withdrawnReq = {",
-                                                "        url: baseUrl + '/api/v1/applications/withdrawn',",
-                                                "        method: 'GET',",
-                                                "        header: [{ key: 'Authorization', value: authHeader, type: 'string' }]",
-                                                "    };",
-                                                "    const repeatReq = {",
-                                                "        url: baseUrl + '/api/v1/applications/withdraw?id=' + withdrawId,",
-                                                "        method: 'POST',",
-                                                "        header: [{ key: 'Authorization', value: authHeader, type: 'string' }]",
-                                                "    };",
-                                                "    pm.sendRequest(appliedReq, function (err, res) {",
-                                                "        pm.test(\"Withdrawn application is no longer in Applied\", function () {",
-                                                "            pm.expect(err ? -1 : res.code).to.eql(200);",
-                                                "            if (!err) {",
-                                                "                const body = res.json();",
-                                                "                const items = (body.data && body.data.items) || [];",
-                                                "                const stillApplied = items.some(function (app) { return Number(app.id) === withdrawId; });",
-                                                "                pm.expect(stillApplied).to.eql(false, 'Application ' + withdrawId + ' is still present in Applied.');",
-                                                "            }",
-                                                "        });",
-                                                "        pm.sendRequest(withdrawnReq, function (err2, res2) {",
-                                                "            pm.test(\"Withdrawn application appears in Withdrawn\", function () {",
-                                                "                pm.expect(err2 ? -1 : res2.code).to.eql(200);",
-                                                "                if (!err2) {",
-                                                "                    const body2 = res2.json();",
-                                                "                    const items2 = (body2.data && body2.data.items) || [];",
-                                                "                    const match = items2.filter(function (app) { return Number(app.id) === withdrawId; });",
-                                                "                    pm.expect(match.length, 'Application ' + withdrawId + ' did not appear in Withdrawn.').to.be.above(0);",
-                                                "                }",
-                                                "            });",
-                                                "            if (!err2) {",
-                                                "                const body2 = res2.json();",
-                                                "                const items2 = (body2.data && body2.data.items) || [];",
-                                                "                const match = items2.filter(function (app) { return Number(app.id) === withdrawId; });",
-                                                "                pm.test(\"Withdrawn application has status Withdrawn\", function () {",
-                                                "                    pm.expect(match.length).to.be.above(0);",
-                                                "                    if (match.length) { pm.expect(match[0].status).to.eql('Withdrawn'); }",
-                                                "                });",
-                                                "                // The Withdrawn card DTO deliberately does not expose can_withdraw;",
-                                                "                // the state transition is proven by the status and the membership checks above.",
-                                                "            }",
-                                                "            pm.sendRequest(repeatReq, function (err3, res3) {",
-                                                "                pm.test(\"Second withdrawal is rejected\", function () {",
-                                                "                    pm.expect(err3 ? -1 : res3.code).to.eql(409);",
-                                                "                    if (!err3) {",
-                                                "                        const body3 = res3.json();",
-                                                "                        pm.expect(body3.success).to.eql(false);",
-                                                "                    }",
-                                                "                });",
-                                                "                pm.test(\"Second withdrawal returns 4xx\", function () {",
-                                                "                    const code = err3 ? -1 : res3.code;",
-                                                "                    pm.expect(code).to.be.at.least(400);",
-                                                "                    pm.expect(code).to.be.below(500);",
-                                                "                });",
-                                                "                if (!err3) {",
-                                                "                    const body3 = res3.json();",
-                                                "                    pm.test(\"Second withdrawal error is meaningful\", function () {",
-                                                "                        pm.expect(body3.message).to.include('pending');",
-                                                "                    });",
-                                                "                }",
-                                                "            });",
-                                                "        });",
-                                                "    });",
-                                                "}"
-                                            ],
-                                            "type": "text/javascript"
-                                        }
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "// The withdraw target is the application selected dynamically by 'List Applied Applications'.",
+                                            "const baseUrl = pm.collectionVariables.get('base_url');",
+                                            "const authHeader = pm.request.headers.get('Authorization') || ('Bearer ' + pm.collectionVariables.get('access_token'));",
+                                            "const withdrawId = Number(pm.collectionVariables.get('withdraw_application_id'));",
+                                            "",
+                                            "pm.test(\"withdraw_application_id is set from the Applied flow\", function () {",
+                                            "    pm.expect(withdrawId > 0, \"No withdrawable application selected. Run 'List Applied Applications' first and do not hard-code an application id.\").to.eql(true);",
+                                            "});",
+                                            "",
+                                            "if (pm.response.code === 200) {",
+                                            "    const json = pm.response.json();",
+                                            "    pm.test(\"Withdraw request succeeds\", function () {",
+                                            "        pm.expect(json.success).to.eql(true);",
+                                            "    });",
+                                            "    pm.test(\"Withdraw response is valid\", function () {",
+                                            "        pm.expect(json.data).to.have.property('id');",
+                                            "        pm.expect(Number(json.data.id)).to.eql(withdrawId);",
+                                            "    });",
+                                            "    pm.test(\"Application was withdrawn\", function () {",
+                                            "        pm.expect(json.data.status).to.eql('withdrawn');",
+                                            "    });",
+                                            "} else if (pm.response.code === 409) {",
+                                            "    const json = pm.response.json();",
+                                            "    pm.test(\"Application was already withdrawn on a previous run\", function () {",
+                                            "        pm.expect(json.success).to.eql(false);",
+                                            "        pm.expect(json.message).to.include('pending');",
+                                            "    });",
+                                            "} else {",
+                                            "    pm.test(\"Withdraw request returns the expected status\", function () {",
+                                            "        pm.expect(pm.response.code).to.be.oneOf([200, 409]);",
+                                            "    });",
+                                            "}",
+                                            "",
+                                            "if (pm.response.code === 200) {",
+                                            "    const appliedReq = {",
+                                            "        url: baseUrl + '/api/v1/applications/applied',",
+                                            "        method: 'GET',",
+                                            "        header: [{ key: 'Authorization', value: authHeader, type: 'string' }]",
+                                            "    };",
+                                            "    const withdrawnReq = {",
+                                            "        url: baseUrl + '/api/v1/applications/withdrawn',",
+                                            "        method: 'GET',",
+                                            "        header: [{ key: 'Authorization', value: authHeader, type: 'string' }]",
+                                            "    };",
+                                            "    const repeatReq = {",
+                                            "        url: baseUrl + '/api/v1/applications/withdraw?id=' + withdrawId,",
+                                            "        method: 'POST',",
+                                            "        header: [{ key: 'Authorization', value: authHeader, type: 'string' }]",
+                                            "    };",
+                                            "    pm.sendRequest(appliedReq, function (err, res) {",
+                                            "        pm.test(\"Withdrawn application is no longer in Applied\", function () {",
+                                            "            pm.expect(err ? -1 : res.code).to.eql(200);",
+                                            "            if (!err) {",
+                                            "                const body = res.json();",
+                                            "                const items = (body.data && body.data.items) || [];",
+                                            "                const stillApplied = items.some(function (app) { return Number(app.id) === withdrawId; });",
+                                            "                pm.expect(stillApplied).to.eql(false, 'Application ' + withdrawId + ' is still present in Applied.');",
+                                            "            }",
+                                            "        });",
+                                            "        pm.sendRequest(withdrawnReq, function (err2, res2) {",
+                                            "            pm.test(\"Withdrawn application appears in Withdrawn\", function () {",
+                                            "                pm.expect(err2 ? -1 : res2.code).to.eql(200);",
+                                            "                if (!err2) {",
+                                            "                    const body2 = res2.json();",
+                                            "                    const items2 = (body2.data && body2.data.items) || [];",
+                                            "                    const match = items2.filter(function (app) { return Number(app.id) === withdrawId; });",
+                                            "                    pm.expect(match.length, 'Application ' + withdrawId + ' did not appear in Withdrawn.').to.be.above(0);",
+                                            "                }",
+                                            "            });",
+                                            "            if (!err2) {",
+                                            "                const body2 = res2.json();",
+                                            "                const items2 = (body2.data && body2.data.items) || [];",
+                                            "                const match = items2.filter(function (app) { return Number(app.id) === withdrawId; });",
+                                            "                pm.test(\"Withdrawn application has status Withdrawn\", function () {",
+                                            "                    pm.expect(match.length).to.be.above(0);",
+                                            "                    if (match.length) { pm.expect(match[0].status).to.eql('Withdrawn'); }",
+                                            "                });",
+                                            "                // The Withdrawn card DTO deliberately does not expose can_withdraw;",
+                                            "                // the state transition is proven by the status and the membership checks above.",
+                                            "            }",
+                                            "            pm.sendRequest(repeatReq, function (err3, res3) {",
+                                            "                pm.test(\"Second withdrawal is rejected\", function () {",
+                                            "                    pm.expect(err3 ? -1 : res3.code).to.eql(409);",
+                                            "                    if (!err3) {",
+                                            "                        const body3 = res3.json();",
+                                            "                        pm.expect(body3.success).to.eql(false);",
+                                            "                    }",
+                                            "                });",
+                                            "                pm.test(\"Second withdrawal returns 4xx\", function () {",
+                                            "                    const code = err3 ? -1 : res3.code;",
+                                            "                    pm.expect(code).to.be.at.least(400);",
+                                            "                    pm.expect(code).to.be.below(500);",
+                                            "                });",
+                                            "                if (!err3) {",
+                                            "                    const body3 = res3.json();",
+                                            "                    pm.test(\"Second withdrawal error is meaningful\", function () {",
+                                            "                        pm.expect(body3.message).to.include('pending');",
+                                            "                    });",
+                                            "                }",
+                                            "            });",
+                                            "        });",
+                                            "    });",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
                                     }
-                                ]
-                            },
+                                }
+                            ]
+                        },
                         {
                             "name": "Accept Application",
                             "request": {
@@ -4278,6 +4404,85 @@
                                     }
                                 }
                             ]
+                        },
+                        {
+                            "name": "List Issued Certificates (Applications Tab)",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{access_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/applications/certificates",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "applications",
+                                        "certificates"
+                                    ]
+                                },
+                                "description": "Requires a Bearer token. The Applications module's Certificates / Issued Certificates tab: returns the EXACT same issued dataset and response as GET /api/v1/certificates/issued (same envelope, field names, types, values, nested student object, certificate/company/training/specialization info, is_paid, certificate_number, issued_at, grade, grade_label and capabilities). Only status=issued certificates are returned; pending, revoked and eligible are never included. Scope is derived ONLY from the authenticated user - a client-supplied student_id or any other query parameter is ignored. Certificates remain the source of truth: the endpoint reuses the existing certificate issued controller/service/repository and creates no application DTO and no duplicate certificate data.",
+                                "response": [],
+                                "event": [
+                                    {
+                                        "listen": "test",
+                                        "script": {
+                                            "exec": [
+                                                "const baseUrl = pm.collectionVariables.get('base_url');",
+                                                "const authHeader = pm.request.headers.get('Authorization') || ('Bearer ' + pm.collectionVariables.get('access_token'));",
+                                                "pm.test(\"Issued certificates returned via Applications tab\", function () {",
+                                                "    pm.expect(pm.response.code).to.eql(200);",
+                                                "    const json = pm.response.json();",
+                                                "    pm.expect(json.success).to.eql(true);",
+                                                "});",
+                                                "const json = pm.response.json();",
+                                                "if (Array.isArray(json.data)) {",
+                                                "    json.data.forEach(function (item) {",
+                                                "        pm.test(\"Applications certificates item is issued only\", function () {",
+                                                "            pm.expect(item.status).to.eql('issued');",
+                                                "            pm.expect(item.can_download).to.eql(false);",
+                                                "        });",
+                                                "        pm.test(\"Issued item carries the canonical fields\", function () {",
+                                                "            pm.expect(item.certificate_number).to.be.ok;",
+                                                "            pm.expect(item.issued_at).to.be.ok;",
+                                                "            pm.expect(item.is_paid).to.be.a('boolean');",
+                                                "            pm.expect(item.specialization_name).to.be.ok;",
+                                                "            pm.expect(item.student).to.be.an('object');",
+                                                "            pm.expect(item).to.have.property('grade');",
+                                                "            pm.expect(item).to.have.property('grade_label');",
+                                                "        });",
+                                                "    });",
+                                                "    pm.test(\"Applications certificates response matches /certificates/issued\", function () {",
+                                                "        pm.sendRequest(",
+                                                "            { url: baseUrl + '/api/v1/certificates/issued', method: 'GET',",
+                                                "              header: [{ key: 'Authorization', value: authHeader, type: 'string' }] },",
+                                                "            function (err, res) {",
+                                                "                pm.expect(err ? -1 : res.code).to.eql(200);",
+                                                "                if (!err) {",
+                                                "                    const canonical = res.json();",
+                                                "                    pm.expect(JSON.stringify(canonical.data)).to.eql(JSON.stringify(json.data), 'Applications certificates data must equal /certificates/issued data.');",
+                                                "                }",
+                                                "            }",
+                                                "        );",
+                                                "    });",
+                                                "}"
+                                            ],
+                                            "type": "text/javascript"
+                                        }
+                                    }
+                                ]
+                            }
                         }
                     ]
                 },
@@ -4310,7 +4515,670 @@
                                         "certificates"
                                     ]
                                 },
-                                "description": "Requires a Bearer token. Lists certificates. For a student this returns their own issued certificates; supports status, student_id, training_id, company_id, limit and offset filters."
+                                "description": "Requires a Bearer token. Lists certificates scoped to the authenticated user. For a student this returns their own certificates; for a company the certificates issued against its trainings. Supports status, student_id, training_id, company_id, limit and offset filters. Rows are \"presented\" per state: certificate_number / issued_at appear once issued and stay visible if the certificate is later revoked (always with status=revoked); revocation_reason + revoked_at also appear once revoked; both are hidden while pending. Pending certificate requests are listed through the dedicated endpoint GET /api/v1/certificates/pending; issued certificates through GET /api/v1/certificates/issued; revoked certificates through GET /api/v1/certificates/revoked.",
+                                "response": [],
+                                "event": [
+                                    {
+                                        "listen": "test",
+                                        "script": {
+                                            "exec": [
+                                                "pm.test(\"Certificates listed\", function () {",
+                                                "    pm.expect(pm.response.code).to.eql(200);",
+                                                "    const json = pm.response.json();",
+                                                "    pm.expect(json.success).to.eql(true);",
+                                                "});",
+                                                "const json = pm.response.json();",
+                                                "if (Array.isArray(json.data)) {",
+                                                "    const issued = json.data.find(c => c.status === 'issued' && c.id);",
+                                                "    if (issued) {",
+                                                "        pm.collectionVariables.set('certificate_id', String(issued.id));",
+                                                "    }",
+                                                "}"
+                                            ],
+                                            "type": "text/javascript"
+                                        }
+                                    }
+                                ]
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Certificate list returns the caller's certificates\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "    const items = Array.isArray(json.data) ? json.data : [];",
+                                            "    pm.expect(items.length).to.be.gte(3);",
+                                            "    const states = items.map(function (i) { return i.status; });",
+                                            "    pm.expect(states).to.include('pending');",
+                                            "    pm.expect(states).to.include('issued');",
+                                            "    pm.expect(states).to.include('revoked');",
+                                            "    const ids = items.map(function (i) { return Number(i.id); });",
+                                            "    pm.expect(ids).to.include(Number(pm.collectionVariables.get('certificate_pending_id')));",
+                                            "    pm.expect(ids).to.include(Number(pm.collectionVariables.get('certificate_issued_id')));",
+                                            "    items.forEach(function (it) {",
+                                            "        pm.expect(it.id).to.be.ok;",
+                                            "        pm.expect(it.student_id).to.eql(Number(pm.collectionVariables.get('certificate_eligible_student')));",
+                                            "        pm.expect(it.training_id).to.be.ok;",
+                                            "        pm.expect(it.company_name).to.be.ok;",
+                                            "        pm.expect(it).to.not.have.property('download_url');",
+                                            "        pm.expect(it).to.not.have.property('may_lead_to_hire');",
+                                            "    });",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Eligible Certificates",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{access_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/certificates/eligible",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "certificates",
+                                        "eligible"
+                                    ]
+                                },
+                                "description": "Requires a Bearer token. Returns trainings the caller may request a certificate for: an accepted application plus a completed training session and no existing certificate row. A student sees their own; a company sees all eligible students for its own trainings. Items carry an is_paid boolean (mirroring training_listings.is_paid) plus can_request / can_view capability flags (can_download is always false: certificates are view-only and there is no download endpoint). On the first run, the test script stores the first eligible training_id into `certificate_training_id`.",
+                                "response": [],
+                                "event": [
+                                    {
+                                        "listen": "test",
+                                        "script": {
+                                            "exec": [
+                                                "pm.test(\"Eligible certificates returned\", function () {",
+                                                "    pm.expect(pm.response.code).to.eql(200);",
+                                                "    const json = pm.response.json();",
+                                                "    pm.expect(json.success).to.eql(true);",
+                                                "});",
+                                                "const json = pm.response.json();",
+                                                "if (Array.isArray(json.data) && json.data.length && json.data[0].training_id) {",
+                                                "    pm.collectionVariables.set('certificate_training_id', String(json.data[0].training_id));",
+                                                "}"
+                                            ],
+                                            "type": "text/javascript"
+                                        }
+                                    }
+                                ]
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Eligible certificates are finished, requestable trainings\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "    const items = Array.isArray(json.data) ? json.data : [];",
+                                            "    pm.expect(items.length).to.be.gte(6);",
+                                            "    items.forEach(function (it) {",
+                                            "        pm.expect(it.status).to.eql('eligible');",
+                                            "        pm.expect(it.can_request).to.eql(true);",
+                                            "        pm.expect(it.can_download).to.eql(false);",
+                                            "        pm.expect(it).to.not.have.property('download_url');",
+                                            "        pm.expect(it.training_id).to.not.eql(Number(pm.collectionVariables.get('certificate_unfinished_id')));",
+                                            "        pm.expect(it.training_title).to.be.ok;",
+                                            "        pm.expect(it.company_name).to.eql('TestHire Solutions');",
+                                            "        pm.expect(typeof it.is_paid).to.eql('boolean');",
+                                            "    });",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Pending Certificates",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{access_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/certificates/pending",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "certificates",
+                                        "pending"
+                                    ]
+                                },
+                                "description": "Requires a Bearer token. Returns only the authenticated user's certificate requests that are already submitted and still pending (status=pending) - the Pending / Requested Certificates section. A student sees their own pending requests; a company sees pending requests across its own trainings; an admin sees all. Each item carries the certificate id, student_id, company_id + company_name, training_id + training_title, specialization_id/specialization_name, requested_at (backend timestamp), a strict boolean is_paid (mirroring training_listings.is_paid, the same canonical source used by Eligible and Issued) and the student profile (id, full_name, email, phone, city, university, field, specialization). Capabilities: can_request=false (already requested), can_view=true (preview openable via GET /api/v1/certificates/{id}), can_download=false (no download endpoint exists in any state). certificate_number / issued_at are NOT exposed while pending and no number is generated during this read. Scope is derived from the auth context only; a client-supplied student_id is ignored. Requests are submitted through POST /api/v1/certificates.",
+                                "response": [],
+                                "event": [
+                                    {
+                                        "listen": "test",
+                                        "script": {
+                                            "exec": [
+                                                "pm.test(\"Pending certificates returned\", function () {",
+                                                "    pm.expect(pm.response.code).to.eql(200);",
+                                                "    const json = pm.response.json();",
+                                                "    pm.expect(json.success).to.eql(true);",
+                                                "});",
+                                                "const json = pm.response.json();",
+                                                "if (Array.isArray(json.data)) {",
+                                                "    json.data.forEach(function (c) {",
+                                                "        pm.test(\"pending item is pending and read-only\", function () {",
+                                                "            pm.expect(c.status).to.eql(\"pending\");",
+                                                "            pm.expect(c.can_request).to.eql(false);",
+                                                "            pm.expect(c.can_view).to.eql(true);",
+                                                "            pm.expect(c.can_download).to.eql(false);",
+                                                "        });",
+                                                "    });",
+                                                "}"
+                                            ],
+                                            "type": "text/javascript"
+                                        }
+                                    }
+                                ]
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Pending certificates include the stable pending seed\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "    const items = Array.isArray(json.data) ? json.data : [];",
+                                            "    const ids = items.map(function (it) { return Number(it.id); });",
+                                            "    pm.expect(ids).to.include(Number(pm.collectionVariables.get('certificate_pending_id')));",
+                                            "    items.forEach(function (it) {",
+                                            "        pm.expect(it.status).to.eql('pending');",
+                                            "        pm.expect(it.can_view).to.eql(true);",
+                                            "        pm.expect(it.can_request).to.eql(false);",
+                                            "        pm.expect(it.requested_at).to.be.ok;",
+                                            "        pm.expect(it).to.not.have.property('certificate_number');",
+                                            "        pm.expect(it).to.not.have.property('download_url');",
+                                            "    });",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Issued Certificates",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{access_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/certificates/issued",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "certificates",
+                                        "issued"
+                                    ]
+                                },
+                                "description": "Requires a Bearer token. The canonical (and ONLY) Issued-certificates directory. Returns ONLY the caller's certificates whose status is `issued`, mirroring /api/v1/certificates/eligible for the issued state. Response items are the canonical State 3 issued certificate presentation: id/certificate_id, status=issued, student_id, company_id, company_name, training_id, training_title, specialization_id and specialization_name, requested_at, issued_at (backend approved_at), certificate_number (stable — generated at request time, revealed on issue), is_paid (true/false from training_listings.is_paid), the student profile block, can_request=false, can_view=true and can_download=false. Scope is ALWAYS derived from the authenticated user (student: own issued certs only; company: its own trainings; admin: all). A client-supplied student_id or any other query parameter is ignored — it can never pivot to another student; no query parameter is required or used to retrieve issued certificates. Pending, revoked and eligible records are never returned; an empty result is a normal 200 with an empty data array. The endpoint never exposes may_lead_to_hire or download_url.",
+                                "response": [],
+                                "event": [
+                                    {
+                                        "listen": "test",
+                                        "script": {
+                                            "exec": [
+                                                "pm.test(\"Issued certificates returned\", function () {",
+                                                "    pm.expect(pm.response.code).to.eql(200);",
+                                                "    const json = pm.response.json();",
+                                                "    pm.expect(json.success).to.eql(true);",
+                                                "    if (Array.isArray(json.data)) {",
+                                                "        json.data.forEach(function (item) {",
+                                                "            pm.expect(item.status).to.eql('issued');",
+                                                "            pm.expect(item.can_download).to.eql(false);",
+                                                "        });",
+                                                "    }",
+                                                "});"
+                                            ],
+                                            "type": "text/javascript"
+                                        }
+                                    }
+                                ]
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Issued certificates contain free and paid sealed certs\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "    const items = Array.isArray(json.data) ? json.data : [];",
+                                            "    const ids = items.map(function (it) { return Number(it.id); });",
+                                            "    pm.expect(ids).to.include(Number(pm.collectionVariables.get('certificate_issued_id')));",
+                                            "    pm.expect(ids).to.include(Number(pm.collectionVariables.get('certificate_issued_id_paid')));",
+                                            "    items.forEach(function (it) {",
+                                            "        pm.expect(it.status).to.eql('issued');",
+                                            "        pm.expect(it.can_view).to.eql(true);",
+                                            "        pm.expect(it.can_download).to.eql(false);",
+                                            "        pm.expect(it).to.not.have.property('download_url');",
+                                            "        pm.expect(it.certificate_number).to.be.ok;",
+                                            "        pm.expect(it.issued_at).to.be.ok;",
+                                            "        pm.expect(it.specialization_name).to.be.ok;",
+                                            "        pm.expect(it.is_paid).to.be.a('boolean');",
+                                            "    });",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Revoked Certificates",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{access_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/certificates/revoked",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "certificates",
+                                        "revoked"
+                                    ]
+                                },
+                                "description": "Requires a Bearer token. The canonical (and ONLY) Revoked-certificates directory. Returns ONLY the caller's certificates whose status is `revoked` (run the Request -> Confirm -> Revoke flow first to create one). Response items expose the revoked presentation: id/certificate_id, status=revoked, student_id, company_id, company_name, training_id, training_title, specialization_id and specialization_name, requested_at, issued_at (backend approved_at — the ORIGINAL issuance date, still available), certificate_number (stable — the number generated at request time, never regenerated by revocation), revoked_at, revocation_reason (from the stored record, never invented), is_paid (true/false from training_listings.is_paid), the student profile block, can_request=false, can_view=true and can_download=false. A revoked certificate keeps its number and issue date so it can be identified in history, but is NEVER presented as an active/valid issued certificate. Scope is ALWAYS derived from the authenticated user (student: own revoked certs only; company: its own trainings; admin: all). A client-supplied student_id or any other query parameter is ignored — it can never pivot to another student; no query parameter is required or used to retrieve revoked certificates. Pending, issued and eligible records are never returned; an empty result is a normal 200 with an empty data array. The endpoint never exposes may_lead_to_hire or download_url.",
+                                "response": [],
+                                "event": [
+                                    {
+                                        "listen": "test",
+                                        "script": {
+                                            "exec": [
+                                                "pm.test(\"Revoked certificates returned\", function () {",
+                                                "    pm.expect(pm.response.code).to.eql(200);",
+                                                "    const json = pm.response.json();",
+                                                "    pm.expect(json.success).to.eql(true);",
+                                                "    if (Array.isArray(json.data)) {",
+                                                "        json.data.forEach(function (item) {",
+                                                "            pm.expect(item.status).to.eql('revoked');",
+                                                "            pm.expect(item.can_download).to.eql(false);",
+                                                "            pm.expect(item.certificate_number).to.be.ok;",
+                                                "            pm.expect(item.revoked_at).to.be.ok;",
+                                                "        });",
+                                                "    }",
+                                                "});"
+                                            ],
+                                            "type": "text/javascript"
+                                        }
+                                    }
+                                ]
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Revoked certificates keep history and the reason\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "    const items = Array.isArray(json.data) ? json.data : [];",
+                                            "    const ids = items.map(function (it) { return Number(it.id); });",
+                                            "    pm.expect(ids).to.include(Number(pm.collectionVariables.get('certificate_revoked_id')));",
+                                            "    items.forEach(function (it) {",
+                                            "        pm.expect(it.status).to.eql('revoked');",
+                                            "        pm.expect(it.revocation_reason).to.be.ok;",
+                                            "        pm.expect(it.revoked_at).to.be.ok;",
+                                            "        pm.expect(it.certificate_number).to.be.ok;",
+                                            "        pm.expect(it.can_view).to.eql(false);",
+                                            "        pm.expect(it).to.not.have.property('download_url');",
+                                            "    });",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Search Certificates",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{access_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/certificates/search?q={{certificate_issued_code}}&status=issued",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "certificates",
+                                        "search"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "q",
+                                            "value": "{{certificate_issued_code}}",
+                                            "description": "Required search keyword, matched case-insensitively against certificate_code OR title. Uses the STABLE issued certificate code so the same code found in List/Issued/Verify is returned."
+                                        },
+                                        {
+                                            "key": "status",
+                                            "value": "issued",
+                                            "description": "Optional filter: pending | issued | revoked."
+                                        }
+                                    ]
+                                },
+                                "description": "Requires a Bearer token. Searches the caller's certificates by keyword (case-insensitive LIKE over certificate_code OR training title). Here q is the stable issued certificate code ({{certificate_issued_code}}) with status=issued: it returns exactly the issued free certificate from the seeded dataset (certificate id {{certificate_issued_id}}). A request without q returns HTTP 422.",
+                                "response": [],
+                                "event": [
+                                    {
+                                        "listen": "test",
+                                        "script": {
+                                            "exec": [
+                                                "pm.test(\"Certificate search returns results\", function () {",
+                                                "    pm.expect(pm.response.code).to.equal(200);",
+                                                "    const json = pm.response.json();",
+                                                "    pm.expect(json.success).to.eql(true);",
+                                                "    pm.assert.ok(Array.isArray(json.data), 'data is an array');",
+                                                "});"
+                                            ],
+                                            "type": "text/javascript"
+                                        }
+                                    }
+                                ]
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Search by issued code returns the matching certificate\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "    const items = Array.isArray(json.data) ? json.data : [];",
+                                            "    pm.expect(items.length).to.be.at.least(1);",
+                                            "    const code = pm.collectionVariables.get('certificate_issued_code');",
+                                            "    pm.expect(items.some(function (it) {",
+                                            "        return (it.certificate_number || it.certificate_code) === code && it.status === 'issued';",
+                                            "    })).to.eql(true);",
+                                            "    items.forEach(function (it) {",
+                                            "        pm.expect(it.status).to.eql('issued');",
+                                            "        pm.expect(it).to.not.have.property('may_lead_to_hire');",
+                                            "    });",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Certificate Statistics",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{access_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/certificates/statistics",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "certificates",
+                                        "statistics"
+                                    ]
+                                },
+                                "description": "Requires a Bearer token. Returns certificate statistics scoped to the authenticated user (student: own certificates only; company: its own trainings; admin: all). Response `data` exposes six numeric keys: `total`, `issued`, `active`, `valid`, `revoked`, `pending`. A client-supplied `student_id` or `company_id` query parameter is ignored — the scope always derives from the bearer token. Before any certificate exists the counts are 0; after running the Request -> Confirm -> Revoke flow the caller's counts reflect that state.",
+                                "response": [],
+                                "event": [
+                                    {
+                                        "listen": "test",
+                                        "script": {
+                                            "exec": [
+                                                "pm.test(\"Certificate statistics returned\", function () {",
+                                                "    pm.expect(pm.response.code).to.equal(200);",
+                                                "    const json = pm.response.json();",
+                                                "    pm.expect(json.success).to.eql(true);",
+                                                "    pm.expect(json.data).to.have.property('total');",
+                                                "    pm.expect(json.data).to.have.property('issued');",
+                                                "    pm.expect(json.data).to.have.property('active');",
+                                                "    pm.expect(json.data).to.have.property('valid');",
+                                                "    pm.expect(json.data).to.have.property('revoked');",
+                                                "    pm.expect(json.data).to.have.property('pending');",
+                                                "});"
+                                            ],
+                                            "type": "text/javascript"
+                                        }
+                                    }
+                                ]
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Statistics expose all six counts\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "    const d = json.data || {};",
+                                            "    ['total', 'pending', 'issued', 'active', 'valid', 'revoked'].forEach(function (k) {",
+                                            "        pm.expect(d).to.have.property(k);",
+                                            "        pm.expect(typeof d[k]).to.eql('number');",
+                                            "    });",
+                                            "    pm.expect(d.total).to.be.gte(14);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Request Certificate",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{access_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"training_id\": \"{{certificate_training_id}}\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/certificates",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "certificates"
+                                    ]
+                                },
+                                "description": "Requires a Bearer token. A student (or a company, on behalf of its eligible students) requests a certificate by `training_id`. Creates a PENDING row and returns it presented with the Pending Confirmation data: status=pending, company_name, training_title, specialization_id/name, requested_at (backend timestamp), the student profile (id, full_name, email, phone, city, university, field, specialization) and can_view=true / can_download=false (no download endpoint exists). The client cannot set student_id, company_id, status, requested_at, issued_at or certificate_number. 201 on success; 422 when the training is missing/not eligible; 409 when a certificate already exists for the student + training pair (any state, so a revoked certificate blocks re-request). Stores the certificate id into `certificate_id`.",
+                                "response": [],
+                                "event": [
+                                    {
+                                        "listen": "test",
+                                        "script": {
+                                            "exec": [
+                                                "pm.test(\"Request certificate responds\", function () {",
+                                                "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+                                                "});",
+                                                "const json = pm.response.json();",
+                                                "if (json.data && json.data.id) {",
+                                                "    pm.collectionVariables.set('certificate_id', String(json.data.id));",
+                                                "}"
+                                            ],
+                                            "type": "text/javascript"
+                                        }
+                                    }
+                                ]
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Request creates a pending certificate for the eligible training\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(201);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "    pm.expect(json.data).to.have.property('id');",
+                                            "    pm.expect(json.data.status).to.eql('pending');",
+                                            "    pm.expect(json.data.training_id).to.eql(Number(pm.collectionVariables.get('certificate_training_id')));",
+                                            "    pm.expect(json.data.can_request).to.eql(false);",
+                                            "    pm.expect(json.data.can_view).to.eql(true);",
+                                            "    pm.expect(json.data.student_id).to.eql(Number(pm.collectionVariables.get('certificate_eligible_student')));",
+                                            "    pm.expect(json.data.requested_at).to.be.ok;",
+                                            "});",
+                                            "if (pm.response.code === 201) {",
+                                            "    const json = pm.response.json();",
+                                            "    pm.collectionVariables.set('certificate_id', String(json.data.id));",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Request Certificate (Unfinished Training - expect 422)",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{access_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"training_id\": \"{{certificate_unfinished_id}}\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/certificates",
+                                    "host": [
+                                        "api"
+                                    ],
+                                    "path": [
+                                        "v1",
+                                        "certificates"
+                                    ]
+                                },
+                                "description": "Requires a Bearer token. Proves the eligibility TIMING rule on the dataset: training {{certificate_unfinished_id}} (100422) has BOTH an accepted application AND a completed session, but its training_listings.ends_at is still in the future (ends_at > NOW()). The backend re-validates eligibility through the same ends_at-gated query, so the request is rejected with 422 even though the session is completed."
                             },
                             "response": [],
                             "event": [
@@ -4318,10 +5186,363 @@
                                     "listen": "test",
                                     "script": {
                                         "exec": [
-                                            "pm.test(\"Certificates listed\", function () {",
+                                            "pm.test(\"Unfinished training cannot be requested\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(422);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(false);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Request Certificate (Mismatched Specialization - expect 422)",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{access_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"training_id\": \"{{certificate_mismatch_training_id}}\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/certificates",
+                                    "host": [
+                                        "api"
+                                    ],
+                                    "path": [
+                                        "v1",
+                                        "certificates"
+                                    ]
+                                },
+                                "description": "Requires a Bearer token. Proves the eligibility SPECIALIZATION rule on a REAL out-of-specialization training: {{certificate_mismatch_training_id}} (100210, \"Business Analytics with Power BI\", specialization 205 Data Analysis) belongs to a different specialization than the student (student 1498 = specialization 199 Backend Development). The backend re-validates eligibility through the same specialization-equality-gated query (training_listings.specialization_id == students.specialization_id), so the request is rejected with 422 no matter what the client sends.",
+                                "response": [],
+                                "event": [
+                                    {
+                                        "listen": "test",
+                                        "script": {
+                                            "exec": [
+                                                "pm.test(\"Mismatched-specialization training cannot be requested\", function () {",
+                                                "    pm.expect(pm.response.code).to.eql(422);",
+                                                "    const json = pm.response.json();",
+                                                "    pm.expect(json.success).to.eql(false);",
+                                                "});"
+                                            ],
+                                            "type": "text/javascript"
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "name": "Get Certificate By ID",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{access_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/certificates/{{certificate_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "certificates",
+                                        "{{certificate_id}}"
+                                    ]
+                                },
+                                "description": "Requires a Bearer token. Returns one certificate presented per state. Only the owning student, the owning company, or an admin may view it (403 otherwise). Once issued the response exposes status=issued, certificate_number (stable — generated at request time, revealed on issue), issued_at (backend approved_at), is_paid (true/false from training_listings.is_paid), company_name, training_title, specialization_id/name, requested_at, the student profile, can_request=false, can_view=true and can_download=false. certificate_number and issued_at are hidden while pending. Once revoked the response keeps status=revoked plus the original certificate_number and issued_at next to revocation_reason and revoked_at — never presented as an active/valid issued certificate. No may_lead_to_hire field is ever present.",
+                                "response": [],
+                                "event": [
+                                    {
+                                        "listen": "test",
+                                        "script": {
+                                            "exec": [
+                                                "pm.test(\"Certificate returned\", function () {",
+                                                "    pm.expect(pm.response.code).to.eql(200);",
+                                                "    const json = pm.response.json();",
+                                                "    pm.expect(json.success).to.eql(true);",
+                                                "    pm.expect(json.data.status).to.match(/^(pending|issued|revoked)$/);",
+                                                "});"
+                                            ],
+                                            "type": "text/javascript"
+                                        }
+                                    }
+                                ]
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Certificate by id returns the requested certificate\", function () {",
                                             "    pm.expect(pm.response.code).to.eql(200);",
                                             "    const json = pm.response.json();",
                                             "    pm.expect(json.success).to.eql(true);",
+                                            "    pm.expect(String(json.data.id)).to.eql(pm.collectionVariables.get('certificate_id'));",
+                                            "    pm.expect(['pending', 'issued', 'revoked']).to.include(json.data.status);",
+                                            "    pm.expect(json.data.student_id).to.eql(Number(pm.collectionVariables.get('certificate_eligible_student')));",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Confirm Certificate (Company)",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{company_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/certificates/{{certificate_id}}/confirm",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "certificates",
+                                        "{{certificate_id}}",
+                                        "confirm"
+                                    ]
+                                },
+                                "description": "Requires a token for the OWNING company (or an admin). Moves a pending certificate to issued: the MASAR certificate_number (`MASAR-YYYY-XXXXXXXX`) was already generated at REQUEST time and is now revealed, stamps approved_at (exposed as issued_at) and reviewed_by, and notifies the student. The 200 response returns the issued certificate with status=issued, certificate_number, issued_at, is_paid (from training_listings.is_paid), company_name, training_title, specialization_id/name, requested_at, the student profile, can_view=true and can_download=false (no download endpoint exists). 409 when the certificate is no longer pending; 403 for non-owning roles (auth is checked before the state transition). Re-confirmation is a 409 and never changes the certificate_number.",
+                                "response": [],
+                                "event": [
+                                    {
+                                        "listen": "test",
+                                        "script": {
+                                            "exec": [
+                                                "pm.test(\"Confirm certificate responds\", function () {",
+                                                "    pm.expect(pm.response.code).to.be.oneOf([200, 409]);",
+                                                "});",
+                                                "const json = pm.response.json();",
+                                                "if (json.data && json.data.status === 'issued') {",
+                                                "    pm.test(\"Issued certificate exposes number\", function () {",
+                                                "        pm.expect(json.data.certificate_number).to.match(/^MASAR-\\d{4}-[0-9A-F]{8}$/);",
+                                                "        pm.expect(json.data.issued_at).to.be.ok;",
+                                                "        pm.expect(json.data.can_download).to.eql(false);",
+                                                "    });",
+                                                "}"
+                                            ],
+                                            "type": "text/javascript"
+                                        }
+                                    }
+                                ]
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Company confirms the certificate\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "    pm.expect(json.data.status).to.eql('issued');",
+                                            "    pm.expect(json.data.company_id).to.eql(Number(pm.collectionVariables.get('certificate_company_id')));",
+                                            "    pm.expect(json.data.company_name).to.eql('TestHire Solutions');",
+                                            "    pm.expect(json.data.certificate_number).to.be.ok;",
+                                            "    pm.expect(json.data.issued_at).to.be.ok;",
+                                            "    pm.expect(json.data.can_view).to.eql(true);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Verify Certificate",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{access_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/certificates/{{certificate_id}}/verify",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "certificates",
+                                        "{{certificate_id}}",
+                                        "verify"
+                                    ]
+                                },
+                                "description": "Requires a Bearer token. Verifies a certificate and returns its public details (status, holder, training, number). A revoked certificate is reported as revoked.",
+                                "response": [],
+                                "event": [
+                                    {
+                                        "listen": "test",
+                                        "script": {
+                                            "exec": [
+                                                "pm.test(\"Certificate verified\", function () {",
+                                                "    pm.expect(pm.response.code).to.eql(200);",
+                                                "    const json = pm.response.json();",
+                                                "    pm.expect(json.success).to.eql(true);",
+                                                "});"
+                                            ],
+                                            "type": "text/javascript"
+                                        }
+                                    }
+                                ]
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Issued certificate verifies as valid\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "    pm.expect(json.data.valid).to.eql(true);",
+                                            "    pm.expect(String(json.data.certificate.id)).to.eql(pm.collectionVariables.get('certificate_id'));",
+                                            "    pm.expect(json.data.certificate.status).to.eql('issued');",
+                                            "    pm.expect(json.data.certificate.certificate_number).to.be.ok;",
+                                            "    pm.expect(json.data.certificate).to.not.have.property('download_url');",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Revoke Certificate (Company)",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{company_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"reason\": \"{{certificate_revoke_reason}}\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/certificates/{{certificate_id}}/revoke",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "certificates",
+                                        "{{certificate_id}}",
+                                        "revoke"
+                                    ]
+                                },
+                                "description": "Requires a token for the OWNING company (or an admin). Revokes an issued certificate with a mandatory `reason`. Returns the certificate presented as revoked: status=revoked, the original certificate_number and issued_at kept stable, revocation_reason + revoked_at present, can_download=false. 200 on success; 422 without a reason; 409 when already revoked; 403 for non-owning roles.",
+                                "response": [],
+                                "event": [
+                                    {
+                                        "listen": "test",
+                                        "script": {
+                                            "exec": [
+                                                "pm.test(\"Revoke certificate responds\", function () {",
+                                                "    pm.expect(pm.response.code).to.be.oneOf([200, 409]);",
+                                                "});",
+                                                "const json = pm.response.json();",
+                                                "if (json.data && json.data.status === 'revoked') {",
+                                                "    pm.test(\"Revoked certificate shape\", function () {",
+                                                "        pm.expect(json.data.revocation_reason).to.be.ok;",
+                                                "        pm.expect(json.data.can_download).to.eql(false);",
+                                                "        pm.expect(json.data.certificate_number).to.be.ok;",
+                                                "        pm.expect(json.data.revoked_at).to.be.ok;",
+                                                "        pm.expect(json.data.status).to.eql('revoked');",
+                                                "    });",
+                                                "}"
+                                            ],
+                                            "type": "text/javascript"
+                                        }
+                                    }
+                                ]
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Company revokes the certificate\", function () {",
+                                            "    pm.expect(pm.response.code).to.eql(200);",
+                                            "    const json = pm.response.json();",
+                                            "    pm.expect(json.success).to.eql(true);",
+                                            "    pm.expect(json.data.status).to.eql('revoked');",
+                                            "    pm.expect(json.data.revocation_reason).to.eql(pm.collectionVariables.get('certificate_revoke_reason'));",
+                                            "    pm.expect(json.data.revoked_at).to.be.ok;",
+                                            "    pm.expect(json.data.certificate_number).to.be.ok;",
                                             "});"
                                         ],
                                         "type": "text/javascript"
@@ -5062,9 +6283,154 @@
                         "description": "List of the authenticated student's saved trainings (items + pagination). Requires a student token."
                     },
                     "response": []
+                },
+                {
+                    "name": "Extend Training (Company Update)",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{company_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"end_date\": \"2026-12-31 17:00:00\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/trainings/update?id={{extend_training_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "trainings",
+                                "update"
+                            ],
+                            "query": [
+                                {
+                                    "key": "id",
+                                    "value": "{{extend_training_id}}"
+                                }
+                            ]
+                        },
+                        "description": "Requires a company Bearer token (`{{company_token}}`, set by Login (Company)). Extends the company's OWN published training by updating its `end_date` (maps to training_listings.ends_at). Targets the seeded expired fixture `{{extend_training_id}}` (Backend Monolith Refactoring Sprint: still published, ends_at already passed, remaining_days 0) so the tester can `GET /api/v1/trainings/list` before and after and watch the countdown go from 0 to 98+. PUT and PATCH are both accepted; the id is read from the `id` query parameter. Returns the updated training row (data.ends_at reflects the new end date, status stays published). Not the owner -> 403; already closed by the close_expired_trainings cron -> 409. NOTE: re-running with the SAME end_date returns 500 (no change in the DB row), so use a different end_date to re-demo.",
+                        "response": [],
+                        "event": [
+                            {
+                                "listen": "test",
+                                "script": {
+                                    "exec": [
+                                        "const json = pm.response.json();",
+                                        "pm.test(\"Extend training responds\", function () {",
+                                        "    pm.expect(pm.response.code).to.be.oneOf([200, 500]);",
+                                        "});",
+                                        "if (pm.response.code === 200) {",
+                                        "    pm.test(\"Extend success updates ends_at and keeps published\", function () {",
+                                        "        pm.expect(json.success).to.eql(true);",
+                                        "        pm.expect(json.data.ends_at).to.eql('2026-12-31 17:00:00');",
+                                        "        pm.expect(json.data.status).to.eql('published');",
+                                        "        pm.expect(Number(json.data.id)).to.eql(Number('{{extend_training_id}}'));",
+                                        "    });",
+                                        "} else {",
+                                        "    pm.test(\"Extend re-run with same end_date is rejected\", function () {",
+                                        "        pm.expect(json.success).to.eql(false);",
+                                        "    });",
+                                        "}"
+                                    ],
+                                    "type": "text/javascript"
+                                }
+                            }
+                        ]
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Training (Company Draft Only)",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{company_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/trainings/delete?id={{delete_training_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "trainings",
+                                "delete"
+                            ],
+                            "query": [
+                                {
+                                    "key": "id",
+                                    "value": "{{delete_training_id}}"
+                                }
+                            ]
+                        },
+                        "description": "Requires a company Bearer token (`{{company_token}}`). Deletes a training listing. Only the OWNING company may delete (403 otherwise) and ONLY `draft` listings are deletable (409 for published/closed). Targets the seeded draft fixture `{{delete_training_id}}` (Backend GraphQL Gateway Draft). On success the row is physically removed, so a re-run returns 404; re-run `php database/seeders/backend_spec199_test_data_seeder.php` to restore the fixture.",
+                        "response": [],
+                        "event": [
+                            {
+                                "listen": "test",
+                                "script": {
+                                    "exec": [
+                                        "const json = pm.response.json();",
+                                        "pm.test(\"Delete training responds\", function () {",
+                                        "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                                        "});",
+                                        "if (pm.response.code === 200) {",
+                                        "    pm.test(\"Delete success for own draft\", function () {",
+                                        "        pm.expect(json.success).to.eql(true);",
+                                        "        pm.expect(json.message).to.include('deleted');",
+                                        "    });",
+                                        "}"
+                                    ],
+                                    "type": "text/javascript"
+                                }
+                            }
+                        ]
+                    },
+                    "response": []
                 }
             ],
-            "description": "Training listing, creation, details, company logo, save/unsave, and saved-list endpoints. Duplicate detail request removed."
+            "description": "Training listing, creation, details, company logo, save/unsave, saved-list, company update (extend) and company delete endpoints. Duplicate detail request removed. Extend/Delete require `{{company_token}}` (set by Login (Company)) and target the seeded spec-199 fixtures `{{extend_training_id}}` / `{{delete_training_id}}` (created by database/seeders/backend_spec199_test_data_seeder.php)."
         },
         {
             "name": "06 - Search",

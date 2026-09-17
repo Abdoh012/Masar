@@ -854,6 +854,18 @@ function masar_seed(PDO $pdo): void
         'reviewed_by' => $companies['company@test.local']['uid'],
     ]);
 
+    // Second past bootcamp completion (Sara): accepted + completed but has NO
+    // certificate yet, so she is ELIGIBLE to request one — the counterpart to
+    // student@test.local who already holds an issued certificate.
+    $apps['frontend-bootcamp|sara'] = masar_insert_application($pdo, $trainings['frontend-bootcamp'], $companies['company@test.local']['cid'], $sara, 'accepted', [
+        'message' => 'I completed the bootcamp requirements as well.',
+        'why_interested' => 'I attended every session and delivered the final project.',
+        'what_to_learn' => 'Modern frontend tooling.',
+        'skills' => 'JavaScript, CSS',
+        'reviewed_at' => date('Y-m-d H:i:s', $now - 78 * $day),
+        'reviewed_by' => $companies['company@test.local']['uid'],
+    ]);
+
     echo "Seeding application answers...\n";
     $ans = $pdo->prepare("INSERT INTO application_answers (application_id, question_id, answer, created_at) VALUES (?, ?, ?, NOW())");
     $backendApp = $apps['backend-intern|student'];
@@ -870,6 +882,14 @@ function masar_seed(PDO $pdo): void
         'trial_ends_at' => date('Y-m-d H:i:s', $now - 80 * $day),
         'confirmed_at' => date('Y-m-d H:i:s', $now - 79 * $day),
         'ended_at' => date('Y-m-d H:i:s', $now - 45 * $day),
+        'employment_opportunity' => 0,
+    ]);
+    $sessions['frontend-bootcamp|sara'] = masar_insert_session($pdo, $apps['frontend-bootcamp|sara'], $trainings['frontend-bootcamp'], $sara['sid'], $companies['company@test.local']['cid'], 'completed', [
+        'started_at' => date('Y-m-d H:i:s', $now - 83 * $day),
+        'trial_started_at' => date('Y-m-d H:i:s', $now - 83 * $day),
+        'trial_ends_at' => date('Y-m-d H:i:s', $now - 78 * $day),
+        'confirmed_at' => date('Y-m-d H:i:s', $now - 77 * $day),
+        'ended_at' => date('Y-m-d H:i:s', $now - 43 * $day),
         'employment_opportunity' => 0,
     ]);
     $sessions['mech-drafting'] = masar_insert_session($pdo, $apps['mech-drafting|ahmed'], $trainings['mech-drafting'], $ahmed['sid'], $companies['delta.engineering@test.local']['cid'], 'continuing', [

@@ -665,6 +665,8 @@ function training_repository_update(
 
         'end_date' => 'ends_at',
 
+        'application_deadline' => 'application_deadline',
+
         'capacity' => 'capacity',
 
         'status' => 'status',
@@ -728,13 +730,7 @@ function training_repository_update(
             continue;
         }
 
-        if ($column === 'starts_at') {
-            $sets[] = "{$column} = ?";
-            $params[] = !empty($value) ? $value : null;
-            continue;
-        }
-
-        if ($column === 'ends_at') {
+        if (in_array($column, ['starts_at', 'ends_at', 'application_deadline'], true)) {
             $sets[] = "{$column} = ?";
             $params[] = !empty($value) ? $value : null;
             continue;
@@ -1169,6 +1165,34 @@ function training_repository_build_public_query(
         "t.status = 'published'"
     ];
     $params = [];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Expiration Visibility
+    |--------------------------------------------------------------------------
+    |
+    | A published training is only shown in public discovery (list, count,
+    | keyword and saved-scope queries via the shared builder) while its
+    | ends_at has not passed yet: the source of truth for expiration is the
+    | existing ends_at field. Expired trainings are hidden from discovery but
+    | their records are never deleted - the owning company can still see,
+    | extend and manage them, and a later extension of ends_at simply makes
+    | them visible again (remaining_days grows from 0).
+    |
+    | application_deadline is deliberately NOT a discovery condition: a
+    | still-running training stays listed even after its apply window closes
+    | (only the apply endpoint rejects past-deadline applications). The
+    | exception is the student's private saved list (saved_only): there every
+    | saved training stays visible regardless of its dates.
+    |
+    */
+
+    if (empty($filters['saved_only'])) {
+
+        $conditions[] =
+            "(t.ends_at IS NULL
+                OR t.ends_at >= NOW())";
+    }
 
     if (
         !empty($filters['company_id'])

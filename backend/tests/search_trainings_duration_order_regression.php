@@ -4,28 +4,31 @@
  * MASAR - Training Duration Sort Order Regression
  *
  * Verifies that the unified search endpoint (search_service_trainings ->
- * search_repository_trainings) orders results by the API's "duration"
+ * search_repository_trainings) orders results by the API's "remaining days"
  * semantic when sort=duration_asc / sort=duration_desc.
  *
- * Duration is documented as: calendar days remaining from today until
- * ends_at, clamped to 0 when today >= ends_at (never negative). It is NOT
- * the total span of the training (DATEDIFF(ends_at, starts_at)). The fix
- * changed the ORDER BY in search_repository_trainings_sort_clause() so both
- * duration sorts key on greatested(remaining days, 0) with NULL ends_at last
- * and a deterministic training id tie-break. Because ORDER BY is applied at
- * the SQL level BEFORE LIMIT/OFFSET, results must also be globally consistent
- * across page boundaries.
+ * Card semantics (corrected): `duration` is the FIXED total span of the
+ * training (DATEDIFF(ends_at, starts_at)); `remaining_days` is the decreasing
+ * countdown from today until ends_at (clamped to 0, never negative). The
+ * duration sorts key on remaining days with NULL ends_at last and a
+ * deterministic training id tie-break; ORDER BY is applied at the SQL level
+ * BEFORE LIMIT/OFFSET so results are globally consistent across pages.
  *
- * The test inserts isolated published trainings whose ends_at are spread over
- * the past, near-future and far-future, then asserts:
- *   1. duration_asc  -> non-decreasing computed duration
- *   2. duration_desc -> non-increasing computed duration
- *   3. duration is derived from ends_at (remaining days), not total span
- *   4. expired rows (today >= ends_at) report duration = 0
- *   5. NULL ends_at rows sort last (end of list) in both directions
- *   6. deterministic tie-break by training id
- *   7. page-boundary continuity across page=1/page=2 for both directions
- *   8. student specialization scope is preserved under both sorts
+ * The test inserts isolated published trainings (application_deadline ===
+ * starts_at) plus one already-expired published training (deadline passed, so
+ * it is HIDDEN by the discovery deadline filter) and asserts:
+ *   1. duration_asc  -> non-decreasing remaining_days
+ *   2. duration_desc -> non-increasing remaining_days
+ *   3. remaining_days derives from ends_at, NOT from the fixed duration span
+ *      (a longer-span row with fewer remaining days sorts AFTER a shorter-span
+ *       row with more remaining days)
+ *   4. card `duration` equals the fixed total span (DATEDIFF ends - starts)
+ *   5. the published training whose deadline/ends has passed is EXCLUDED from
+ *      discovery (deadline filter), even though it is still published
+ *   6. NULL ends_at rows sort last (end of list) in both directions
+ *   7. deterministic ordering across repeated calls
+ *   8. page-boundary continuity across page=1/page=2 for both directions
+ *   9. student specialization scope is preserved under both sorts
  *
  * Run from the backend root:
  *     php tests/search_trainings_duration_order_regression.php
@@ -64,13 +67,28 @@ function next_free_id(PDO $pdo, string $table, string $col): int
     return $max + 1;
 }
 
-function expected_duration(?string $endsAt): int
+function expected_remaining(?string $endsAt): int
 {
     if ($endsAt === null) {
-        return -1; // place NaN sentinel; NULL sort-last is checked separately
+        return -1; // sentinel: NULL ends_at (sorted last)
     }
     $days = (int) floor((strtotime($endsAt) - time()) / 86400);
     return max($days, 0);
+}
+
+function fixed_span(?string $startsAt, ?string $endsAt): ?int
+{
+    if ($startsAt === null || $endsAt === null) {
+        // NULL ends_at rows expose a NULL card span (kept in DTO).
+        return null;
+    }
+    $starts = date_create($startsAt);
+    $ends = date_create($endsAt);
+    if ($starts === false || $ends === false) {
+        return null;
+    }
+    $diff = (int) $starts->diff($ends)->format('%r%a');
+    return max($diff, 0);
 }
 
 $pdo = get_database_connection();
@@ -139,54 +157,62 @@ try {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', ?, ?, NOW(), NOW())"
     );
 
-    $now = date('Y-m-d H:i:s');
-    $past10 = date('Y-m-d H:i:s', time() - 10 * 86400);
-    $in3 = date('Y-m-d H:i:s', time() + 3 * 86400);
+    $in2  = date('Y-m-d H:i:s', time() + 2 * 86400);
+    $in3  = date('Y-m-d H:i:s', time() + 3 * 86400);
     $in20 = date('Y-m-d H:i:s', time() + 20 * 86400);
+    $in48 = date('Y-m-d H:i:s', time() + 48 * 86400);
     $in50 = date('Y-m-d H:i:s', time() + 50 * 86400);
+    $in45 = date('Y-m-d H:i:s', time() + 45 * 86400);
     $in90 = date('Y-m-d H:i:s', time() + 90 * 86400);
+    $past10 = date('Y-m-d H:i:s', time() - 10 * 86400);
 
-    // Build trainings with KNOWN remaining-day ordering. To defeat total-span
-    // (DATEDIFF ends_at - starts_at) ordering, vary starts_at independently:
-    // starts near ends_at so total span !== remaining days.
+    /*
+     * Visible in-spec rows (deadline === starts, starts in the future).
+     * R2 has a LONGER fixed span (18) than R3 (2) but FEWER remaining days
+     * (20 vs 50) - the sort must key on remaining days, not the span.
+     *   visible: R1 (3d), R2 (20d), R3 (50d), R4 (90d), NULL-ends
+     *   hidden : R0 (published, ends/deadline in the past) - excluded
+     *   oos    : specB training sharing the keyword - excluded by scope
+     */
     $tpl = [
-        // 'id-raw-end' remaining day bucket (approx), start offset (days before ends_at)
-        ['ends' => $past10, 'startOffset' => 40], // expired -> duration 0
-        ['ends' => $in3,    'startOffset' => 1 ],  // ~3  days remaining
-        ['ends' => $in20,   'startOffset' => 60],  // ~20 days remaining
-        ['ends' => $in50,   'startOffset' => 2 ],  // ~50 days remaining
-        ['ends' => $in90,   'startOffset' => 45],  // ~90 days remaining
+        ['ends' => $in3,  'starts' => $in2,  'title' => 'Row 1'], // rem 3,  span 1
+        ['ends' => $in20, 'starts' => $in2,  'title' => 'Row 2'], // rem 20, span 18
+        ['ends' => $in50, 'starts' => $in48, 'title' => 'Row 3'], // rem 50, span 2
+        ['ends' => $in90, 'starts' => $in45, 'title' => 'Row 4'], // rem 90, span 45
     ];
 
     $trainingIds = [];
     $expectedRemaining = [];
-    $createdTrainings = array_merge([], $createdTrainings);
+    $expectedSpan = [];
     $firstTrainingId = next_free_id($pdo, 'training_listings', 'id');
+
     foreach ($tpl as $i => $row) {
         $tid = $firstTrainingId + $i;
-        $starts = date('Y-m-d H:i:s', strtotime($row['ends']) - $row['startOffset'] * 86400);
-        // Ensure starts_at is in the future so cards are published/visible.
-        if (strtotime($starts) < time()) {
-            $starts = date('Y-m-d H:i:s', time() + 2 * 86400);
-        }
-        $insTraining->execute([$tid, $companyCid, $specA, "{$kw} Duration Row {$i}", "{$kw} description row {$i}", 'hands_on', 'remote', 0, null, 'EGP', $starts, $row['ends'], $now, $row['ends']]);
+        $insTraining->execute([$tid, $companyCid, $specA, "{$kw} Duration {$row['title']}", "{$kw} description row {$i}", 'hands_on', 'remote', 0, null, 'EGP', $row['starts'], $row['ends'], $in2, $row['ends']]);
         $trainingIds[] = $tid;
-        $expectedRemaining[$tid] = expected_duration($row['ends']);
+        $expectedRemaining[$tid] = expected_remaining($row['ends']);
+        $expectedSpan[$tid] = fixed_span($row['starts'], $row['ends']);
         $createdTrainings[] = $tid;
         $insTsp = $pdo->prepare("INSERT INTO training_specializations (training_id, specialization_id) VALUES (?, ?)");
         $insTsp->execute([$tid, $specA]);
     }
 
+    // R0: published but already ended (deadline passed) -> hidden in discovery.
+    $hiddenTid = $firstTrainingId + count($tpl);
+    $insTraining->execute([$hiddenTid, $companyCid, $specA, "{$kw} Duration Expired Hidden", "{$kw} description expired", 'hands_on', 'hybrid', 0, null, 'EGP', $in2, $past10, $in2, $past10]);
+    $createdTrainings[] = $hiddenTid;
+    $insTsp->execute([$hiddenTid, $specA]);
+
     // NULL ends_at row: belongs to specA scope but must sort LAST in both directions.
-    $nullTid = $firstTrainingId + count($tpl);
-    $insTraining->execute([$nullTid, $companyCid, $specA, "{$kw} Null Ends Row", "{$kw} description null ends", 'shadowing', 'onsite', 1, 2000, 'EGP', date('Y-m-d H:i:s', time() + 2 * 86400), null, $now, null]);
+    $nullTid = $hiddenTid + 1;
+    $insTraining->execute([$nullTid, $companyCid, $specA, "{$kw} Null Ends Row", "{$kw} description null ends", 'shadowing', 'onsite', 1, 2000, 'EGP', $in2, null, $in2, null]);
     $trainingIds[] = $nullTid;
     $createdTrainings[] = $nullTid;
     $insTsp->execute([$nullTid, $specA]);
 
     // Out-of-scope training (specB) sharing the keyword - must never appear.
     $oosTid = $nullTid + 1;
-    $insTraining->execute([$oosTid, $companyCid, $specB, "{$kw} Out Of Scope", "{$kw} outside scope", 'project_based', 'remote', 1, 9999, 'EGP', date('Y-m-d H:i:s', time() + 2 * 86400), date('Y-m-d H:i:s', time() + 5 * 86400), $now, $now]);
+    $insTraining->execute([$oosTid, $companyCid, $specB, "{$kw} Out Of Scope", "{$kw} outside scope", 'project_based', 'remote', 1, 9999, 'EGP', $in2, $in5 = date('Y-m-d H:i:s', time() + 5 * 86400), $in2, $in5]);
     $createdTrainings[] = $oosTid;
     $insTsp->execute([$oosTid, $specB]);
 
@@ -198,71 +224,86 @@ try {
         'query' => $kw,
     ];
 
-    // Helper: return list of [id, duration] in the order the API returns them.
+    // Helper: return [id, duration, remaining_days] in API order.
     $fetchDurations = static function (string $sort, int $page = 1, int $limit = 100) use ($base) {
         $r = search_service_trainings(array_merge($base, ['sort' => $sort, 'page' => $page, 'limit' => $limit]));
-        return array_map(static fn ($it) => [(int) $it['id'], $it['duration']], $r['items'] ?? []);
+        return array_map(static fn ($it) => [(int) $it['id'], $it['duration'], $it['remaining_days']], $r['items'] ?? []);
     };
 
-    // Total rows that should be returned for specA scope (5 non-null + 1 null).
-    $expectCount = 6;
+    // Visible in-spec rows: 4 non-null + 1 null.
+    $expectCount = 5;
 
     echo "\n== TESTS: duration_asc ==\n";
     $asc = $fetchDurations('duration_asc');
-    check('asc returns all scoped rows', count($asc) === $expectCount);
-    check('asc total = scoped rows', (int) search_service_trainings(array_merge($base, ['sort' => 'duration_asc']))['total'] === $expectCount);
-    // Non-null durations must be non-decreasing.
-    $ascNonNull = array_values(array_filter($asc, static fn ($it) => $it[1] !== null));
-    $ascDurs = array_map('intval', array_column($ascNonNull, 1));
+    check('asc returns all scoped visible rows', count($asc) === $expectCount);
+    check('asc total = scoped visible rows', (int) search_service_trainings(array_merge($base, ['sort' => 'duration_asc']))['total'] === $expectCount);
+    // Ordering by remaining_days must be non-decreasing (nulls surface last).
+    $ascRemaining = array_map(static fn ($it) => $it[2], $asc);
     $isNonDec = true;
-    for ($i = 1; $i < count($ascDurs); $i++) {
-        if ($ascDurs[$i] < $ascDurs[$i - 1]) {
+    for ($i = 1; $i < count($ascRemaining); $i++) {
+        if ($ascRemaining[$i] !== null && $ascRemaining[$i - 1] !== null && $ascRemaining[$i] < $ascRemaining[$i - 1]) {
             $isNonDec = false;
         }
     }
-    check('asc non-null durations non-decreasing', $isNonDec);
+    check('asc remaining_days non-decreasing', $isNonDec);
     check('asc NULL ends_at last', (int) end($asc)[0] === $nullTid);
-    check('asc expired rows report duration 0', count(array_filter($asc, static fn ($it) => in_array($it[0], $trainingIds, true) && isset($expectedRemaining[$it[0]]) && $expectedRemaining[$it[0]] === 0 && $it[1] !== null)) > 0);
+    check('asc expired-deadline published row is hidden', !in_array($hiddenTid, array_map(static fn ($it) => (int) $it[0], $asc), true));
 
     echo "\n== TESTS: duration_desc ==\n";
     $desc = $fetchDurations('duration_desc');
-    check('desc returns all scoped rows', count($desc) === $expectCount);
-    $descNonNull = array_values(array_filter($desc, static fn ($it) => $it[1] !== null));
-    $descDurs = array_map('intval', array_column($descNonNull, 1));
+    check('desc returns all scoped visible rows', count($desc) === $expectCount);
+    $descRemaining = array_map(static fn ($it) => $it[2], $desc);
     $isNonInc = true;
-    for ($i = 1; $i < count($descDurs); $i++) {
-        if ($descDurs[$i] > $descDurs[$i - 1]) {
+    for ($i = 1; $i < count($descRemaining); $i++) {
+        if ($descRemaining[$i] !== null && $descRemaining[$i - 1] !== null && $descRemaining[$i] > $descRemaining[$i - 1]) {
             $isNonInc = false;
         }
     }
-    check('desc non-null durations non-increasing', $isNonInc);
+    check('desc remaining_days non-increasing', $isNonInc);
     check('desc NULL ends_at last', (int) end($desc)[0] === $nullTid);
 
-    echo "\n== TESTS: duration derived from ends_at (not total span) ==\n";
-    // Row 2 (in20, offset 60) has a LONGER total span than Row 3 (in50, offset 2),
-    // but must sort by remaining days: Row 3 (50d) should precede Row 2 (20d) in desc.
+    echo "\n== TESTS: remaining_days (not fixed span) drives the sort ==\n";
     $descById = [];
     foreach ($desc as $it) {
         if (isset($expectedRemaining[$it[0]])) {
-            $descById[(int) $it[0]] = (int) $it[1];
+            $descById[(int) $it[0]] = $it;
         }
     }
-    $row2 = $trainingIds[2]; // ends +20d
-    $row3 = $trainingIds[3]; // ends +50d
-    check('duration sort uses remaining days, not total span', ($descById[$row3] ?? -1) > ($descById[$row2] ?? -99));
+    // Row 3 (50 days remaining, span 2) must precede Row 2 (20 days, span 18)
+    // in desc even though Row 2 has the LONGER fixed span.
+    $row2 = $trainingIds[1];
+    $row3 = $trainingIds[2];
+    check('remaining_days drives the sort (not the fixed duration span)',
+        ($descById[$row3][2] ?? -1) > ($descById[$row2][2] ?? -99));
 
-    echo "\n== TESTS: deterministic id tie-break ==\n";
-    // Row 1 in3/offset1 and row 4 in50/offset2 have distinct remaining days, but
-    // to test the tie-break we just confirm both calls return identical order.
+    echo "\n== TESTS: duration card field equals the fixed total span ==\n";
+    $spanMatch = true;
+    foreach ($desc as $it) {
+        $tid = (int) $it[0];
+        if ($tid === $nullTid) {
+            if ($it[1] !== null || $it[2] !== null) {
+                $spanMatch = false;
+            }
+            continue;
+        }
+        if ($it[1] !== $expectedSpan[$tid]) {
+            $spanMatch = false;
+            echo "  [DIAG] span mismatch tid={$tid} api_duration=" . var_export($it[1], true) . " expected=" . var_export($expectedSpan[$tid] ?? null, true) . "\n";
+        }
+    }
+    check('duration equals DATEDIFF(ends_at, starts_at) for every visible row', $spanMatch);
+    check('duration is NOT the remaining-days countdown (fixed values)', ($descById[$row2][1] ?? 0) !== ($descById[$row2][2] ?? 0));
+
+    echo "\n== TESTS: deterministic ordering ==\n";
     $asc2 = $fetchDurations('duration_asc');
     check('asc order deterministic across calls', array_column($asc, 0) === array_column($asc2, 0));
 
     echo "\n== TESTS: page-boundary continuity ==\n";
-    $asc1 = array_map(static fn ($it) => [$it[0], (int) $it[1]], array_filter($fetchDurations('duration_asc', 1, 3), static fn ($it) => $it[1] !== null));
-    $asc2p = array_map(static fn ($it) => [$it[0], (int) $it[1]], array_filter($fetchDurations('duration_asc', 2, 3), static fn ($it) => $it[1] !== null));
+    $asc1 = array_map(static fn ($it) => [(int) $it[0], (int) $it[2]], array_filter($fetchDurations('duration_asc', 1, 3), static fn ($it) => $it[2] !== null));
+    $asc2p = array_map(static fn ($it) => [(int) $it[0], (int) $it[2]], array_filter($fetchDurations('duration_asc', 2, 3), static fn ($it) => $it[2] !== null));
     $ascMerged = array_merge($asc1, $asc2p);
-    // 5 trainings have non-null durations.
-    check('asc page1+page2 covers all non-null rows (no dup/leak)', count($ascMerged) === 5 && count(array_unique(array_column($ascMerged, 0))) === 5);
+    // 4 trainings have non-null remaining days (R1-R4).
+    check('asc page1+page2 covers all non-null rows (no dup/leak)', count($ascMerged) === 4 && count(array_unique(array_column($ascMerged, 0))) === 4);
     $mergedIsNonDec = true;
     for ($i = 1; $i < count($ascMerged); $i++) {
         if ($ascMerged[$i][1] < $ascMerged[$i - 1][1]) {
@@ -271,10 +312,10 @@ try {
     }
     check('asc page-boundary ordering preserved', $mergedIsNonDec);
 
-    $desc1 = array_map(static fn ($it) => [$it[0], (int) $it[1]], array_filter($fetchDurations('duration_desc', 1, 3), static fn ($it) => $it[1] !== null));
-    $desc2p = array_map(static fn ($it) => [$it[0], (int) $it[1]], array_filter($fetchDurations('duration_desc', 2, 3), static fn ($it) => $it[1] !== null));
+    $desc1 = array_map(static fn ($it) => [(int) $it[0], (int) $it[2]], array_filter($fetchDurations('duration_desc', 1, 3), static fn ($it) => $it[2] !== null));
+    $desc2p = array_map(static fn ($it) => [(int) $it[0], (int) $it[2]], array_filter($fetchDurations('duration_desc', 2, 3), static fn ($it) => $it[2] !== null));
     $descMerged = array_merge($desc1, $desc2p);
-    check('desc page1+page2 covers all non-null rows (no dup/leak)', count($descMerged) === 5 && count(array_unique(array_column($descMerged, 0))) === 5);
+    check('desc page1+page2 covers all non-null rows (no dup/leak)', count($descMerged) === 4 && count(array_unique(array_column($descMerged, 0))) === 4);
     $mergedIsNonInc = true;
     for ($i = 1; $i < count($descMerged); $i++) {
         if ($descMerged[$i][1] > $descMerged[$i - 1][1]) {
@@ -287,7 +328,7 @@ try {
     foreach (['duration_asc', 'duration_desc'] as $sort) {
         $ids = array_map(static fn ($it) => (int) $it[0], $fetchDurations($sort));
         check("{$sort} excludes out-of-scope training", !in_array($oosTid, $ids, true));
-        check("{$sort} includes all in-scope trainings", count(array_intersect($ids, $trainingIds)) === $expectCount);
+        check("{$sort} includes all visible in-scope trainings", count(array_intersect($ids, $trainingIds)) === $expectCount);
     }
 
     echo "\n" . '===' . ($failures === 0 ? ' ALL PASS' : (" {$failures} FAILURE(S)")) . " ===\n";

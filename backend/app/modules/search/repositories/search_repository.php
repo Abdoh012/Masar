@@ -104,10 +104,13 @@ function search_repository_trainings_card_query(int $student_id = 0): string {
 }
 
 function search_repository_attach_training_relations(array $items, bool $is_student = false, ?int $student_specialization_id = null): array {
-    /* Attach skills, the single specialization object and duration for the
-       current page only. The specialization comes straight from the card
-       query's joined `specializations` columns (training_listings.specialization_id
-       is the one-specialization-per-training contract). */
+    /* Attach skills, the single specialization object and the training
+       timing fields for the current page only. The specialization comes
+       straight from the card query's joined `specializations` columns
+       (training_listings.specialization_id is the one-specialization-per-training
+       contract). duration is the fixed total calendar-day length computed
+       from starts_at/ends_at; remaining_days is the countdown until the end
+       date (0 once it has passed). */
     $training_ids = array_map(static fn ($row) => (int) $row['id'], $items);
     if ($training_ids === []) return $items;
     $ids = implode(',', $training_ids);
@@ -132,7 +135,22 @@ function search_repository_attach_training_relations(array $items, bool $is_stud
         $items[$index]['skills'] = array_values($skills[$id] ?? []);
         $items[$index]['specialization'] = training_card_specialization($item);
 
+        $starts_at = $item['starts_at'] ?? null;
         $ends_at = $item['ends_at'] ?? null;
+
+        if (
+            !empty($starts_at)
+            && !empty($ends_at)
+            && @strtotime($starts_at) !== false
+            && @strtotime($ends_at) !== false
+        ) {
+            $start_day = new DateTime(date('Y-m-d', strtotime($starts_at)));
+            $end_day = new DateTime(date('Y-m-d', strtotime($ends_at)));
+            $total_days = (int) $start_day->diff($end_day)->format('%r%a');
+            $items[$index]['duration'] = $total_days > 0 ? $total_days : 0;
+        } else {
+            $items[$index]['duration'] = null;
+        }
 
         if (
             !empty($ends_at)
@@ -140,11 +158,11 @@ function search_repository_attach_training_relations(array $items, bool $is_stud
             && @strtotime($ends_at) !== false
         ) {
             $remaining = @strtotime($ends_at) - $today_start;
-            $items[$index]['duration'] = $remaining > 0
+            $items[$index]['remaining_days'] = $remaining > 0
                 ? (int) floor($remaining / 86400)
                 : 0;
         } else {
-            $items[$index]['duration'] = null;
+            $items[$index]['remaining_days'] = null;
         }
     }
     return $items;
@@ -249,6 +267,11 @@ function search_repository_trainings(string $query, array $filters = []): array 
      * mode, paid) combined with AND, plus the documented sort values, so
      * search and filters can be used together from the unified
      * /api/v1/search/trainings endpoint.
+     *
+     * Only published listings whose end date has not passed are returned -
+     * the same expiration-visibility rule used by the public training list
+     * (application_deadline is NOT a discovery condition: a still-running
+     * training stays listed even after its apply window closes).
      */
     $page = max(1, (int) ($filters['page'] ?? 1));
     $limit = max(1, min(100, (int) ($filters['limit'] ?? 20)));
@@ -306,7 +329,9 @@ function search_repository_trainings(string $query, array $filters = []): array 
 
     $items = search_repository_fetch_all(
         search_repository_trainings_card_query($student_id) . "
-        WHERE t.status = 'published' AND {$where}{$scope}
+        WHERE t.status = 'published'
+        AND (t.ends_at IS NULL OR t.ends_at >= NOW())
+        AND {$where}{$scope}
         {$sort_clause}
         LIMIT {$limit} OFFSET {$offset}",
         $params
@@ -316,7 +341,9 @@ function search_repository_trainings(string $query, array $filters = []): array 
     $total = (int) search_repository_fetch_value(
         "SELECT COUNT(*)
         FROM training_listings t
-        WHERE t.status = 'published' AND {$where}{$scope}",
+        WHERE t.status = 'published'
+        AND (t.ends_at IS NULL OR t.ends_at >= NOW())
+        AND {$where}{$scope}",
         $count_params
     );
 
@@ -364,6 +391,7 @@ function search_repository_trainings_filters(array $filters = []): array {
         : null;
 
     $conditions = ["t.status = 'published'"];
+    $conditions[] = "(t.ends_at IS NULL OR t.ends_at >= NOW())";
     $params = [];
 
     [$filter_conditions, $params] = search_repository_trainings_filter_conditions($filters, $params);

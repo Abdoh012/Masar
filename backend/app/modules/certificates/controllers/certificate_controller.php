@@ -61,6 +61,14 @@ function certificate_controller_current_user(): ?array
 
 function certificate_controller_input(): array
 {
+    if (function_exists('request_input')) {
+        $data = request_input();
+
+        return is_array($data)
+            ? $data
+            : [];
+    }
+
     if (function_exists('request_all')) {
         $data = request_all();
 
@@ -95,7 +103,17 @@ function certificate_controller_parameter(
     if (function_exists('request_route')) {
         $value = request_route($name);
 
-        return $value ?? $default;
+        if ($value !== null) {
+            return $value;
+        }
+    }
+
+    if (function_exists('request_get')) {
+        $value = request_get($name, $default);
+
+        if ($value !== null) {
+            return $value;
+        }
     }
 
     if (
@@ -157,12 +175,9 @@ function certificate_controller_success(
 
     if (function_exists('response_json')) {
         return response_json(
-            [
-                'success' => true,
-                'message' => $message,
-                'data'    => $data
-            ],
-            $status
+            $data,
+            $status,
+            $message
         );
     }
 
@@ -184,12 +199,10 @@ function certificate_controller_error(
 
     if (function_exists('response_json')) {
         return response_json(
-            [
-                'success' => false,
-                'message' => $message,
-                'errors'  => $errors
-            ],
-            $status
+            null,
+            $status,
+            $message,
+            $errors
         );
     }
 
@@ -346,6 +359,361 @@ function certificate_controller_show(
         $result['data']
             ?? $result,
         'Certificate retrieved successfully.'
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Eligible Certificates
+|--------------------------------------------------------------------------
+|
+| GET /certificates/eligible
+|
+*/
+
+function certificate_controller_eligible(): mixed
+{
+    $user = certificate_controller_current_user();
+
+    if (!$user) {
+        return certificate_controller_error(
+            'Authentication required.',
+            [],
+            401
+        );
+    }
+
+    $filters = [
+        'student_id' => certificate_controller_parameter(
+            'student_id'
+        ),
+
+        'training_id' => certificate_controller_parameter(
+            'training_id'
+        ),
+
+        'company_id' => certificate_controller_parameter(
+            'company_id'
+        )
+    ];
+
+    $result =
+        certificate_service_eligible(
+            $user,
+            $filters
+        );
+
+    if (
+        !is_array($result)
+        ||
+        ($result['success'] ?? false) === false
+    ) {
+
+        return certificate_controller_error(
+            $result['message']
+                ?? 'Unable to retrieve eligible certificates.',
+            $result['errors']
+                ?? [],
+            $result['status']
+                ?? 400
+        );
+    }
+
+    return certificate_controller_success(
+        $result['data']
+            ?? $result,
+        'Eligible certificates retrieved successfully.'
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Pending Certificates
+|--------------------------------------------------------------------------
+|
+| GET /certificates/pending
+|
+| Returns only the authenticated user's certificates whose status is
+| `pending`. Scope is derived from the auth context only; no client-
+| supplied student_id or other query parameter is trusted.
+|
+*/
+
+function certificate_controller_pending(): mixed
+{
+    $user = certificate_controller_current_user();
+
+    if (!$user) {
+        return certificate_controller_error(
+            'Authentication required.',
+            [],
+            401
+        );
+    }
+
+    $result =
+        certificate_service_pending(
+            $user
+        );
+
+    if (
+        !is_array($result)
+        ||
+        ($result['success'] ?? false) === false
+    ) {
+
+        return certificate_controller_error(
+            $result['message']
+                ?? 'Unable to retrieve pending certificates.',
+            $result['errors']
+                ?? [],
+            $result['status']
+                ?? 400
+        );
+    }
+
+    return certificate_controller_success(
+        $result['data']
+            ?? $result,
+        'Pending certificates retrieved successfully.'
+    );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Issued Certificates
+|--------------------------------------------------------------------------
+|
+| GET /certificates/issued
+|
+| Returns only the authenticated user's certificates whose status is
+| `issued`. Scope is derived from the auth context only; no client-
+| supplied student_id or other query parameter is trusted.
+|
+*/
+
+function certificate_controller_issued(): mixed
+{
+    $user = certificate_controller_current_user();
+
+    if (!$user) {
+        return certificate_controller_error(
+            'Authentication required.',
+            [],
+            401
+        );
+    }
+
+    $result =
+        certificate_service_issued(
+            $user
+        );
+
+    if (
+        !is_array($result)
+        ||
+        ($result['success'] ?? false) === false
+    ) {
+
+        return certificate_controller_error(
+            $result['message']
+                ?? 'Unable to retrieve issued certificates.',
+            $result['errors']
+                ?? [],
+            $result['status']
+                ?? 400
+        );
+    }
+
+    return certificate_controller_success(
+        $result['data']
+            ?? $result,
+        'Issued certificates retrieved successfully.'
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Revoked Certificates
+|--------------------------------------------------------------------------
+|
+| GET /certificates/revoked
+|
+| Returns only the authenticated user's certificates whose status is
+| `revoked`. Scope is derived from the auth context only; no client-
+| supplied student_id or other query parameter is trusted.
+|
+*/
+
+function certificate_controller_revoked(): mixed
+{
+    $user = certificate_controller_current_user();
+
+    if (!$user) {
+        return certificate_controller_error(
+            'Authentication required.',
+            [],
+            401
+        );
+    }
+
+    $result =
+        certificate_service_revoked(
+            $user
+        );
+
+    if (
+        !is_array($result)
+        ||
+        ($result['success'] ?? false) === false
+    ) {
+
+        return certificate_controller_error(
+            $result['message']
+                ?? 'Unable to retrieve revoked certificates.',
+            $result['errors']
+                ?? [],
+            $result['status']
+                ?? 400
+        );
+    }
+
+    return certificate_controller_success(
+        $result['data']
+            ?? $result,
+        'Revoked certificates retrieved successfully.'
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Request Certificate
+|--------------------------------------------------------------------------
+|
+| POST /certificates
+|
+| Role-aware entry point for the certificate lifecycle. Students request
+| their own certificate; companies and admins request on behalf of a
+| student. Always creates a PENDING certificate.
+|
+*/
+
+function certificate_controller_request(): mixed
+{
+    $user = certificate_controller_current_user();
+
+    if (!$user) {
+        return certificate_controller_error(
+            'Authentication required.',
+            [],
+            401
+        );
+    }
+
+    $data =
+        certificate_controller_input();
+
+    $result =
+        certificate_service_request(
+            $user,
+            $data
+        );
+
+    if (
+        !is_array($result)
+        ||
+        ($result['success'] ?? false) === false
+    ) {
+
+        return certificate_controller_error(
+            $result['message']
+                ?? 'Unable to request certificate.',
+            $result['errors']
+                ?? [],
+            $result['status']
+                ?? 400
+        );
+    }
+
+    return certificate_controller_success(
+        $result['data']
+            ?? $result,
+        $result['message']
+            ?? 'Certificate requested successfully.',
+        201
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Confirm Certificate
+|--------------------------------------------------------------------------
+|
+| POST /certificates/{id}/confirm
+|
+*/
+
+function certificate_controller_confirm(
+    ?int $certificate_id = null
+): mixed {
+
+    $user = certificate_controller_current_user();
+
+    if (!$user) {
+        return certificate_controller_error(
+            'Authentication required.',
+            [],
+            401
+        );
+    }
+
+    $certificate_id ??=
+        certificate_controller_certificate_id();
+
+    if (!$certificate_id) {
+        return certificate_controller_error(
+            'Valid certificate ID is required.',
+            [],
+            422
+        );
+    }
+
+    $data =
+        certificate_controller_input();
+
+    $result =
+        certificate_service_confirm(
+            $user,
+            $certificate_id,
+            $data
+        );
+
+    if (
+        !is_array($result)
+        ||
+        ($result['success'] ?? false) === false
+    ) {
+
+        return certificate_controller_error(
+            $result['message']
+                ?? 'Unable to confirm certificate.',
+            $result['errors']
+                ?? [],
+            $result['status']
+                ?? 400
+        );
+    }
+
+    return certificate_controller_success(
+        $result['data']
+            ?? $result,
+        $result['message']
+            ?? 'Certificate confirmed and issued successfully.'
     );
 }
 
@@ -594,142 +962,6 @@ function certificate_controller_verify(
             ?? $result,
         $result['message']
             ?? 'Certificate verification completed.'
-    );
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| Download Certificate
-|--------------------------------------------------------------------------
-|
-| GET /certificates/{id}/download
-|
-*/
-
-function certificate_controller_download(
-    ?int $certificate_id = null
-): mixed {
-
-    $user = certificate_controller_current_user();
-
-    if (!$user) {
-        return certificate_controller_error(
-            'Authentication required.',
-            [],
-            401
-        );
-    }
-
-    $certificate_id ??=
-        certificate_controller_certificate_id();
-
-    if (!$certificate_id) {
-        return certificate_controller_error(
-            'Valid certificate ID is required.',
-            [],
-            422
-        );
-    }
-
-    $result =
-        certificate_service_download(
-            $user,
-            $certificate_id
-        );
-
-    if (
-        !is_array($result)
-        ||
-        ($result['success'] ?? false) === false
-    ) {
-
-        return certificate_controller_error(
-            $result['message']
-                ?? 'Unable to download certificate.',
-            $result['errors']
-                ?? [],
-            $result['status']
-                ?? 400
-        );
-    }
-
-    /*
-     * The service may return a prepared file response.
-     */
-
-    if (
-        isset($result['file'])
-        &&
-        is_array($result['file'])
-    ) {
-
-        $file =
-            $result['file'];
-
-        if (
-            isset($file['path'])
-            &&
-            is_file(
-                $file['path']
-            )
-        ) {
-
-            if (
-                function_exists(
-                    'response_file'
-                )
-            ) {
-
-                return response_file(
-                    $file['path'],
-                    $file['name']
-                        ?? basename(
-                            $file['path']
-                        ),
-                    $file['mime']
-                        ?? 'application/pdf'
-                );
-            }
-
-            header(
-                'Content-Type: ' .
-                (
-                    $file['mime']
-                    ?? 'application/pdf'
-                )
-            );
-
-            header(
-                'Content-Disposition: attachment; filename="' .
-                (
-                    $file['name']
-                    ?? basename(
-                        $file['path']
-                    )
-                ) .
-                '"'
-            );
-
-            header(
-                'Content-Length: ' .
-                filesize(
-                    $file['path']
-                )
-            );
-
-            readfile(
-                $file['path']
-            );
-
-            exit;
-        }
-    }
-
-    return certificate_controller_success(
-        $result['data']
-            ?? $result,
-        'Certificate download prepared successfully.'
     );
 }
 

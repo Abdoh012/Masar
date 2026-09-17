@@ -1,19 +1,23 @@
 <?php
 
 /**
- * MASAR - Applications All Endpoint Case Runner (internal)
+ * MASAR - Applications Issued Certificates Endpoint Case Runner (internal)
  *
- * One-shot subprocess executed by tests/applications_all_endpoint_regression.php.
+ * One-shot subprocess executed by tests/applications_certificates_endpoint_regression.php.
  * NOT a standalone test.
  *
- * Usage: php tests/applications_all_endpoint_case.php <guest|bearer> <token> [request_uri]
+ * Usage: php tests/applications_certificates_endpoint_case.php <guest|bearer> <token> [request_uri]
  *
  * It boots the same request shim as public/index.php (minus static asset /
  * HTML handling), issues the given GET request (defaults to
- * /api/v1/applications/all), and prints:
+ * /api/v1/applications/certificates), and prints:
  *
  *     STATUS=<http_code>
  *     BODY=<raw json body>
+ *
+ * The request_uri may carry a query string (e.g. ?student_id=1464); the query
+ * is parsed into $_GET exactly like the real front controller does, so the
+ * endpoint must prove it ignores client-supplied parameters.
  */
 
 declare(strict_types=1);
@@ -44,20 +48,20 @@ register_exception_handler();
 security_apply_http_headers();
 cors_handle();
 
-$scenario = trim((string) ($argv[1] ?? 'guest'));
-$token    = (string) ($argv[2] ?? '');
-$request_uri = (string) ($argv[3] ?? '/api/v1/applications/all');
+$scenario    = trim((string) ($argv[1] ?? 'guest'));
+$token       = (string) ($argv[2] ?? '');
+$request_uri = (string) ($argv[3] ?? '/api/v1/applications/certificates');
 
 $_SERVER['REQUEST_METHOD'] = 'GET';
 $_SERVER['REQUEST_URI']    = $request_uri;
-if (is_string($_SERVER['REQUEST_URI'])) {
-    $query_part = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY) ?? '';
-    $_SERVER['QUERY_STRING'] = $query_part !== '' ? $query_part : 'page=1&limit=20';
-    parse_str($_SERVER['QUERY_STRING'], $_GET);
-} else {
-    $_SERVER['QUERY_STRING'] = 'page=1&limit=20';
-    $_GET = ['page' => '1', 'limit' => '20'];
+$_GET = [];
+$query_part = is_string($_SERVER['REQUEST_URI'])
+    ? (string) (parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY) ?? '')
+    : '';
+if ($query_part !== '') {
+    parse_str($query_part, $_GET);
 }
+$_SERVER['QUERY_STRING'] = $query_part;
 $_COOKIE = [];
 
 if ($scenario === 'bearer') {

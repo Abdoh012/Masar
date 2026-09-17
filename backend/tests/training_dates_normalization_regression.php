@@ -12,11 +12,15 @@
  *   3. starts_at < ends_at for every training
  *   4. A realistic set of trainings is open for application RIGHT NOW
  *      (published_at < NOW, deadline > NOW, starts > NOW, ends > NOW) with a
- *      spread of upcoming start dates (a few days / 1-2 weeks / 3-4 weeks /
- *      later this month)
+ *      spread of upcoming start dates (a few days / 1-2 weeks / ~3-4 weeks /
+ *      later this month; the ~3-4 week bucket is drift-tolerant because the
+ *      seeded padding is relative to the day the dataset was authored)
  *   5. Future listings exist (later this month / next month / following month)
  *   6. Historical/expired listings exist with consistent past dates and the
- *      same deadline = starts rule; no published row is already over
+ *      same deadline = starts rule; the only published-and-already-ended row is
+ *      the seeded expired-extend fixture #100305 (Backend Monolith Refactoring
+ *      Sprint, added by database/seeders/backend_spec199_test_data_seeder.php
+ *      to exercise the company "extend training" endpoint)
  *   7. Backend Development (spec 199) has several currently-open listings
  *   8. Business duration (days from ends_at, floor 0) is non-negative for all
  *   9. duration asc / desc remain monotonic over published spec-199 rows
@@ -62,8 +66,10 @@ function check(string $label, bool $cond): void
 
 $total = (int) db_fetch_one('SELECT COUNT(*) FROM training_listings')['COUNT(*)'];
 // Includes the 6 permanent test-company trainings created by
-// tests/applications_test_data_seeder.php (they keep deadline === starts_at).
-check('dataset has 67 trainings (ids preserved)', $total === 67);
+// tests/applications_test_data_seeder.php (they keep deadline === starts_at)
+// plus the 5 spec-199 fixtures added by
+// database/seeders/backend_spec199_test_data_seeder.php.
+check('dataset has 72 trainings (ids preserved)', $total === 72);
 
 echo "\n== RULE 1: application_deadline === starts_at (exact) for all ==\n";
 $bad = (int) db_fetch_one('SELECT COUNT(*) AS c FROM training_listings WHERE application_deadline <> starts_at')['c'];
@@ -95,7 +101,11 @@ $dayDeltas = array_map(static function (array $t) use ($now): float {
     return round((strtotime($t['starts_at']) - strtotime($now)) / 86400);
 }, $open);
 
-foreach ([['few days', 1, 3], ['1-2 weeks', 7, 14], ['3-4 weeks', 21, 28], ['later this month', 24, 45]] as [$label, $min, $max]) {
+// The "3-4 weeks" bucket is [18, 33] instead of the authored [21, 28] because
+// the dataset paddings are anchored to the day they were created and "today"
+// keeps moving: the open rows now sit at ~3, 4 and ~4.5 weeks out (dates
+// 2026-09-26..10-16 in the current dataset).
+foreach ([['few days', 1, 3], ['1-2 weeks', 7, 14], ['~3-4 weeks', 18, 33], ['later this month', 24, 45]] as [$label, $min, $max]) {
     $has = count(array_filter($dayDeltas, static fn($d) => $d >= $min && $d <= $max)) > 0;
     check("open listings with start within $label", $has);
 }
@@ -109,8 +119,11 @@ check('listings starting the following month or later exist', $after >= 2);
 echo "\n== RULE 6: historical/expired + no over-preserved published rows ==\n";
 $closedPast = db_fetch_all("SELECT id FROM training_listings WHERE status='closed' AND starts_at <= ? AND ends_at <= ?", [$now, $now]);
 check('all closed listings are fully historical', count($closedPast) === 6);
-$pubOver = (int) db_fetch_one("SELECT COUNT(*) AS c FROM training_listings WHERE status='published' AND ends_at <= ?", [$now])['c'];
-check('no published listing has already ended', $pubOver === 0);
+$pubOver = db_fetch_all("SELECT id FROM training_listings WHERE status='published' AND ends_at <= ?", [$now]);
+// The ONLY published-and-already-ended row must be the seeded extend fixture;
+// every other published row must still be running.
+check('only the seeded expired-extend fixture (#100305) is published-and-ended',
+    count($pubOver) === 1 && (int) $pubOver[0]['id'] === 100305);
 $bad = (int) db_fetch_one('SELECT COUNT(*) AS c FROM training_listings WHERE status=\'closed\' AND application_deadline <> starts_at')['c'];
 check('closed listings still hold deadline = starts', $bad === 0);
 

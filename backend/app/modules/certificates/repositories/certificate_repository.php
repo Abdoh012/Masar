@@ -75,8 +75,52 @@ function certificate_repository_find(
 
     $sql = "
         SELECT
-            c.*
+            c.*,
+
+            t.title                         AS training_title,
+            t.is_paid                       AS is_paid,
+            t.specialization_id             AS specialization_id,
+
+            cp.legal_name                   AS company_name,
+
+            sp.name                         AS specialization_name,
+
+            st.full_name                    AS student_name,
+            st.phone                        AS student_phone,
+            st.city                         AS student_city,
+
+            us.email                        AS student_email,
+
+            un.name                         AS student_university,
+            sf.name                         AS student_field,
+            sp2.name                        AS student_specialization
+
         FROM certificates c
+
+        LEFT JOIN training_listings t
+            ON t.id = c.training_id
+
+        LEFT JOIN companies cp
+            ON cp.id = c.company_id
+
+        LEFT JOIN specializations sp
+            ON sp.id = t.specialization_id
+
+        LEFT JOIN students st
+            ON st.id = c.student_id
+
+        LEFT JOIN users us
+            ON us.id = st.user_id
+
+        LEFT JOIN universities un
+            ON un.id = st.university_id
+
+        LEFT JOIN study_fields sf
+            ON sf.id = st.field_id
+
+        LEFT JOIN specializations sp2
+            ON sp2.id = st.specialization_id
+
         WHERE c.id = :certificate_id
         LIMIT 1
     ";
@@ -262,15 +306,18 @@ function certificate_repository_list(
 
         $where[] = "
             (
-                c.certificate_code LIKE :keyword
-                OR c.title LIKE :keyword
+                c.certificate_code LIKE :keyword_code
+                OR c.title LIKE :keyword_title
             )
         ";
 
-        $params[':keyword'] =
+        $params[':keyword_code'] =
             '%' .
             (string) $filters['keyword'] .
             '%';
+
+        $params[':keyword_title'] =
+            $params[':keyword_code'];
     }
 
 
@@ -280,8 +327,51 @@ function certificate_repository_list(
 
     $sql = "
         SELECT
-            c.*
+            c.*,
+
+            t.title                         AS training_title,
+            t.is_paid                       AS is_paid,
+            t.specialization_id             AS specialization_id,
+
+            cp.legal_name                   AS company_name,
+
+            sp.name                         AS specialization_name,
+
+            st.full_name                    AS student_name,
+            st.phone                        AS student_phone,
+            st.city                         AS student_city,
+
+            us.email                        AS student_email,
+
+            un.name                         AS student_university,
+            sf.name                         AS student_field,
+            sp2.name                        AS student_specialization
+
         FROM certificates c
+
+        LEFT JOIN training_listings t
+            ON t.id = c.training_id
+
+        LEFT JOIN companies cp
+            ON cp.id = c.company_id
+
+        LEFT JOIN specializations sp
+            ON sp.id = t.specialization_id
+
+        LEFT JOIN students st
+            ON st.id = c.student_id
+
+        LEFT JOIN users us
+            ON us.id = st.user_id
+
+        LEFT JOIN universities un
+            ON un.id = st.university_id
+
+        LEFT JOIN study_fields sf
+            ON sf.id = st.field_id
+
+        LEFT JOIN specializations sp2
+            ON sp2.id = st.specialization_id
     ";
 
     if (!empty($where)) {
@@ -379,6 +469,7 @@ $allowed = [
     'student_id',
     'training_id',
     'company_id',
+    'training_session_id',
     'title',
     'status',
     'start_date',
@@ -603,7 +694,7 @@ function certificate_repository_generate_number(): string
         $sql = "
             SELECT id
             FROM certificates
-            WHERE certificate_number = :number
+            WHERE certificate_code = :number
             LIMIT 1
         ";
 
@@ -650,7 +741,6 @@ function certificate_repository_revoke(
         SET
             status = 'revoked',
             revocation_reason = :reason,
-            revoked_by = :revoked_by,
             revoked_at = NOW(),
             updated_at = NOW()
         WHERE id = :certificate_id
@@ -664,9 +754,6 @@ function certificate_repository_revoke(
         $stmt->execute([
             ':reason' =>
                 $reason,
-
-            ':revoked_by' =>
-                $revoked_by,
 
             ':certificate_id' =>
                 $certificate_id
@@ -746,56 +833,6 @@ function certificate_repository_verify(
 
         'certificate' =>
             $certificate
-    ];
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| Get Certificate File
-|--------------------------------------------------------------------------
-*/
-
-function certificate_repository_get_file(
-    int $certificate_id
-): ?array {
-
-    $certificate =
-        certificate_repository_find(
-            $certificate_id
-        );
-
-    if (!$certificate) {
-        return null;
-    }
-
-    $path =
-        $certificate['file_path']
-        ?? $certificate['certificate_path']
-        ?? null;
-
-    if (
-        !$path
-        ||
-        !is_file($path)
-    ) {
-        return null;
-    }
-
-    return [
-        'path' =>
-            $path,
-
-        'name' =>
-            $certificate['file_name']
-            ?? basename($path),
-
-        'mime' =>
-            $certificate['mime_type']
-            ?? 'application/pdf',
-
-        'size' =>
-            filesize($path)
     ];
 }
 
@@ -1346,4 +1383,311 @@ function certificate_repository_find_training_listing(
     ]);
 
     return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Find Certificate By Student + Training
+|--------------------------------------------------------------------------
+|
+| Returns any certificate row for the pair (any status). Used by the
+| duplicate detection: a student may only have ONE certificate per
+| training, regardless of its state.
+|
+*/
+
+function certificate_repository_find_by_student_training(
+    int $student_id,
+    int $training_id
+): ?array {
+
+    if (
+        $student_id <= 0
+        ||
+        $training_id <= 0
+    ) {
+        return null;
+    }
+
+    $db =
+        certificate_repository_db();
+
+    $sql = "
+        SELECT
+            c.*
+        FROM certificates c
+        WHERE
+            c.student_id = :student_id
+            AND c.training_id = :training_id
+        ORDER BY c.id ASC
+        LIMIT 1
+    ";
+
+    $stmt =
+        $db->prepare($sql);
+
+    $stmt->execute([
+        ':student_id' =>
+            $student_id,
+
+        ':training_id' =>
+            $training_id
+    ]);
+
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Eligible Certificates
+|--------------------------------------------------------------------------
+|
+| A student becomes eligible for a certificate when:
+|
+|   1. They have an ACCEPTED application for the training, and
+|   2. A COMPLETED training session exists for that student + training, and
+|   3. The training's specialization matches the STUDENT's specialization
+|      (student.specialization_id == training_listings.specialization_id),
+|      and
+|   4. The training has already ended (training_listings.ends_at <= NOW()),
+|      and
+|   5. No certificate row exists for that student + training yet
+|      (pending, issued, active, valid or revoked).
+|
+| The same rules define the company dashboard list: every eligible student
+| across the company's own trainings.
+|
+| $filters may contain:
+|   - student_id  : restrict to one student (student dashboard / request check)
+|   - company_id  : restrict to one company (company dashboard)
+|   - training_id : restrict to one training (pair eligibility check)
+|
+*/
+
+function certificate_repository_eligible(
+    array $filters = []
+): array {
+
+    $db =
+        certificate_repository_db();
+
+    $where = [];
+
+    $params = [];
+
+    if (
+        isset($filters['student_id'])
+        &&
+        $filters['student_id'] !== ''
+        &&
+        (int) $filters['student_id'] > 0
+    ) {
+
+        $where[] =
+            'a.student_id = :student_id';
+
+        $params[':student_id'] =
+            (int) $filters['student_id'];
+    }
+
+    if (
+        isset($filters['company_id'])
+        &&
+        $filters['company_id'] !== ''
+        &&
+        (int) $filters['company_id'] > 0
+    ) {
+
+        $where[] =
+            't.company_id = :company_id';
+
+        $params[':company_id'] =
+            (int) $filters['company_id'];
+    }
+
+    if (
+        isset($filters['training_id'])
+        &&
+        $filters['training_id'] !== ''
+        &&
+        (int) $filters['training_id'] > 0
+    ) {
+
+        $where[] =
+            'a.training_id = :training_id';
+
+        $params[':training_id'] =
+            (int) $filters['training_id'];
+    }
+
+    $sql = "
+        SELECT
+            t.id                                    AS training_id,
+            t.is_paid                               AS is_paid,
+            t.title                                 AS training_title,
+            t.company_id                            AS company_id,
+            c2.legal_name                           AS company_name,
+            ts.id                                   AS training_session_id,
+            COALESCE(
+                ts.actual_ended_at,
+                t.ends_at
+            )                                       AS completed_on,
+            COALESCE(
+                ts.started_at,
+                t.starts_at
+            )                                       AS started_on,
+            COALESCE(
+                ts.actual_ended_at,
+                t.ends_at
+            )                                       AS ended_on
+        FROM training_applications a
+
+        INNER JOIN training_listings t
+            ON t.id = a.training_id
+
+        INNER JOIN training_sessions ts
+            ON ts.training_id = a.training_id
+           AND ts.student_id = a.student_id
+           AND ts.status = 'completed'
+
+        INNER JOIN companies c2
+            ON c2.id = t.company_id
+
+        INNER JOIN students st
+            ON st.id = a.student_id
+
+        WHERE
+            a.status = 'accepted'
+            AND t.ends_at <= NOW()
+            AND t.specialization_id = st.specialization_id
+            AND NOT EXISTS (
+                SELECT 1
+                FROM certificates c
+                WHERE
+                    c.student_id = a.student_id
+                    AND c.training_id = a.training_id
+            )
+    ";
+
+    if (!empty($where)) {
+
+        $sql .=
+            ' AND ' .
+            implode(
+                ' AND ',
+                $where
+            );
+    }
+
+    $sql .= "
+        ORDER BY
+            t.id DESC,
+            a.student_id ASC
+        LIMIT 200
+    ";
+
+    $stmt =
+        $db->prepare($sql);
+
+    $stmt->execute($params);
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Confirm Certificate (Issue)
+|--------------------------------------------------------------------------
+|
+| Transitions a PENDING certificate to ISSUED. This is the company/admin
+| approval action: the certificate number and dates are already set at
+| request time, so confirmation only stamps the review timestamps.
+|
+*/
+
+function certificate_repository_confirm(
+    int $certificate_id,
+    ?int $reviewed_by = null
+): bool {
+
+    if ($certificate_id <= 0) {
+        return false;
+    }
+
+    $db =
+        certificate_repository_db();
+
+    $sql = "
+        UPDATE certificates
+        SET
+            status = 'issued',
+            reviewed_at = NOW(),
+            approved_at = NOW(),
+            reviewed_by = :reviewed_by,
+            updated_at = NOW()
+        WHERE
+            id = :certificate_id
+            AND status = 'pending'
+        LIMIT 1
+    ";
+
+    $stmt =
+        $db->prepare($sql);
+
+    return
+        $stmt->execute([
+            ':reviewed_by' =>
+                $reviewed_by,
+
+            ':certificate_id' =>
+                $certificate_id
+        ]);
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Student User ID
+|--------------------------------------------------------------------------
+|
+| Resolves the owning user of a student profile so notifications for
+| certificate lifecycle events can target the correct user account.
+|
+*/
+
+function certificate_repository_student_user_id(
+    int $student_id
+): ?int {
+
+    if ($student_id <= 0) {
+        return null;
+    }
+
+    $db =
+        certificate_repository_db();
+
+    $sql = "
+        SELECT
+            user_id
+        FROM students
+        WHERE id = :student_id
+        LIMIT 1
+    ";
+
+    $stmt =
+        $db->prepare($sql);
+
+    $stmt->execute([
+        ':student_id' =>
+            $student_id
+    ]);
+
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    return $row
+        ? (int) $row['user_id']
+        : null;
 }

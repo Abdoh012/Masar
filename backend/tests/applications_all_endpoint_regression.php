@@ -14,8 +14,8 @@
  *            DB value (submitted->Applied, accepted->Accepted,
  *            rejected->Rejected, withdrawn->Withdrawn)
  *   Case 6   Every item exposes the exact per-status card DTO key set (no
- *            more, no fewer): Applied 16 keys, Accepted 20 keys, Rejected
- *            12 keys, Withdrawn 12 keys
+ *            more, no fewer): Applied 18 keys, Accepted 28 keys, Rejected
+ *            17 keys, Withdrawn 15 keys
  *   Case 7   All items share the common card keys (id, training_id, ...)
  *   Case 8   Forbidden raw/PII/internal fields are absent from every item
  *   Case 9   Status-specific fields are present and correct per status
@@ -213,20 +213,24 @@ check('student specialization resolved', $student_spec_id > 0 && $student_spec_n
 */
 
 /*
- * One in-spec fixture per tab state, each with a distinct newer activity
- * timestamp so the All ordering is provable and deterministic:
- *   submitted -> applied_at = 2026-09-09 05:00:00  (Applied card)
- *   accepted  -> reviewed_at = 2026-09-09 05:01:00 (Accepted card)
- *   rejected  -> reviewed_at = 2026-09-09 05:02:00 (Rejected card)
- *   withdrawn -> withdrawn_at = 2026-09-09 05:03:00 (Withdrawn card)
- * Plus one out-of-spec rejected fixture (excluded at the SQL level).
+ * One in-spec fixture per tab state, each with a distinct activity timestamp
+ * so the All ordering is provable and deterministic. Timestamps are anchored
+ * to NOW() (whole minutes in the past) instead of a fixed calendar date: the
+ * live row-set gains newer activity as real time passes, so a fixed date would
+ * eventually stop being "newest" and this test would time-drift.
+ *   submitted -> applied_at  = NOW - 3 min  (Applied card,  oldest of four)
+ *   accepted  -> reviewed_at = NOW - 2 min  (Accepted card)
+ *   rejected  -> reviewed_at = NOW - 1 min  (Rejected card)
+ *   withdrawn -> withdrawn_at = NOW          (Withdrawn card, newest)
+ * Plus one out-of-spec rejected fixture at NOW - 4 min (excluded at SQL level).
  */
-
+$anchor = date('Y-m-d H:i:s');
+$anchor_min = static fn (int $m): string => date('Y-m-d H:i:s', strtotime($anchor . " -{$m} minutes"));
 $seed_plans = [
-    'submitted' => ['applied_at'   => '2026-09-09 05:00:00'],
-    'accepted'  => ['reviewed_at'  => '2026-09-09 05:01:00'],
-    'rejected'  => ['reviewed_at'  => '2026-09-09 05:02:00'],
-    'withdrawn' => ['withdrawn_at' => '2026-09-09 05:03:00'],
+    'submitted' => ['applied_at'   => $anchor_min(3)],
+    'accepted'  => ['reviewed_at'  => $anchor_min(2)],
+    'rejected'  => ['reviewed_at'  => $anchor_min(1)],
+    'withdrawn' => ['withdrawn_at' => $anchor],
 ];
 
 $fixture_in_spec_by_status = [];
@@ -265,9 +269,9 @@ if (is_array($student) && $student_spec_id > 0) {
                 $set = $status === 'accepted' || $status === 'rejected'
                     ? 'reviewed_at'
                     : ($status === 'withdrawn' ? 'withdrawn_at' : 'applied_at');
-                $ts = $status === 'accepted' || $status === 'rejected'
-                    ? '2026-09-09 05:0' . ($status === 'accepted' ? '1' : '2') . ':00'
-                    : ($status === 'withdrawn' ? '2026-09-09 05:03:00' : '2026-09-09 05:00:00');
+                $ts = $status === 'withdrawn'
+                    ? $anchor
+                    : $anchor_min($status === 'rejected' ? 1 : ($status === 'accepted' ? 2 : 3));
 
                 db_execute(
                     "UPDATE training_applications SET {$set} = ? WHERE id = ?",
@@ -306,7 +310,7 @@ if (is_array($student) && $student_spec_id > 0) {
             $created_ids[] = $created;
             db_execute(
                 "UPDATE training_applications SET reviewed_at = ? WHERE id = ?",
-                ['2026-09-09 05:04:00', $created]
+                [$anchor_min(4), $created]
             );
             $fixture_out_spec_id = $created;
         }
@@ -355,6 +359,25 @@ if (!isset($all_data['pagination']) || !is_array($all_data['pagination'])) {
 check('all pagination envelope matches Applied/Accepted/Rejected/Withdrawn (key set)', $pagination_ok);
 
 $all_items = items($all);
+$page1_count = count($all_items);
+
+/*
+ * The endpoint paginates at per_page=20; when the in-scope set spans more
+ * than one page (e.g. once the certificate dataset seeded extra accepted
+ * applications), the ordering/scoping/DTO checks must run against the COMPLETE
+ * set. Collect every remaining page through the real HTTP endpoint.
+ */
+$all_total = (int) (is_array($all_data['pagination'] ?? null) ? ($all_data['pagination']['total'] ?? 0) : 0);
+$all_pages = (int) (is_array($all_data['pagination'] ?? null) ? ($all_data['pagination']['total_pages'] ?? 0) : 0);
+for ($page = 2; $page <= $all_pages && $all_total > 0 && count($all_items) < $all_total; $page++) {
+    $more = run_scenario('bearer', $valid_token ?? '', "/api/v1/applications/all?page={$page}");
+    if ($more['status'] !== 200) {
+        break;
+    }
+    foreach (items($more) as $it) {
+        $all_items[] = $it;
+    }
+}
 
 echo "\n== Cases 5-10: statuses, DTO contracts, DB cross-checks ==\n";
 
@@ -366,25 +389,30 @@ $expected_keys_by_card = [
         'id', 'training_id', 'training_title', 'status', 'specialization',
         'company_name', 'company_logo', 'training_type', 'method',
         'is_paid', 'may_lead_to_hire', 'applied_at',
-        'starts_at', 'ends_at', 'duration', 'can_withdraw',
+        'starts_at', 'ends_at', 'duration', 'remaining_days',
+        'status_message', 'can_withdraw',
     ],
     'Accepted' => [
-        'id', 'training_id', 'training_title', 'status', 'specialization',
-        'company_name', 'company_logo', 'training_type', 'method',
-        'is_paid', 'may_lead_to_hire', 'accepted_at',
-        'starts_at', 'ends_at', 'duration',
+        'id', 'training_id', 'training_title', 'status', 'status_message',
+        'specialization', 'company_name', 'company_logo', 'training_type',
+        'method', 'is_paid', 'may_lead_to_hire', 'accepted_at',
+        'starts_at', 'ends_at', 'duration', 'remaining_days',
         'free_trial_days', 'free_trial_days_remaining',
-        'motivational_message', 'payment_status', 'bank_account',
+        'motivational_message', 'payment_status', 'payment_submitted',
+        'payment_reference', 'payment_amount', 'payment_currency',
+        'payment_paid_at', 'payment_method', 'bank_account',
     ],
     'Rejected' => [
-        'id', 'training_id', 'training_title', 'status', 'specialization',
-        'company_name', 'company_logo', 'training_type', 'method',
-        'rejected_at', 'rejection_reason', 'rejection_note',
+        'id', 'training_id', 'training_title', 'status', 'status_message',
+        'specialization', 'company_name', 'company_logo', 'training_type',
+        'method', 'rejected_at', 'rejection_reason', 'rejection_note',
+        'starts_at', 'ends_at', 'duration', 'remaining_days',
     ],
     'Withdrawn' => [
-        'id', 'training_id', 'training_title', 'status', 'specialization',
-        'company_name', 'company_logo', 'training_type', 'method',
-        'withdrawn_at', 'starts_at', 'ends_at',
+        'id', 'training_id', 'training_title', 'status', 'status_message',
+        'specialization', 'company_name', 'company_logo', 'training_type',
+        'method', 'withdrawn_at', 'starts_at', 'ends_at', 'duration',
+        'remaining_days',
     ],
 ];
 
@@ -603,7 +631,7 @@ foreach (['Applied', 'Accepted', 'Rejected', 'Withdrawn'] as $expected_status) {
 }
 
 check('status mapping correct for every item (submitted->Applied, accepted->Accepted, rejected->Rejected, withdrawn->Withdrawn)', $status_mapping_ok);
-check('every item exposes the exact per-status card DTO key set (16/20/12/12)', $key_set_by_status);
+check('every item exposes the exact per-status card DTO key set (18/28/17/15)', $key_set_by_status);
 check('every item exposes the common card keys', $common_ok);
 check('all items exclude all forbidden raw/PII/internal keys', $forbidden_present === []);
 check('status-specific fields present/correct per status and never leak across statuses', $db_checks_ok);
@@ -699,7 +727,7 @@ $p_per = (int) ($pagination['per_page'] ?? 0);
 $p_pages = (int) ($pagination['total_pages'] ?? -1);
 
 check('pagination total equals the scoped 4-status count', $p_total === $expected_scoped_total);
-check('all items count matches min(total, per_page)', count($all_items) === min($expected_scoped_total, 20));
+check('all items count matches min(total, per_page)', $page1_count === min($expected_scoped_total, 20));
 check('pagination current_page is 1', $p_page === 1);
 check('pagination per_page is 20', $p_per === 20);
 check('pagination total_pages equals ceil(total/per_page)', $p_pages === (int) ceil($expected_scoped_total / 20));

@@ -34,6 +34,11 @@ require_once __DIR__ . '/../app/modules/files/services/file_upload_service.php';
  * — Get my applications across all four states (Applied, Accepted, Rejected,
  *   Withdrawn) in one unified paginated list
  *
+ * GET /api/v1/applications/certificates
+ * — Get my issued certificates (Applications "Certificates / Issued
+ *   Certificates" tab). Returns the EXACT same issued dataset and response as
+ *   GET /api/v1/certificates/issued; certificates remain the source of truth.
+ *
  * GET /api/v1/applications/{id}
  * — Get application details
  *
@@ -242,6 +247,23 @@ if ($path === '/api/v1/applications/withdrawn' && $method === 'GET') {
 if ($path === '/api/v1/applications/all' && $method === 'GET') {
     middleware_student();
     application_controller_all_applications();
+    return;
+}
+
+/*
+ * The Applications module's "Certificates / Issued Certificates" tab reuses
+ * the existing issued-certificate retrieval end-to-end (certificate service +
+ * repository + presenter) through the Certificate controller, so this endpoint
+ * returns the EXACT same issued dataset and response envelope as
+ * GET /api/v1/certificates/issued. Certificates remain the source of truth;
+ * no student_id (or any other) query parameter is accepted or trusted, scope
+ * comes only from the authenticated user. Registered before the /{id} regex
+ * route below so "certificates" is never interpreted as an application id.
+ */
+// GET /api/v1/applications/certificates — Issued certificates (same as /certificates/issued)
+if ($path === '/api/v1/applications/certificates' && $method === 'GET') {
+    middleware_auth();
+    application_controller_issued_certificates();
     return;
 }
 

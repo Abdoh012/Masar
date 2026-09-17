@@ -21,6 +21,16 @@ if ($path === '/api/v1/trainings/create' && $method === 'POST') {
     return;
 }
 
+if ($path === '/api/v1/trainings/update' && ($method === 'PUT' || $method === 'PATCH')) {
+    training_controller_update();
+    return;
+}
+
+if ($path === '/api/v1/trainings/delete' && $method === 'DELETE') {
+    training_controller_delete();
+    return;
+}
+
 if (preg_match('#^/api/v1/trainings/details/([0-9]+)$#', $path, $matches) && $method === 'GET') {
     training_controller_show((int) $matches[1]);
     return;

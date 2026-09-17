@@ -26,6 +26,10 @@
 require_once __DIR__ . '/../repositories/application_repository.php';
 require_once __DIR__ . '/../repositories/training_repository.php';
 
+require_once __DIR__ . '/../services/training_service.php';
+
+require_once __DIR__ . '/../../../shared/functions/application_cards.php';
+
 require_once __DIR__ . '/../validators/application_validator.php';
 
 require_once __DIR__ . '/../../files/repositories/file_repository.php';
@@ -866,6 +870,22 @@ function application_service_enrich_application(
         ($application['status'] ?? '') === 'submitted'
             ? 'pending'
             : ($application['status'] ?? null);
+
+    $application['status_message'] =
+        application_status_message(
+            $application['status'] ?? null
+        );
+
+    $application['duration'] =
+        training_calculate_duration(
+            $application['training_starts_at'] ?? null,
+            $application['training_ends_at'] ?? null
+        );
+
+    $application['remaining_days'] =
+        training_calculate_remaining_days(
+            $application['training_ends_at'] ?? null
+        );
 
     if (
         !empty($application['skills'])

@@ -64,8 +64,12 @@ status
 ### Example
 
 ```http
-GET /api/certificates?page=1&per_page=20&status=issued
+GET /api/certificates?page=1&per_page=20&status=pending
 ```
+
+> Pending certificate requests are retrieved from the dedicated pending endpoint
+> (`GET /api/v1/certificates/pending`) rather than the `status=pending` query filter;
+> issued certificates come from the dedicated issued endpoint (`GET /api/v1/certificates/issued`).
 
 ### Response
 
