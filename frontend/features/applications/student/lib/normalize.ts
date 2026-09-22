@@ -62,6 +62,7 @@ export function normalizeApplicationItem(raw: unknown): MyApplication {
     withdrawnOn: toStr(card.withdrawn_at),
     startsAt: toStr(card.starts_at),
     endsAt: toStr(card.ends_at),
+    method: toStr(card.method),
     duration: toNum(card.duration),
     isPaid: toBool(card.is_paid),
     canWithdraw: toBool(card.can_withdraw),

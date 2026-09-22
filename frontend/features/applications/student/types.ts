@@ -64,7 +64,11 @@ export interface MyApplication {
   withdrawnOn?: string;
   startsAt?: string;
   endsAt?: string;
-  /** Remaining calendar days until ends_at (0 once ended, null when absent). */
+  /** Delivery mode as stored on the training (`in_person` | `remote` |
+   *  `hybrid`) — sent by the backend as `method` on every card. */
+  method?: string;
+  /** Total calendar-day length of the training (backend `duration`, computed
+   *  from starts_at/ends_at — fixed, not a countdown). Null when dates absent. */
   duration: number | null;
   isPaid: boolean;
   /** Present (true) only on Applied/Accepted cards; absent on other statuses. */

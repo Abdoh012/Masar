@@ -5,9 +5,13 @@ import { TrialCountdown } from "../../../shared/components/trial-countdown/Trial
 import type { MyApplication } from "../../types";
 import { AcceptedPaymentInfo } from "./AcceptedPaymentInfo";
 import { ApplicationCardActions } from "./ApplicationCardActions";
+import { AwaitingResponseNote } from "./AwaitingResponseNote";
+import { FreeTrainingInfo } from "./FreeTrainingInfo";
+import { PaymentStatusBadge } from "./PaymentStatusBadge";
 import {
   formatApplicationDate,
   formatDurationDays,
+  FREE_TRAINING_INFO_LABELS,
   getStatusDate,
   MAY_LEAD_TO_HIRE_LABEL,
   PAYMENT_NOTICE_DAYS,
@@ -19,19 +23,22 @@ interface ApplicationCardProps {
 }
 
 // Leaf: one application card on the My Applications page (FR-010/012/013).
-// Renders listing/company, a compact meta row (status date + training
-// duration in remaining days), the status badge, the "may lead to hire" pill
-// (Applied/Accepted only — the backend only sends may_lead_to_hire there),
-// the conditional rejected-reason panel, and the per-status actions row. The
-// date shown is the current status's own date (accepted/rejected/withdrawn/
+// Renders listing/company, a compact meta row (status date + a "Duration ·
+// 35 days"-style chip stating the training's total term), the badge row
+// (status + Free/Paid pill on
+// Applied/Accepted cards + the "may lead to hire" pill on Applied/Accepted
+// paid cards), the Applied-card awaiting-response note (fills the slot the
+// Accepted sections leave empty), the conditional rejected-reason panel, and
+// the per-status actions row. The date shown is the current status's own date
+// (accepted/rejected/withdrawn/
 // applied — STATUS_DATE_FIELDS), never the raw applied date for terminal
 // statuses. Accepted paid applications render the shared trial countdown for
 // as long as the free trial runs, with the payment-info panel joining it once
 // ≤ PAYMENT_NOTICE_DAYS days remain (bank transfers need lead time, so the
 // details surface before the trial ends — the countdown stays visible through
 // its final days, and after the trial only the panel remains); free accepted
-// trainings show neither. Cards flow two-per-row from the orchestrator's
-// grid.
+// trainings fill that same slot with the FreeTrainingInfo facts block instead.
+// Cards flow two-per-row from the orchestrator's grid.
 export function ApplicationCard({ application }: ApplicationCardProps) {
   const trial = application.trial;
   const rejectionLabel = rejectionReasonLabel(application.rejectionReasonCode);
@@ -47,6 +54,10 @@ export function ApplicationCard({ application }: ApplicationCardProps) {
         >
           {application.status}
         </span>
+
+        {application.status === "Applied" || application.status === "Accepted" ? (
+          <PaymentStatusBadge isPaid={application.isPaid} />
+        ) : null}
 
         {application.mayLeadToHire ? (
           <span className="rounded-full bg-primary-tint px-2.5 py-0.5 text-xs font-medium text-primary-text">
@@ -76,10 +87,13 @@ export function ApplicationCard({ application }: ApplicationCardProps) {
         {application.duration !== null ? (
           <span className="inline-flex items-center gap-1.5 rounded-md bg-neutral-badge-bg px-2 py-0.5 text-xs font-medium text-neutral-badge-fg">
             <Clock className="size-3" />
+            {FREE_TRAINING_INFO_LABELS.duration} ·{" "}
             {formatDurationDays(application.duration)}
           </span>
         ) : null}
       </div>
+
+      {application.status === "Applied" ? <AwaitingResponseNote /> : null}
 
       {application.status === "Accepted" && application.motivationalMessage ? (
         <p className="text-xs italic text-muted-foreground">
@@ -108,6 +122,14 @@ export function ApplicationCard({ application }: ApplicationCardProps) {
             />
           ) : null}
         </>
+      ) : null}
+
+      {application.status === "Accepted" && !application.isPaid ? (
+        <FreeTrainingInfo
+          duration={application.duration}
+          method={application.method}
+          startsAt={application.startsAt}
+        />
       ) : null}
 
       {application.status === "Rejected" &&

@@ -120,8 +120,8 @@ export function formatApplicationDate(isoDate: string): string {
   return SHORT_DATE.format(date);
 }
 
-// Remaining calendar days until the training ends (card `duration`). Only
-// rendered when the API sends a number.
+// Total calendar days of the training (card `duration`), e.g. "35 days".
+// Only rendered when the API sends a number, always beside its "Duration" label.
 export function formatDurationDays(days: number): string {
   return `${days} ${days === 1 ? "day" : "days"}`;
 }
@@ -201,3 +201,56 @@ export const PAYMENT_REPORT = {
 // "May lead to hire" pill copy — mirrors the backend `may_lead_to_hire` field
 // on Applied/Accepted cards (equals is_paid).
 export const MAY_LEAD_TO_HIRE_LABEL = "May lead to hire";
+
+// --- Free-training info block (free counterpart of the paid trial chip) ---
+
+// Row labels for the small training-facts block rendered on Accepted-free
+// cards in the same slot the trial countdown occupies on paid ones.
+export const FREE_TRAINING_INFO_LABELS = {
+  duration: "Duration",
+  mode: "Mode",
+  starts: "Starts",
+} as const;
+
+// Delivery-mode label map for the info block — mirrors the listings shared
+// FORMAT_LABELS (in_person | remote | hybrid) so the app speaks one vocabulary.
+// Kept feature-local because features must not import from each other (R6);
+// promote to top-level shared/ if a third consumer appears.
+export const TRAINING_MODE_LABELS: Record<string, string> = {
+  in_person: "In-person",
+  remote: "Remote",
+  hybrid: "Hybrid",
+};
+
+// --- Free/paid indicator pill (Applied + Accepted cards) ---
+
+// Applied and Accepted cards tell the user whether the training is paid —
+// important before they act on it. Free = success status token (no cost,
+// positive); paid = the brand's seal-gold secondary tint, deliberately
+// different from the primary-tint "May lead to hire" pill so a paid card never
+// shows two identical-looking pills. Only the Applied/Accepted DTOs send
+// `is_paid` (backend application_cards.php), so the pill renders solely there;
+// Rejected/Withdrawn cards omit it entirely instead of defaulting to a lie.
+export const PAYMENT_BADGE_LABELS = {
+  free: "Free",
+  paid: "Paid",
+  ariaFree: "Free training",
+  ariaPaid: "Paid training",
+} as const;
+
+export const PAYMENT_BADGE_STYLES = {
+  free: "bg-success-bg text-success-fg",
+  paid: "bg-secondary-tint text-secondary-text",
+} as const;
+
+// --- Applied-card status note (fills the Applied cards' empty slot) ---
+
+// Applied cards render no trial/facts/motivational section, so the area
+// between the meta row and the actions reads as a gap. This note states the
+// pending state in the same chip shape as the trial countdown; "reviewing" is
+// informational, never urgent — the info status tokens, not warning.
+export const AWAITING_RESPONSE_NOTE = {
+  title: "Awaiting response",
+  subline:
+    "The company is reviewing your application — you'll hear back as soon as they decide.",
+} as const;
