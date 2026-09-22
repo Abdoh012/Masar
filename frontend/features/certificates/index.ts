@@ -17,7 +17,6 @@ export type { CertificateStatus } from "./student/types";
 export type { EligibleTraining } from "./student/types";
 export type { StudentCertificate } from "./student/types";
 export type { CertificateCounts } from "./student/types";
-export type { CertificatesPageState } from "./student/types";
-export type { CertificatesPageDemoMode } from "./student/components/my-certificates/MyCertificatesPage";
 
-export { MyCertificatesPage } from "./student/components/my-certificates/MyCertificatesPage";
+export { CertificatePageContent } from "./student/components/my-certificates/CertificatePageContent";
+export { CertificatesPageSkeleton } from "./student/components/my-certificates/CertificatesPageSkeleton";

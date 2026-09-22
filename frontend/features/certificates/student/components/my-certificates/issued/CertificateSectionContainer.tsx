@@ -1,35 +1,17 @@
-"use client";
-
-import { useState } from "react";
 import { BadgeCheck } from "lucide-react";
 
 import Motion from "@/shared/components/animation/Motion";
 import { fadeInUp } from "@/shared/lib/animations";
 
-import type { StudentCertificate } from "../../../types";
-import { CERTIFICATE_GROUPS, isRequestedStatus } from "../constants";
-import { CertificateDetailDialog } from "./CertificateDetailDialog";
+import { CERTIFICATE_GROUPS } from "../constants";
 import { CertificateGroup } from "./CertificateGroup";
 
 // CertificateSectionContainer: orchestrator for the "Your certificates"
-// section. "use client" because it owns the detail-dialog selection. Splits
-// the certificate records into the still-pending "requested" bucket and the
-// issued/terminal bucket, composing each via CertificateGroup. No detailed
-// markup of its own.
-export function CertificateSectionContainer({
-  certificates,
-}: {
-  certificates: StudentCertificate[];
-}) {
-  const [detailTarget, setDetailTarget] = useState<StudentCertificate | null>(null);
-
-  const requested = certificates.filter((certificate) =>
-    isRequestedStatus(certificate.status),
-  );
-  const issued = certificates.filter(
-    (certificate) => !isRequestedStatus(certificate.status),
-  );
-
+// section. Server component — splits the certificate records into the
+// still-pending "requested" bucket and the issued/terminal bucket, composing
+// each via CertificateGroup. Data wiring (records list) lands here; the groups
+// currently render their sample placeholders. No detailed markup of its own.
+export function CertificateSectionContainer() {
   return (
     <Motion
       variants={fadeInUp}
@@ -46,26 +28,9 @@ export function CertificateSectionContainer({
         <h2 className="text-base font-semibold text-primary-text">Your certificates</h2>
       </div>
 
-      <CertificateGroup
-        config={CERTIFICATE_GROUPS.requested}
-        certificates={requested}
-        onViewDetail={setDetailTarget}
-      />
+      <CertificateGroup config={CERTIFICATE_GROUPS.requested} />
 
-      <CertificateGroup
-        config={CERTIFICATE_GROUPS.issued}
-        certificates={issued}
-        onViewDetail={setDetailTarget}
-      />
-
-      {detailTarget ? (
-        <CertificateDetailDialog
-          certificate={detailTarget}
-          onOpenChange={(open) => {
-            if (!open) setDetailTarget(null);
-          }}
-        />
-      ) : null}
+      <CertificateGroup config={CERTIFICATE_GROUPS.issued} />
     </Motion>
   );
 }

@@ -1,10 +1,11 @@
-// Static data + copy for the my-certificates page (UI-only — no backend yet;
-// structure rules §14). Mock data demonstrates every certificate state the
-// specification describes: eligible-not-requested, requested/pending, issued,
-// and terminal (revoked).
+// Static data + copy for the my-certificates page (structure rules §14). All
+// page data is server-fetched — statistics, the eligible feed, and the
+// certificate records (the page orchestrator → student/api.ts). This file
+// holds only copy, display metadata, and the local pending-record builder used
+// by the request transition (POST /certificates not wired yet — the request
+// flow is UI-only for now).
 
 import type {
-  CertificateCounts,
   CertificateStatus,
   EligibleTraining,
   StudentCertificate,
@@ -25,6 +26,39 @@ export const SUMMARY_LABELS = {
   pending: "In review",
   issued: "Issued",
 } as const;
+
+// --- Summary stat cards: per-lifecycle-state display metadata ---
+
+// One entry per stat card — label (reusing SUMMARY_LABELS), icon key (mapped
+// to a lucide icon in the SummaryCounts orchestrator), and the semantic status
+// tint applied as a soft card wash (cardTint) with a matching icon tile
+// (iconTint). Eligible uses the info (blue) tint — the actionable, not-yet-
+// in-flight state; In review the warning (amber) tint; Issued the success
+// (green) tint. All three pairs already exist in the token architecture
+// (globals.css §3/§4) — nothing new is introduced here.
+export const SUMMARY_CARD_META = [
+  {
+    key: "eligible",
+    label: SUMMARY_LABELS.eligible,
+    icon: "badge-check",
+    cardTint: "bg-info-bg",
+    iconTint: "text-info-fg",
+  },
+  {
+    key: "pending",
+    label: SUMMARY_LABELS.pending,
+    icon: "clock",
+    cardTint: "bg-warning-bg",
+    iconTint: "text-warning-fg",
+  },
+  {
+    key: "issued",
+    label: SUMMARY_LABELS.issued,
+    icon: "check-circle",
+    cardTint: "bg-success-bg",
+    iconTint: "text-success-fg",
+  },
+] as const;
 
 // --- "Why / how it works" explainer copy (the spec's eligibility chain) ---
 
@@ -102,96 +136,14 @@ export function isRequestedStatus(status: CertificateStatus): boolean {
   return status === "pending";
 }
 
-// --- Mock data: eligible trainings (completed, can request) ---
+// --- Build the pending certificate record created when a request is
+// confirmed ---
 
-export const MOCK_ELIGIBLE: EligibleTraining[] = [
-  {
-    id: "eg-001",
-    listingId: "lst-201",
-    listingTitle: "Software Engineering Internship",
-    field: "Software Engineering",
-    companyName: "Hala Bank",
-    completedOn: "2026-06-15",
-    mayLeadToHire: true,
-  },
-  {
-    id: "eg-003",
-    listingId: "lst-203",
-    listingTitle: "QA Testing Internship",
-    field: "Software Quality",
-    companyName: "Craft Labs",
-    completedOn: "2026-04-10",
-  },
-];
-
-// --- Mock data: certificate records (requested / issued / terminal) ---
-
-export const MOCK_CERTIFICATES: StudentCertificate[] = [
-  {
-    id: "cert-00385",
-    listingId: "lst-202",
-    listingTitle: "Data Science Trainee",
-    field: "Data Science",
-    companyName: "NileGrants",
-    status: "pending",
-    requestedOn: "2026-06-01",
-    canDownload: false,
-    canVerify: false,
-  },
-  {
-    id: "cert-00482",
-    listingId: "lst-101",
-    listingTitle: "Backend Internship",
-    field: "Software Engineering",
-    companyName: "Orbit Systems",
-    status: "issued",
-    issuedOn: "2026-05-11",
-    certNumber: "MASAR-2026-000482",
-    canDownload: true,
-    canVerify: true,
-    mayLeadToHire: true,
-  },
-  {
-    id: "cert-00317",
-    listingId: "lst-104",
-    listingTitle: "Data Intern",
-    field: "Data Science",
-    companyName: "NileGrants",
-    status: "issued",
-    issuedOn: "2026-02-02",
-    certNumber: "MASAR-2026-000317",
-    canDownload: true,
-    canVerify: true,
-  },
-  {
-    id: "cert-00220",
-    listingId: "lst-107",
-    listingTitle: "Frontend Intern",
-    field: "Frontend Engineering",
-    companyName: "Seera Digital",
-    status: "revoked",
-    issuedOn: "2025-11-08",
-    revokedOn: "2026-01-15",
-    revokeReason: "Training completion was not verified by the company.",
-    certNumber: "MASAR-2025-000220",
-    canDownload: false,
-    canVerify: false,
-  },
-];
-
-// --- Mock summary counts (derived to match the mock arrays above) ---
-// Single source of truth: "eligible" = requestable trainings, "pending" =
-// records still awaiting confirmation, "issued" = live records.
-
-export const MOCK_COUNTS: CertificateCounts = {
-  eligible: MOCK_ELIGIBLE.length,
-  pending: MOCK_CERTIFICATES.filter((c) => c.status === "pending").length,
-  issued: MOCK_CERTIFICATES.filter((c) => LIVE_STATUSES.includes(c.status)).length,
-};
-
-// Build the pending certificate record created the moment a request is
-// confirmed: the training leaves "Eligible to request" and re-appears here as
-// a record awaiting confirmation (UI-only, no backend).
+// The pending record created locally the moment a request is confirmed: the
+// training leaves "Eligible to request" and re-appears here as a record
+// awaiting confirmation. UI-only until POST /certificates is wired; the
+// eligible DTO carries no field, so pending records render without the
+// "— field" suffix (see StudentCertificateCard).
 export function buildPendingCertificate(eligible: EligibleTraining): StudentCertificate {
   return {
     id: `cert-${eligible.listingId}`,

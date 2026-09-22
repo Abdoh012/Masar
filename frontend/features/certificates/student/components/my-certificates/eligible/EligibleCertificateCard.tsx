@@ -13,7 +13,7 @@ interface EligibleCertificateCardProps {
 // EligibleCertificateCard: one completed-training row the student can request a
 // certificate for, with the Request action. Leaf — receives one training + the
 // request callback, renders nothing else.
-export function EligibleCertificateCard({ training, onRequest }: EligibleCertificateCardProps) {
+export function EligibleCertificateCard() {
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-start gap-3 sm:items-center">
@@ -22,16 +22,13 @@ export function EligibleCertificateCard({ training, onRequest }: EligibleCertifi
         </span>
         <div className="min-w-0">
           <p className="truncate font-sans text-base font-semibold text-foreground">
-            {training.listingTitle}
+            listingTitle
           </p>
-          <p className="truncate text-sm text-muted-foreground">{training.companyName}</p>
-          <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-            <CalendarCheck2 className="size-3.5" />
-            Completed {formatShortDate(training.completedOn)}
-          </p>
-          {training.mayLeadToHire ? (
-            <p className="mt-1.5 inline-flex rounded-full bg-primary-tint px-2.5 py-0.5 text-xs font-medium text-primary-text">
-              May lead to hire
+          <p className="truncate text-sm text-muted-foreground">companyName</p>
+          {true ? (
+            <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <CalendarCheck2 className="size-3.5" />
+              Completed {formatShortDate("2025-01-01")}
             </p>
           ) : null}
         </div>
@@ -41,7 +38,6 @@ export function EligibleCertificateCard({ training, onRequest }: EligibleCertifi
         type="button"
         size="sm"
         className="shrink-0 self-start sm:self-center cursor-pointer"
-        onClick={() => onRequest(training)}
       >
         Request certificate
       </Button>

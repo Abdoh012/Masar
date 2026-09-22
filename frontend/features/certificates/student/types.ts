@@ -82,9 +82,19 @@ export interface CertificateCounts {
   issued: number;
 }
 
-// The student's full certificates page state (UI-only; no backend).
-export interface CertificatesPageState {
-  eligible: EligibleTraining[];
-  certificates: StudentCertificate[];
-  counts: CertificateCounts;
+// Raw certificate statistics returned by GET /api/v1/certificates/statistics
+// (student scope). Field names mirror the backend repository output exactly —
+// `valid` is the backend's eligible/requestable certificate count (the
+// statistics endpoint has no literal "eligible" key; the frontend maps `valid`
+// to the "Eligible to request" stat card — see lib/normalize.ts).
+export interface CertificateStatistics {
+  total: number;
+  issued: number;
+  active: number;
+  valid: number;
+  revoked: number;
+  pending: number;
 }
+
+// Page data is server-fetched through student/api.ts + lib/normalize.ts —
+// there is no client-side page state type.

@@ -1,38 +1,21 @@
-"use client";
-
-import { useState } from "react";
 import { Sparkles } from "lucide-react";
 
 import Motion from "@/shared/components/animation/Motion";
 import { containerVariants, fadeInUp } from "@/shared/lib/animations";
 
-import type { EligibleTraining } from "../../../types";
-import { MOCK_ELIGIBLE as initialMock } from "../constants";
 import { EligibleCertificateCard } from "./EligibleCertificateCard";
 import { EligibleEmptyState } from "./EligibleEmptyState";
 import { RequestConfirmDialog } from "./RequestConfirmDialog";
 
 // EligibleSectionContainer: orchestrator for the "eligible to request" section.
 // "use client" because it owns the eligible list state and the request dialog
-// target. A request removes the training from this list (it re-appears as a
-// pending record in the "Requested certificates" group — the page owns that
-// transition via onRequested). Composes the per-training cards, the empty
-// state, and the confirm dialog — no detailed markup of its own.
-export function EligibleSectionContainer({
-  onRequested,
-}: {
-  onRequested: (training: EligibleTraining) => void;
-}) {
-  const [eligible, setEligible] = useState<EligibleTraining[]>(initialMock);
-  const [requestTarget, setRequestTarget] = useState<EligibleTraining | null>(null);
-
-  const handleConfirm = () => {
-    if (!requestTarget) return;
-    setEligible((current) => current.filter((t) => t.id !== requestTarget.id));
-    setRequestTarget(null);
-    onRequested(requestTarget);
-  };
-
+// target. The list is seeded from the server-fetched eligible feed
+// (initialEligible — no mock data); a request removes the training from this
+// list (it re-appears as a pending record in the "Requested certificates"
+// group — the page owns that transition via onRequested). Composes the
+// per-training cards, the empty state, and the confirm dialog — no detailed
+// markup of its own.
+export function EligibleSectionContainer() {
   return (
     <Motion
       variants={fadeInUp}
@@ -51,7 +34,7 @@ export function EligibleSectionContainer({
         </h2>
       </div>
 
-      {eligible.length > 0 ? (
+      {5 > 0 ? (
         <Motion
           variants={containerVariants}
           initial="hidden"
@@ -59,23 +42,21 @@ export function EligibleSectionContainer({
           viewport={{ once: true }}
           className="space-y-3"
         >
-          {eligible.map((training) => (
-            <Motion key={training.id} variants={fadeInUp}>
-              <EligibleCertificateCard training={training} onRequest={setRequestTarget} />
-            </Motion>
-          ))}
+          <Motion variants={fadeInUp}>
+            <EligibleCertificateCard />
+          </Motion>
         </Motion>
       ) : (
         <EligibleEmptyState />
       )}
 
-      <RequestConfirmDialog
+      {/* <RequestConfirmDialog
         training={requestTarget}
         onOpenChange={(open) => {
           if (!open) setRequestTarget(null);
         }}
         onConfirm={handleConfirm}
-      />
+      /> */}
     </Motion>
   );
 }

@@ -151,6 +151,15 @@
   --color-muted-foreground: var(--color-neutral-700);
   --color-disabled: var(--color-neutral-500);
 
+  /* Loading-placeholder fills — a soft stone wash that reads on the white
+     card surface without competing with real content (used by the shared
+     Skeleton primitive). */
+  --color-skeleton: color-mix(
+    in oklch,
+    var(--color-neutral-400) 50%,
+    transparent
+  );
+
   --color-border: var(--color-neutral-400);
   --color-input: var(--color-neutral-400);
   --color-ring: var(--color-primary-500);
@@ -215,6 +224,8 @@
 
   --color-muted-foreground: var(--color-neutral-600);
   --color-disabled: var(--color-neutral-600);
+
+  --color-skeleton: var(--color-neutral-800);
 
   /* No exact hex in the source for dark borders — masar-identity uses a
      translucent white overlay here rather than a flat scale step, so

@@ -8,7 +8,10 @@ import { CertificateHowItWorksStep } from "./CertificateHowItWorksStep";
 
 // CertificateHowItWorks: the intro panel that explains the certificate journey
 // (the spec's eligibility chain, presented as three human steps). Purely
-// presentational — composes a per-step leaf in a responsive column/grid.
+// presentational — draws a dashed connector rail behind the step icons on sm+
+// (trimmed to run exactly between the outer circle edges at top-6, the center
+// of the size-12 circles) and composes one numbered per-step leaf per entry in
+// a responsive three-up grid. On mobile the rail hides and the steps stack.
 export function CertificateHowItWorks() {
   return (
     <Motion
@@ -24,10 +27,21 @@ export function CertificateHowItWorks() {
         {HOW_IT_WORKS_TITLE}
       </h2>
 
-      <div className="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-3">
-        {HOW_IT_WORKS_STEPS.map((step) => (
-          <CertificateHowItWorksStep key={step.title} step={step} />
-        ))}
+      <div className="relative">
+        {/* Dashed path from step 1's icon edge to step 3's icon edge: each icon
+            circle is centered in its own 1/3 column, so the rail runs from
+            16.666% + 1.5rem (the circle's radius) to the mirror on the right.
+            Hidden on mobile where the steps stack vertically. */}
+        <span
+          aria-hidden
+          className="absolute left-[calc(16.666%_+_1.5rem)] right-[calc(16.666%_+_1.5rem)] top-6 hidden border-t border-dashed border-border sm:block"
+        />
+
+        <ol className="mt-6 grid grid-cols-1 gap-10 sm:grid-cols-3 sm:gap-6">
+          {HOW_IT_WORKS_STEPS.map((step, index) => (
+            <CertificateHowItWorksStep key={step.title} step={step} index={index} />
+          ))}
+        </ol>
       </div>
     </Motion>
   );

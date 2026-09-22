@@ -4,7 +4,6 @@ import Motion from "@/shared/components/animation/Motion";
 import { fadeInUp } from "@/shared/lib/animations";
 import { cn } from "@/shared/lib/utils";
 
-import type { StudentCertificate } from "../../../types";
 import { CertificateGroupEmpty } from "./CertificateGroupEmpty";
 import { StudentCertificateCard } from "./StudentCertificateCard";
 
@@ -26,16 +25,14 @@ export interface CertificateGroupConfig {
 
 interface CertificateGroupProps {
   config: CertificateGroupConfig;
-  certificates: StudentCertificate[];
-  onViewDetail: (certificate: StudentCertificate) => void;
 }
 
 // CertificateGroup: one bucket inside the "Your certificates" section — the
 // requested (still awaiting confirmation) bucket or the issued/terminal
 // bucket. Renders its tinted heading and, per item, a StudentCertificateCard;
-// falls back to its own empty state when the bucket is empty. Leaf — maps
-// over items, owns no data or state.
-export function CertificateGroup({ config, certificates, onViewDetail }: CertificateGroupProps) {
+// falls back to its own empty state when the bucket is empty. Placeholder
+// render until the records list is wired — one sample card, no data props.
+export function CertificateGroup({ config }: CertificateGroupProps) {
   const Icon = GROUP_ICONS[config.icon];
 
   return (
@@ -47,24 +44,15 @@ export function CertificateGroup({ config, certificates, onViewDetail }: Certifi
         <h3 className="text-sm font-semibold text-primary-text">{config.title}</h3>
       </div>
 
-      {certificates.length > 0 ? (
-        // Each card drives its own entrance: a container-level stagger with
-        // `viewport once` leaves a card that's appended after the group already
-        // animated stuck at `hidden` (invisible but occupying space). Self-
-        // triggered whileInView always converges to visible on mount.
-        <div className="space-y-3">
-          {certificates.map((certificate) => (
-            <Motion
-              key={certificate.id}
-              variants={fadeInUp}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-40px" }}
-            >
-              <StudentCertificateCard certificate={certificate} onViewDetail={onViewDetail} />
-            </Motion>
-          ))}
-        </div>
+      {true ? (
+        <Motion
+          variants={fadeInUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-40px" }}
+        >
+          <StudentCertificateCard />
+        </Motion>
       ) : (
         <CertificateGroupEmpty config={config} />
       )}
