@@ -5,6 +5,7 @@ import { Award } from "lucide-react";
 
 import Motion from "@/shared/components/animation/Motion";
 import { fadeInUp } from "@/shared/lib/animations";
+import { PageHeader } from "@/shared/components/page-header/PageHeader";
 
 import type { EligibleTraining, StudentCertificate } from "../../types";
 import { CertificateCounts } from "../../types";
@@ -16,7 +17,7 @@ import {
   buildPendingCertificate,
   MOCK_CERTIFICATES,
   MOCK_COUNTS,
-  PAGE_LABELS,
+  PAGE_HEADER,
   REQUEST_TOAST_COPY,
   SUMMARY_LABELS,
 } from "./constants";
@@ -83,29 +84,16 @@ export function MyCertificatesPage({
   return (
     <div className="space-y-8">
       {/* Header */}
-      <Motion
-        variants={fadeInUp}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-        className="flex flex-wrap items-end justify-between gap-3"
-      >
-        <div className="space-y-1.5">
-          <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-secondary-text">
-            {PAGE_LABELS.eyebrow}
-          </p>
-          <h1 className="font-sans text-2xl font-semibold text-primary-text">
-            {PAGE_LABELS.title}
-          </h1>
-          <p className="max-w-xl text-sm text-muted-foreground">
-            {PAGE_LABELS.description}
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5 rounded-full bg-primary-tint px-3 py-1.5 text-sm font-semibold text-primary-text">
-          <Award className="size-4" />
-          {displayCounts.issued} issued
-        </div>
-      </Motion>
+      <PageHeader
+        {...PAGE_HEADER}
+        icon={<Award className="size-6" />}
+        actions={
+          <span className="flex items-center gap-1.5 rounded-full bg-primary-tint px-3 py-1.5 text-sm font-semibold text-primary-text">
+            <Award className="size-4" />
+            {displayCounts.issued} issued
+          </span>
+        }
+      />
 
       {/* Summary counts */}
       <SummaryCounts counts={displayCounts} />

@@ -1,12 +1,14 @@
+import { GraduationCap } from "lucide-react";
 import { Suspense } from "react";
+
+import { PageHeader } from "@/shared/components/page-header/PageHeader";
 
 import { parseBrowseParams } from "../../lib/browse-params";
 
 import { BrowseFilterBar } from "./BrowseFilterBar";
 import { BrowseGridSkeleton } from "./BrowseGridSkeleton";
-import { BrowseHero } from "./BrowseHero";
 import { BrowseResults } from "./BrowseResults";
-import { BROWSE_PAGE_LIMIT } from "./constants";
+import { BROWSE_HERO, BROWSE_PAGE_LIMIT } from "./constants";
 import { FilterAndSearch } from "./FilterAndSearch";
 
 interface BrowseListingsContainerProps {
@@ -14,20 +16,20 @@ interface BrowseListingsContainerProps {
 }
 
 // BrowseListingsContainer: server orchestrator for the browse page. Composes the
-// hero, filter rows and the card grid. Only the grid suspends (Suspense-scoped
-// to BrowseResults), so the hero/filters render immediately while the cards
-// stream in with a skeleton. Interactivity stays in the client leaves; save/
-// unsave revalidates these routes so the server re-renders fresh.
+// shared header band, filter rows and the card grid. Only the grid suspends
+// (Suspense-scoped to BrowseResults), so the header/filters render immediately
+// while the cards stream in with a skeleton. Interactivity stays in the client
+// leaves; save/unsave revalidates these routes so the server re-renders fresh.
 export function BrowseListingsContainer({
   searchParams,
 }: BrowseListingsContainerProps) {
   const params = parseBrowseParams(searchParams);
 
   return (
-    <div>
-      <BrowseHero />
+    <div className="space-y-6">
+      <PageHeader {...BROWSE_HERO} icon={<GraduationCap className="size-6" />} />
 
-      <div className="px-10">
+      <div>
         <FilterAndSearch />
         <BrowseFilterBar />
 

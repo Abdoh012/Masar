@@ -6,7 +6,7 @@ export const BROWSE_PAGE_LIMIT = 10;
 export const BROWSE_HERO = {
   eyebrow: "Explore Opportunities",
   title: "Trainings",
-  subtitle:
+  description:
     "Explore training opportunities provided by companies and apply to grow your skills and career.",
 };
 

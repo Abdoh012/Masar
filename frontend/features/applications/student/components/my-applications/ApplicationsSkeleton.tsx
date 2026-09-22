@@ -9,8 +9,15 @@ import { Skeleton } from "@/shared/components/ui/skeleton";
 export function ApplicationsSkeleton() {
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Skeleton className="h-8 w-48" />
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-card p-5 shadow-card sm:p-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="size-10 rounded-2xl" />
+          <div className="space-y-2.5">
+            <Skeleton className="h-3 w-28" />
+            <Skeleton className="h-8 w-56" />
+            <Skeleton className="h-4 w-72 max-w-full" />
+          </div>
+        </div>
         <Skeleton className="h-7 w-16 rounded-full" />
       </div>
 

@@ -6,9 +6,13 @@
 // count: the header chip (and the All tab badge, same number) shows /all's
 // total while All is active; non-All tabs are label-only because their counts
 // aren't fetched. Throws on failure so the route-level error.tsx renders.
-// Owns no markup beyond composition — tabs, cards, the empty state, and the
-// per-card withdraw flow are all dedicated leaves.
-import { APPLICATIONS_TITLE, EMPTY_STATES, TABS } from "./constants";
+// Owns no markup beyond composition — the header band, tabs, cards, the empty
+// state, and the per-card withdraw flow are all dedicated leaves.
+import { FileText } from "lucide-react";
+
+import { PageHeader } from "@/shared/components/page-header/PageHeader";
+
+import { APPLICATIONS_HEADER, EMPTY_STATES, TABS } from "./constants";
 import { fetchApplicationsTab } from "../../api";
 import { parseApplicationsTab } from "../../lib/applications-params";
 import { normalizeApplicationsResponse } from "../../lib/normalize";
@@ -44,16 +48,17 @@ export async function MyApplicationsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-sans text-2xl font-semibold text-primary-text">
-          {APPLICATIONS_TITLE}
-        </h1>
-        {activeTab === "all" ? (
-          <span className="rounded-full bg-primary-tint px-3 py-1 text-sm font-medium text-primary-text">
-            {total}
-          </span>
-        ) : null}
-      </div>
+      <PageHeader
+        {...APPLICATIONS_HEADER}
+        icon={<FileText className="size-6" />}
+        actions={
+          activeTab === "all" ? (
+            <span className="rounded-full bg-primary-tint px-3 py-1 text-sm font-medium text-primary-text">
+              {total}
+            </span>
+          ) : undefined
+        }
+      />
 
       <ApplicationStatusTabs tabs={statusTabs} />
 

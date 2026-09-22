@@ -9,7 +9,12 @@ import type {
 } from "@/features/applications/student/types";
 
 // Header copy.
-export const APPLICATIONS_TITLE = "My Applications";
+export const APPLICATIONS_HEADER = {
+  eyebrow: "Track your progress",
+  title: "My Applications",
+  description:
+    "Follow every listing you've applied to — from submitted to outcome — all in one place.",
+} as const;
 
 // Status tabs. "All" is the default active tab; values map to the backend
 // list endpoints (student/api.ts) and drive the URL (?tab=).

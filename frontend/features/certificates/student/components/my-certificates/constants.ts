@@ -13,7 +13,7 @@ import type { CertificateDocument } from "../../../shared/types";
 
 // --- Page header copy ---
 
-export const PAGE_LABELS = {
+export const PAGE_HEADER = {
   eyebrow: "Certificates",
   title: "Your certificates",
   description:
