@@ -26,6 +26,7 @@ export interface Listing {
   status: ListingStatus;
   createdAt: string;
   updatedAt: string;
+  applicationDeadline?: string;
 }
 
 // UI-only display extension used by the shared ListingCard and role rows:

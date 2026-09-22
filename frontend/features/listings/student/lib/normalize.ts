@@ -1,4 +1,5 @@
 import type { ListingCardData, ListingMode } from "../../shared/types";
+import type { ApplicationStatus } from "../types";
 import type { Pagination } from "../api";
 
 const API_MODE_MAP: Record<string, string> = {
@@ -8,6 +9,24 @@ const API_MODE_MAP: Record<string, string> = {
 const API_FORMAT_MAP: Record<string, string> = {
   onsite: "in_person",
 };
+
+// Backend application.status as delivered on the detail response
+// (submitted is normalized to "pending", mirroring the API's own mapping).
+const APPLICATION_STATUS_MAP: Record<string, ApplicationStatus> = {
+  pending: "pending",
+  submitted: "pending",
+  accepted: "accepted",
+  rejected: "rejected",
+  withdrawn: "withdrawn",
+};
+
+function normalizeApplicationStatus(
+  raw: unknown,
+): ApplicationStatus | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const status = String((raw as Record<string, unknown>).status ?? "");
+  return APPLICATION_STATUS_MAP[status];
+}
 
 function computeDuration(
   startsAt?: string,
@@ -26,7 +45,7 @@ function computeDuration(
 
 export function normalizeApiItem(
   item: Record<string, unknown>,
-): ListingCardData {
+): ListingCardData & { applicationStatus?: ApplicationStatus } {
   const rawMode = String(item.training_type ?? "observer");
   const mappedMode = API_MODE_MAP[rawMode] ?? rawMode;
   const rawFormat = String(item.mode ?? "remote");
@@ -61,6 +80,10 @@ export function normalizeApiItem(
     status: "published" as const,
     createdAt: String(item.created_at),
     updatedAt: String(item.updated_at),
+    applicationDeadline:
+      item.application_deadline == null
+        ? undefined
+        : String(item.application_deadline),
     skills,
     duration: computeDuration(
       item.starts_at as string | undefined,
@@ -68,6 +91,7 @@ export function normalizeApiItem(
     ),
     saved: Boolean(item.is_saved),
     hasApplied: Boolean(item.has_applied),
+    applicationStatus: normalizeApplicationStatus(item.application),
     companyLogo: String(item.company_logo ?? ""),
   };
 }

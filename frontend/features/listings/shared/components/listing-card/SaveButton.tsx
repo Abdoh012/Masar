@@ -41,7 +41,7 @@ export function SaveButton({ saved = false, id }: SaveButtonProps) {
       type="button"
       onClick={handleToggle}
       disabled={isPending}
-      className={`cursor-pointer rounded-md p-1.5 transition-colors disabled:opacity-50 ${
+      className={`cursor-pointer rounded-md p-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
         saved
           ? "text-secondary hover:bg-secondary-tint"
           : "text-muted-foreground hover:bg-primary-tint hover:text-primary"

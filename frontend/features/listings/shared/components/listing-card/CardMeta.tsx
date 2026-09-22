@@ -1,13 +1,14 @@
-import { CalendarDays, Clock, MapPin } from "lucide-react";
+import { CalendarClock, CalendarDays, Clock, MapPin } from "lucide-react";
 
 import { FORMAT_LABELS } from "../../lib/constants";
 
-import { CARD_META_POSTED_PREFIX } from "./constants";
+import { CARD_META_DEADLINE_PREFIX, CARD_META_POSTED_PREFIX } from "./constants";
 
 interface CardMetaProps {
   duration?: string;
   format: "in_person" | "remote" | "hybrid";
   createdAt: string;
+  deadline?: string;
 }
 
 function formatPostedDate(iso: string): string {
@@ -18,7 +19,21 @@ function formatPostedDate(iso: string): string {
   }).format(new Date(iso));
 }
 
-export function CardMeta({ duration, format, createdAt }: CardMetaProps) {
+function formatDeadlineDate(iso: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(iso));
+}
+
+export function CardMeta({
+  duration,
+  format,
+  createdAt,
+  deadline,
+}: CardMetaProps) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
       {duration ? (
@@ -32,6 +47,13 @@ export function CardMeta({ duration, format, createdAt }: CardMetaProps) {
         <MapPin className="size-3.5" />
         {FORMAT_LABELS[format]}
       </span>
+
+      {deadline ? (
+        <span className="flex items-center gap-1.5">
+          <CalendarClock className="size-3.5" />
+          {CARD_META_DEADLINE_PREFIX} {formatDeadlineDate(deadline)}
+        </span>
+      ) : null}
 
       <span className="flex items-center gap-1.5">
         <CalendarDays className="size-3.5" />

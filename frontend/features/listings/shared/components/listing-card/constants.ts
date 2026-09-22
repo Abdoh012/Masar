@@ -5,6 +5,7 @@
 export const CARD_ACTION_LABEL = "View training";
 export const CARD_SKILLS_ARIA_LABEL = "Skills";
 export const CARD_META_POSTED_PREFIX = "Posted";
+export const CARD_META_DEADLINE_PREFIX = "Deadline";
 
 // Category pill accents, keyed by the listing's field. Brand-token accents
 // only (navy/gold/beige) — sage stays reserved for the hire signal.

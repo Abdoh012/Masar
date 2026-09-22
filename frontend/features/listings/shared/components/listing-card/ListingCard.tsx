@@ -66,6 +66,7 @@ export function ListingCard({ className, ...listing }: ListingCardProps) {
           duration={listing.duration}
           format={listing.format}
           createdAt={listing.createdAt}
+          deadline={listing.applicationDeadline}
         />
 
         <Link

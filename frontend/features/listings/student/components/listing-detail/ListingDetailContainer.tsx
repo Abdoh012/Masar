@@ -33,7 +33,6 @@ export async function ListingDetailContainer({ id }: ListingDetailContainerProps
 
   const listing = normalizeApiItem(raw.data);
   const listingId = listing.id;
-  const alreadyApplied = listing.hasApplied ?? false;
 
   return (
     <article className="space-y-8">
@@ -75,7 +74,7 @@ export async function ListingDetailContainer({ id }: ListingDetailContainerProps
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-6">
-        <ApplyCta listingId={listing.id} appliedByDefault={alreadyApplied} />
+        <ApplyCta listingId={listing.id} applicationStatus={listing.applicationStatus} />
       </div>
 
       <Button asChild variant="outline">
