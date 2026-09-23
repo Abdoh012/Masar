@@ -1,7 +1,7 @@
 import { Ban, Check, Clock } from "lucide-react";
 
 import Motion from "@/shared/components/animation/Motion";
-import { containerVariants, fadeInUp } from "@/shared/lib/animations";
+import { fadeInUp } from "@/shared/lib/animations";
 import { cn } from "@/shared/lib/utils";
 
 import type { StudentCertificate } from "../../../types";
@@ -51,19 +51,19 @@ export function CertificateGroup({ config, items }: CertificateGroupProps) {
       </div>
 
       {items.length > 0 ? (
-        <Motion
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-card"
-        >
+        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-card">
           {items.map((certificate) => (
-            <Motion key={certificate.id} variants={fadeInUp}>
+            // Each row animates on its own (initial/whileInView + once), not
+            // via a container-orchestrated stagger: a row can mount AFTER the
+            // panel's group first painted (request → revalidatePath feeds the
+            // new pending row in), and a container whose whileInView already
+            // fired once would leave that late-added row stuck at hidden —
+            // an "empty card" until a reload remounts everything.
+            <Motion key={certificate.id} variants={fadeInUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
               <StudentCertificateCard certificate={certificate} />
             </Motion>
           ))}
-        </Motion>
+        </div>
       ) : (
         <CertificateGroupEmpty config={config} />
       )}
