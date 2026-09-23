@@ -11,6 +11,13 @@
 export const TRIAL_LOW_DAYS = 7;
 export const TRIAL_CRITICAL_DAYS = 3;
 
+// Period label under the "{n} days remaining" line — the countdown chip serves
+// both the free-trial period and the remaining-training-days countdown on the
+// Application Card, so the sub-label is configurable (the trial label stays
+// the default for the dashboard's ActiveTraining consumer).
+export const TRIAL_PERIOD_LABEL = "Free trial period";
+export const TRAINING_PERIOD_LABEL = "Training period";
+
 export type TrialUrgency = "healthy" | "low" | "critical";
 
 export const TRIAL_URGENCY_STYLES: Record<

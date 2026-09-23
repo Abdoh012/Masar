@@ -150,20 +150,11 @@ export function rejectionReasonLabel(code?: string): string | undefined {
   return REJECTION_REASON_LABELS[code];
 }
 
-// Accepted-paid card: how early the payment phase surfaces. Bank transfers
-// take lead time, so the payment-info panel appears while the free trial still
-// has this many days left instead of waiting until it ends (the card shows the
-// countdown while daysRemaining > this, the payment panel from here down).
-// Currently aligned with the countdown's critical threshold (TRIAL_CRITICAL_DAYS
-// in the shared trial-countdown constants) but kept independent so either can
-// change without forcing the other.
-export const PAYMENT_NOTICE_DAYS = 3;
-
-// Accepted-paid card copy for the payment phase (late trial + after the trial
-// ends). `sage` stays reserved for the hire-opportunity-confirmed signal —
-// these states use neutral/secondary/info tokens; only the transfer-reference
-// callout uses the warning role (copy lives with the raw instructions text
-// from the API).
+// Accepted-paid card: the payment phase. Bank transfers take lead time, so the
+// payment-info panel stays visible for the whole period the payment hasn't
+// been submitted yet — the student reports the transfer whenever they're
+// ready, and only `payment_submitted` (the paid-successfully signal) swaps the
+// card to the remaining-days countdown.
 export const PAYMENT_LABELS = {
   paidTitle: "Payment confirmed",
   paidMessage: "Your payment for this training has been confirmed.",
@@ -202,25 +193,25 @@ export const PAYMENT_REPORT = {
 // on Applied/Accepted cards (equals is_paid).
 export const MAY_LEAD_TO_HIRE_LABEL = "May lead to hire";
 
-// --- Free-training info block (free counterpart of the paid trial chip) ---
+// --- Free/paid training labels ---
 
-// Row labels for the small training-facts block rendered on Accepted-free
-// cards in the same slot the trial countdown occupies on paid ones.
+// "Duration" is the meta-chip label on every card, stating the training's
+// total term (fixed, not a countdown — the remaining days own that signal via
+// the shared countdown chip), while the remaining-days countdown itself is
+// labeled by the shared TRAINING_PERIOD_LABEL from the trial-countdown
+// constants. (The old Mode/Starts facts rows are gone — free trainings show
+// only the countdown / finished note now.)
 export const FREE_TRAINING_INFO_LABELS = {
   duration: "Duration",
-  mode: "Mode",
-  starts: "Starts",
 } as const;
 
-// Delivery-mode label map for the info block — mirrors the listings shared
-// FORMAT_LABELS (in_person | remote | hybrid) so the app speaks one vocabulary.
-// Kept feature-local because features must not import from each other (R6);
-// promote to top-level shared/ if a third consumer appears.
-export const TRAINING_MODE_LABELS: Record<string, string> = {
-  in_person: "In-person",
-  remote: "Remote",
-  hybrid: "Hybrid",
-};
+// Accepted card: the training's run-down hit zero. Replaces the remaining-days
+// countdown so the card says the training is over instead of an alarming
+// critical "0 days remaining" chip.
+export const TRAINING_FINISHED_NOTE = {
+  title: "Training finished",
+  subline: "You've completed this training — the run-down has reached zero.",
+} as const;
 
 // --- Free/paid indicator pill (Applied + Accepted cards) ---
 

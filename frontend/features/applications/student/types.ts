@@ -70,6 +70,10 @@ export interface MyApplication {
   /** Total calendar-day length of the training (backend `duration`, computed
    *  from starts_at/ends_at — fixed, not a countdown). Null when dates absent. */
   duration: number | null;
+  /** Current remaining calendar days of the training (backend `remaining_days`,
+   *  computed from ends_at against today — a countdown, NOT the fixed
+   *  `duration`). Null when no ends_at date is set. */
+  remainingDays: number | null;
   isPaid: boolean;
   /** Present (true) only on Applied/Accepted cards; absent on other statuses. */
   mayLeadToHire?: boolean;
@@ -79,6 +83,10 @@ export interface MyApplication {
   rejectionNote?: string | null;
   trial?: ApplicationTrial;
   motivationalMessage?: string;
+  /** True once the student has submitted a payment (backend `payment_submitted`
+   *  on accepted cards) — the "user has paid successfully" signal. Never sent
+   *  for free trainings (absent → false). */
+  paymentSubmitted?: boolean;
   paymentStatus?: PaymentStatus;
   bankAccount?: BankAccount | null;
 }

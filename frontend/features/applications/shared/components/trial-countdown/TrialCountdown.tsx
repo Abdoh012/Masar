@@ -1,17 +1,20 @@
-// Trial countdown — the "opportunity clock" ring for the free-trial period.
+// Countdown ring — the "opportunity clock" for a bounded run-down period.
 // Two things express the state: the arc is proportional to
-// daysRemaining / totalDays (full ring on day one, depleting as the trial
+// daysRemaining / totalDays (full ring on day one, depleting as the period
 // runs down), and the color + chip tint shift through the status tokens as
 // days run out (healthy = success, 4–7 days = warning, ≤3 days = critical —
 // thresholds and styles in sibling constants.ts; never sage, which is
 // reserved for the hire-opportunity-confirmed signal). Server-rendered, no
 // live ticking — it reflects each server-side re-render. Shared by the
-// dashboard's ActiveTraining and the My Applications page's ApplicationCard
-// (second consumer → promoted per the promote-on-second-use rule).
+// dashboard's ActiveTraining (free-trial period) and the My Applications
+// page's ApplicationCard (free-trial period OR remaining-training-days), the
+// sibling constants provide the default trial label plus the "Training
+// period" label the remaining-days countdown passes in.
 
 import {
   TRIAL_CRITICAL_DAYS,
   TRIAL_LOW_DAYS,
+  TRIAL_PERIOD_LABEL,
   TRIAL_URGENCY_STYLES,
 } from "./constants";
 import type { TrialUrgency } from "./constants";
@@ -23,9 +26,11 @@ const CIRCUMFERENCE = 2 * Math.PI * 17;
 export function TrialCountdown({
   daysRemaining,
   totalDays,
+  periodLabel = TRIAL_PERIOD_LABEL,
 }: {
   daysRemaining: number;
   totalDays: number;
+  periodLabel?: string;
 }) {
   // Fraction of the trial still left, clamped to [0, 1] defensively (a null
   // or zero denominator, or remaining > total, must never break the arc).
@@ -78,7 +83,7 @@ export function TrialCountdown({
           {daysRemaining} days remaining
         </span>
         <span className="block text-xs text-muted-foreground">
-          Free trial period
+          {periodLabel}
         </span>
       </span>
     </div>
