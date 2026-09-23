@@ -1,9 +1,10 @@
-import { Check, Clock } from "lucide-react";
+import { Ban, Check, Clock } from "lucide-react";
 
 import Motion from "@/shared/components/animation/Motion";
-import { fadeInUp } from "@/shared/lib/animations";
+import { containerVariants, fadeInUp } from "@/shared/lib/animations";
 import { cn } from "@/shared/lib/utils";
 
+import type { StudentCertificate } from "../../../types";
 import { CertificateGroupEmpty } from "./CertificateGroupEmpty";
 import { StudentCertificateCard } from "./StudentCertificateCard";
 
@@ -11,6 +12,7 @@ import { StudentCertificateCard } from "./StudentCertificateCard";
 export const GROUP_ICONS = {
   clock: Clock,
   check: Check,
+  ban: Ban,
 } as const;
 
 export type CertificateGroupIcon = keyof typeof GROUP_ICONS;
@@ -25,14 +27,18 @@ export interface CertificateGroupConfig {
 
 interface CertificateGroupProps {
   config: CertificateGroupConfig;
+  items: StudentCertificate[];
 }
 
 // CertificateGroup: one bucket inside the "Your certificates" section — the
-// requested (still awaiting confirmation) bucket or the issued/terminal
-// bucket. Renders its tinted heading and, per item, a StudentCertificateCard;
-// falls back to its own empty state when the bucket is empty. Placeholder
-// render until the records list is wired — one sample card, no data props.
-export function CertificateGroup({ config }: CertificateGroupProps) {
+// requested (still awaiting confirmation) bucket, the issued bucket, or the
+// revoked bucket — each fed by its own server-fetched list
+// (CertificateSectionContainer → student/api.ts). Renders its tinted heading
+// and, per item, a StudentCertificateCard row inside a single grouped panel
+// (one border/shadow, rows divided by hairlines — same pattern as the eligible
+// section, §eligible); falls back to its own empty state when the bucket is
+// empty.
+export function CertificateGroup({ config, items }: CertificateGroupProps) {
   const Icon = GROUP_ICONS[config.icon];
 
   return (
@@ -44,14 +50,19 @@ export function CertificateGroup({ config }: CertificateGroupProps) {
         <h3 className="text-sm font-semibold text-primary-text">{config.title}</h3>
       </div>
 
-      {true ? (
+      {items.length > 0 ? (
         <Motion
-          variants={fadeInUp}
+          variants={containerVariants}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: "-40px" }}
+          viewport={{ once: true }}
+          className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-card"
         >
-          <StudentCertificateCard />
+          {items.map((certificate) => (
+            <Motion key={certificate.id} variants={fadeInUp}>
+              <StudentCertificateCard certificate={certificate} />
+            </Motion>
+          ))}
         </Motion>
       ) : (
         <CertificateGroupEmpty config={config} />

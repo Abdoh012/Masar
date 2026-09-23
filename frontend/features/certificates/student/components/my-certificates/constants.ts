@@ -1,16 +1,11 @@
 // Static data + copy for the my-certificates page (structure rules §14). All
 // page data is server-fetched — statistics, the eligible feed, and the
 // certificate records (the page orchestrator → student/api.ts). This file
-// holds only copy, display metadata, and the local pending-record builder used
-// by the request transition (POST /certificates not wired yet — the request
-// flow is UI-only for now).
+// holds only copy and display metadata; the request transition is backend-
+// wired (student/actions.ts requestCertificate → POST /certificates, then
+// revalidatePath) — the client keeps no pending-record list state.
 
-import type {
-  CertificateStatus,
-  EligibleTraining,
-  StudentCertificate,
-} from "../../types";
-import type { CertificateDocument } from "../../../shared/types";
+import type { CertificateStatus } from "../../types";
 
 // --- Page header copy ---
 
@@ -108,10 +103,10 @@ export const STATUS_DISPLAY: Record<
 // A status is live/valid — downloadable + verifiable.
 export const LIVE_STATUSES: CertificateStatus[] = ["issued", "active"];
 
-// The certificates collection is split into two groups: certificates the
-// student has requested (still awaiting confirmation) vs. the ones actually
-// issued (issued/active, plus terminal records). Heading, icon, tint, and
-// empty-state copy.
+// The certificates section is grouped by lifecycle state, one group per
+// dedicated endpoint: requested (pending, still awaiting confirmation), issued
+// (issued/active), and revoked (revoked, with its reason). Heading, icon,
+// tint, and empty-state copy.
 export const CERTIFICATE_GROUPS = {
   requested: {
     title: "Requested certificates",
@@ -129,34 +124,34 @@ export const CERTIFICATE_GROUPS = {
     emptyMessage:
       "Once a company confirms your request, your verified certificate will appear here and be ready to download.",
   },
+  revoked: {
+    title: "Revoked certificates",
+    icon: "ban",
+    accent: "bg-neutral-badge-bg text-neutral-badge-fg",
+    emptyTitle: "No revoked certificates",
+    emptyMessage:
+      "Certificates that have been revoked — with the reason — will appear here.",
+  },
 } as const;
+
+// The date line shown on a certificate row is per-status: its label and which
+// record field carries the date the backend reports for that state (pending →
+// requested_at, issued/active → issued_at, revoked → revoked_at).
+export const CERTIFICATE_DATE_META: Record<
+  CertificateStatus,
+  { label: string; field: "requestedOn" | "issuedOn" | "revokedOn" }
+> = {
+  pending: { label: "Requested", field: "requestedOn" },
+  issued: { label: "Issued", field: "issuedOn" },
+  active: { label: "Issued", field: "issuedOn" },
+  revoked: { label: "Revoked", field: "revokedOn" },
+  expired: { label: "Issued", field: "issuedOn" },
+  cancelled: { label: "Issued", field: "issuedOn" },
+};
 
 // True when a certificate is still awaiting confirmation (the "requested" group).
 export function isRequestedStatus(status: CertificateStatus): boolean {
   return status === "pending";
-}
-
-// --- Build the pending certificate record created when a request is
-// confirmed ---
-
-// The pending record created locally the moment a request is confirmed: the
-// training leaves "Eligible to request" and re-appears here as a record
-// awaiting confirmation. UI-only until POST /certificates is wired; the
-// eligible DTO carries no field, so pending records render without the
-// "— field" suffix (see StudentCertificateCard).
-export function buildPendingCertificate(eligible: EligibleTraining): StudentCertificate {
-  return {
-    id: `cert-${eligible.listingId}`,
-    listingId: eligible.listingId,
-    listingTitle: eligible.listingTitle,
-    field: eligible.field,
-    companyName: eligible.companyName,
-    status: "pending",
-    requestedOn: new Date().toISOString().slice(0, 10),
-    canDownload: false,
-    canVerify: false,
-    mayLeadToHire: eligible.mayLeadToHire,
-  };
 }
 
 // --- Empty variants (used by the EmptyState) ---
@@ -177,16 +172,31 @@ export const REQUEST_DIALOG_LABELS = {
     `We'll ask ${company} to confirm your completion of "${title}". Once confirmed, your certificate will be verified and appear in your certificates.`,
   cancel: "Not now",
   confirm: "Request certificate",
+  confirmPending: "Requesting…",
+} as const;
+
+// --- Request trigger copy ---
+
+export const REQUEST_ACTION_LABELS = {
+  trigger: "Request certificate",
+  failedGeneric: "Could not request the certificate right now. Please try again.",
 } as const;
 
 // --- Certificate detail dialog copy ---
 
 export const DETAIL_DIALOG_LABELS = {
   viewCertificate: "View certificate",
-  download: "Download PDF",
   verify: "Verify",
   verified: "Verified by Masar",
   closed: "Close",
+} as const;
+
+// --- Certificate PDF download copy ---
+
+export const DOWNLOAD_LABELS = {
+  download: "Download PDF",
+  success: "Certificate downloaded.",
+  error: "Could not download the certificate. Please try again.",
 } as const;
 
 // --- Request-success toast copy ---
@@ -198,8 +208,21 @@ export const REQUEST_TOAST_COPY = {
 
 // --- Format a date for the summary header ---
 
+// The backend's date/datetime DTOs arrive as "YYYY-MM-DD" or
+// "YYYY-MM-DD HH:MM:SS"; slice off the time portion before parsing so a
+// datetime value never yields NaN (which turns into a RangeError in
+// Intl.DateTimeFormat.format). Returns an invalid Date when the string
+// isn't a real date, and formatShortDate falls back to the raw string.
 function toUtcDate(isoDate: string): Date {
-  const [year, month, day] = isoDate.split("-").map(Number);
+  const [year, month, day] = isoDate.slice(0, 10).split("-").map(Number);
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) ||
+    !Number.isFinite(day) ||
+    isoDate.length < 10
+  ) {
+    return new Date(NaN);
+  }
   return new Date(Date.UTC(year, month - 1, day));
 }
 
@@ -211,5 +234,9 @@ const SHORT_DATE = new Intl.DateTimeFormat("en-US", {
 });
 
 export function formatShortDate(isoDate: string): string {
-  return SHORT_DATE.format(toUtcDate(isoDate));
+  const date = toUtcDate(isoDate);
+  if (Number.isNaN(date.getTime())) {
+    return isoDate;
+  }
+  return SHORT_DATE.format(date);
 }

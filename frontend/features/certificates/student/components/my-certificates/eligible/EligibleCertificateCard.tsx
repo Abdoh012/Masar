@@ -1,46 +1,47 @@
 import { Briefcase, CalendarCheck2 } from "lucide-react";
 
-import { Button } from "@/shared/components/ui/button";
-
 import type { EligibleTraining } from "../../../types";
 import { formatShortDate } from "../constants";
+import { EligibleRequestAction } from "./EligibleRequestAction";
 
 interface EligibleCertificateCardProps {
   training: EligibleTraining;
-  onRequest: (training: EligibleTraining) => void;
 }
 
-// EligibleCertificateCard: one completed-training row the student can request a
-// certificate for, with the Request action. Leaf — receives one training + the
-// request callback, renders nothing else.
-export function EligibleCertificateCard() {
+// EligibleCertificateCard: one completed-training row inside the section's
+// grouped eligible panel. Server leaf — receives one training, renders its
+// title, company, and completion date. The row's single border/shadow shell
+// lives on the panel (EligibleSectionContainer divides rows with hairlines);
+// this row only pads the content and adds a primary-tint hover wash so it
+// stays interactive-feeling despite the compact layout. The Request trigger
+// is a client leaf (EligibleRequestAction) so interactivity stays at the
+// boundary.
+export function EligibleCertificateCard({
+  training,
+}: EligibleCertificateCardProps) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 p-5 transition-colors hover:bg-primary-tint sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-start gap-3 sm:items-center">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary-tint text-secondary-text">
           <Briefcase className="size-4" />
         </span>
         <div className="min-w-0">
           <p className="truncate font-sans text-base font-semibold text-foreground">
-            listingTitle
+            {training.listingTitle}
           </p>
-          <p className="truncate text-sm text-muted-foreground">companyName</p>
-          {true ? (
+          <p className="truncate text-sm text-muted-foreground">
+            {training.companyName}
+          </p>
+          {training.completedOn ? (
             <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
               <CalendarCheck2 className="size-3.5" />
-              Completed {formatShortDate("2025-01-01")}
+              Completed {formatShortDate(training.completedOn)}
             </p>
           ) : null}
         </div>
       </div>
 
-      <Button
-        type="button"
-        size="sm"
-        className="shrink-0 self-start sm:self-center cursor-pointer"
-      >
-        Request certificate
-      </Button>
+      <EligibleRequestAction training={training} />
     </div>
   );
 }

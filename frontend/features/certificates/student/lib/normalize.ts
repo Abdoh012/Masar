@@ -58,9 +58,11 @@ export function normalizeEligibleTrainings(raw: unknown[]): EligibleTraining[] {
 }
 
 // Maps the /certificates list presenter output to StudentCertificate,
-// field-for-field. can_download / can_verify come straight from the API (the
-// list presenter currently reports can_download=false on every record —
-// download gating is backend-owned, not inferred on the frontend).
+// field-for-field. studentName maps the presenter's student.full_name (what
+// the certificate document prints). can_download / can_verify come straight
+// from the API (the list presenter currently reports can_download=false on
+// every record — the frontend gates downloads on LIVE_STATUSES instead and
+// builds the PDF client-side; these flags are kept mapped for API fidelity).
 // mayLeadToHire maps the presenter's employment_eligible flag (0/1).
 export function normalizeStudentCertificates(
   raw: unknown[],
@@ -76,7 +78,13 @@ export function normalizeStudentCertificates(
       listingTitle: String(item.training_title ?? ""),
       field: String(item.specialization_name ?? ""),
       companyName: String(item.company_name ?? ""),
+      studentName: String(
+        (item.student as Record<string, unknown> | undefined)?.full_name ??
+          "",
+      ),
       status: (item.status ?? "pending") as CertificateStatus,
+      grade: item.grade ? String(item.grade) : undefined,
+      gradeLabel: item.grade_label ? String(item.grade_label) : undefined,
       requestedOn: item.requested_at ? String(item.requested_at) : undefined,
       issuedOn: item.issued_at ? String(item.issued_at) : undefined,
       certNumber: item.certificate_number

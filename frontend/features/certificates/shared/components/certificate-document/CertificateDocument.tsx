@@ -128,28 +128,68 @@ export function CertificateDocument({
         <strong className={cn("font-semibold", isNavy ? "text-white" : "text-primary-500")}>
           {data.companyName}
         </strong>
-        {data.issuedOn ? `and was issued on ${data.issuedOn}` : null}
+        {data.gradeLabel ? (
+          <>
+            {" "}
+            with a grade of{" "}
+            <strong className={cn("font-semibold", isNavy ? "text-white" : "text-primary-500")}>
+              {data.gradeLabel}
+              {data.grade ? ` (${data.grade})` : null}
+            </strong>
+          </>
+        ) : null}
+        {data.issuedOn ? `, and was issued on ${data.issuedOn}` : null}
       </p>
 
       <div className={cn("flex w-full items-end justify-between", compact ? "mt-4" : "mt-6")}>
-        <div className="flex w-28 flex-col items-center gap-1">
+        {/* seal column — fixed width, mirrors the signature column so the row
+            stays balanced */}
+        <div className="flex w-28 shrink-0 flex-col items-center gap-1 sm:w-36">
           <SealMark className="size-9" />
           <span className={cn("text-[10px] font-medium", isNavy ? "text-white/55" : "text-neutral-700")}>
             Verified by Masar
           </span>
         </div>
 
-        <span className={cn("font-mono text-[10.5px] tracking-[0.04em]", isNavy ? "text-white/50" : "text-neutral-700")}>
-          {data.certId}
-        </span>
-
-        <div className="flex w-28 flex-col items-center gap-1">
-          <span aria-hidden="true" className={cn("w-full border-t", isNavy ? "border-white/60" : "border-neutral-800")} />
-          <span className={cn("text-[10px] font-medium", isNavy ? "text-white/55" : "text-neutral-700")}>
+        {/* signature column — the border is the signature "rule" (slightly
+            narrower than the column, like the design), the company name sits
+            under it, wrapping inside the column (never nowrap, which was what
+            let long names spill over the certificate ID). */}
+        <div className="flex w-28 shrink-0 flex-col items-center gap-1 sm:w-36">
+          <span
+            aria-hidden="true"
+            className={cn(
+              "w-full border-t sm:w-32",
+              isNavy ? "border-white/60" : "border-neutral-800",
+            )}
+          />
+          <span
+            className={cn(
+              "max-w-full break-words font-signature leading-tight",
+              isNavy ? "text-white/70" : "text-neutral-800",
+              compact ? "text-[13px]" : "text-[15px]",
+            )}
+          >
             {data.companyName}
           </span>
         </div>
       </div>
+
+      {/* cert ID — dedicated full-width centered row BELOW the seal/signature
+          row. Giving it its own row instead of a squeezed flex slot between
+          the two fixed columns means it has the whole document width and never
+          needs to wrap; whitespace-nowrap + truncate guarantee it always
+          renders as a single horizontal line (a pathologically long id would
+          ellipsis, never wrap per-character, and it can't collide with the
+          signature since they no longer share a row). */}
+      <p
+        className={cn(
+          "block max-w-full truncate text-center font-mono text-[10.5px] tracking-[0.04em]",
+          isNavy ? "text-white/50" : "text-neutral-700",
+        )}
+      >
+        {data.certId}
+      </p>
     </div>
   );
 }

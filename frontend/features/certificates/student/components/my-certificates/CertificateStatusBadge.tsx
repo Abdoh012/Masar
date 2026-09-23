@@ -5,7 +5,7 @@ import { cn } from "@/shared/lib/utils";
 import type { CertificateStatus } from "../../types";
 import { STATUS_DISPLAY } from "./constants";
 
-const STATUS_ICONS = {
+export const STATUS_ICONS = {
   clock: Clock,
   check: Check,
   alert: AlertTriangle,

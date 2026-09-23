@@ -124,6 +124,9 @@
     --font-ibm-plex-mono
   ); /* certificate IDs, dates, reference numbers */
   --font-serif: var(--font-ibm-plex-serif); /* certificate template only */
+  --font-signature: var(
+    --font-dancing-script
+  ); /* certificate signature line (company name) only */
   --font-arabic: var(
     --font-ibm-plex-sans-arabic
   ); /* wired for v2, unused in v1 UI */

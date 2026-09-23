@@ -1,13 +1,15 @@
 "use client";
 
 import { Dialog } from "radix-ui";
-import { Download, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 import { CertificateDocument } from "../../../../shared/components/certificate-document/CertificateDocument";
 import { Button } from "@/shared/components/ui/button";
 
 import type { StudentCertificate } from "../../../types";
+import { buildCertificateDocument } from "../../../lib/certificate-document";
 import { DETAIL_DIALOG_LABELS, LIVE_STATUSES } from "../constants";
+import { DownloadCertificateButton } from "./DownloadCertificateButton";
 
 interface CertificateDetailDialogProps {
   certificate: StudentCertificate;
@@ -25,14 +27,7 @@ export function CertificateDetailDialog({
 }: CertificateDetailDialogProps) {
   const isLive = LIVE_STATUSES.includes(certificate.status);
 
-  const document = {
-    studentName: "Nour El-Sayed",
-    title: certificate.listingTitle,
-    field: certificate.field,
-    companyName: certificate.companyName,
-    issuedOn: certificate.issuedOn ?? "",
-    certId: certificate.certNumber ?? `MASAR-${certificate.id}`,
-  };
+  const document = buildCertificateDocument(certificate);
 
   return (
     <Dialog.Root open onOpenChange={onOpenChange}>
@@ -62,14 +57,7 @@ export function CertificateDetailDialog({
           ) : null}
 
           <div className="mt-1 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            {isLive ? (
-              <Button type="button" size="sm" variant="default" asChild>
-                <a href="#" aria-disabled="true">
-                  <Download className="size-4" />
-                  {DETAIL_DIALOG_LABELS.download}
-                </a>
-              </Button>
-            ) : null}
+            {isLive ? <DownloadCertificateButton certificate={certificate} /> : null}
             <Dialog.Close asChild>
               <Button variant="outline" size="sm">
                 {DETAIL_DIALOG_LABELS.closed}

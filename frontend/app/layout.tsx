@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import {
+  Dancing_Script,
   IBM_Plex_Sans,
   IBM_Plex_Serif,
   IBM_Plex_Mono,
@@ -37,6 +38,14 @@ const ibmPlexMono = IBM_Plex_Mono({
   display: "swap",
 });
 
+// Certificate signature line (company name) — the fixed Masar certificate artifact
+const dancingScript = Dancing_Script({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-dancing-script",
+  display: "swap",
+});
+
 // Wired now so v2 Arabic UI is a locale flip, not a rebuild
 const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
   subsets: ["arabic"],
@@ -57,6 +66,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         ibmPlexSerif.variable,
         ibmPlexMono.variable,
         ibmPlexSansArabic.variable,
+        dancingScript.variable,
       ].join(" ")}
     >
       <body>

@@ -3,19 +3,26 @@ import { Sparkles } from "lucide-react";
 import Motion from "@/shared/components/animation/Motion";
 import { containerVariants, fadeInUp } from "@/shared/lib/animations";
 
+import type { EligibleTraining } from "../../../types";
 import { EligibleCertificateCard } from "./EligibleCertificateCard";
 import { EligibleEmptyState } from "./EligibleEmptyState";
-import { RequestConfirmDialog } from "./RequestConfirmDialog";
 
-// EligibleSectionContainer: orchestrator for the "eligible to request" section.
-// "use client" because it owns the eligible list state and the request dialog
-// target. The list is seeded from the server-fetched eligible feed
-// (initialEligible — no mock data); a request removes the training from this
-// list (it re-appears as a pending record in the "Requested certificates"
-// group — the page owns that transition via onRequested). Composes the
-// per-training cards, the empty state, and the confirm dialog — no detailed
-// markup of its own.
-export function EligibleSectionContainer() {
+interface EligibleSectionContainerProps {
+  items: EligibleTraining[];
+}
+
+// EligibleSectionContainer: server orchestrator for the "eligible to request"
+// section. Receives the server-fetched eligible feed (CertificatePageContent →
+// fetchEligibleFeed → normalizeEligibleTrainings) and renders one
+// EligibleCertificateCard row per training inside a single grouped panel
+// (one border/shadow, rows divided by hairlines), or the EligibleEmptyState
+// when there are none. A confirmed request removes the training server-side
+// (the action revalidates /certificates and the backend stops listing it once
+// a row exists) — the client keeps no list state. Composition only; per-card
+// interactivity lives in the client EligibleRequestAction leaf.
+export function EligibleSectionContainer({
+  items,
+}: EligibleSectionContainerProps) {
   return (
     <Motion
       variants={fadeInUp}
@@ -34,29 +41,23 @@ export function EligibleSectionContainer() {
         </h2>
       </div>
 
-      {5 > 0 ? (
+      {items.length > 0 ? (
         <Motion
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="space-y-3"
+          className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-card"
         >
-          <Motion variants={fadeInUp}>
-            <EligibleCertificateCard />
-          </Motion>
+          {items.map((training) => (
+            <Motion key={training.id} variants={fadeInUp}>
+              <EligibleCertificateCard training={training} />
+            </Motion>
+          ))}
         </Motion>
       ) : (
         <EligibleEmptyState />
       )}
-
-      {/* <RequestConfirmDialog
-        training={requestTarget}
-        onOpenChange={(open) => {
-          if (!open) setRequestTarget(null);
-        }}
-        onConfirm={handleConfirm}
-      /> */}
     </Motion>
   );
 }

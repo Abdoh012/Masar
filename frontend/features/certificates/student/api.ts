@@ -41,3 +41,33 @@ export async function fetchStudentCertificates(): Promise<TryCatchResponse> {
     cache: "no-store",
   });
 }
+
+/** Fetches the authenticated student's pending (requested, still awaiting
+ *  confirmation) certificates — GET /certificates/pending. Non-throwing
+ *  TryCatchResponse; the orchestrator throws on failure. */
+export async function fetchPendingCertificates(): Promise<TryCatchResponse> {
+  return serverFetch({
+    url: "certificates/pending",
+    cache: "no-store",
+  });
+}
+
+/** Fetches the authenticated student's issued certificates —
+ *  GET /certificates/issued. Non-throwing TryCatchResponse; the orchestrator
+ *  throws on failure. */
+export async function fetchIssuedCertificates(): Promise<TryCatchResponse> {
+  return serverFetch({
+    url: "certificates/issued",
+    cache: "no-store",
+  });
+}
+
+/** Fetches the authenticated student's revoked certificates —
+ *  GET /certificates/revoked. Non-throwing TryCatchResponse; the orchestrator
+ *  throws on failure. */
+export async function fetchRevokedCertificates(): Promise<TryCatchResponse> {
+  return serverFetch({
+    url: "certificates/revoked",
+    cache: "no-store",
+  });
+}

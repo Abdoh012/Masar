@@ -8,4 +8,6 @@ export interface CertificateDocument {
   companyName: string;
   issuedOn: string;
   certId: string;
+  grade?: string;
+  gradeLabel?: string;
 }

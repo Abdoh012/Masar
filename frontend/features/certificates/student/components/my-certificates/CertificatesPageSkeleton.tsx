@@ -62,18 +62,25 @@ export function CertificatesPageSkeleton() {
           <Skeleton className="size-6 rounded-full" />
           <Skeleton className="h-6 w-40" />
         </div>
-        <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3 sm:items-center">
-            <Skeleton className="size-10 rounded-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-5 w-56" />
-              <Skeleton className="h-4 w-36" />
-              <Skeleton className="mt-1 h-3 w-32" />
+        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-card">
+          {[0, 1].map((i) => (
+            <div
+              key={i}
+              className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div className="flex items-start gap-3 sm:items-center">
+                <Skeleton className="size-10 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-56" />
+                  <Skeleton className="h-4 w-36" />
+                  <Skeleton className="mt-1 h-3 w-32" />
+                </div>
+              </div>
+              <div className="shrink-0 self-start sm:self-center">
+                <Skeleton className="h-9 w-40 rounded-md" />
+              </div>
             </div>
-          </div>
-          <div className="shrink-0 self-start sm:self-center">
-            <Skeleton className="h-9 w-40 rounded-md" />
-          </div>
+          ))}
         </div>
       </div>
 
@@ -84,25 +91,27 @@ export function CertificatesPageSkeleton() {
           <Skeleton className="h-6 w-40" />
         </div>
 
-        {[0, 1].map((group) => (
+        {[0, 1, 2].map((group) => (
           <div key={group} className="space-y-3">
             <div className="flex items-center gap-2">
               <Skeleton className="size-6 rounded-full" />
               <Skeleton className="h-5 w-44" />
             </div>
-            <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-3 sm:items-center">
-                <Skeleton className="size-10 rounded-full" />
-                <div className="min-w-0 space-y-2.5">
-                  <Skeleton className="h-5 w-56" />
-                  <Skeleton className="h-4 w-40" />
-                  <Skeleton className="h-3 w-32" />
-                  <Skeleton className="h-3 w-36" />
+            <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-card">
+              <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3 sm:items-center">
+                  <Skeleton className="size-10 rounded-full" />
+                  <div className="min-w-0 space-y-2.5">
+                    <Skeleton className="h-5 w-56" />
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-3 w-32" />
+                    <Skeleton className="h-3 w-36" />
+                  </div>
                 </div>
-              </div>
-              <div className="flex shrink-0 items-center gap-2 self-start sm:self-center">
-                <Skeleton className="h-9 w-32 rounded-md" />
-                <Skeleton className="h-9 w-9 rounded-md" />
+                <div className="flex shrink-0 items-center gap-2 self-start sm:self-center">
+                  <Skeleton className="h-9 w-32 rounded-md" />
+                  <Skeleton className="h-9 w-9 rounded-md" />
+                </div>
               </div>
             </div>
           </div>

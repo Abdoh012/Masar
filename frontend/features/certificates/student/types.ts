@@ -64,7 +64,12 @@ export interface StudentCertificate {
   listingTitle: string;
   field: string;
   companyName: string;
+  /** Student's full name as reported by the backend (student.full_name) —
+   *  the name printed on the certificate document. */
+  studentName: string;
   status: CertificateStatus;
+  grade?: string;
+  gradeLabel?: string;
   requestedOn?: string;
   issuedOn?: string;
   certNumber?: string;

@@ -9,20 +9,37 @@ import { PAGE_HEADER } from "./constants";
 import { SummaryCounts } from "./summary-counts/SummaryCounts";
 import { EligibleSectionContainer } from "./eligible/EligibleSectionContainer";
 
-import { fetchCertificateStats } from "../../api";
+import { fetchCertificateStats, fetchEligibleFeed } from "../../api";
 
-import type { CertificateStatistics } from "../../types";
-import { normalizeCertificateCounts } from "../../lib/normalize";
+import type { CertificateStatistics, EligibleTraining } from "../../types";
+import {
+  normalizeCertificateCounts,
+  normalizeEligibleTrainings,
+} from "../../lib/normalize";
+import { CertificateSectionContainer } from "./issued/CertificateSectionContainer";
 
 export async function CertificatePageContent() {
-  const statsRes = await fetchCertificateStats();
+  const [statsRes, eligibleRes] = await Promise.all([
+    fetchCertificateStats(),
+    fetchEligibleFeed(),
+  ]);
 
   if (!statsRes.success || statsRes.data === undefined) {
     throw new Error(statsRes.error ?? "Failed to load certificate statistics.");
   }
 
+  if (!eligibleRes.success || eligibleRes.data === undefined) {
+    throw new Error(
+      eligibleRes.error ?? "Failed to load eligible certificates.",
+    );
+  }
+
   const initialCounts: CertificateCounts = normalizeCertificateCounts(
     statsRes.data as CertificateStatistics,
+  );
+
+  const eligibleTrainings: EligibleTraining[] = normalizeEligibleTrainings(
+    eligibleRes.data as unknown[],
   );
 
   return (
@@ -46,11 +63,10 @@ export async function CertificatePageContent() {
       <CertificateHowItWorks />
 
       {/* Eligible to request */}
-
-      <EligibleSectionContainer />
+      <EligibleSectionContainer items={eligibleTrainings} />
 
       {/* Your certificates */}
-      {/* <CertificateSectionContainer /> */}
+      <CertificateSectionContainer />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import { Dialog } from "radix-ui";
 
 import { Button } from "@/shared/components/ui/button";
@@ -11,17 +12,20 @@ interface RequestConfirmDialogProps {
   training: EligibleTraining | null;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
+  isPending?: boolean;
 }
 
 // RequestConfirmDialog: confirm-before-request modal for an eligible training.
 // Mirrors the app's dialog conventions (radix-ui + tw-animate-css + semantic
 // tokens). `training === null` → closed; otherwise open, identifying the exact
-// training/company in the copy. Confirm fires the orchestrator's local state
-// transition; Cancel/Escape/overlay close with no change.
+// training/company in the copy. Confirm fires the owning leaf's server action;
+// Cancel/Escape/overlay close with no change. isPending disables both buttons
+// (spinner on confirm) so the request can't be submitted twice.
 export function RequestConfirmDialog({
   training,
   onOpenChange,
   onConfirm,
+  isPending = false,
 }: RequestConfirmDialogProps) {
   const open = training !== null;
 
@@ -45,12 +49,24 @@ export function RequestConfirmDialog({
 
           <div className="mt-2 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Dialog.Close asChild>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" disabled={isPending}>
                 {REQUEST_DIALOG_LABELS.cancel}
               </Button>
             </Dialog.Close>
-            <Button variant="accent" size="sm" onClick={onConfirm}>
-              {REQUEST_DIALOG_LABELS.confirm}
+            <Button
+              variant="accent"
+              size="sm"
+              onClick={onConfirm}
+              disabled={isPending}
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  {REQUEST_DIALOG_LABELS.confirmPending}
+                </>
+              ) : (
+                REQUEST_DIALOG_LABELS.confirm
+              )}
             </Button>
           </div>
         </Dialog.Content>
