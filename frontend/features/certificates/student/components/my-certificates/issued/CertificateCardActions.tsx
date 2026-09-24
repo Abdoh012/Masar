@@ -15,7 +15,8 @@ interface CertificateCardActionsProps {
 // CertificateCardActions: client leaf owning the interactive actions on a
 // certificate row. "View certificate" (shown for live records) opens the shared
 // CertificateDetailDialog, which hosts the Download button — the row itself
-// stays clean, with download reachable only inside the dialog.
+// stays clean, with download reachable only inside the dialog. The dialog
+// stays mounted (controlled) so its exit animation plays on close.
 export function CertificateCardActions({
   certificate,
 }: CertificateCardActionsProps) {
@@ -38,12 +39,11 @@ export function CertificateCardActions({
         ) : null}
       </div>
 
-      {dialogOpen ? (
-        <CertificateDetailDialog
-          certificate={certificate}
-          onOpenChange={setDialogOpen}
-        />
-      ) : null}
+      <CertificateDetailDialog
+        certificate={certificate}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+      />
     </>
   );
 }

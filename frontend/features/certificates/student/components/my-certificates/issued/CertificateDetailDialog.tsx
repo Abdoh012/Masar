@@ -13,6 +13,7 @@ import { DownloadCertificateButton } from "./DownloadCertificateButton";
 
 interface CertificateDetailDialogProps {
   certificate: StudentCertificate;
+  open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
@@ -20,9 +21,12 @@ interface CertificateDetailDialogProps {
 // artifact for an issued certificate, plus its cert number and Download/Verify
 // actions. For non-live (terminal) records it shows the document (from stored
 // identity) with a muted notice instead of download/verify. Built on the
-// radix-ui Dialog primitive following the app's dialog conventions.
+// radix-ui Dialog primitive following the app's dialog conventions. Always
+// mounted and controlled via open/onOpenChange (Radix keeps it in the DOM
+// through the animate-out so the exit animation plays on close).
 export function CertificateDetailDialog({
   certificate,
+  open,
   onOpenChange,
 }: CertificateDetailDialogProps) {
   const isLive = LIVE_STATUSES.includes(certificate.status);
@@ -30,12 +34,12 @@ export function CertificateDetailDialog({
   const document = buildCertificateDocument(certificate);
 
   return (
-    <Dialog.Root open onOpenChange={onOpenChange}>
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <Dialog.Content
           data-slot="certificate-detail-dialog"
-          className="fixed left-1/2 top-1/2 z-50 flex max-h-[90vh] w-full max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-y-auto rounded-xl border border-border bg-background p-6 shadow-lg data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+          className="fixed left-1/2 top-1/2 z-50 flex max-h-[90vh] w-full max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-y-auto rounded-xl border border-border bg-background p-6 shadow-lg data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
         >
           <Dialog.Title className="sr-only">
             {DETAIL_DIALOG_LABELS.viewCertificate}
