@@ -1,7 +1,7 @@
 import { fetchBrowseListings } from "../../api";
 import type { BrowseParams } from "../../lib/browse-params";
 import { ListingCard } from "@/features/listings/shared/components/listing-card/ListingCard";
-import { Pagination } from "@/features/listings/shared/components/pagination/Pagination";
+import { Pagination } from "@/shared/components/pagination/Pagination";
 
 import { BrowseEmptyState } from "./BrowseEmptyState";
 

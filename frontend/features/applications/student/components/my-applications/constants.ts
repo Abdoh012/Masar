@@ -16,14 +16,18 @@ export const APPLICATIONS_HEADER = {
     "Follow every listing you've applied to — from submitted to outcome — all in one place.",
 } as const;
 
-// Status tabs. "All" is the default active tab; values map to the backend
-// list endpoints (student/api.ts) and drive the URL (?tab=).
+// Status tabs. "All" is the default active tab; the five status values map to
+// the backend list endpoints (student/api.ts) and drive the URL (?tab=). The
+// last one, "Ended Applications", maps instead to /applications/certificates
+// (completed trainings with an issued certificate) — see
+// ended-applications/EndedApplicationsContainer.
 export const TABS: { value: TabValue; label: string }[] = [
   { value: "all", label: "All" },
   { value: "applied", label: "Applied" },
   { value: "accepted", label: "Accepted" },
   { value: "rejected", label: "Rejected" },
   { value: "withdrawn", label: "Withdrawn" },
+  { value: "ended", label: "Ended Applications" },
 ];
 
 // Card action copy (US3).
@@ -79,6 +83,10 @@ export const EMPTY_STATES: Record<
   withdrawn: {
     title: "No withdrawn applications",
     message: "Applications you withdraw will show up here.",
+  },
+  ended: {
+    title: "No ended applications yet",
+    message: "Trainings you've completed with a certificate will appear here.",
   },
 };
 

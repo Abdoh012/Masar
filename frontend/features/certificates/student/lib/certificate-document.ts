@@ -3,7 +3,7 @@
 // document leaf takes plain data, this derivation happens once, upstream).
 // Used by the CertificateDetailDialog preview and the client-side PDF
 // download, so the document a user downloads is exactly the one they see.
-import type { CertificateDocument as CertificateDocumentData } from "../../shared/types";
+import type { CertificateDocument as CertificateDocumentData } from "@/shared/types/certificateDocument";
 import type { StudentCertificate } from "../types";
 
 export function buildCertificateDocument(

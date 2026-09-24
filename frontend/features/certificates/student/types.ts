@@ -1,6 +1,6 @@
 // Role-level types for the certificates student (structure rules §14).
 
-import type { CertificateDocument } from "../shared/types";
+import type { CertificateDocument } from "@/shared/types/certificateDocument";
 
 export interface CertificateSummary {
   totalCount: number;

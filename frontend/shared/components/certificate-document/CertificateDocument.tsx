@@ -1,7 +1,7 @@
 import { cn } from "@/shared/lib/utils";
 
 import { SealMark } from "./SealMark";
-import type { CertificateDocument as CertificateDocumentData } from "../../types";
+import type { CertificateDocument as CertificateDocumentData } from "@/shared/types/certificateDocument";
 
 interface CertificateCornerProps {
   position: "tl" | "tr" | "bl" | "br";
@@ -37,7 +37,9 @@ export interface CertificateDocumentProps {
 // CertificateDocument: the fixed Masar certificate artifact from
 // masar-identity.html (navy border, gold frame + corners, seal, serif name,
 // mono ID, signature line). Stays a consistent physical document in both
-// themes — fixed brand colors are used, not adaptive tokens.
+// themes — fixed brand colors are used, not adaptive tokens. Promoted from the
+// certificates feature (R7) once the applications feature also needs the
+// artifact.
 export function CertificateDocument({
   data,
   variant = "paper",

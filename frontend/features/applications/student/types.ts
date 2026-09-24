@@ -15,9 +15,11 @@ export interface ActiveApplication {
 
 export type ApplicationStatus = "Applied" | "Accepted" | "Rejected" | "Withdrawn";
 
-// The five My Applications tabs. Values map 1:1 to the backend endpoints
-// (all/applied/accepted/rejected/withdrawn) — see student/api.ts.
-export type TabValue = "all" | "applied" | "accepted" | "rejected" | "withdrawn";
+// The six My Applications tabs. Five values map 1:1 to the backend list
+// endpoints (all/applied/accepted/rejected/withdrawn) — see student/api.ts —
+// and the sixth, "ended", maps to GET /applications/certificates (the
+// student's completed trainings with an issued certificate).
+export type TabValue = "all" | "applied" | "accepted" | "rejected" | "withdrawn" | "ended";
 
 // Manual bank-transfer lifecycle on the Accepted card: free trainings never
 // require one ("not_required"), paid trainings are "pending" until the company
@@ -89,6 +91,36 @@ export interface MyApplication {
   paymentSubmitted?: boolean;
   paymentStatus?: PaymentStatus;
   bankAccount?: BankAccount | null;
+}
+
+// A completed training the student has seen through to a certificate: the
+// "Ended Applications" tab card. Every entry is one issued certificate record
+// from GET /applications/certificates (the exact same dataset as
+// /certificates/issued — see student/api.ts + normalize.ts). Mirrors the
+// presenter's issued DTO field-for-field; the card renders the training's own
+// identity (title/company/specialization), its degree + completion date, and
+// the View Certificate action that opens the CertificateDocument modal.
+export interface EndedApplication {
+  /** The certificate record id (backend certificate id). */
+  id: number;
+  trainingId: number;
+  listingTitle: string;
+  specialization: string;
+  companyName: string;
+  /** Degree achieved: `gradeLabel` ("Excellent") with `grade` ("A+") — the
+   *  pair is absent when the training issued no evaluation. */
+  grade?: string;
+  gradeLabel?: string;
+  /** Training completion date (backend `end_date`, the day the training
+   *  finished — distinct from issued_at, when the certificate was minted). */
+  completedOn: string;
+  /** When the certificate was issued (backend issued_at → approved_at). */
+  issuedOn: string;
+  /** The certificate number (backend certificate_number → certificate_code). */
+  certNumber: string;
+  /** Student's full name as reported by the backend (student.full_name) — the
+   *  name printed on the certificate document. */
+  studentName: string;
 }
 
 export interface StatusCounts {

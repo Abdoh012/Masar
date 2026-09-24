@@ -1,5 +1,8 @@
 // Public surface for the "certificates" feature.
-// The fixed Masar certificate template lives in shared/ — every role renders the same component, only the data differs. See masar-spec.pdf Section 7.
+// The fixed Masar certificate template lives in top-level shared/ (promoted on
+// second use — the applications Ended tab also renders it) — every certificate
+// role renders the same component, only the data differs. See masar-spec.pdf
+// Section 7.
 //
 // Only export what other parts of the app (routes, other features via
 // shared/) are meant to consume. Nothing outside this feature should ever
@@ -7,8 +10,8 @@
 // from each other directly — promote to top-level shared/ on second use (R7).
 
 export { CertificatesSnapshot } from "./student/components/certificates-snapshot/CertificatesSnapshot";
-export { CertificateDocument } from "./shared/components/certificate-document/CertificateDocument";
-export { SealMark } from "./shared/components/certificate-document/SealMark";
+export { CertificateDocument } from "@/shared/components/certificate-document/CertificateDocument";
+export { SealMark } from "@/shared/components/certificate-document/SealMark";
 
 export type { EligibleCertificate } from "./student/types";
 export type { EarnedCertificateRef } from "./student/types";

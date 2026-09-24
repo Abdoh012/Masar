@@ -22,7 +22,7 @@ export function ApplicationsSkeleton() {
       </div>
 
       <div className="flex flex-nowrap items-center gap-1 overflow-x-auto rounded-lg border border-border bg-card p-1">
-        {[0, 1, 2, 3, 4].map((i) => (
+        {[0, 1, 2, 3, 4, 5].map((i) => (
           <Skeleton
             key={i}
             className={`h-9 shrink-0 rounded-md ${i % 2 === 0 ? "w-20" : "w-28"}`}

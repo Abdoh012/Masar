@@ -12,6 +12,7 @@ const APPLICATION_TAB_VALUES: TabValue[] = [
   "accepted",
   "rejected",
   "withdrawn",
+  "ended",
 ];
 
 /** Parses an unknown ?tab= value into a valid TabValue; anything unknown,
@@ -22,4 +23,11 @@ export function parseApplicationsTab(value: unknown): TabValue {
     if (match) return match;
   }
   return "all";
+}
+
+/** Parses an unknown ?page= value into a 1-based page number; anything
+ *  missing, non-numeric, or below 1 falls back to 1 — the same rule as the
+ *  browse page's parseBrowseParams page handling. */
+export function parseApplicationsPage(value: unknown): number {
+  return Math.max(1, Number(typeof value === "string" ? value : "") || 1);
 }

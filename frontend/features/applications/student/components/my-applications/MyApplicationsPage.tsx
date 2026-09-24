@@ -1,24 +1,36 @@
 // MyApplicationsPage: async server orchestrator for the /applications page
-// (FR-001/002/007). Fetches ONLY the active tab's cards from the backend
-// (student/api.ts) — one query per render, no cross-tab fetching — so the
-// active view's list is exact and server-rendered; the active tab comes from
-// the ?tab= search param (parseApplicationsTab). Only the All view carries a
-// count: the header chip (and the All tab badge, same number) shows /all's
-// total while All is active; non-All tabs are label-only because their counts
-// aren't fetched. Throws on failure so the route-level error.tsx renders.
-// Owns no markup beyond composition — the header band, tabs, cards, the empty
-// state, and the per-card withdraw flow are all dedicated leaves.
+// (FR-001/002/007). Fetches ONLY the active tab's page of cards from the
+// backend (student/api.ts) — one query per render, no cross-tab fetching — so
+// the active view is exact and server-rendered; the active tab comes from the
+// ?tab= search param (parseApplicationsTab) and the page from ?page=
+// (parseApplicationsPage, hitting the same shared Pagination component the
+// Trainings tab uses). Every status tab pages server-side at
+// APPLICATIONS_PAGE_LIMIT (20); only the All view carries a count: the header
+// chip (and the All tab badge, same number) reads /all's pagination.total,
+// which is the full count regardless of the page. The Ended Applications tab
+// is a different dataset (/applications/certificates — an unpaginated bare
+// array) and owns its own async container
+// (ended-applications/EndedApplicationsContainer), which slices pages
+// client-side. Throws on failure so the route-level error.tsx renders. Owns
+// no markup beyond composition — the header band, tabs, cards, the empty
+// state, the pager, and the per-card withdraw flow are all dedicated leaves.
 import { FileText } from "lucide-react";
 
 import { PageHeader } from "@/shared/components/page-header/PageHeader";
+import { Pagination } from "@/shared/components/pagination/Pagination";
 
 import { APPLICATIONS_HEADER, EMPTY_STATES, TABS } from "./constants";
 import { fetchApplicationsTab } from "../../api";
-import { parseApplicationsTab } from "../../lib/applications-params";
+import {
+  parseApplicationsPage,
+  parseApplicationsTab,
+} from "../../lib/applications-params";
 import { normalizeApplicationsResponse } from "../../lib/normalize";
 import { ApplicationCard } from "./ApplicationCard";
 import { ApplicationStatusTabs } from "./ApplicationStatusTabs";
 import { EmptyApplicationsState } from "./EmptyApplicationsState";
+import { EndedApplicationsContainer } from "./ended-applications/EndedApplicationsContainer";
+import type { MyApplication } from "../../types";
 
 interface MyApplicationsPageProps {
   searchParams: Record<string, string | string[] | undefined>;
@@ -28,16 +40,26 @@ export async function MyApplicationsPage({
   searchParams,
 }: MyApplicationsPageProps) {
   const activeTab = parseApplicationsTab(searchParams.tab);
+  const page = parseApplicationsPage(searchParams.page);
+  const isEndedTab = activeTab === "ended";
 
-  // Single no-store fetch for the active tab only (per-student, must be fresh
-  // after a withdraw or staff-side change).
-  const response = await fetchApplicationsTab(activeTab);
-  if (!response.success) {
-    throw new Error(
-      response.error ?? `Failed to load ${activeTab} applications.`,
-    );
+  // Single no-store fetch for the active status tab's page only (per-student,
+  // must be fresh after a withdraw or staff-side change). The Ended tab skips
+  // this path entirely — its own container fetches /applications/certificates.
+  let items: MyApplication[] = [];
+  let total = 0;
+  let pagination = { current_page: 1, total_pages: 0 };
+  if (!isEndedTab) {
+    const response = await fetchApplicationsTab(activeTab, page);
+    if (!response.success) {
+      throw new Error(
+        response.error ?? `Failed to load ${activeTab} applications.`,
+      );
+    }
+    const normalized = normalizeApplicationsResponse(response.data);
+    ({ items, total } = normalized);
+    pagination = normalized.pagination;
   }
-  const { items, total } = normalizeApplicationsResponse(response.data);
 
   // Only /all's total is in the response, and only when All is the active
   // view — so the All tab is the only badge, shown when its data is loaded.
@@ -62,12 +84,17 @@ export async function MyApplicationsPage({
 
       <ApplicationStatusTabs tabs={statusTabs} />
 
-      {items.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {items.map((application) => (
-            <ApplicationCard key={application.id} application={application} />
-          ))}
-        </div>
+      {isEndedTab ? (
+        <EndedApplicationsContainer page={page} />
+      ) : items.length > 0 ? (
+        <>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {items.map((application) => (
+              <ApplicationCard key={application.id} application={application} />
+            ))}
+          </div>
+          <Pagination pagination={pagination} />
+        </>
       ) : (
         <EmptyApplicationsState {...EMPTY_STATES[activeTab]} />
       )}

@@ -16,9 +16,13 @@ interface PaginationProps {
   pagination: PaginationInfo;
 }
 
-// Pagination: shared pager for the browse grid. Reads the current URL params
-// itself and pushes updates via router.push — the container only hands over the
-// page numbers. Pure leaf, no data fetching (structure rules §6).
+// Pagination: shared pager for server-paginated grids (promoted from the
+// listings feature on second use — the Applications page paginates its tabs
+// with the same control). Reads the current URL params itself and pushes
+// updates via router.push — the container only hands over the page numbers.
+// Pure leaf, no data fetching (structure rules §6). URL-driven like the
+// browse filters: page changes carry through ?page= and switching any other
+// param (via createPageUrl) resets to page 1.
 export function Pagination({ pagination }: PaginationProps) {
   const router = useRouter();
   const searchParams = useSearchParams();

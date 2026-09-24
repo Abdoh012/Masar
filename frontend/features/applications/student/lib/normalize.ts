@@ -5,8 +5,10 @@
 import {
   ApplicationStatus,
   BankAccount,
+  EndedApplication,
   MyApplication,
 } from "@/features/applications/student/types";
+import { APPLICATIONS_PAGE_LIMIT, type Pagination } from "../api";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -86,18 +88,60 @@ export function normalizeApplicationItem(raw: unknown): MyApplication {
   return item;
 }
 
-/** Unwraps the { items, pagination } envelope and returns the mapped cards
- *  plus the server-reported total (shown in the page header only while the
- *  All view is active). Defensive against an empty payload, like the listings
- *  layer. */
+/** Unwraps the { items, pagination } envelope and returns the mapped cards,
+ *  the server-reported total (shown in the page header only while the All
+ *  view is active), and the server's page numbers — normalized so the shared
+ *  Pagination component can render from them. Defensive against an empty
+ *  payload, like the listings layer. */
 export function normalizeApplicationsResponse(raw: unknown): {
   items: MyApplication[];
   total: number;
+  pagination: Pagination;
 } {
   const body = (raw ?? {}) as UnknownRecord;
   const itemsRaw = Array.isArray(body.items) ? body.items : [];
-  const pagination = (body.pagination ?? {}) as UnknownRecord;
-  const total = Number(pagination.total ?? itemsRaw.length);
+  const pagination = (body.pagination ?? {
+    current_page: 1,
+    per_page: APPLICATIONS_PAGE_LIMIT,
+    total: 0,
+    total_pages: 0,
+    has_next_page: false,
+    has_previous_page: false,
+  }) as Pagination;
 
-  return { items: itemsRaw.map(normalizeApplicationItem), total };
+  return {
+    items: itemsRaw.map(normalizeApplicationItem),
+    total: Number(pagination.total ?? itemsRaw.length),
+    pagination,
+  };
+}
+
+/** Maps the /applications/certificates dataset (a bare array of issued
+ *  certificate DTOs — no { items, pagination } envelope) to ended-application
+ *  cards. Only the fields the card and its certificate modal render are picked;
+ *  degree (grade/grade_label) stays absent when a training issued no
+ *  evaluation, so the card can hide its row (studentName feeds the document). */
+export function normalizeEndedApplications(raw: unknown): EndedApplication[] {
+  const items = Array.isArray(raw) ? raw : [];
+  return items
+    .filter(
+      (item): item is UnknownRecord =>
+        !!item && typeof item === "object" && !Array.isArray(item),
+    )
+    .map((item) => {
+      const student = (item.student ?? {}) as UnknownRecord;
+      return {
+        id: Number(item.id ?? 0),
+        trainingId: Number(item.training_id ?? 0),
+        listingTitle: toStr(item.training_title) ?? "Training",
+        specialization: toStr(item.specialization_name) ?? "",
+        companyName: toStr(item.company_name) ?? "Company",
+        grade: toStr(item.grade),
+        gradeLabel: toStr(item.grade_label),
+        completedOn: toStr(item.end_date) ?? "",
+        issuedOn: toStr(item.issued_at) ?? "",
+        certNumber: toStr(item.certificate_number) ?? "",
+        studentName: toStr(student.full_name) ?? "",
+      };
+    });
 }

@@ -3,7 +3,7 @@
 import { Dialog } from "radix-ui";
 import { ShieldCheck } from "lucide-react";
 
-import { CertificateDocument } from "../../../../shared/components/certificate-document/CertificateDocument";
+import { CertificateDocument } from "@/shared/components/certificate-document/CertificateDocument";
 import { Button } from "@/shared/components/ui/button";
 
 import type { StudentCertificate } from "../../../types";

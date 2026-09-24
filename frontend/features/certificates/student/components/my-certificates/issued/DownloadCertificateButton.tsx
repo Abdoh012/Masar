@@ -7,7 +7,7 @@ import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { showError, showSuccess } from "@/shared/lib/notifications";
 
-import { CertificateDocument } from "../../../../shared/components/certificate-document/CertificateDocument";
+import { CertificateDocument } from "@/shared/components/certificate-document/CertificateDocument";
 import type { StudentCertificate } from "../../../types";
 import { buildCertificateDocument } from "../../../lib/certificate-document";
 import { downloadElementAsPdf } from "../../../lib/certificate-pdf";
