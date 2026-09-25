@@ -7,3 +7,5 @@
 // from each other directly — promote to top-level shared/ on second use (R7).
 
 export { ProfileHeader } from "./student/components/profile-header/ProfileHeader";
+
+export { default as MyProfileContainer } from "./student/components/my-profile/MyProfileContainer";
