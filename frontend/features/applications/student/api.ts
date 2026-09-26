@@ -6,22 +6,19 @@ import { serverFetch } from "@/services/api";
 import type { TryCatchResponse } from "@/types/server-action";
 import { TabValue } from "@/features/applications/student/types";
 
-// The five status tabs map 1:1 to list endpoints; /all returns every status
-// mixed. Each endpoint pages server-side via ?page= + ?limit= (limit clamped
-// to 100 backend-side) and returns the { items, pagination } envelope — the
-// backend computes offset from page, never the client. The page calls once per
-// render with the ACTIVE status tab only (no cross-tab fetching) and passes
-// the current ?page= through, so every tab pages at APPLICATIONS_PAGE_LIMIT.
-// The ended tab is deliberately NOT here — it maps to /applications/
-// certificates (fetchEndedApplications), a different dataset.
-export type ApplicationStatusTabValue = Exclude<TabValue, "ended">;
-
-const TAB_ENDPOINTS: Record<ApplicationStatusTabValue, string> = {
+// Every tab resolves to one backend list endpoint through this single map: the
+// five status tabs 1:1 (/all returns every status mixed), plus "ended" →
+// applications/certificates, the issued-certificates view behind the Ended
+// Applications tab. The page calls once per render with the ACTIVE tab only (no
+// cross-tab fetching) and passes the current ?page= through, so every tab pages
+// at APPLICATIONS_PAGE_LIMIT.
+const TAB_ENDPOINTS: Record<TabValue, string> = {
   all: "all",
   applied: "applied",
   accepted: "accepted",
   rejected: "rejected",
   withdrawn: "withdrawn",
+  ended: "certificates",
 };
 
 // Pagination envelope shape (matches the backend response and the shared
@@ -40,28 +37,23 @@ export interface Pagination {
 // BROWSE_PAGE_LIMIT.
 export const APPLICATIONS_PAGE_LIMIT = 20;
 
-/** Fetches one status tab's page of application cards. Non-throwing
+/** Fetches one tab's page of cards for the active ?tab= value. Non-throwing
  *  TryCatchResponse; the container throws on !res.success so the route-level
- *  error boundary renders. page is the 1-based page carried by ?page=. */
+ *  error boundary renders. page is the 1-based page carried by ?page=.
+ *
+ *  The five status tabs page server-side via ?page= + ?limit= (limit clamped to
+ *  100 backend-side) and return the { items, pagination } envelope — the backend
+ *  computes the offset, never the client. The ended tab's endpoint is not
+ *  paginated: it ignores the query params and returns the whole set as a bare
+ *  array of issued certificate DTOs, so the page normalizes it with
+ *  normalizeEndedApplications and slices it client-side. Same request path for
+ *  every tab — only the endpoint and the response shape differ. */
 export async function fetchApplicationsTab(
-  tab: ApplicationStatusTabValue,
+  tab: TabValue,
   page: number,
 ): Promise<TryCatchResponse> {
   return serverFetch({
     url: `applications/${TAB_ENDPOINTS[tab]}?page=${page}&limit=${APPLICATIONS_PAGE_LIMIT}`,
-    cache: "no-store",
-  });
-}
-
-/** Fetches the ended-applications dataset (GET /applications/certificates) —
- *  the student's completed trainings with an issued certificate. The backend
- *  delegates this to the same issued handler as GET /certificates/issued, so
- *  the response is a bare array of issued certificate DTOs (no pagination
- *  envelope) — normalized by normalizeEndedApplications. Non-throwing
- *  TryCatchResponse; the ended container throws on failure. */
-export async function fetchEndedApplications(): Promise<TryCatchResponse> {
-  return serverFetch({
-    url: "applications/certificates",
     cache: "no-store",
   });
 }

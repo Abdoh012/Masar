@@ -1,6 +1,7 @@
 // Static copy + display helpers for the Ended Applications tab section
 // (structure rules §14). Cards are server-fetched from /applications/
-// certificates (student/api.ts) — nothing here is mock data.
+// certificates (student/api.ts, the "ended" tab of the shared tab→endpoint map)
+// — nothing here is mock data.
 
 // Card labels (the "Completed" badge, facts rows and the modal entry point).
 export const ENDED_CARD_LABELS = {

@@ -1,37 +1,32 @@
-// EndedApplicationsContainer: async server orchestrator for the Ended
-// Applications tab of the My Applications page. Fetches the completed-trainings
-// dataset — GET /applications/certificates, the issued-certificates view — via
-// student/api.ts, normalizes it to EndedApplication cards, and composes the
-// card grid or the section's empty state. Throws on failure so the route-level
-// error.tsx renders. The endpoint returns an unpaginated bare array (no
-// pagination envelope), so unlike the status tabs this container pages
-// client-side: it slices the fetched set into APPLICATIONS_PAGE_LIMIT (20)
-// cards per page and renders the same shared Pagination control for the
-// in-range page — page stays URL-driven (?page=) and clamped server-side so a
-// stale/out-of-range page never shows an empty grid. Composition only — the
-// card and dialog live in their own leaves, and the empty state reuses the
-// shared EmptyApplicationsState.
-import { fetchEndedApplications, APPLICATIONS_PAGE_LIMIT } from "../../../api";
-import { normalizeEndedApplications } from "../../../lib/normalize";
+// EndedApplicationsContainer: server orchestrator for the Ended Applications tab
+// of the My Applications page. The dataset (GET /applications/certificates, the
+// issued-certificates view) is fetched by MyApplicationsPage through the same
+// fetchApplicationsTab call every tab uses, with the active tab value ("ended")
+// resolving the endpoint; the page hands the already-normalized cards down here
+// and this container owns the tab's own view logic. Unlike the status tabs that
+// endpoint is not paginated (it ignores ?page=/?limit= and returns the whole set
+// as a bare array), so it pages client-side: it slices the received set into
+// APPLICATIONS_PAGE_LIMIT (20) cards per page and renders the same shared
+// Pagination control for the in-range page — page stays URL-driven (?page=) and
+// clamped so a stale/out-of-range page never shows an empty grid. Composition
+// only — the card and dialog live in their own leaves, and the empty state
+// reuses the shared EmptyApplicationsState.
+import { APPLICATIONS_PAGE_LIMIT } from "../../../api";
 import { Pagination } from "@/shared/components/pagination/Pagination";
 import { EmptyApplicationsState } from "../EmptyApplicationsState";
 import { EndedApplicationCard } from "./EndedApplicationCard";
 import { ENDED_EMPTY_STATE } from "./constants";
+import type { EndedApplication } from "../../../types";
 
 interface EndedApplicationsContainerProps {
+  items: EndedApplication[];
   page: number;
 }
 
-export async function EndedApplicationsContainer({
+export function EndedApplicationsContainer({
+  items,
   page,
 }: EndedApplicationsContainerProps) {
-  const response = await fetchEndedApplications();
-  if (!response.success) {
-    throw new Error(response.error ?? "Failed to load ended applications.");
-  }
-
-  const items = normalizeEndedApplications(response.data);
-
   if (items.length === 0) {
     return <EmptyApplicationsState {...ENDED_EMPTY_STATE} />;
   }

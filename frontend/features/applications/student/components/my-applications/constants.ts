@@ -16,10 +16,11 @@ export const APPLICATIONS_HEADER = {
     "Follow every listing you've applied to — from submitted to outcome — all in one place.",
 } as const;
 
-// Status tabs. "All" is the default active tab; the five status values map to
-// the backend list endpoints (student/api.ts) and drive the URL (?tab=). The
-// last one, "Ended Applications", maps instead to /applications/certificates
-// (completed trainings with an issued certificate) — see
+// Status tabs. "All" is the default active tab; every value maps to a backend
+// list endpoint through the single tab→endpoint map in student/api.ts and drives
+// the URL (?tab=). The last one, "Ended Applications", resolves to
+// /applications/certificates (completed trainings with an issued certificate) —
+// fetched by the same call as the rest, rendered by
 // ended-applications/EndedApplicationsContainer.
 export const TABS: { value: TabValue; label: string }[] = [
   { value: "all", label: "All" },

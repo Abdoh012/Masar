@@ -4,16 +4,17 @@
 // the active view is exact and server-rendered; the active tab comes from the
 // ?tab= search param (parseApplicationsTab) and the page from ?page=
 // (parseApplicationsPage, hitting the same shared Pagination component the
-// Trainings tab uses). Every status tab pages server-side at
-// APPLICATIONS_PAGE_LIMIT (20); only the All view carries a count: the header
-// chip (and the All tab badge, same number) reads /all's pagination.total,
-// which is the full count regardless of the page. The Ended Applications tab
-// is a different dataset (/applications/certificates — an unpaginated bare
-// array) and owns its own async container
-// (ended-applications/EndedApplicationsContainer), which slices pages
-// client-side. Throws on failure so the route-level error.tsx renders. Owns
-// no markup beyond composition — the header band, tabs, cards, the empty
-// state, the pager, and the per-card withdraw flow are all dedicated leaves.
+// Trainings tab uses). All six tabs go through the same fetch: the status tabs
+// page server-side at APPLICATIONS_PAGE_LIMIT (20); only the All view carries a
+// count: the header chip (and the All tab badge, same number) reads /all's
+// pagination.total, which is the full count regardless of the page. Ended
+// Applications is the one different dataset (/applications/certificates — an
+// unpaginated bare array of issued certificates), so only its response handling
+// differs: it normalizes to ended cards and the section container
+// (ended-applications/EndedApplicationsContainer) slices pages client-side.
+// Throws on failure so the route-level error.tsx renders. Owns no markup beyond
+// composition — the header band, tabs, cards, the empty state, the pager, and
+// the per-card withdraw flow are all dedicated leaves.
 import { FileText } from "lucide-react";
 
 import { PageHeader } from "@/shared/components/page-header/PageHeader";
@@ -25,12 +26,15 @@ import {
   parseApplicationsPage,
   parseApplicationsTab,
 } from "../../lib/applications-params";
-import { normalizeApplicationsResponse } from "../../lib/normalize";
+import {
+  normalizeApplicationsResponse,
+  normalizeEndedApplications,
+} from "../../lib/normalize";
 import { ApplicationCard } from "./ApplicationCard";
 import { ApplicationStatusTabs } from "./ApplicationStatusTabs";
 import { EmptyApplicationsState } from "./EmptyApplicationsState";
 import { EndedApplicationsContainer } from "./ended-applications/EndedApplicationsContainer";
-import type { MyApplication } from "../../types";
+import type { EndedApplication, MyApplication } from "../../types";
 
 interface MyApplicationsPageProps {
   searchParams: Record<string, string | string[] | undefined>;
@@ -43,19 +47,26 @@ export async function MyApplicationsPage({
   const page = parseApplicationsPage(searchParams.page);
   const isEndedTab = activeTab === "ended";
 
-  // Single no-store fetch for the active status tab's page only (per-student,
-  // must be fresh after a withdraw or staff-side change). The Ended tab skips
-  // this path entirely — its own container fetches /applications/certificates.
+  // Single no-store fetch for the active tab's page only (per-student, must be
+  // fresh after a withdraw or staff-side change). Same call for every tab —
+  // fetchApplicationsTab resolves the endpoint from the tab.
+  const response = await fetchApplicationsTab(activeTab, page);
+  if (!response.success) {
+    throw new Error(
+      response.error ?? `Failed to load ${activeTab} applications.`,
+    );
+  }
+
+  // Only the status tabs return the { items, pagination } envelope; the ended
+  // tab's endpoint returns a bare array, normalized here and paged by its own
+  // container.
   let items: MyApplication[] = [];
+  let endedItems: EndedApplication[] = [];
   let total = 0;
   let pagination = { current_page: 1, total_pages: 0 };
-  if (!isEndedTab) {
-    const response = await fetchApplicationsTab(activeTab, page);
-    if (!response.success) {
-      throw new Error(
-        response.error ?? `Failed to load ${activeTab} applications.`,
-      );
-    }
+  if (isEndedTab) {
+    endedItems = normalizeEndedApplications(response.data);
+  } else {
     const normalized = normalizeApplicationsResponse(response.data);
     ({ items, total } = normalized);
     pagination = normalized.pagination;
@@ -85,7 +96,7 @@ export async function MyApplicationsPage({
       <ApplicationStatusTabs tabs={statusTabs} />
 
       {isEndedTab ? (
-        <EndedApplicationsContainer page={page} />
+        <EndedApplicationsContainer items={endedItems} page={page} />
       ) : items.length > 0 ? (
         <>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
