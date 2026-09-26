@@ -6,7 +6,6 @@ import { Button } from "@/shared/components/ui/button";
 import { ModeBadge } from "@/features/listings/shared/components/mode-badge/ModeBadge";
 import { PaidBadge } from "@/features/listings/shared/components/paid-badge/PaidBadge";
 import { CardMeta } from "@/features/listings/shared/components/listing-card/CardMeta";
-import { SaveButton } from "@/features/listings/shared/components/listing-card/SaveButton";
 import { CARD_ACTION_LABEL } from "@/features/listings/shared/components/listing-card/constants";
 import type { ListingCardData } from "@/features/listings/shared/types";
 
@@ -15,11 +14,14 @@ interface RecommendedTrainingRowProps {
 }
 
 // Leaf: one recommended training as a full-width horizontal row — company
-// monogram, the title with its badges, the shared format/posted meta, then the
-// save toggle and the call to action. Deliberately not the shared ListingCard:
-// that is a vertical browse card, and forcing a full-width row into its
-// two-column shape is what produced the cramped four-across dashboard grid.
-// The badges, meta and save control are still the shared definitions.
+// monogram, the title with its badges, the shared format/deadline/posted meta,
+// then the call to action. Deliberately not the shared ListingCard: that is a
+// vertical browse card, and forcing a full-width row into its two-column shape
+// is what produced the cramped four-across dashboard grid. The badges and meta
+// are still the shared definitions, deadline included, so the dashboard and the
+// browse grid can't disagree on when a listing closes. There is no save toggle
+// here — the dashboard is a read-only glance, and saving belongs to the browse
+// grid and the detail page.
 export function RecommendedTrainingRow({ listing }: RecommendedTrainingRowProps) {
   return (
     <article className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 transition-all duration-200 hover:border-primary/30 hover:shadow-lift motion-safe:hover:-translate-y-0.5 sm:flex-row sm:items-center sm:gap-5 sm:p-5">
@@ -51,14 +53,17 @@ export function RecommendedTrainingRow({ listing }: RecommendedTrainingRowProps)
         </div>
 
         <div className="mt-3">
-          <CardMeta format={listing.format} createdAt={listing.createdAt} />
+          <CardMeta
+            format={listing.format}
+            createdAt={listing.createdAt}
+            deadline={listing.applicationDeadline}
+          />
         </div>
       </div>
 
-      {/* Save + call to action */}
-      <div className="flex shrink-0 items-center justify-between gap-2 border-t border-border pt-3 sm:justify-end sm:border-t-0 sm:pt-0">
-        <SaveButton saved={listing.saved} id={listing.id} />
-
+      {/* Call to action — right-aligned at every width, where the save toggle
+          used to sit opposite it. */}
+      <div className="flex shrink-0 items-center justify-end gap-2 border-t border-border pt-3 sm:border-t-0 sm:pt-0">
         <Button asChild size="sm">
           <Link href={`/listings/${listing.id}`} className="group">
             {CARD_ACTION_LABEL}

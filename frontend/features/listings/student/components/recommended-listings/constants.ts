@@ -19,6 +19,7 @@ export const RECOMMENDED_LIMIT = 2;
 export const RECOMMENDED_LISTINGS: ListingCardData[] = [
   {
     id: "36",
+    applicationDeadline: "2026-10-15",
     companyId: "c-sawari",
     companyName: "Sawari Digital",
     field: "Software Engineering",
@@ -35,6 +36,7 @@ export const RECOMMENDED_LISTINGS: ListingCardData[] = [
   },
   {
     id: "41",
+    applicationDeadline: "2026-11-02",
     companyId: "c-mobica",
     companyName: "Mobica Alexandria",
     field: "Software Engineering",
@@ -49,6 +51,7 @@ export const RECOMMENDED_LISTINGS: ListingCardData[] = [
   },
   {
     id: "52",
+    applicationDeadline: "2026-10-28",
     companyId: "c-startapp",
     companyName: "StartApp Hub",
     field: "Software Engineering",
@@ -63,6 +66,7 @@ export const RECOMMENDED_LISTINGS: ListingCardData[] = [
   },
   {
     id: "63",
+    applicationDeadline: "2026-11-20",
     companyId: "c-clouditech",
     companyName: "CloudiTech",
     field: "Software Engineering",
@@ -83,6 +87,7 @@ export const RECOMMENDED_LISTINGS: ListingCardData[] = [
 export const FALLBACK_LISTINGS: ListingCardData[] = [
   {
     id: "70",
+    applicationDeadline: "2026-10-09",
     companyId: "c-brightlocal",
     companyName: "BrightLocal Media",
     field: "Marketing",
@@ -97,6 +102,7 @@ export const FALLBACK_LISTINGS: ListingCardData[] = [
   },
   {
     id: "71",
+    applicationDeadline: "2026-11-11",
     companyId: "c-meridian",
     companyName: "Meridian Analytics",
     field: "Data Science",
@@ -113,6 +119,7 @@ export const FALLBACK_LISTINGS: ListingCardData[] = [
   },
   {
     id: "72",
+    applicationDeadline: "2026-10-21",
     companyId: "c-palette",
     companyName: "Palette Studio",
     field: "Design",
@@ -127,6 +134,7 @@ export const FALLBACK_LISTINGS: ListingCardData[] = [
   },
   {
     id: "73",
+    applicationDeadline: "2026-12-01",
     companyId: "c-orbit",
     companyName: "Orbit Software",
     field: "Software Engineering",
