@@ -5,8 +5,6 @@ import { Camera } from "lucide-react";
 import { useFilePreview } from "../../../hooks/useFilePreview";
 
 import { IDENTITY_LABELS } from "./constants";
-import Motion from "@/shared/components/animation/Motion";
-import { hoverReveal } from "@/shared/lib/animations";
 
 interface AvatarEditorProps {
   name: string;
@@ -16,15 +14,15 @@ interface AvatarEditorProps {
 
 // AvatarEditor: the identity card's photo. The whole circle is a <label> over a
 // visually-hidden file input, so clicking or keyboard-focusing it opens the
-// picker, and a camera overlay fades in on hover. The picked image is previewed
-// from a local object URL — no upload yet, so the file only exists in the tab.
-// Falls back to the initials avatar until a photo exists.
+// picker, and a camera overlay fades in on hover/focus. The picked image is
+// previewed from a local object URL — no upload yet, so the file only exists in
+// the tab. Falls back to the initials avatar until a photo exists.
 export function AvatarEditor({ name, initials, src }: AvatarEditorProps) {
   const { file, select } = useFilePreview();
   const preview = file?.previewUrl ?? src;
 
   return (
-    <span className="relative shrink-0">
+    <span className="group relative shrink-0">
       <label className="block cursor-pointer rounded-full bg-secondary-tint p-1 ring-1 ring-secondary/40 transition-shadow focus-within:ring-2 focus-within:ring-ring">
         <span className="relative block size-24 overflow-hidden rounded-full sm:size-28">
           {preview ? (
@@ -43,21 +41,10 @@ export function AvatarEditor({ name, initials, src }: AvatarEditorProps) {
           )}
 
           {/* Inset by the gold padding ring so the overlay hugs the photo. */}
-          <Motion
-            as="span"
-            // initial={false} + an explicit animate base keeps the mount instant.
-            // Passing a variant label as `initial` instead makes framer run that
-            // variant's transition on mount, which flashes the overlay in from
-            // opacity 1 before fading it back out.
-            initial={false}
-            animate="hidden"
-            whileHover="visible"
-            variants={hoverReveal}
-            className="absolute inset-0 grid place-items-center rounded-full bg-primary/75 text-primary-foreground"
-          >
+          <span className="absolute inset-0 grid place-items-center rounded-full bg-primary/75 text-primary-foreground opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
             <Camera className="size-5" />
             <span className="sr-only">{IDENTITY_LABELS.changePhoto}</span>
-          </Motion>
+          </span>
         </span>
 
         <input
