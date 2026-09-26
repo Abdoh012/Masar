@@ -6,7 +6,7 @@ import { Button } from "@/shared/components/ui/button";
 // Empty state for the Active training section — points the student to /listings.
 export function NoActiveTraining() {
   return (
-    <div className="mt-4 flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-background px-4 py-8 text-center">
+    <div className="mt-5 flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-background px-4 py-8 text-center">
       {/* Icon */}
       <span className="flex size-10 items-center justify-center rounded-full bg-neutral-badge-bg text-neutral-badge-fg">
         <GraduationCap aria-hidden="true" className="size-5" />

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
-import Motion from "@/shared/components/animation/Motion";
-import { fadeInUp } from "@/shared/lib/animations";
+import { DashboardSection } from "@/shared/components/dashboard-section/DashboardSection";
+import { DashboardSectionHeading } from "@/shared/components/dashboard-section/DashboardSectionHeading";
+
 import { ACTIVE_TRAINING, TRAINING_MODE_LABELS } from "./constants";
 import { NoActiveTraining } from "./NoActiveTraining";
 import { TrialCountdown } from "../../../shared/components/trial-countdown/TrialCountdown";
@@ -15,38 +16,30 @@ export function ActiveTraining() {
   const isTrial = active?.mode === "paid_trial";
 
   return (
-    <Motion
-      variants={fadeInUp}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.24, ease: "easeOut" }}
-      className="flex h-full flex-col rounded-2xl border border-border bg-card p-5 shadow-card"
-    >
-      <div className="flex items-center justify-between gap-2">
-        {/* Header */}
-        <h2 className="text-base font-semibold text-primary-text">
-          Active training
-        </h2>
-
-        {/* Mode label for paid trial, part-time, full-time */}
-        {active ? (
-          <span className="shrink-0 rounded-full bg-secondary-tint px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-secondary-text">
-            {TRAINING_MODE_LABELS[active.mode]}
-          </span>
-        ) : null}
-      </div>
+    <DashboardSection elevation="raised">
+      <DashboardSectionHeading
+        title="Active training"
+        action={
+          active ? (
+            <span className="shrink-0 rounded-full bg-secondary-tint px-3 py-1 text-xs font-semibold uppercase tracking-wide text-secondary-text">
+              {TRAINING_MODE_LABELS[active.mode]}
+            </span>
+          ) : null
+        }
+      />
 
       {/* Active training card */}
       {active ? (
-        <div className="mt-4 flex flex-1 flex-col">
+        <div className="mt-5 flex flex-1 flex-col">
           <ActiveTrainingCard
             company={active.company}
             listingTitle={active.listingTitle}
+            daysRemaining={isTrial ? active.trialDaysRemaining : undefined}
+            totalDays={isTrial ? active.trialDays : undefined}
           />
 
           {/* Start date */}
-          <p className="mt-3 font-mono text-xs text-muted-foreground">
+          <p className="mt-4 font-mono text-xs text-muted-foreground">
             Started {active.startedOn}
           </p>
 
@@ -62,7 +55,7 @@ export function ActiveTraining() {
 
           <Link
             href="/applications"
-            className="group mt-auto inline-flex items-center gap-1.5 pt-4 text-sm font-medium text-primary transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="group mt-auto inline-flex items-center gap-1.5 pt-5 text-sm font-semibold text-primary transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             View application
             <ArrowRight
@@ -74,6 +67,6 @@ export function ActiveTraining() {
       ) : (
         <NoActiveTraining />
       )}
-    </Motion>
+    </DashboardSection>
   );
 }

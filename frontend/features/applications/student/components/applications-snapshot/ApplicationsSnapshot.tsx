@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { FileText } from "lucide-react";
 
-import Motion from "@/shared/components/animation/Motion";
-import { fadeInUp } from "@/shared/lib/animations";
+import { DashboardSection } from "@/shared/components/dashboard-section/DashboardSection";
+import { DashboardSectionHeading } from "@/shared/components/dashboard-section/DashboardSectionHeading";
+
 import {
   APPLICATION_STATUSES,
   RECENT_APPLICATIONS,
@@ -30,34 +31,24 @@ export function ApplicationsSnapshot() {
     RECENT_APPLICATIONS.length === 0;
 
   return (
-    <Motion
-      variants={fadeInUp}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.24, ease: "easeOut" }}
-      className="flex h-full flex-col rounded-2xl border border-border bg-card p-5 shadow-card"
-    >
-      <div className="flex items-center justify-between gap-2">
-        {/* Header */}
-        <h2 className="text-base font-semibold text-primary-text">
-          Applications snapshot
-        </h2>
-
-        {/* If there are applications, show "View all applications" button */}
-        {!isEmpty ? (
-          <Link
-            href="/applications"
-            className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary-text transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            View all applications
-          </Link>
-        ) : null}
-      </div>
+    <DashboardSection>
+      <DashboardSectionHeading
+        title="Applications snapshot"
+        action={
+          !isEmpty ? (
+            <Link
+              href="/applications"
+              className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary-text transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              View all applications
+            </Link>
+          ) : null
+        }
+      />
 
       {/* If there are no applications, show the empty state */}
       {isEmpty ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-background px-4 py-8 text-center">
+        <div className="mt-5 flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-background px-4 py-8 text-center">
           <FileText
             aria-hidden="true"
             className="size-6 text-muted-foreground"
@@ -72,7 +63,7 @@ export function ApplicationsSnapshot() {
       ) : (
         <>
           {/* Status count tiles — always 4 columns (2 on mobile) */}
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {APPLICATION_STATUSES.map((status) => (
               <StatusCountBadge
                 key={status}
@@ -84,13 +75,13 @@ export function ApplicationsSnapshot() {
           </div>
 
           {/* Recent applications list (up to 3 rows) */}
-          <ul className="mt-2">
+          <ul className="mt-3">
             {RECENT_APPLICATIONS.slice(0, 3).map((row) => (
               <RecentApplicationRow key={row.id} row={row} />
             ))}
           </ul>
         </>
       )}
-    </Motion>
+    </DashboardSection>
   );
 }

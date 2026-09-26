@@ -6,6 +6,12 @@ export const RECOMMENDED_LABELS = {
   viewAll: "View all",
 };
 
+// The dashboard is a summary, not the browse grid: two rows read as a
+// recommendation, four read as a second browse page. Slice the set rather than
+// trimming the data, so the same mock pool still feeds anything that wants all
+// of it.
+export const RECOMMENDED_LIMIT = 2;
+
 // Field-matched mock listings for "Software Engineering" students, reshaped
 // to the shared ListingCardData (FR-022 dashboard consumer migration, R-9).
 // companyName is a UI-only display field resolved from companyId later.

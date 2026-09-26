@@ -43,7 +43,7 @@ export function MobileNav() {
             initial="hidden"
             animate="visible"
             exit="hidden"
-            className="absolute right-0 top-full z-50 mt-2 w-56 flex-col gap-1 rounded-xl border border-border bg-card p-3 shadow-card-sm origin-top-right"
+            className="absolute right-0 top-full z-50 mt-2 w-56 flex-col gap-1 rounded-xl border border-border bg-card p-3 shadow-card-md origin-top-right"
           >
             {headerNavLinks.map((link) => (
               <PublicNavLink

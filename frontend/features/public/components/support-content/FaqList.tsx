@@ -30,7 +30,7 @@ export function FaqList({ items }: FaqListProps) {
         return (
           <div
             key={item.question}
-            className="overflow-hidden rounded-xl border border-border bg-card shadow-card-sm"
+            className="overflow-hidden rounded-xl border border-border bg-card shadow-card-md"
           >
             {/* FAQ question trigger - accordion button */}
             <button
