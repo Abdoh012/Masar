@@ -3,6 +3,7 @@ node_modules
 out
 .env
 .env*.local
+.figma.env
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store
