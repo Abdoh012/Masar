@@ -42,10 +42,10 @@ export default function IdentityContainer({ profile }: IdentityContainerProps) {
         <AvatarEditor name={name} initials={initials} src={profile.avatarUrl} />
 
         <div className="min-w-0 space-y-3">
-          {/* Not an <h1> — the shared PageHeader already owns the page title. */}
-          <p className="font-sans text-2xl font-semibold leading-tight text-primary-text sm:text-3xl">
+          {/* The page's <h1> — /profile has no PageHeader band above this hero. */}
+          <h1 className="font-sans text-2xl font-semibold leading-tight text-primary-text sm:text-3xl">
             {name}
-          </p>
+          </h1>
 
           <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary-tint px-2.5 py-1 text-xs font-semibold text-secondary-text">
             <Sparkles className="size-3.5" />

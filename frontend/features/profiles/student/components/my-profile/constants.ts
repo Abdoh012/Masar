@@ -5,8 +5,7 @@
 // persisted. The shapes match `../../types` (ISO dates, month-input year-month
 // strings) so the mock can be swapped for a fetch without touching a
 // component. Section-specific UI copy (labels, hints, button text) lives in
-// each section's own constants.ts; this file holds the page header copy and
-// the seeded page data.
+// each section's own constants.ts; this file holds the seeded page data.
 
 import type {
   AcademicLevel,
@@ -15,15 +14,6 @@ import type {
   ProfileIdentity,
   ProfileViewer,
 } from "../../types";
-
-// --- Page header copy ---
-
-export const PAGE_HEADER = {
-  eyebrow: "Your account",
-  title: "My profile",
-  description:
-    "Keep your details, skills and academic status up to date — this is what companies see when they review your profile.",
-} as const;
 
 // --- Identity (the hero card) ---
 
