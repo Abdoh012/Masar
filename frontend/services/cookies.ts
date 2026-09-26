@@ -1,14 +1,26 @@
 import "server-only";
 import { cookies } from "next/headers";
+import {
+  ACCESS_TOKEN_COOKIE,
+  ACCESS_TOKEN_MAX_AGE,
+  COMPANY_STATUS_COOKIE,
+  CSRF_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+  REFRESH_TOKEN_MAX_AGE,
+  ROLE_COOKIE,
+} from "@/shared/lib/authCookies";
 
-export const ACCESS_TOKEN_COOKIE = "masarJwt";
-export const ROLE_COOKIE = "masarRole";
-export const COMPANY_STATUS_COOKIE = "companyStatus";
-export const REFRESH_TOKEN_COOKIE = "refresh_token";
-export const CSRF_TOKEN_COOKIE = "csrf_token";
-
-export const ACCESS_TOKEN_MAX_AGE = 60 * 60 * 24 * 90;
-export const REFRESH_TOKEN_MAX_AGE = 60 * 60 * 24 * 90;
+// Names/lifetimes live in shared/lib/authCookies so middleware (Edge runtime,
+// can't import "server-only") and these server-only helpers share one source.
+export {
+  ACCESS_TOKEN_COOKIE,
+  ACCESS_TOKEN_MAX_AGE,
+  COMPANY_STATUS_COOKIE,
+  CSRF_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+  REFRESH_TOKEN_MAX_AGE,
+  ROLE_COOKIE,
+};
 
 export async function getCookie(name: string) {
   const store = await cookies();
