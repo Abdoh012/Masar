@@ -55,6 +55,21 @@ export const rotateToggle: Variants = {
   },
 };
 
+// Pointer-driven reveal (e.g. a hover overlay on top of media). Deliberately
+// hover-only: it is driven from the hovered element itself, so a focusable
+// sibling outside it can never trigger it. Reach for a CSS focus-within group
+// instead when the reveal must also answer keyboard focus.
+export const hoverReveal: Variants = {
+  hidden: {
+    opacity: 0,
+    transition: { duration: 0.24, ease: "easeOut" },
+  },
+  visible: {
+    opacity: 1,
+    transition: { duration: 0.24, ease: "easeOut" },
+  },
+};
+
 export const expandCollapse: Variants = {
   hidden: {
     height: 0,
