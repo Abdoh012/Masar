@@ -1,8 +1,6 @@
-import {
-  STATUS_BADGE_CLASSES,
-  STATUS_BADGE_MIN_WIDTH_CLASS,
-} from "./constants";
+import { RECENT_ROW_BADGE_CLASS } from "./constants";
 import type { RecentApplicationRow } from "../../types";
+import { ApplicationStatusBadge } from "../ApplicationStatusBadge";
 
 // Leaf: one recent-application row. The monogram keeps the row from being a
 // bare two-line text block, and the fixed-width badge keeps the right edge of
@@ -28,16 +26,7 @@ export function RecentApplicationRow({ row }: { row: RecentApplicationRow }) {
         <time className="font-mono text-xs text-muted-foreground">
           {row.appliedOn}
         </time>
-        <span
-          className={
-            "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold " +
-            STATUS_BADGE_MIN_WIDTH_CLASS +
-            " " +
-            STATUS_BADGE_CLASSES[row.status]
-          }
-        >
-          {row.status}
-        </span>
+        <ApplicationStatusBadge status={row.status} className={RECENT_ROW_BADGE_CLASS} />
       </div>
     </li>
   );

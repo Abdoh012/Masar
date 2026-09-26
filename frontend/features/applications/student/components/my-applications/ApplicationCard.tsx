@@ -1,12 +1,12 @@
 import { Clock } from "lucide-react";
 
-import { STATUS_BADGE_CLASSES } from "../applications-snapshot/constants";
 import {
   TRAINING_PERIOD_LABEL,
   TRIAL_CRITICAL_DAYS,
 } from "../../../shared/components/trial-countdown/constants";
 import { TrialCountdown } from "../../../shared/components/trial-countdown/TrialCountdown";
 import type { MyApplication } from "../../types";
+import { ApplicationStatusBadge } from "../ApplicationStatusBadge";
 import { AcceptedPaymentInfo } from "./AcceptedPaymentInfo";
 import { ApplicationCardActions } from "./ApplicationCardActions";
 import { AwaitingResponseNote } from "./AwaitingResponseNote";
@@ -57,14 +57,7 @@ export function ApplicationCard({ application }: ApplicationCardProps) {
   return (
     <div className="flex h-full flex-col gap-3 rounded-xl border border-border bg-card p-5">
       <div className="flex flex-wrap items-center gap-2">
-        <span
-          className={
-            "rounded-full px-2.5 py-0.5 text-xs font-medium " +
-            STATUS_BADGE_CLASSES[application.status]
-          }
-        >
-          {application.status}
-        </span>
+        <ApplicationStatusBadge status={application.status} />
 
         {application.status === "Applied" || application.status === "Accepted" ? (
           <PaymentStatusBadge isPaid={application.isPaid} />

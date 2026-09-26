@@ -37,10 +37,13 @@ export const STATUS_COUNT_ACCENT_CLASSES: Record<ApplicationStatus, string> = {
   Withdrawn: "text-neutral-badge-fg",
 };
 
-// One width for every status pill. "Applied" through "Withdrawn" differ by two
-// characters, which is enough to make the right edge of the row jump around
-// when the label changes; a fixed floor plus centred text keeps it still.
-export const STATUS_BADGE_MIN_WIDTH_CLASS = "min-w-20 justify-center text-center";
+// How the recent row's status pill differs from the default ApplicationStatusBadge
+// geometry. "Applied" through "Withdrawn" differ by two characters, which is
+// enough to make the right edge of the row jump around when the label changes,
+// so a fixed floor plus centred text keeps it still; the row is standalone, so it
+// also gets a slightly heavier pill than the one sitting inside a card's badge row.
+export const RECENT_ROW_BADGE_CLASS =
+  "inline-flex items-center px-3 py-1 font-semibold min-w-20 justify-center text-center";
 
 // Maps display status → StatusCounts key (labels are capitalized, count keys lowercase).
 export const STATUS_COUNT_KEYS: Record<ApplicationStatus, keyof StatusCounts> = {
