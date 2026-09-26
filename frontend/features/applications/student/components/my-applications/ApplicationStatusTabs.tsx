@@ -43,7 +43,7 @@ export function ApplicationStatusTabs({ tabs }: ApplicationStatusTabsProps) {
   };
 
   return (
-    <div className="sticky top-14 z-30 px-2 sm:px-3">
+    <div className="sticky top-2 z-30 px-2 sm:px-3">
       <div
         className="flex flex-nowrap items-center gap-1 overflow-x-auto rounded-xl border border-border bg-card p-1 shadow-card"
         role="tablist"
