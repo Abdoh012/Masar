@@ -45,7 +45,12 @@ export function AvatarEditor({ name, initials, src }: AvatarEditorProps) {
           {/* Inset by the gold padding ring so the overlay hugs the photo. */}
           <Motion
             as="span"
-            initial="hidden"
+            // initial={false} + an explicit animate base keeps the mount instant.
+            // Passing a variant label as `initial` instead makes framer run that
+            // variant's transition on mount, which flashes the overlay in from
+            // opacity 1 before fading it back out.
+            initial={false}
+            animate="hidden"
             whileHover="visible"
             variants={hoverReveal}
             className="absolute inset-0 grid place-items-center rounded-full bg-primary/75 text-primary-foreground"
