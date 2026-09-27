@@ -1,0 +1,1030 @@
+openapi: 3.0.3
+
+info:
+  title: MASAR API
+  version: 1.0.0
+  description: |
+    REST API for MASAR, a platform connecting students with companies that offer
+    training and internship opportunities.
+
+    - All request and response bodies are JSON unless noted.
+    - Authentication uses a JWT access token (Bearer) plus an HttpOnly refresh
+      cookie. Cookie-based state-changing requests must also send the CSRF
+      header (`X-CSRF-Token` by default).
+    - Paths below are relative to the server URL, which already includes `/api/v1`.
+    - See `docs/api/*.md` for field-level detail per domain and `ERRORS.md` for
+      the error envelope.
+  contact:
+    name: MASAR Backend
+
+servers:
+  - url: http://localhost/Masar/backend/api/v1
+    description: Local Laragon development
+
+tags:
+  - name: Health
+  - name: Authentication
+  - name: Users
+  - name: Students
+  - name: Companies
+  - name: Trainings
+  - name: Applications
+  - name: Certificates
+  - name: Files
+  - name: Notifications
+  - name: Messaging
+  - name: Search
+  - name: Lookups
+  - name: Admin
+
+security:
+  - bearerAuth: []
+
+paths:
+  /:
+    get:
+      tags: [Health]
+      summary: API discovery / root
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /health:
+    get:
+      tags: [Health]
+      summary: Service health check
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a new user account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '201': { $ref: '#/components/responses/AuthSuccess' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Authenticate an existing user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/AuthSuccess' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Issue a new access token from the refresh cookie
+      security:
+        - refreshCookie: []
+          csrfToken: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Invalidate the current session
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get the currently authenticated user
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/change-password:
+    post:
+      tags: [Authentication]
+      summary: Change the authenticated user's password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChangePasswordRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /auth/forgot-password:
+    post:
+      tags: [Authentication]
+      summary: Start password recovery
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /auth/resend-reset-otp:
+    get:
+      tags: [Authentication]
+      summary: Resend the password-reset OTP
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    post:
+      tags: [Authentication]
+      summary: Resend the password-reset OTP
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /auth/verify-reset-otp:
+    post:
+      tags: [Authentication]
+      summary: Verify the password-reset OTP
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /auth/reset-password:
+    post:
+      tags: [Authentication]
+      summary: Reset a password using a valid reset token
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /auth/google:
+    get:
+      tags: [Authentication]
+      summary: Start Google OAuth flow
+      security: []
+      responses:
+        '302': { description: Redirect to Google }
+
+  /auth/google/callback:
+    get:
+      tags: [Authentication]
+      summary: Google OAuth callback
+      security: []
+      responses:
+        '302': { description: Redirect back to the frontend }
+
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get the current user profile
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    put:
+      tags: [Users]
+      summary: Update the current user profile
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Users]
+      summary: Delete the current user account
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Get a user by id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /students/me:
+    get:
+      tags: [Students]
+      summary: Get the authenticated student's profile
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /students/{id}:
+    get:
+      tags: [Students]
+      summary: Get a student by id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /students/profile:
+    post:
+      tags: [Students]
+      summary: Create the student profile
+      responses:
+        '201': { $ref: '#/components/responses/AuthSuccess' }
+    put:
+      tags: [Students]
+      summary: Update the student profile
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /students/profile/status:
+    get:
+      tags: [Students]
+      summary: Get student profile completion status
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /students/profile/complete:
+    post:
+      tags: [Students]
+      summary: Mark the student profile as complete
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /students/me/skills:
+    get:
+      tags: [Students]
+      summary: List the student's skills
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    post:
+      tags: [Students]
+      summary: Add a skill
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+    put:
+      tags: [Students]
+      summary: Update the student's skills
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    delete:
+      tags: [Students]
+      summary: Remove a skill
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /students/me/cv:
+    get:
+      tags: [Students]
+      summary: Get the student's CV metadata
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    post:
+      tags: [Students]
+      summary: Upload the student's CV
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Students]
+      summary: Delete the student's CV
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /companies:
+    post:
+      tags: [Companies]
+      summary: Create a company profile
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /companies/{id}:
+    get:
+      tags: [Companies]
+      summary: Get a public company profile
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /companies/me:
+    get:
+      tags: [Companies]
+      summary: Get the authenticated company profile
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    put:
+      tags: [Companies]
+      summary: Update the authenticated company profile
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /companies/me/logo:
+    post:
+      tags: [Companies]
+      summary: Upload the company logo
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                logo: { type: string, format: binary }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /trainings/list:
+    get:
+      tags: [Trainings]
+      summary: List / browse trainings
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /trainings/create:
+    post:
+      tags: [Trainings]
+      summary: Create a training
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /trainings/update:
+    put:
+      tags: [Trainings]
+      summary: Update a training
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    patch:
+      tags: [Trainings]
+      summary: Update a training (partial)
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /trainings/delete:
+    delete:
+      tags: [Trainings]
+      summary: Delete a training
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /trainings/details/{id}:
+    get:
+      tags: [Trainings]
+      summary: Get training details
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /trainings/saved/list:
+    get:
+      tags: [Trainings]
+      summary: List the student's saved trainings
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /trainings/save/{id}:
+    post:
+      tags: [Trainings]
+      summary: Save a training
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /trainings/unsave/{id}:
+    delete:
+      tags: [Trainings]
+      summary: Remove a saved training
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /applications:
+    get:
+      tags: [Applications]
+      summary: List applications
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    post:
+      tags: [Applications]
+      summary: Submit an application
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /applications/applied:
+    get:
+      tags: [Applications]
+      summary: List the student's applied applications
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /applications/accepted:
+    get:
+      tags: [Applications]
+      summary: List accepted applications
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /applications/rejected:
+    get:
+      tags: [Applications]
+      summary: List rejected applications
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /applications/withdrawn:
+    get:
+      tags: [Applications]
+      summary: List withdrawn applications
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /applications/all:
+    get:
+      tags: [Applications]
+      summary: List all applications (admin)
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /applications/certificates:
+    get:
+      tags: [Applications]
+      summary: List applications that resulted in certificates
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /applications/accept:
+    post:
+      tags: [Applications]
+      summary: Accept a submitted application
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /applications/reject:
+    post:
+      tags: [Applications]
+      summary: Reject a submitted application
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /applications/withdraw:
+    post:
+      tags: [Applications]
+      summary: Withdraw an application
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /applications/{id}:
+    get:
+      tags: [Applications]
+      summary: Get an application by id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /applications/{id}/cv:
+    get:
+      tags: [Applications]
+      summary: Download the CV attached to an application
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: CV file stream
+          content:
+            application/pdf: { schema: { type: string, format: binary } }
+            application/msword: { schema: { type: string, format: binary } }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /applications/{id}/payment:
+    get:
+      tags: [Applications]
+      summary: Get payment information for an application
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    post:
+      tags: [Applications]
+      summary: Submit payment for an application
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /applications/{id}/payment/confirm:
+    post:
+      tags: [Applications]
+      summary: Confirm payment for an application
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /certificates:
+    get:
+      tags: [Certificates]
+      summary: List certificates
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    post:
+      tags: [Certificates]
+      summary: Request a certificate
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /certificates/eligible:
+    get:
+      tags: [Certificates]
+      summary: List trainings the student is eligible to certify
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /certificates/pending:
+    get:
+      tags: [Certificates]
+      summary: List pending certificates
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /certificates/issued:
+    get:
+      tags: [Certificates]
+      summary: List issued certificates
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /certificates/revoked:
+    get:
+      tags: [Certificates]
+      summary: List revoked certificates
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /certificates/search:
+    get:
+      tags: [Certificates]
+      summary: Search certificates
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /certificates/statistics:
+    get:
+      tags: [Certificates]
+      summary: Certificate statistics (admin)
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /certificates/{id}:
+    get:
+      tags: [Certificates]
+      summary: Get a certificate by id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /certificates/{id}/verify:
+    get:
+      tags: [Certificates]
+      summary: Verify a certificate by id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /certificates/{id}/confirm:
+    post:
+      tags: [Certificates]
+      summary: Approve/confirm a certificate
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /certificates/{id}/revoke:
+    post:
+      tags: [Certificates]
+      summary: Revoke a certificate
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /files:
+    get:
+      tags: [Files]
+      summary: List files owned by the current user
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    post:
+      tags: [Files]
+      summary: Upload a single file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /files/multiple:
+    post:
+      tags: [Files]
+      summary: Upload multiple files
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items: { type: string, format: binary }
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+
+  /files/{id}:
+    get:
+      tags: [Files]
+      summary: Get file metadata
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Files]
+      summary: Delete a file
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /files/{id}/download:
+    get:
+      tags: [Files]
+      summary: Download a file through the controlled endpoint
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: File stream
+          content:
+            application/octet-stream: { schema: { type: string, format: binary } }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: List notifications for the current user
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /notifications/unread-count:
+    get:
+      tags: [Notifications]
+      summary: Get the unread notification count
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /notifications/read-all:
+    post:
+      tags: [Notifications]
+      summary: Mark all notifications as read
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /notifications/{id}:
+    get:
+      tags: [Notifications]
+      summary: Get a notification
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Notifications]
+      summary: Delete a notification
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /notifications/{id}/read:
+    post:
+      tags: [Notifications]
+      summary: Mark a notification as read
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /conversations:
+    get:
+      tags: [Messaging]
+      summary: List conversations for the current user
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    post:
+      tags: [Messaging]
+      summary: Start a conversation
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+
+  /conversations/{id}:
+    get:
+      tags: [Messaging]
+      summary: Get a conversation
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /conversations/{id}/messages:
+    get:
+      tags: [Messaging]
+      summary: List messages in a conversation
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    post:
+      tags: [Messaging]
+      summary: Send a message in a conversation
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /search:
+    get:
+      tags: [Search]
+      summary: Unified search
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /search/users:
+    get:
+      tags: [Search]
+      summary: Search users
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /search/companies:
+    get:
+      tags: [Search]
+      summary: Search companies
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /search/trainings:
+    get:
+      tags: [Search]
+      summary: Search trainings
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /search/students:
+    get:
+      tags: [Search]
+      summary: Search students
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /search/certificates:
+    get:
+      tags: [Search]
+      summary: Search certificates
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /search/suggestions:
+    get:
+      tags: [Search]
+      summary: Search suggestions
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /search/recent:
+    get:
+      tags: [Search]
+      summary: List recent searches
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    delete:
+      tags: [Search]
+      summary: Clear recent searches
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /lookups/study-fields:
+    get:
+      tags: [Lookups]
+      summary: List study fields
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /lookups/specializations:
+    get:
+      tags: [Lookups]
+      summary: List specializations
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /lookups/study-fields/{id}/specializations:
+    get:
+      tags: [Lookups]
+      summary: List specializations for a study field
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /admin/dashboard:
+    get:
+      tags: [Admin]
+      summary: Admin dashboard summary
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/students/{id}/delete:
+    delete:
+      tags: [Admin]
+      summary: Delete a student (admin)
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    refreshCookie:
+      type: apiKey
+      in: cookie
+      name: MASAR_REFRESH
+      description: HttpOnly refresh-token cookie
+    csrfToken:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+      description: Required for cookie-based state-changing requests
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+
+  schemas:
+    SuccessEnvelope:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        message: { type: string, nullable: true }
+        data: { type: object, nullable: true }
+    ErrorEnvelope:
+      type: object
+      properties:
+        success: { type: boolean, example: false }
+        message: { type: string }
+        errors: { type: object, nullable: true }
+    ValidationErrors:
+      type: object
+      properties:
+        success: { type: boolean, example: false }
+        message: { type: string, example: Validation failed. }
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items: { type: string }
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string, format: email }
+        role: { type: string, enum: [admin, super_admin, student, company, trainer, moderator, employee] }
+        status: { type: string, enum: [active, inactive, suspended, pending] }
+    RegisterRequest:
+      type: object
+      required: [full_name, email, password, password_confirmation, accept_terms, role]
+      properties:
+        full_name: { type: string }
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+        password_confirmation: { type: string, format: password }
+        accept_terms: { type: boolean }
+        role: { type: string, enum: [student, company] }
+        field: { type: string, description: Required for students; must match seeded lookup }
+        specialization: { type: string, description: Required for students; must match seeded lookup }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+    ChangePasswordRequest:
+      type: object
+      required: [current_password, password, password_confirmation]
+      properties:
+        current_password: { type: string, format: password }
+        password: { type: string, format: password }
+        password_confirmation: { type: string, format: password }
+
+  responses:
+    Success:
+      description: Successful operation
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/SuccessEnvelope' }
+    AuthSuccess:
+      description: Authenticated successfully (access token returned; refresh cookie set)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/SuccessEnvelope' }
+    NoContent:
+      description: No content
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ValidationErrors' }
+    Unauthorized:
+      description: Authentication required or invalid
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    Forbidden:
+      description: Authenticated but not permitted
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    RateLimited:
+      description: Too many requests
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }

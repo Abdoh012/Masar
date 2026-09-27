@@ -1,0 +1,59 @@
+name: Security
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/security.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/security.yml'
+  schedule:
+    - cron: '0 6 * * 1'
+
+jobs:
+  audit:
+    name: Dependency and secret audit
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+          tools: composer:v2
+
+      - name: Validate composer.json
+        run: composer validate --no-check-publish
+
+      - name: Composer audit
+        run: composer audit --no-interaction
+
+      - name: Ensure .env is not committed
+        shell: bash
+        run: |
+          if git ls-files --error-unmatch .env >/dev/null 2>&1; then
+            echo "::error::.env must never be committed"
+            exit 1
+          fi
+
+      - name: Scan tracked files for high-confidence secrets
+        shell: bash
+        run: |
+          pattern='(BEGIN (RSA|EC|OPENSSH|DSA|PGP) PRIVATE KEY|AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|AIza[0-9A-Za-z_\-]{35}|xox[baprs]-[0-9A-Za-z-]+|ghp_[0-9A-Za-z]{36})'
+          matches=$(git grep -nIE "$pattern" -- . ':!composer.lock' || true)
+          if [ -n "$matches" ]; then
+            echo "$matches"
+            echo "::error::Potential secret detected in tracked files"
+            exit 1
+          fi
+          echo "No high-confidence secrets detected."

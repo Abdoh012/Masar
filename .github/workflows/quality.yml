@@ -1,0 +1,64 @@
+name: Quality
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/quality.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/quality.yml'
+
+jobs:
+  static-analysis:
+    name: Static analysis and style
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo_mysql, openssl, curl, fileinfo
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Download PHPStan
+        run: curl -sSL -o /tmp/phpstan.phar https://github.com/phpstan/phpstan/releases/latest/download/phpstan.phar
+
+      # The codebase currently exceeds a zero-error PHPStan baseline, so this
+      # step reports findings (via GitHub annotations) without failing the job.
+      # Remove continue-on-error once the baseline is clean.
+      - name: PHPStan
+        continue-on-error: true
+        run: php /tmp/phpstan.phar analyse -c phpstan.neon --no-progress --error-format=github
+
+      - name: Download PHP-CS-Fixer
+        run: curl -sSL -o /tmp/php-cs-fixer.phar https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/latest/download/php-cs-fixer.phar
+
+      # Informational until the codebase is brought to the configured style.
+      - name: PHP-CS-Fixer (dry run)
+        continue-on-error: true
+        run: php /tmp/php-cs-fixer.phar fix --config=.php-cs-fixer.dist.php --dry-run --diff --using-cache=no
+
+      - name: Lint config PHP files
+        run: php -l .php-cs-fixer.dist.php
+
+      - name: Validate JSON and YAML
+        shell: bash
+        run: |
+          for json in composer.json MASAR.json; do
+            php -r "json_decode(file_get_contents('$json'), true, 512, JSON_THROW_ON_ERROR); echo '$json OK' . PHP_EOL;"
+          done
+          python3 -c "import glob, yaml; [yaml.safe_load(open(f, encoding='utf-8')) for f in sorted(glob.glob('config/*.yml')) + ['openapi.yaml']]; print('YAML OK')"

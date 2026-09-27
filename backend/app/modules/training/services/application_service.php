@@ -883,7 +883,8 @@ function application_service_enrich_application(
         );
 
     $application['remaining_days'] =
-        training_calculate_remaining_days(
+        application_calculate_remaining_days(
+            $application['training_starts_at'] ?? null,
             $application['training_ends_at'] ?? null
         );
 

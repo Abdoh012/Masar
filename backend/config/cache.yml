@@ -1,0 +1,54 @@
+# MASAR Backend - Cache configuration (reference)
+#
+# The backend has no YAML configuration loader: runtime configuration is read
+# from .env via getenv() in app/config/*.php. This file documents the cache
+# behaviour that actually exists in code, plus proposed defaults for the future.
+# `status: implemented` is enforced by code; `status: proposed` is not wired yet.
+#
+# Code references:
+#   app/shared/functions/security.php  (file-backed rate-limit cache)
+#   phpstan.neon                       (tooling cache)
+
+version: 1
+default: file
+
+stores:
+  file:
+    status: implemented
+    driver: filesystem
+    root: storage/cache
+
+    rate_limit:
+      status: implemented
+      directory: storage/cache/security
+      format: json
+      filename: "{action}-md5({identifier}).json"
+      lock: true
+      ttl_source: window_seconds
+      tiers:
+        global:  { max_requests: 200, window_seconds: 60 }
+        ip:      { max_requests: 30,  window_seconds: 60 }
+        user:    { max_requests: 20,  window_seconds: 300 }
+        endpoint: { max_requests: 50,  window_seconds: 60 }
+        sensitive: { max_requests: 5, window_seconds: 900 }
+
+  phpstan:
+    status: tooling
+    driver: filesystem
+    root: storage/cache/phpstan
+    cleanup: safe to delete at any time
+
+  application:
+    status: proposed
+    driver: filesystem
+    root: storage/cache/app
+    default_ttl: 300
+    namespaces:
+      lookups: 3600
+      trainings: 120
+      search: 60
+
+env:
+  CACHE_DIR:
+    status: legacy
+    note: listed in .env.example but not read by app/config today

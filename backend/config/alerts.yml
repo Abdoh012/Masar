@@ -1,0 +1,56 @@
+# MASAR Backend - Alerts configuration (reference)
+#
+# The backend does not send alerts itself. This file is a proposed operational
+# baseline to be consumed by an external log scraper / monitoring service.
+# All entries are `status: proposed` unless noted otherwise.
+
+version: 1
+
+channels:
+  email:
+    status: proposed
+    env: [MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD, MAIL_FROM_ADDRESS]
+  webhook:
+    status: proposed
+    note: post a JSON payload to an incident-management endpoint
+
+thresholds:
+  http_5xx:
+    status: proposed
+    window: 5m
+    count: 10
+    severity: critical
+    source: storage/logs/app.log
+
+  failed_logins:
+    status: proposed
+    window: 15m
+    count: 20
+    severity: high
+    source: audit_logs
+
+  rate_limit_hits:
+    status: proposed
+    window: 5m
+    count: 50
+    severity: medium
+    source: storage/logs/app.log
+
+  certificate_issuance_failures:
+    status: proposed
+    window: 1h
+    count: 5
+    severity: high
+    source: audit_logs
+
+  cron_missed:
+    status: proposed
+    window: 1h
+    count: 1
+    severity: high
+    note: expected run window per cron job
+
+  disk_or_storage_writable:
+    status: proposed
+    severity: critical
+    note: storage/ and storage/cache must remain writable by the web user

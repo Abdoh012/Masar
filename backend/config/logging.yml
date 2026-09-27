@@ -1,0 +1,57 @@
+# MASAR Backend - Logging configuration (reference)
+#
+# Runtime configuration is read from .env via getenv(); this file documents the
+# logging behaviour implemented in code and proposed defaults.
+#
+# Code references:
+#   app/core/logging/logger.php  (logger_write + level helpers)
+#   public/index.php             (request_debug.log)
+
+version: 1
+default: file
+
+channels:
+  app:
+    status: implemented
+    driver: filesystem
+    path: storage/logs/app.log
+    writer: logger_write()
+    levels:
+      - debug
+      - info
+      - warning
+      - error
+      - exception
+      - security
+      - database_error
+
+  request_debug:
+    status: implemented
+    driver: filesystem
+    path: storage/logs/request_debug.log
+    writer: public/index.php
+    note: request tracing aid; keep disabled or trimmed in production
+
+rotation:
+  status: proposed
+  strategy: daily
+  keep_days: 14
+  compress: true
+
+redaction:
+  status: implemented
+  never_log:
+    - passwords
+    - jwt access tokens
+    - refresh tokens
+    - password-reset and OTP codes
+    - oauth authorization codes and state
+    - full payment credentials
+
+env:
+  APP_DEBUG:
+    status: implemented
+    note: controls error verbosity and whether internals are included in responses
+  LOG_DIR:
+    status: legacy
+    note: listed in .env.example but not read by app/config today; path is fixed at storage/logs

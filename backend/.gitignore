@@ -21,6 +21,11 @@
 /storage/uploads/*
 /storage/certificates/*
 
+# Runtime uploads written by app/core/helpers/upload.php
+/app/storage/uploads/*
+/app/storage/cache/*
+/app/storage/logs/*
+
 # Keep required directories
 
 !/storage/logs/.gitkeep
@@ -72,18 +77,13 @@ postman/
 
 *.generated.php
 
-# Uploads
+# Loose upload artifacts written outside /storage/uploads (e.g. manual test files)
 
-*.jpg
-*.jpeg
-*.png
-*.gif
-*.webp
-*.pdf
+/uploads/
 
-# Certificates
+# Quality tool caches
 
-/storage/certificates/*
+.php-cs-fixer.cache
 
 # Backup files
 

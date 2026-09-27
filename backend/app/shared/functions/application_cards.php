@@ -110,6 +110,88 @@ function application_status_message(
 
 /*
 |--------------------------------------------------------------------------
+| Application Remaining Days (Countdown Within The Training Period)
+|--------------------------------------------------------------------------
+|
+| Counts the calendar days still to run INSIDE the training period itself, so
+| the countdown is measured from starts_at and never from now:
+|
+|   now < starts_at     -> the full fixed duration; the training has not begun
+|   starts_at <= now    -> duration minus the whole calendar days elapsed
+|   now >= ends_at      -> 0, and never negative
+|
+| This is intentionally NOT training_calculate_remaining_days(ends_at), the
+| plain "now -> end" countdown the Training APIs use. That one over-reports a
+| training that has not started: for starts_at 2026-09-30 / ends_at
+| 2026-10-15 it answers 18 on 2026-09-27 even though the training is only 15
+| days long, because the three pre-start days are counted as remaining time.
+| Bounding the countdown by starts_at keeps remaining_days inside
+| [0, duration] and answers the question an application card actually asks -
+| how much of the training is still ahead of this student.
+|
+| Calendar-day arithmetic and the timezone convention are inherited unchanged
+| from training_calculate_duration(): the dates are truncated with
+| date('Y-m-d') and compared as whole days in PHP's default timezone, so
+| `duration` and `remaining_days` can never disagree about how long the
+| training is. No timezone conversion is introduced here.
+|
+| Returns null when either date is missing or unparseable, matching
+| training_calculate_duration(). When starts_at is absent the beginning of the
+| period is unknown, so the unbounded "now -> ends_at" countdown is kept rather
+| than inventing a bound - the behaviour before this helper existed.
+|
+*/
+
+function application_calculate_remaining_days(
+    ?string $starts_at,
+    ?string $ends_at
+): ?int {
+
+    $duration = training_calculate_duration(
+        $starts_at,
+        $ends_at
+    );
+
+    $start_timestamp = empty( $starts_at ) ? false : @strtotime( $starts_at );
+
+    if (
+        $duration === null
+        ||
+        $start_timestamp === false
+    ) {
+        return training_calculate_remaining_days( $ends_at );
+    }
+
+    $today_start = strtotime( 'today' );
+
+    if ( $today_start === false ) {
+        return null;
+    }
+
+    $start_day = new DateTime(
+        date( 'Y-m-d', $start_timestamp )
+    );
+
+    $today_day = new DateTime(
+        date( 'Y-m-d', $today_start )
+    );
+
+    // Signed whole-day gap. Negative while the training is still in the
+    // future, meaning nothing has elapsed yet.
+    $elapsed = (int) $start_day->diff( $today_day )->format( '%r%a' );
+
+    if ( $elapsed <= 0 ) {
+        return $duration;
+    }
+
+    $remaining = $duration - $elapsed;
+
+    return $remaining > 0 ? $remaining : 0;
+}
+
+
+/*
+|--------------------------------------------------------------------------
 | Applied Application Card
 |--------------------------------------------------------------------------
 |
@@ -186,7 +268,8 @@ function application_applied_card(
             ),
 
         'remaining_days' =>
-            training_calculate_remaining_days(
+            application_calculate_remaining_days(
+                $item['starts_at'] ?? null,
                 $item['ends_at'] ?? null
             ),
 
@@ -630,7 +713,8 @@ function application_accepted_card(
             ),
 
         'remaining_days' =>
-            training_calculate_remaining_days(
+            application_calculate_remaining_days(
+                $item['starts_at'] ?? null,
                 $item['ends_at'] ?? null
             ),
 
@@ -956,7 +1040,8 @@ function application_rejected_card(
             ),
 
         'remaining_days' =>
-            training_calculate_remaining_days(
+            application_calculate_remaining_days(
+                $item['starts_at'] ?? null,
                 $item['ends_at'] ?? null
             ),
     ];
@@ -1094,7 +1179,8 @@ function application_withdrawn_card(
             ),
 
         'remaining_days' =>
-            training_calculate_remaining_days(
+            application_calculate_remaining_days(
+                $item['starts_at'] ?? null,
                 $item['ends_at'] ?? null
             ),
     ];
