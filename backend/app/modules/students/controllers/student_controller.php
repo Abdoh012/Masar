@@ -38,6 +38,40 @@ require_once __DIR__ . '/../../../modules/files/repositories/file_repository.php
 
 /*
 |--------------------------------------------------------------------------
+| Get My Student Dashboard
+|--------------------------------------------------------------------------
+|
+| GET /api/v1/students/dashboard
+|
+*/
+
+function student_dashboard(): void
+{
+    $user = auth_user();
+
+    if (!$user) {
+        response_unauthorized( 'Authentication required.' );
+        return;
+    }
+
+    if ( ($user['role'] ?? '') !== 'student' ) {
+        response_forbidden( 'Only students can access this resource.' );
+        return;
+    }
+
+    $result = student_service_dashboard( (int) $user['id'] );
+
+    if ( isset($result['error']) && $result['error'] === true ) {
+        response_error( $result['message'] ?? 'Unable to load dashboard.', $result['status'] ?? 404 );
+        return;
+    }
+
+    response_success( $result['data'] ?? []);
+}
+
+
+/*
+|--------------------------------------------------------------------------
 | Get My Student Profile
 |--------------------------------------------------------------------------
 |

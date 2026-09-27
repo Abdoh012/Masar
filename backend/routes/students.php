@@ -83,6 +83,12 @@ if ($path === '/api/v1/students/me/cv' && $method === 'DELETE') {
     return;
 }
 
+if ($path === '/api/v1/students/dashboard' && $method === 'GET') {
+    middleware_student();
+    student_dashboard();
+    return;
+}
+
 if (preg_match('#^/api/v1/students/([0-9]+)$#', $path, $matches) && $method === 'GET') {
     middleware_auth();
     student_show((int) $matches[1]);

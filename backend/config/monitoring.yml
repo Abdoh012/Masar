@@ -1,0 +1,59 @@
+# MASAR Backend - Monitoring configuration (reference)
+#
+# The backend exposes a health endpoint and writes structured logs; it does not
+# run an internal metrics agent. This file documents observable surfaces and
+# proposed probes for an external monitoring stack.
+#
+# Code references:
+#   routes/api.php      (GET /api/v1/health)
+#   cron/*.php          (scheduled jobs)
+#   routes/cron.php     (HTTP cron hook: /cron, /cron/run)
+
+version: 1
+
+health:
+  status: implemented
+  endpoint: GET /api/v1/health
+  auth: none
+  response_envelope:
+    success: true
+    message: "API is healthy."
+    data: { status: ok }
+
+jobs:
+  status: implemented
+  runner: app/core/cron/runner.php
+  scheduled:
+    - close_expired_trainings.php
+    - expire_trial_periods.php
+    - send_expiry_notifications.php
+    - cleanup_temp_files.php
+    - cleanup_expired_tokens.php
+  http_hook:
+    paths: [/cron, /cron/run]
+    note: gate this behind a secret and/or deny public access in production
+
+signals:
+  logs:
+    - storage/logs/app.log
+    - storage/logs/request_debug.log
+  rate_limit_store: storage/cache/security
+  audit_table: audit_logs
+
+probes:
+  database:
+    status: proposed
+  storage_writable:
+    status: proposed
+  disk_space:
+    status: proposed
+  cron_last_run:
+    status: proposed
+  queue_or_backlog:
+    status: not_applicable
+    note: no queue system is present in the backend
+
+env:
+  APP_ENV:
+    status: implemented
+    note: used by rate limiting and error verbosity
