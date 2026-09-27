@@ -1,16 +1,24 @@
 // Role-level types for the applications student role (structure rules §14).
 
-export type TrainingMode = "paid_trial" | "part_time" | "full_time";
+/** Delivery format as stored on a training — the mode pill's vocabulary. */
+export type TrainingDeliveryMode = "in_person" | "remote" | "hybrid";
 
-export interface ActiveApplication {
-  id: string;
+/** What the dashboard's Active Training section renders: the student's latest
+ *  accepted application and the training behind it (the `active_training`
+ *  block of GET /students/dashboard), or null when they have never been
+ *  accepted. Dates keep the ISO-8601 + UTC offset the API sends, so
+ *  lib/training-progress.ts can resolve them without re-zoning. */
+export interface ActiveTrainingView {
+  id: number;
   company: string;
   listingTitle: string;
-  mode: TrainingMode;
-  /** Full trial length in days — the countdown ring's denominator. */
-  trialDays?: number;
-  trialDaysRemaining?: number;
-  startedOn: string;
+  deliveryMode: TrainingDeliveryMode;
+  isPaid: boolean;
+  startsAt: string | null;
+  endsAt: string | null;
+  /** The backend's calendar-day countdown — the copy the card states out loud.
+   *  Not the progress bar's source; see lib/training-progress.ts. */
+  remainingDays: number | null;
 }
 
 export type ApplicationStatus = "Applied" | "Accepted" | "Rejected" | "Withdrawn";
@@ -123,7 +131,12 @@ export interface EndedApplication {
   studentName: string;
 }
 
+/** The snapshot's four status counts plus the backend's overall total, read off
+ *  `applications_snapshot`. `total` is what decides the section's empty state
+ *  (a student with no applications at all), so it travels with the counts
+ *  rather than as a separate prop. */
 export interface StatusCounts {
+  total: number;
   applied: number;
   accepted: number;
   rejected: number;
@@ -131,11 +144,14 @@ export interface StatusCounts {
 }
 
 export interface RecentApplicationRow {
-  id: string;
+  id: number;
   companyName: string;
   listingTitle: string;
   status: ApplicationStatus;
-  appliedOn: string;
+  /** ISO-8601 of the row's most recent lifecycle action (the status's own
+   *  timestamp, falling back to applied_at). Kept raw so the row formats it
+   *  with the section's own date helper. */
+  dateOn: string | null;
 }
 
 // --- Training application wizard (3-step apply form) ---

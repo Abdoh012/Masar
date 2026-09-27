@@ -1,11 +1,19 @@
 // Role-level types for the profiles student (structure rules §14).
 
-export interface StudentProfile {
+/** The identity block at the top of the student dashboard: the student's own
+ *  name, academic line and the backend-computed profile completion. Fed by the
+ *  dashboard orchestrator from GET /students/dashboard (`student`), so nothing
+ *  here is a mock. */
+export interface ProfileHeaderStudent {
   name: string;
-  field: string;
+  /** Study field name; null when the student hasn't set one. */
+  field: string | null;
+  /** "Faculty · University" as one line, or null when neither is set. */
+  studies: string | null;
   initials: string;
-  isComplete: boolean;
-  studies?: string;
+  /** Profile completion, 0..100, exactly as the backend computed it
+   *  (`student.profile_completion.percentage`). Never derived on the client. */
+  completion: number;
 }
 
 // The identity block at the top of /profile. There is no profile read endpoint

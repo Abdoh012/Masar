@@ -1,152 +1,25 @@
-import type { ListingCardData } from "@/features/listings/shared/types";
+// Copy and limits for the dashboard's recommended-trainings section.
 
-// Dashboard "Recommended trainings" section copy (FR-022 consumer).
+// How many rows the dashboard shows. The backend already caps its
+// recommendation selection, so this is a defensive ceiling rather than the
+// section's source of truth — it guarantees the section can never grow into a
+// second browse grid.
+export const RECOMMENDED_LIMIT = 2;
+
 export const RECOMMENDED_LABELS = {
   title: "Recommended trainings",
   viewAll: "View all",
-};
+} as const;
 
-// The dashboard is a summary, not the browse grid: two rows read as a
-// recommendation, four read as a second browse page. Slice the set rather than
-// trimming the data, so the same mock pool still feeds anything that wants all
-// of it.
-export const RECOMMENDED_LIMIT = 2;
+// Empty state — rendered when the backend finds no training matching the
+// student's specialization (which is also the case for a student whose profile
+// is still incomplete).
+export const RECOMMENDED_EMPTY = {
+  title: "No recommendations yet",
+  message: "Complete your profile and we'll match you with relevant trainings.",
+} as const;
 
-// Field-matched mock listings for "Software Engineering" students, reshaped
-// to the shared ListingCardData (FR-022 dashboard consumer migration, R-9).
-// companyName is a UI-only display field resolved from companyId later.
-
-export const RECOMMENDED_LISTINGS: ListingCardData[] = [
-  {
-    id: "36",
-    applicationDeadline: "2026-10-15",
-    companyId: "c-sawari",
-    companyName: "Sawari Digital",
-    field: "Software Engineering",
-    specialization: "Spring Boot Engineer Trainee",
-    mode: "hands_on",
-    format: "hybrid",
-    hireIntent: true,
-    isPaid: true,
-    price: 180,
-    trialDays: 7,
-    status: "published",
-    createdAt: "2026-08-01",
-    updatedAt: "2026-08-01",
-  },
-  {
-    id: "41",
-    applicationDeadline: "2026-11-02",
-    companyId: "c-mobica",
-    companyName: "Mobica Alexandria",
-    field: "Software Engineering",
-    specialization: "React Frontend Intern",
-    mode: "observer",
-    format: "in_person",
-    hireIntent: false,
-    isPaid: false,
-    status: "published",
-    createdAt: "2026-08-04",
-    updatedAt: "2026-08-04",
-  },
-  {
-    id: "52",
-    applicationDeadline: "2026-10-28",
-    companyId: "c-startapp",
-    companyName: "StartApp Hub",
-    field: "Software Engineering",
-    specialization: "Quality & Test Engineer Program",
-    mode: "hands_on",
-    format: "remote",
-    hireIntent: true,
-    isPaid: false,
-    status: "published",
-    createdAt: "2026-08-06",
-    updatedAt: "2026-08-06",
-  },
-  {
-    id: "63",
-    applicationDeadline: "2026-11-20",
-    companyId: "c-clouditech",
-    companyName: "CloudiTech",
-    field: "Software Engineering",
-    specialization: "DevOps Apprentice",
-    mode: "project_based",
-    format: "hybrid",
-    hireIntent: true,
-    isPaid: true,
-    price: 240,
-    trialDays: 14,
-    status: "published",
-    createdAt: "2026-08-08",
-    updatedAt: "2026-08-08",
-  },
-];
-
-// Fallback (general/newest) used when the student's field has no listings.
-export const FALLBACK_LISTINGS: ListingCardData[] = [
-  {
-    id: "70",
-    applicationDeadline: "2026-10-09",
-    companyId: "c-brightlocal",
-    companyName: "BrightLocal Media",
-    field: "Marketing",
-    specialization: "Digital Marketing Trainee",
-    mode: "observer",
-    format: "remote",
-    hireIntent: false,
-    isPaid: false,
-    status: "published",
-    createdAt: "2026-08-02",
-    updatedAt: "2026-08-02",
-  },
-  {
-    id: "71",
-    applicationDeadline: "2026-11-11",
-    companyId: "c-meridian",
-    companyName: "Meridian Analytics",
-    field: "Data Science",
-    specialization: "Data Analyst Intern",
-    mode: "hands_on",
-    format: "hybrid",
-    hireIntent: true,
-    isPaid: true,
-    price: 150,
-    trialDays: 7,
-    status: "published",
-    createdAt: "2026-08-03",
-    updatedAt: "2026-08-03",
-  },
-  {
-    id: "72",
-    applicationDeadline: "2026-10-21",
-    companyId: "c-palette",
-    companyName: "Palette Studio",
-    field: "Design",
-    specialization: "UI/UX Design Apprentice",
-    mode: "project_based",
-    format: "in_person",
-    hireIntent: true,
-    isPaid: false,
-    status: "published",
-    createdAt: "2026-08-05",
-    updatedAt: "2026-08-05",
-  },
-  {
-    id: "73",
-    applicationDeadline: "2026-12-01",
-    companyId: "c-orbit",
-    companyName: "Orbit Software",
-    field: "Software Engineering",
-    specialization: "Frontend Developer Program",
-    mode: "hands_on",
-    format: "remote",
-    hireIntent: true,
-    isPaid: true,
-    price: 200,
-    trialDays: 7,
-    status: "published",
-    createdAt: "2026-08-07",
-    updatedAt: "2026-08-07",
-  },
-];
+// The duration chip's suffix. The presenter sends whole days, so the label is
+// pluralised around the number rather than baked into it.
+export const DURATION_DAYS_SUFFIX = "days";
+export const DURATION_DAY_SUFFIX = "day";

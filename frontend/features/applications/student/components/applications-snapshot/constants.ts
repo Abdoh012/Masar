@@ -1,8 +1,10 @@
 import { Briefcase, Check, Undo2, X, type LucideIcon } from "lucide-react";
 
-import type { ApplicationStatus, RecentApplicationRow, StatusCounts } from "../../types";
+import type { ApplicationStatus, StatusCounts } from "../../types";
 
-// Mock applications-snapshot data (UI-only).
+// The four status tiles, in display order. The backend sends the counts as
+// `applications_snapshot.{applied,accepted,rejected,withdrawn}`; the labels and
+// their order are this section's own presentation concern.
 export const APPLICATION_STATUSES: ApplicationStatus[] = ["Applied", "Accepted", "Rejected", "Withdrawn"];
 
 // Single source for status pill classes — keeps the dashboard tiles, the recent
@@ -37,6 +39,17 @@ export const STATUS_COUNT_ACCENT_CLASSES: Record<ApplicationStatus, string> = {
   Withdrawn: "text-neutral-badge-fg",
 };
 
+// The status's own colour, painted as a full-height rail down the tile's left
+// edge. The rail is what carries the semantic meaning at a glance while the tile
+// surface itself stays neutral — four saturated panels side by side read as a
+// colour chart, and this keeps the number the loudest thing on the card.
+export const STATUS_RAIL_CLASSES: Record<ApplicationStatus, string> = {
+  Applied: "bg-primary",
+  Accepted: "bg-success-fg",
+  Rejected: "bg-error-fg",
+  Withdrawn: "bg-neutral-badge-fg",
+};
+
 // How the recent row's status pill differs from the default ApplicationStatusBadge
 // geometry. "Applied" through "Withdrawn" differ by two characters, which is
 // enough to make the right edge of the row jump around when the label changes,
@@ -53,39 +66,15 @@ export const STATUS_COUNT_KEYS: Record<ApplicationStatus, keyof StatusCounts> = 
   Withdrawn: "withdrawn",
 };
 
-export const STATUS_COUNTS: StatusCounts = {
-  applied: 4,
-  accepted: 1,
-  rejected: 2,
-  withdrawn: 1,
-};
+// Empty state copy — rendered when the backend reports no applications at all.
+export const SNAPSHOT_EMPTY = {
+  title: "No applications yet",
+  message: "Applications you submit will appear here.",
+} as const;
 
-export const RECENT_APPLICATIONS: RecentApplicationRow[] = [
-  {
-    id: "app-1042",
-    companyName: "Hala Bank",
-    listingTitle: "Software Engineering Trainee",
-    status: "Accepted",
-    appliedOn: "Jul 20, 2026",
-  },
-  {
-    id: "app-0991",
-    companyName: "NileGrants",
-    listingTitle: "Data Intern",
-    status: "Rejected",
-    appliedOn: "Jul 02, 2026",
-  },
-  {
-    id: "app-1010",
-    companyName: "Seera Digital",
-    listingTitle: "Frontend Intern",
-    status: "Withdrawn",
-    appliedOn: "Jun 28, 2026",
-  },
-];
-
-// Empty variant: zeroed counts + no rows → "No applications yet".
-export const APPLICATIONS_EMPTY: { counts: StatusCounts; rows: RecentApplicationRow[] } = {
-  counts: { applied: 0, accepted: 0, rejected: 0, withdrawn: 0 },
-  rows: [],
-};
+// Captions for the header's headline pair. The numbers themselves are the API's
+// (`total`, `acceptance_rate`); only the wording is this section's own.
+export const SNAPSHOT_TOTALS_LABELS = {
+  total: "total",
+  acceptanceRate: "accepted",
+} as const;

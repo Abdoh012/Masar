@@ -1,13 +1,13 @@
 import { Award, Briefcase, Info, type LucideIcon } from "lucide-react";
 
-import type { AppNotification } from "../../types";
+import type { AppNotification, NotificationType } from "../../types";
 
 // How each notification type is presented: its icon, the tint of that icon's
 // disc, and the accent colour of its title. Application updates carry brand
 // navy (primary), certificates the seal gold (secondary), and system notices
 // stay neutral so a routine message never competes with a real update.
 export const NOTIFICATION_TYPE_STYLES: Record<
-  AppNotification["type"],
+  NotificationType,
   { icon: LucideIcon; disc: string; title: string }
 > = {
   application: {
@@ -27,42 +27,54 @@ export const NOTIFICATION_TYPE_STYLES: Record<
   },
 };
 
-// The scroll window for the dashboard's notification feed. Capping it is what
-// keeps the Certificates + Notifications row a predictable height: without a
-// ceiling the taller card grows without bound and the shorter one is left with
-// dead space underneath. Sized for roughly four rows; `min-h-0` is what allows
-// a flex child to actually scroll instead of refusing to shrink.
-export const NOTIFICATIONS_SCROLL_AREA_CLASS =
-  "min-h-0 max-h-72 overflow-y-auto overscroll-contain pr-1";
+// The type an unrecognised notification falls back to. The data layer already
+// degrades unknown kinds to "system", so this is the second line of defence for
+// a caller that assembles rows by hand.
+export const DEFAULT_NOTIFICATION_TYPE: NotificationType = "system";
 
-// Mock notifications data (UI-only).
+export const NOTIFICATIONS_LABELS = {
+  title: "Recent notifications",
+} as const;
 
-export const RECENT_NOTIFICATIONS: AppNotification[] = [
-  {
-    id: "n-1",
-    type: "application",
-    title: "Application accepted",
-    body: "Hala Bank accepted your application for Software Engineering Trainee.",
-    timestamp: "2h ago",
-    unread: true,
-  },
-  {
-    id: "n-2",
-    type: "certificate",
-    title: "Certificate confirmed",
-    body: "Your Software Engineering certificate is verified.",
-    timestamp: "yesterday",
-    unread: true,
-  },
-  {
-    id: "n-3",
-    type: "system",
-    title: "New trainings match your field",
-    body: "New trainings were added to Recommended trainings.",
-    timestamp: "3d ago",
-    unread: false,
-  },
-];
+/** Relative time for a notification row, from the API's ISO-8601 timestamp.
+ *
+ *  Hand-written rather than pulled from a date library: this is the only place
+ *  the dashboard needs "how long ago", and it is a handful of comparisons. The
+ *  timestamp keeps its UTC offset and is parsed with `new Date()`, so the
+ *  result is correct in any host timezone. Boundaries step through
+ *  seconds → minutes → hours → days, and anything older than a week falls back
+ *  to an absolute date — beyond that "31 days ago" stops being useful, and a
+ *  month-old notification is better read as a date. */
+export function formatNotificationTime(createdAt: string): string {
+  if (!createdAt) return "";
 
-// Empty variant: empty array → "Nothing new".
-export const NOTIFICATIONS_EMPTY: AppNotification[] = [];
+  const timestamp = new Date(createdAt).getTime();
+  if (Number.isNaN(timestamp)) return "";
+
+  const elapsedSeconds = Math.floor((Date.now() - timestamp) / 1000);
+
+  // A timestamp in the future (clock skew between app and API) reads as "now"
+  // rather than as a negative age.
+  if (elapsedSeconds < 60) return "just now";
+
+  const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+  if (elapsedMinutes < 60) {
+    return `${elapsedMinutes}m ago`;
+  }
+
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  if (elapsedHours < 24) {
+    return `${elapsedHours}h ago`;
+  }
+
+  const elapsedDays = Math.floor(elapsedHours / 24);
+  if (elapsedDays < 7) {
+    return elapsedDays === 1 ? "yesterday" : `${elapsedDays}d ago`;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  }).format(new Date(timestamp));
+}

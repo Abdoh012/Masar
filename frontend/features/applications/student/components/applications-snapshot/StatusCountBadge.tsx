@@ -1,4 +1,9 @@
-import { STATUS_BADGE_CLASSES, STATUS_COUNT_ACCENT_CLASSES, STATUS_COUNT_ICONS } from "./constants";
+import {
+  STATUS_BADGE_CLASSES,
+  STATUS_COUNT_ACCENT_CLASSES,
+  STATUS_COUNT_ICONS,
+  STATUS_RAIL_CLASSES,
+} from "./constants";
 import type { ApplicationStatus } from "../../types";
 
 export interface StatusCountBadgeProps {
@@ -7,35 +12,56 @@ export interface StatusCountBadgeProps {
   status: ApplicationStatus;
 }
 
-// Leaf: one status count tile. A neutral lifted panel rather than a solid block
-// of colour — the icon and the number carry the status, so four tiles can sit
-// side by side without the section reading as a colour chart. The icon reuses
-// the pill's own bg/text pair, so tile and badge can never disagree.
-export function StatusCountBadge({ label, count, status }: StatusCountBadgeProps) {
+// Leaf: one status count tile. The count is the subject — it sits at the top of
+// the tile at display size, with the label beneath it as a quiet caption, and
+// the status icon beside it as support rather than as the focal point.
+//
+// The semantic colour is a full-height rail down the left edge instead of a
+// tinted panel: four coloured blocks side by side read as a colour chart, while
+// a rail keeps the surface neutral so the four counts can be compared as
+// numbers. The icon disc reuses the pill's own bg/text pair so the tile and the
+// badge elsewhere can never disagree.
+//
+// Compact by construction: no min-height and a horizontal layout, so a row of
+// four is one tight band instead of four tall boxes with dead space under the
+// label. `tabular-nums` stops the tile jittering as a count changes digits, and
+// the `overflow-hidden` clips the rail to the tile's rounded corners.
+export function StatusCountBadge({
+  label,
+  count,
+  status,
+}: StatusCountBadgeProps) {
   const Icon = STATUS_COUNT_ICONS[status];
 
   return (
-    <div className="flex min-h-28 flex-col justify-between gap-3 rounded-xl border border-border bg-background p-4 shadow-card transition-shadow duration-200 hover:shadow-card-md">
+    <div className="group relative flex items-center justify-between gap-3.5 overflow-hidden rounded-xl border border-border bg-background p-4 shadow-card transition-shadow duration-200 hover:shadow-card-md">
       <span
         className={
-          "flex size-9 items-center justify-center rounded-lg " +
-          STATUS_BADGE_CLASSES[status]
+          "absolute inset-y-0 left-0 w-1 " + STATUS_RAIL_CLASSES[status]
         }
-      >
-        <Icon aria-hidden="true" className="size-4" />
-      </span>
+      />
 
-      <div className="flex flex-col gap-1">
+      <div className="flex min-w-0 flex-col">
         <span
           className={
-            "text-3xl font-semibold leading-none tracking-tight " +
+            "text-3xl font-semibold leading-none tracking-tight tabular-nums " +
             STATUS_COUNT_ACCENT_CLASSES[status]
           }
         >
           {count}
         </span>
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        <span className="mt-1.5 truncate text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {label}
+        </span>
       </div>
+      <span
+        className={
+          "flex size-10 shrink-0 items-center justify-center rounded-xl " +
+          STATUS_BADGE_CLASSES[status]
+        }
+      >
+        <Icon className="size-5" />
+      </span>
     </div>
   );
 }

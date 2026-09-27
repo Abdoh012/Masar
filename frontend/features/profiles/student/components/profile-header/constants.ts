@@ -1,20 +1,18 @@
-import type { StudentProfile } from "../../types";
+// Copy for the dashboard's profile header (structure rules §14). The completion
+// percentage itself is not here — it comes from the backend, per render.
 
-export const PROFILE: StudentProfile = {
-  name: "Nour El-Sayed",
-  field: "Software Engineering",
-  initials: "NE",
-  isComplete: true,
-  studies: "Faculty of Computers & Information, Cairo University",
-};
-
-// Copy for the completion nudge. The header shows this on `!isComplete`.
 export const PROFILE_COMPLETION_CTA = {
   label: "Complete your profile",
 } as const;
 
-// Flip the ProfileHeader read to this to review the "Complete your profile" nudge.
-export const PROFILE_INCOMPLETE: StudentProfile = {
-  ...PROFILE,
-  isComplete: false,
-};
+// The meter is labelled by state rather than by one fixed sentence: a student at
+// 0% and one at 100% need different words, and a single "X% complete" line would
+// read as an accusation at one end and as nothing at the other. The CTA label
+// above is unchanged in every state.
+export const PROFILE_COMPLETION_COPY = {
+  label: "Profile completion",
+  incomplete: (percent: number) =>
+    `You're ${percent}% there — a complete profile unlocks tailored training recommendations.`,
+  complete: () =>
+    "Your profile is complete. Recommendations are tailored to your field.",
+} as const;
