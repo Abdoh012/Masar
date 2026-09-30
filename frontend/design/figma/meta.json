@@ -1,0 +1,23 @@
+{
+  "source": "Figma REST API (files, files/{key}/variables/local, files/{key}/styles)",
+  "file": {
+    "key": "R09TRqCYj9CHC7tBNTNQKH",
+    "name": "Masar",
+    "editorType": "figma",
+    "lastModified": "2026-09-24T23:33:23Z",
+    "version": "2402921162869929797",
+    "thumbnailUrl": "https://s3-alpha.figma.com/thumbnails/7a39bbe4-d7b2-46e4-bad3-1e6e73ea2476?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAQ4GOSFWCYH2VEHUI%2F20260924%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260924T000000Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=13133faebe5120ecfc09e4e77b67c4530fe32ca3ff3139b5a598204f460e6bf5"
+  },
+  "extractedAt": "2026-09-25T00:00:37.263Z",
+  "pages": {
+    "count": 1,
+    "frameCount": 0
+  },
+  "variables": {
+    "error": "HTTP 403 (GET /files/R09TRqCYj9CHC7tBNTNQKH/variables/local)"
+  },
+  "styles": {
+    "total": 0,
+    "countsByType": {}
+  }
+}

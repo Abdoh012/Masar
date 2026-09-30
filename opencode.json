@@ -1,0 +1,30 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "D:/React/React-library/docs/component-structure-rules.md",
+    "D:/React/React-library/docs/nextjs-architecture/nextjs-architecture-directive.md"
+  ],
+  "permission": {
+    "bash": {
+      "git status": "allow",
+      "git diff *": "allow",
+      "git log *": "allow",
+      "git branch *": "allow",
+      "git fetch *": "allow",
+      "pnpm exec tsc --noEmit": "allow",
+      "pnpm dev": "allow"
+    }
+  },
+  "agent": {
+    "frontend": {
+      "description": "Masar frontend build agent — enforces AGENTS.md rules, thin pages, server-first data fetching, scoped Suspense, and React component decomposition.",
+      "mode": "primary",
+      "prompt": "You build Masar frontend features. Always apply AGENTS.md and the files in D:/React/React-library/docs (component-structure-rules.md + nextjs-architecture-directive.md). Pages are thin shells; containers are async server components; \"use client\" is pushed to interactive leaves; Suspense is scoped to data-bound sections only; mutations go through server actions in actions.ts with revalidatePath(); no @/ imports on main; split components small and single-purpose."
+    }
+  },
+  "autoupdate": "notify",
+  "tool_output": {
+    "max_lines": 200,
+    "max_bytes": 8192
+  }
+}
