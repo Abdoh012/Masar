@@ -2,11 +2,9 @@ node_modules
 .next
 out
 .env
-.env*.local
+.env.*
 .figma.env
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store
-AGENTS.md
-opencode.json
 .vercel

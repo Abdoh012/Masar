@@ -4,11 +4,24 @@ node_modules/
 # Environment and secrets
 .env
 .env.*
-!.env.example
+*.env.example
+.figma.env
+.figma.env.*
 *.pem
 *.key
 *.p12
 *.pfx
+
+# Local-only instructions and agent/tool config (never pushed)
+AGENTS.md
+GEMINI.md
+opencode.json
+
+# Figma design extraction — local tooling, credentials, and generated dumps (never pushed)
+.figma.env
+.figma.env.*
+**/design/figma/
+**/scripts/figma/
 
 # Build output
 .next/
