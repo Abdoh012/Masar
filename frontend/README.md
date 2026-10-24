@@ -1,64 +1,79 @@
-# Masar — Project Scaffold
+# Masar — Frontend
 
-Structure follows `nextjs-architecture-directive.md` +
-`component-structure-rules.md`. This is the bare skeleton agreed on:
-**infrastructure is real, `features/` is empty folders** — fill in feature
-code together, feature by feature.
+Next.js 15 + React 19 + TypeScript + Tailwind v4. Structure follows
+`nextjs-architecture-directive.md` and `component-structure-rules.md`.
+There is **no `src/` directory** — `app/`, `features/`, `shared/`,
+`services/`, `config/`, and `types/` are top-level.
 
-## What's actually wired up
+## Stack
 
-- **Fonts** (`src/app/layout.tsx`) — IBM Plex Sans (UI), IBM Plex Serif
-  (certificate/formal text), IBM Plex Mono (certificate IDs), IBM Plex Sans
-  Arabic (wired now for v2, unused in v1 UI).
-- **Design tokens** (`src/app/globals.css`) — Tailwind v4 `@theme`, colors
-  pulled straight from `masar-identity.html`. `sage` is reserved for the
-  "hire opportunity confirmed" signal only — don't reuse it as a generic
-  success color.
-- **`middleware.ts`** — fixed from the uploaded `proxy.ts` (which was never
-  actually being called — Next requires the file named `middleware.ts` with
-  an export named `middleware`). Extended for 3 roles (student/company/admin)
-  and to lock pending companies to `/company/pending-approval` until Admin
-  approves them.
-- **`shared/components/animation/Motion.tsx`** — fixed the `motion[as] as
-  ElementType` bug (breaks in Framer Motion v11+) using your established
-  `motion.create()` + `useMemo` pattern. Import corrected to `framer-motion`
-  to match your dependency list.
-- **`shared/lib/animations.ts`** — your variants file, unchanged, just
-  relocated.
-- **Root `loading.tsx` / `error.tsx` / `not-found.tsx`** — plus one set per
-  route segment, per Rule R2.
-- **`shared/components/ui/`** — minimal shadcn baseline (button, card,
-  input). Add more via the shadcn CLI as features need them:
-  `npx shadcn@latest add dialog`
-- **`services/`** — base `apiFetch` wrapper (JWT header, empty-body-safe
-  like your el-le3ba `DELETE` fix), cookie helpers, `getSession()`.
-- **`config/`** — routes, role→path permissions, nav items per role, site
-  metadata.
-- **`types/`** — `Role`, `Session`, `ApiResponse<T>`, `PaginatedResponse<T>`,
-  `ActionState<T>`.
+- Next.js 15 App Router, React 19, TypeScript
+- Tailwind CSS v4 (`@theme` tokens in `app/globals.css`)
+- shadcn-style primitives on Radix UI, lucide icons
+- Framer Motion through the shared `Motion` abstraction
+- Sonner toasts, `next-themes` for light/dark
+- `html-to-image` + `jsPDF` for client-side certificate PDFs
 
-## What's intentionally empty
+## Commands
 
-- **`src/features/*`** — folders only (`shared/` + the roles that need
-  feature-specific logic), each with an `index.ts` stub explaining what
-  belongs there. No components, hooks, actions, or api calls yet.
-- **`src/shared/components/{dialogs,forms,layout,navigation,...}`** — empty,
-  created on demand per the promote-on-second-use rule.
+```bash
+pnpm dev                  # http://localhost:3000
+pnpm build
+pnpm start
+pnpm exec tsc --noEmit    # the working type check (ESLint config is not set up yet)
+```
 
-## Route shape
+## Environment
 
-- `(public)`, `(auth)`, `(student)` — route groups, **no URL prefix**.
-  Student is the default/unprefixed area.
-- `company/`, `admin/` — real URL prefixes (required — a route group can't
-  share a URL with another group, so company/admin needed real segments to
-  avoid colliding with student routes like `/dashboard`).
+Copy `.env.example` to `.env`:
 
-## Next steps
+- `NEXT_PUBLIC_API_URL` — base URL of the PHP API **including** `/api/v1`
+  (default `http://localhost:8000/api/v1`). It must be publicly reachable
+  when deployed, because reads happen server-side via `serverFetch`.
+- `NEXT_PUBLIC_SITE_URL` — public URL of this app (currently unused by app code).
 
-1. `npm install` (or `pnpm install`, matching your usual workflow).
-2. Nail the API contract for Auth + Listings + Applications with your
-   backend teammate.
-3. Build the `auth` feature first (student/company sign-up, company
-   approval) — see build-order reasoning from our planning conversation.
-4. `npx shadcn@latest init` isn't needed — `components.json` is already
-   configured; just `npx shadcn@latest add <component>` as needed.
+## What's implemented
+
+| Area | Routes | Status |
+| --- | --- | --- |
+| Public site | `/`, `/about`, `/support`, `/privacy`, `/terms` | Done |
+| Auth | `/sign-in`, `/sign-up`, `/profile-information`, `/forgot-password`, `/verify-otp`, `/reset-password/[token]`, `/password-updated` | Backend-wired |
+| Company gate | `/company/pending-approval` | Done |
+| Student dashboard | `/dashboard` | Backend-wired |
+| Student listings | `/listings`, `/listings/[id]` | Backend-wired |
+| Apply | `/listings/[id]/apply` | Backend-wired |
+| Applications | `/applications` | Backend-wired |
+| Certificates | `/certificates` | Backend-wired |
+| Profile | `/profile` | UI-only (local state) |
+| Company listings | `/company/listings`, `/company/listings/new`, `/company/listings/[id]` | UI-only (feature-local mock store) |
+| Admin moderation | `/admin/listings` | UI-only (local state) |
+| Placeholders | company dashboard/students/messages/profile, admin companies/certificates, student messages | Not built |
+
+## Architecture
+
+- `app/` is routing-only. Pages are thin shells that unwrap params and compose
+  feature containers; route groups `(public)`, `(auth)`, `(student)` have no URL
+  prefix, while `company/` and `admin/` are real segments.
+- `features/<feature>/` owns business logic, with `shared/` plus role subfolders
+  (`student/`, `company/`, `admin/`) created only when needed. Features expose
+  exactly one public surface, `index.ts`.
+- `shared/` holds cross-feature primitives: UI components, the `PageHeader`
+  band, `CertificateDocument`, pagination, skeletons, animation variants.
+- `services/api.ts` (`serverFetch`/`apiFetch`) is the only HTTP layer; feature
+  `api.ts` files call it with `cache: "no-store"`. Mutations are server actions
+  in `actions.ts` that call `revalidatePath()`.
+- `middleware.ts` enforces role-based access and owns access-token refresh via
+  the backend's rotating refresh cookie.
+- Session cookies: `masarJwt`, `masarRole`, `companyStatus`, `refresh_token`,
+  `csrf_token` — constants live in `shared/lib/authCookies.ts`.
+
+## Design system
+
+Tokens come from `masar-identity.html`. Navy primary, seal-gold secondary,
+paper/stone neutrals; `sage` is reserved for the confirmed-hire signal. Card
+elevation is a four-tier scale (`shadow-card`, `-md`, `-lg`, `lift`). The seal
+logo is the raw `public/logo.png`, never redrawn.
+
+## Backend
+
+The PHP API lives in `../backend` — see `../backend/README.md`.
