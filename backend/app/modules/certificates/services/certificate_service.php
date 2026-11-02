@@ -321,11 +321,7 @@ function certificate_service_status_is_issued(
 
     return in_array(
         strtolower((string) $status),
-        [
-            'issued',
-            'active',
-            'valid'
-        ],
+        certificate_currently_issued_statuses(),
         true
     );
 }
@@ -2272,6 +2268,18 @@ function certificate_service_verify(
  |--------------------------------------------------------------------------
  | Statistics
  |--------------------------------------------------------------------------
+ |
+ | Returns the four canonical certificate states plus `total`:
+ |
+ |   eligible : students eligible to request a certificate, using the
+ |              existing eligibility rules (never a persisted status).
+ |   pending  : persisted requests awaiting review.
+ |   issued   : persisted certificates currently issued and not revoked.
+ |   revoked  : persisted certificates that were revoked.
+ |   total    : persisted certificate records in scope. `eligible` is
+ |              deliberately NOT added to it, because an eligible
+ |              opportunity has no persisted certificate record yet.
+ |
  */
 
 function certificate_service_statistics(
@@ -2290,91 +2298,30 @@ function certificate_service_statistics(
         if ($filters === null) {
 
             return certificate_service_success(
-                [
-                    'total'   => 0,
-                    'issued'  => 0,
-                    'valid'   => 0,
-                    'revoked' => 0
-                ],
+                certificate_service_empty_statistics(),
                 'Certificate statistics retrieved successfully.'
             );
         }
     }
 
-    if (
-        function_exists(
-            'certificate_repository_statistics'
-        )
-    ) {
-
-        $statistics =
-            certificate_repository_statistics(
-                $filters
-            );
-
-        return certificate_service_success(
-            $statistics,
-            'Certificate statistics retrieved successfully.'
-        );
-    }
-
-    /*
-     * Fallback based on repository counts.
-     */
-
-    $statistics = [
-        'total'   => 0,
-        'issued'  => 0,
-        'valid'   => 0,
-        'revoked' => 0
-    ];
-
-    if (
-        function_exists(
-            'certificate_repository_count'
-        )
-    ) {
-
-        $statistics['total'] =
-            (int) certificate_repository_count(
-                $filters
-            );
-
-        $statistics['issued'] =
-            (int) certificate_repository_count(
-                array_merge(
-                    $filters,
-                    [
-                        'status' => 'issued'
-                    ]
-                )
-            );
-
-        $statistics['valid'] =
-            (int) certificate_repository_count(
-                array_merge(
-                    $filters,
-                    [
-                        'status' => 'valid'
-                    ]
-                )
-            );
-
-        $statistics['revoked'] =
-            (int) certificate_repository_count(
-                array_merge(
-                    $filters,
-                    [
-                        'status' => 'revoked'
-                    ]
-                )
-            );
-    }
-
     return certificate_service_success(
-        $statistics,
+        certificate_repository_statistics(
+            $filters
+        ),
         'Certificate statistics retrieved successfully.'
     );
+}
+
+
+function certificate_service_empty_statistics(): array
+{
+    return [
+        'total'     => 0,
+        'eligible'  => 0,
+        'pending'   => 0,
+        'issued'    => 0,
+        'revoked'   => 0
+    ];
 }
 
 

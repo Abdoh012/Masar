@@ -92,3 +92,63 @@ function lookup_service_specializations(): array
         ],
     ];
 }
+
+
+/*
+|--------------------------------------------------------------------------
+| Get The Skill Taxonomy
+|--------------------------------------------------------------------------
+|
+| The skills a student may pick from, read from the shared `skills` table.
+|
+| This is the counterpart to the skills endpoints: those accept a name only
+| when it resolves in this same table, so the list served here is exactly the
+| set that will be accepted. Serving it from the database is what keeps the
+| count honest - the product copy mentions a number of common skills, and
+| that number is whatever the taxonomy currently holds, not a literal in code.
+|
+| `total` is returned alongside the items so a client can render the count
+| without hardcoding it.
+|
+*/
+
+function lookup_service_skills(): array
+{
+    $skills = lookup_repository_get_active_skills();
+
+    return [
+        'success' => true,
+        'status' => 200,
+        'data' => [
+            'skills' => $skills,
+            'total' => count($skills),
+        ],
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Get Education Degrees
+|--------------------------------------------------------------------------
+|
+| The education degrees offered to students inside the profile education
+| history. Read from the shared `degrees` lookup through the repository so the
+| API never hardcodes the option list.
+|
+*/
+
+function lookup_service_education_degrees(): array
+{
+    $education_degrees = lookup_repository_get_active_education_degrees();
+
+    return [
+        'success' => true,
+        'status' => 200,
+        'message' => 'Education degrees retrieved successfully.',
+        'data' => [
+            'education_degrees' => $education_degrees,
+            'total' => count($education_degrees),
+        ],
+    ];
+}

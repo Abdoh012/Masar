@@ -1,32 +1,37 @@
-// Mock active-training data (UI-only; the real slice is fetched by this section in a later phase).
+// Display copy for the Active Training section (structure rules §14). The
+// section's data is fetched by the dashboard orchestrator from
+// GET /students/dashboard — nothing here is mock data.
+import type { TrainingDeliveryMode } from "../../types";
 
-import type { ActiveApplication, TrainingMode } from "../../types";
-
-// Display labels for the mode pill (single source — no inline mapping in the component).
-export const TRAINING_MODE_LABELS: Record<TrainingMode, string> = {
-  paid_trial: "Paid trial",
-  part_time: "Part-time",
-  full_time: "Full-time",
+// Display labels for the delivery-mode pill, keyed by the vocabulary the
+// training's own `mode` column uses (in_person | remote | hybrid). The
+// dashboard's API sends that raw value, so the pill is a lookup, not a
+// derivation. Single source — no inline mapping in the component.
+export const TRAINING_MODE_LABELS: Record<TrainingDeliveryMode, string> = {
+  in_person: "In-person",
+  remote: "Remote",
+  hybrid: "Hybrid",
 };
 
-export const ACTIVE_TRAINING: ActiveApplication = {
-  id: "app-1042",
-  company: "Hala Bank",
-  listingTitle: "Software Engineering Trainee",
-  mode: "paid_trial",
-  trialDays: 14,
-  trialDaysRemaining: 12,
-  startedOn: "2026-07-20",
-};
+// Label shown while the run is still in progress; the number itself is the
+// backend's `remaining_days`.
+export const DAYS_REMAINING_LABEL = (days: number): string =>
+  `${days} ${days === 1 ? "day" : "days"} remaining`;
 
-// Non-trial variant: countdown hidden, normal presentation.
-export const ACTIVE_TRAINING_FULL_TIME: ActiveApplication = {
-  ...ACTIVE_TRAINING,
-  mode: "full_time",
-  trialDays: undefined,
-  trialDaysRemaining: undefined,
-};
-
-// Empty variant: no active training → NoActiveTraining state. Typed so flipping
-// the ActiveTraining read to this stays type-safe.
-export const ACTIVE_TRAINING_NULL: ActiveApplication | null = null;
+// The three states lib/training-progress.ts can report, each with the line the
+// card shows above the bar. `in_progress` is paired with the day countdown;
+// the other two are terminal, so they state the outcome instead.
+export const TRAINING_PROGRESS_COPY = {
+  not_started: {
+    label: "Not started yet",
+    subline: "Your training begins on the start date below.",
+  },
+  in_progress: {
+    label: "Training in progress",
+    subline: "Progress is measured from your training's start and end dates.",
+  },
+  completed: {
+    label: "Training finished",
+    subline: "This training has already reached its end date.",
+  },
+} as const;

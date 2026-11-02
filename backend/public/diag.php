@@ -1,0 +1,1 @@
+<?php error_reporting(E_ALL); ini_set('display_errors',1); define('PROFILE_VIEW_RECENT_LIMIT',10); require_once __DIR__.'/../app/config/constants.php'; require_once __DIR__.'/../app/modules/students/services/student_profile_view_service.php'; echo function_exists('student_profile_view_summary') ? 'fn_found' : 'fn_missing'; ?> 

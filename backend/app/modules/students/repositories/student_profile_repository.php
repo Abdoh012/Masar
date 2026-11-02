@@ -21,6 +21,129 @@
 
 require_once __DIR__ . '/../../../core/database/query.php';
 
+/*
+|--------------------------------------------------------------------------
+| Resolve Skills Against The Taxonomy
+|--------------------------------------------------------------------------
+|
+| The `skills` table is a SHARED taxonomy: training_skills, the company
+| filters and the dashboard all read it. A student must therefore pick from
+| that taxonomy rather than inventing an entry, otherwise one student can
+| write arbitrary rows into a list every other user filters by.
+|
+| These helpers are the only way a skill name becomes a skill id now. The
+| lookup is case-insensitive because the column's collation already is, so
+| `php` and `PHP` resolve to the same taxonomy row.
+|
+*/
+
+function student_profile_repository_find_skill_id( string $name ): ?int {
+
+    $name = trim( $name );
+
+    if ( $name === '' ) {
+        return null;
+    }
+
+    $row = db_fetch_one(
+        ' SELECT id FROM skills WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) AND is_active = 1 LIMIT 1 ',
+        [ $name ]
+    );
+
+    return is_array( $row ) ? (int) $row['id'] : null;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Find Skill By Id
+|--------------------------------------------------------------------------
+|
+| The by-id counterpart of find_skill_id(): the education degrees moved to
+| numeric lookup ids, so the skills the student may attach now arrive as their
+| taxonomy id. The lookup stays the source of truth - a profile can never
+| write a new taxonomy row, only reference an existing one.
+|
+*/
+
+function student_profile_repository_find_skill_by_id( int $skill_id ): ?array {
+
+    if ( $skill_id <= 0 ) {
+        return null;
+    }
+
+    $row = db_fetch_one(
+        ' SELECT id, name FROM skills WHERE id = ? AND is_active = 1 LIMIT 1 ',
+        [ $skill_id ]
+    );
+
+    return is_array( $row ) ? $row : null;
+}
+
+/*
+| Maps every name that exists in the taxonomy to its id. Names that do not
+| resolve are simply absent from the result, which is how the service reports
+| them as unknown. One query for the whole list, so a 50-skill bulk update is
+| a single round trip rather than 50.
+*/
+function student_profile_repository_find_skill_ids( array $names ): array {
+
+    $names = array_values( array_unique( array_filter( array_map(
+        static fn( $name ) => is_string( $name ) || is_numeric( $name ) ? trim( (string) $name ) : '',
+        $names
+    ), static fn( $name ) => $name !== '' ) ) );
+
+    if ( empty( $names ) ) {
+        return [];
+    }
+
+    $placeholders = implode( ', ', array_fill( 0, count( $names ), '?' ) );
+
+    $rows = db_fetch_all(
+        " SELECT id, name FROM skills
+          WHERE is_active = 1
+            AND LOWER(TRIM(name)) IN ( " . $placeholders . " ) ",
+        array_map( 'strtolower', $names )
+    );
+
+    $map = [];
+
+    foreach ( $rows as $row ) {
+        $map[ strtolower( trim( (string) $row['name'] ) ) ] = (int) $row['id'];
+    }
+
+    return $map;
+}
+
+function student_profile_repository_count_skills( int $student_id ): int {
+
+    $row = db_fetch_one(
+        ' SELECT COUNT(*) AS total FROM student_skills WHERE student_id = ? ',
+        [ $student_id ]
+    );
+
+    return (int) ( $row['total'] ?? 0 );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Sync Skills
+|--------------------------------------------------------------------------
+|
+| Replaces the student's whole skill set.
+|
+| This resolves each name against the taxonomy and LINKS the ones that exist.
+| It deliberately does NOT insert into `skills`: the taxonomy is shared
+| reference data, and a profile edit must never be able to add a row to it.
+| An unresolvable name is skipped rather than created, so even a caller that
+| bypassed the service-level validation cannot pollute the shared list.
+|
+| The validate call in the service runs first and rejects unknown names with a
+| 422, so a client is told which skill was not recognised instead of quietly
+| losing it. The skip here is the second line of defence, not the primary
+| behaviour.
+|
+*/
+
 function student_profile_repository_sync_skills( PDO $db, int $student_id, array $skills ): bool {
 
     $names = [];
@@ -34,6 +157,7 @@ function student_profile_repository_sync_skills( PDO $db, int $student_id, array
     }
 
     $names = array_values( array_unique( $names ) );
+
     $clear = $db->prepare(" DELETE FROM student_skills WHERE student_id = ? " );
     $clear->execute( [$student_id] );
 
@@ -41,18 +165,24 @@ function student_profile_repository_sync_skills( PDO $db, int $student_id, array
         return true;
     }
 
-    $insert_skill = $db->prepare(" INSERT IGNORE INTO skills (name) VALUES (?) " );
-    $find_skill = $db->prepare(" SELECT id FROM skills WHERE name = ? LIMIT 1 " );
-    $link = $db->prepare(" INSERT INTO student_skills (student_id, skill_id) VALUES (?, ?) " );
+    $skill_ids = student_profile_repository_find_skill_ids( $names );
 
-    foreach ($names as $name) {
-        $insert_skill->execute( [$name] );
-        $find_skill->execute( [$name] );
-        $row = $find_skill->fetch();
+    if ( empty( $skill_ids ) ) {
+        return true;
+    }
 
-        if ( $row && !empty($row['id']) ) {
-            $link->execute( [ $student_id, (int) $row['id'] ] );
+    // INSERT IGNORE: the composite PRIMARY KEY (student_id, skill_id) is the
+    // real duplicate guard, so a name that resolved twice cannot double-link.
+    $link = $db->prepare(" INSERT IGNORE INTO student_skills (student_id, skill_id) VALUES (?, ?) " );
+
+    foreach ( $names as $name ) {
+        $skill_id = $skill_ids[ strtolower( $name ) ] ?? null;
+
+        if ( $skill_id === null ) {
+            continue;
         }
+
+        $link->execute( [ $student_id, $skill_id ] );
     }
 
     return true;
@@ -187,33 +317,6 @@ function student_profile_repository_update_skills( int $student_id, array $skill
 
 function student_profile_repository_get_skills( int $student_id ): array {
     return student_profile_repository_get_skills_ids( get_database_connection(), $student_id );
-}
-
-function student_profile_repository_set_cv( int $student_id, int $file_id ): bool {
-    $sql = " UPDATE students SET cv_file_id = ?, updated_at = NOW() WHERE id = ? LIMIT 1 ";
-    $statement = db_execute( $sql, [ $file_id, $student_id ] );
-    return $statement->rowCount() > 0;
-}
-
-function student_profile_repository_remove_cv( int $student_id ): bool {
-    $sql = " UPDATE students SET cv_file_id = NULL, updated_at = NOW() WHERE id = ? LIMIT 1 ";
-    $statement = db_execute( $sql, [$student_id] );
-    return $statement->rowCount() > 0;
-}
-
-function student_profile_repository_get_cv_file_id( int $student_id ): ?int {
-    $sql = " SELECT cv_file_id FROM students WHERE id = ? LIMIT 1 ";
-    $profile = db_fetch_one( $sql, [$student_id] );
-
-    if (!$profile) {
-        return null;
-    }
-
-    if ( empty( $profile['cv_file_id'] ) ) {
-        return null;
-    }
-
-    return (int) $profile['cv_file_id'];
 }
 
 function student_profile_repository_get_complete( int $student_id ): ?array {

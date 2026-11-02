@@ -611,6 +611,74 @@ function auth_get_current_user( int $user_id ): array {
 |--------------------------------------------------------------------------
 | Change User Password
 |--------------------------------------------------------------------------
+|
+| WHAT A PASSWORD CHANGE DOES AND DOES NOT INVALIDATE
+| --------------------------------------------------
+|
+| This is deliberately left as-is, and the behaviour is pinned by
+| tests/auth_password_policy_regression.php so it cannot drift silently.
+|
+| Revoked here:
+|   - every row in the legacy `auth_tokens` table  (token_revoke_all_for_user)
+|   - every row in `refresh_tokens`                (jwt_revoke_all_refresh_tokens_for_user)
+|   - the CALLING device's access token, blacklisted by the controller through
+|     jwt_revoke_access_token()
+|
+| NOT revoked - the security window:
+|   Access tokens are STATELESS JWTs and are never persisted when issued, so
+|   there is no list of a user's outstanding access tokens to walk. On another
+|   device an access token therefore stays valid until it expires on its own
+|   (JWT_ACCESS_TTL, default 3600s = 1 hour). jwt_validate_access_token()
+|   only rejects a token it finds marked revoked in `refresh_tokens`, and an
+|   access token is not written there unless it was explicitly blacklisted -
+|   which is done for the current device only.
+|
+|   Net effect: after this call, another device keeps working for up to one
+|   hour, then fails to refresh and must log in again. The UI must not claim
+|   that all other sessions are signed out immediately.
+|
+| WHY IT IS NOT "FIXED" HERE
+| --------------------------
+| Immediate all-device invalidation needs either a per-user credential version
+| or a persisted denylist of outstanding access tokens, checked on every
+| request. Neither exists today:
+|
+|   - Access tokens are never persisted when issued, so there is no list of a
+|     user's live access tokens to enumerate and revoke.
+|   - The `revoked_access_tokens` table DOES exist (user_id, token_hash, jti,
+|     expires_at) and access tokens DO carry a `jti`, but the table is not
+|     wired into the auth flow at all: the only reference to it anywhere is
+|     student_admin_repository_delete_user_tokens(), which DELETES rows when a
+|     user is removed. It is currently empty. Re-populating it still would not
+|     help, because a denylist only works for tokens you already know about.
+|   - The access payload has no password-version claim (there is no `pv`/`pwd`),
+|     so a token cannot be compared against a credential change.
+|
+| Either route is an authentication-architecture change touching login,
+| refresh, logout and remember-me. The instruction for this work was to keep
+| the existing model rather than redesign it.
+|
+| MINIMAL FUTURE PATH (not implemented)
+| ------------------------------------
+| The cheapest correct option needs no new table and no per-token bookkeeping:
+| 1. Add a nullable `users.credentials_changed_at DATETIME` (migration 037).
+| 2. Set it to NOW() in auth_repository_update_password() and on password reset.
+| 3. In jwt_validate_access_token(), reject a token whose `iat` is older than
+|    the user's `credentials_changed_at`. The user row is already loaded by the
+|    auth middleware, so this adds no extra query on the happy path, and it
+|    invalidates EVERY outstanding access token for that user at once.
+| 4. Keep the refresh-token revocation here as well; it stops a stolen refresh
+|    token from minting a fresh access token before the check runs.
+|
+| Note for whoever picks this up: `updated_at` is NOT a substitute. It moves
+| on every account write (last_login_at, email change, profile edit), so using
+| it would sign users out constantly.
+|
+| Until then the refresh-token revocation above is the real boundary: it is
+| what stops a stolen refresh token from minting new access tokens.
+|
+| No application, training, payment or certificate row is read or written here.
+|
 */
 
 function auth_change_user_password( int $user_id, array $data ): array {

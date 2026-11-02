@@ -26,6 +26,128 @@ function user_repository_email_exists_for_other_user( string $email, int $user_i
     return $user !== null;
 }
 
+/*
+|--------------------------------------------------------------------------
+| Public Username
+|--------------------------------------------------------------------------
+|
+| The public handle (users.username). It is a separate identity from the
+| account email, so it has its own read / uniqueness / write helpers rather
+| than being folded into the generic user update.
+|
+| Uniqueness is checked with LOWER() on both sides so the service reports a
+| clean conflict for `Nour` vs `nour`. That is belt-and-braces: the column's
+| collation is already case-insensitive, so the UNIQUE index would reject it
+| too. The service check exists to return a 409 with a useful message instead
+| of letting the index raise a driver error.
+|
+*/
+
+function user_repository_find_username( int $user_id ): ?string {
+
+    if ( $user_id <= 0 ) {
+        return null;
+    }
+
+    $row = db_fetch_one( " SELECT username FROM users WHERE id = ? LIMIT 1 ", [ $user_id ] );
+
+    if ( !is_array( $row ) || !array_key_exists( 'username', $row ) ) {
+        return null;
+    }
+
+    $username = $row['username'];
+
+    if ( $username === null || trim( (string) $username ) === '' ) {
+        return null;
+    }
+
+    return trim( (string) $username );
+}
+
+function user_repository_username_exists( string $username, int $except_user_id = 0 ): bool {
+
+    $sql = " SELECT id FROM users WHERE LOWER(username) = LOWER(?) ";
+
+    $params = [ $username ];
+
+    if ( $except_user_id > 0 ) {
+        $sql .= " AND id != ? ";
+        $params[] = $except_user_id;
+    }
+
+    $sql .= " LIMIT 1 ";
+
+    return db_fetch_one( $sql, $params ) !== null;
+}
+
+function user_repository_update_username( int $user_id, string $username ): bool {
+
+    if ( $user_id <= 0 || trim( $username ) === '' ) {
+        return false;
+    }
+
+    db_execute(
+        " UPDATE users SET username = ?, updated_at = NOW() WHERE id = ? LIMIT 1 ",
+        [ $username, $user_id ]
+    );
+
+    return true;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Contact Details
+|--------------------------------------------------------------------------
+|
+| Reads and writes for the account's own email address. There is no separate
+| contact-email column: users.email is the account identity, so it is reused
+| rather than duplicated.
+|
+*/
+
+function user_repository_find_email( int $user_id ): ?array {
+
+    if ( $user_id <= 0 ) {
+        return null;
+    }
+
+    return db_fetch_one( " SELECT id, email FROM users WHERE id = ? LIMIT 1 ", [ $user_id ] );
+}
+
+function user_repository_update_email( int $user_id, string $email ): bool {
+
+    if ( $user_id <= 0 || trim( $email ) === '' ) {
+        return false;
+    }
+
+    db_execute(
+        " UPDATE users SET email = ?, updated_at = NOW() WHERE id = ? LIMIT 1 ",
+        [ $email, $user_id ]
+    );
+
+    return true;
+}
+
+/*
+| A changed address has not been proven, so the existing verification stamp is
+| cleared. This reuses the verification model rather than bypassing it: the
+| account keeps authenticating on its password, but the new address is no
+| longer treated as verified.
+*/
+function user_repository_clear_email_verified_at( int $user_id ): bool {
+
+    if ( $user_id <= 0 ) {
+        return false;
+    }
+
+    db_execute(
+        " UPDATE users SET email_verified_at = NULL, updated_at = NOW() WHERE id = ? LIMIT 1 ",
+        [ $user_id ]
+    );
+
+    return true;
+}
+
 function user_repository_update( int $user_id, array $data ): bool {
 
     if (empty($data)) {

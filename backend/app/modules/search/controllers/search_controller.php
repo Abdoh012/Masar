@@ -95,7 +95,69 @@ function search_controller_trainings(array $request = [], int $user_id = 0): arr
         return search_controller_error('Unable to process training search and filters.');
     }
 }
-function search_controller_students(array $request = [], int $user_id = 0): array { return search_controller_type('students', $request, $user_id); }
+function search_controller_students(array $request = [], int $user_id = 0): array {
+    /*
+     * Student candidate search: keyword plus an optional skill filter.
+     *
+     * `skill_id` mirrors the existing training filter (single integer id) and
+     * additionally accepts the repeated / comma-separated forms
+     * `skill_id[]=5&skill_id[]=9` and `skill_id=5,9`, which mean ANY of the
+     * listed skills. The semantics are documented in docs/api/search.md and
+     * implemented once in search_repository_students().
+     *
+     * Values are validated here so a malformed id is a 422 rather than a
+     * silently ignored filter; the repository re-normalizes them and binds
+     * every id as a parameter.
+     */
+    $skill_ids = search_controller_skill_ids($request['skill_id'] ?? null);
+
+    if ($skill_ids === null) {
+        return search_controller_error('Invalid skill_id value. skill_id must be one or more positive integers.', 422);
+    }
+
+    if (empty($skill_ids)) {
+        return search_controller_type('students', $request, $user_id);
+    }
+
+    return search_controller_type('students', array_merge($request, ['skill_id' => $skill_ids]), $user_id);
+}
+
+/*
+ * Parses the accepted `skill_id` shapes into a list of positive integers.
+ * Returns null when the caller sent something that is not a positive
+ * integer, which the controller turns into a 422.
+ */
+function search_controller_skill_ids(mixed $raw): ?array {
+    if ($raw === null || $raw === '' || $raw === []) {
+        return [];
+    }
+
+    $values = is_array($raw) ? $raw : explode(',', (string) $raw);
+    $ids = [];
+
+    foreach ($values as $value) {
+        if (is_array($value)) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            continue;
+        }
+
+        if (filter_var($value, FILTER_VALIDATE_INT) === false || (int) $value < 1) {
+            return null;
+        }
+
+        $ids[(int) $value] = (int) $value;
+    }
+
+    ksort($ids);
+
+    return array_values($ids);
+}
+
 function search_controller_certificates(array $request = [], int $user_id = 0): array { return search_controller_type('certificates', $request, $user_id); }
 function search_controller_type(string $type, array $request, int $user_id): array { $request['type'] = $type; return search_controller_search($request, $user_id); }
 

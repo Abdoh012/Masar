@@ -19,6 +19,7 @@
 require_once __DIR__ . '/../repositories/student_repository.php';
 require_once __DIR__ . '/../repositories/student_profile_repository.php';
 require_once __DIR__ . '/../../files/repositories/file_repository.php';
+require_once __DIR__ . '/../../../shared/functions/file_urls.php';
 
 /*
 |--------------------------------------------------------------------------
@@ -40,115 +41,6 @@ require_once __DIR__ . '/../../search/services/search_service.php';
 
 if (file_exists(__DIR__ . '/../../notifications/services/notification_service.php')) {
     require_once __DIR__ . '/../../notifications/services/notification_service.php';
-}
-
-/**
- * Verifies that a client-supplied CV file ID belongs to the authenticated user.
- *
- * Returns ['cv_file_id' => int] on success, or an error result otherwise.
- * The authenticated user is derived from the request context, so a
- * client-supplied file ID is never trusted.
- */
-function student_service_validate_cv_file_ownership( int $user_id, mixed $cv_file_id ): array {
-    $cv_file_id = (int) $cv_file_id;
-
-    if ( $cv_file_id <= 0 ) {
-        return [ 'error' => true, 'status' => 422, 'message' => 'Invalid CV file ID.', ];
-    }
-
-    $file = file_repository_find_for_user( $cv_file_id, $user_id );
-
-    if (!$file) {
-        return [ 'error' => true, 'status' => 422, 'message' => 'The selected CV file does not belong to your account.', ];
-    }
-
-    return [ 'cv_file_id' => $cv_file_id, ];
-}
-
-/**
- * Resolves the student's academic choices (User Field + Specialist) to
- * database IDs.
- *
- * The User Field is read from the `field` payload key when present, falling
- * back to the legacy `faculty` key used by the current registration form.
- * A numeric `field_id` is also accepted. The `field` value itself may be a
- * numeric study_fields.id (dropdown) or a name. Specialist is read from the
- * `specialization` key (or numeric `specialization_id`) and MUST belong to
- * the selected field: the field -> specialization relationship
- * (specializations.field_id) is enforced here. University is accepted
- * separately by name in student_service_create_profile and stored as the
- * numeric university_id (the students.university_id FK is preserved).
- *
- * Returns null when the field or specialization is unknown/inactive or when
- * the specialization does not belong to the selected field.
- */
-function student_service_resolve_academic_data( array $data ): ?array {
-    $user_field = trim((string) ($data['field'] ?? ''));
-
-    if ($user_field === '') {
-        $user_field = trim((string) ($data['faculty'] ?? ''));
-    }
-
-    $specialization = trim((string) ($data['specialization'] ?? ''));
-
-    // Resolve the study field. `field_id`, a numeric `field` value, or a
-    // field name are accepted; the ID forms are resolved strictly against
-    // the active study_fields table.
-    $field_id = null;
-
-    if (isset($data['field_id']) && (int) $data['field_id'] > 0) {
-        $field = student_repository_find_field_by_id((int) $data['field_id']);
-        $field_id = is_array($field) ? (int) $field['id'] : null;
-    } elseif ($user_field !== '' && ctype_digit($user_field)) {
-        $field = student_repository_find_field_by_id((int) $user_field);
-        $field_id = is_array($field) ? (int) $field['id'] : null;
-    } elseif ($user_field !== '') {
-        $field_id = student_repository_resolve_field_id( $user_field );
-    }
-
-    if ($field_id === null) {
-        return null;
-    }
-
-    // Resolve the specialization strictly inside the selected field.
-    // `specialization_id`, a numeric `specialization` value, or a name
-    // scoped to the field are accepted.
-    $specialization_id = null;
-
-    if (isset($data['specialization_id']) && (int) $data['specialization_id'] > 0) {
-        $specialization_row = student_repository_find_specialization_by_id((int) $data['specialization_id']);
-
-        if (
-            $specialization_row === null
-            || (int) ($specialization_row['field_id'] ?? 0) !== $field_id
-        ) {
-            return null;
-        }
-
-        $specialization_id = (int) $specialization_row['id'];
-    } elseif ($specialization !== '' && ctype_digit($specialization)) {
-        $specialization_row = student_repository_find_specialization_by_id((int) $specialization);
-
-        if (
-            $specialization_row === null
-            || (int) ($specialization_row['field_id'] ?? 0) !== $field_id
-        ) {
-            return null;
-        }
-
-        $specialization_id = (int) $specialization_row['id'];
-    } else {
-        $specialization_id = student_repository_resolve_specialization_id_in_field( $specialization, $field_id );
-    }
-
-    if ($specialization_id === null) {
-        return null;
-    }
-
-    return [
-        'field_id' => $field_id,
-        'specialization_id' => $specialization_id,
-    ];
 }
 
 function student_service_create_profile( int $user_id, array $data ): array {
@@ -214,14 +106,6 @@ function student_service_create_profile( int $user_id, array $data ): array {
         $student_data['graduation_year'] = (int) $data['graduation_year'];
     }
 
-    if ( array_key_exists( 'cv_file_id', $data ) && (int) $data['cv_file_id'] > 0 ) {
-        $cv_result = student_service_validate_cv_file_ownership( $user_id, $data['cv_file_id'] );
-        if ( !empty( $cv_result['error'] ) ) {
-            return $cv_result;
-        }
-        $student_data['cv_file_id'] = $cv_result['cv_file_id'];
-    }
-
     $student_id = student_repository_create( $student_data );
 
     if (!$student_id) {
@@ -251,7 +135,173 @@ function student_get_profile( int $user_id ): array {
 
     $profile = student_profile_repository_find_by_student_id( (int) $student['id'] );
 
-    return ['data' => [ 'student' => $student, 'profile' => $profile, ], ];
+    return [
+        'data' => [
+            'student' => $student,
+            'profile' => $profile,
+            'header'  => student_service_profile_header( (int) $student['id'] ),
+        ],
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Student Self Header
+|--------------------------------------------------------------------------
+|
+| The whole GET /api/v1/students/me response: a single `header` object with
+| exactly thirteen fields.
+|
+| It is built from two reads and nothing else:
+|
+|   1. the student's own row, which already carries id, academic_status,
+|      updated_at, bio, field_id, specialization_id and cv_file_id;
+|   2. the existing profile-header read, which resolves the lookup-backed
+|      field, specialization, university and faculty names, plus the
+|      ownership-scoped profile image.
+|
+| The old response also ran the full student_profiles read (seventeen
+| columns plus a skills query) purely to expose `data.profile`. That payload is
+| not part of this contract, so it is not fetched here at all - the only trace
+| of it this endpoint needs is the skills list, which the completion
+| calculation genuinely requires and which is read on its own.
+|
+| `is_profile_complete` is the completion PERCENTAGE from the canonical
+| student_calculate_completion_percentage(), not the raw students column. That
+| column is a tinyint flag and stays exactly as it is stored; only this
+| API-layer presentation turns it into a 0-100 integer, which is the same
+| number GET /students/profile/status and the dashboard already report.
+|
+*/
+
+function student_service_me_header( int $user_id ): array {
+
+    if ($user_id <= 0) {
+        return [ 'error' => true, 'status' => 422, 'message' => 'Invalid user ID.' ];
+    }
+
+    $student = student_repository_find_by_user_id( $user_id );
+
+    if (!$student) {
+        return [ 'error' => true, 'status' => 404, 'message' => 'Student profile not found.' ];
+    }
+
+    $student_id = (int) $student['id'];
+    $row        = student_repository_find_profile_header( $student_id );
+    $row        = is_array( $row ) ? $row : [];
+
+    /*
+     | Only the skills list is needed, and only because the completion
+     | calculation counts it. Reading it directly avoids re-fetching the whole
+     | extended profile row that the deleted `profile` object used to expose.
+     */
+    $skills = student_profile_repository_get_skills_ids( get_database_connection(), $student_id );
+
+    $image_file_id = (int) ( $row['profile_image_id'] ?? 0 );
+
+    return [
+        'data' => [
+            'header' => [
+                'id'                  => $student_id,
+                'academic_status'     => $student['academic_status'] ?? null,
+                'is_profile_complete' => student_calculate_completion_percentage(
+                    [
+                        'field_id'          => $student['field_id'] ?? null,
+                        'specialization_id' => $student['specialization_id'] ?? null,
+                    ],
+                    [
+                        'skills'    => $skills,
+                        'cv_file_id' => $student['cv_file_id'] ?? null,
+                    ]
+                ),
+                'updated_at'          => $student['updated_at'] ?? null,
+                'bio'                 => $student['bio'] ?? null,
+                'field'               => student_service_profile_header_text( $row['field'] ?? null ),
+
+                'profile_image_url'     => file_signed_url( $image_file_id ),
+                'profile_image_file_id' => $image_file_id > 0 ? $image_file_id : null,
+                'full_name'             => student_service_profile_header_text( $row['full_name'] ?? null ),
+                'specialization'        => student_service_profile_header_text( $row['specialization'] ?? null ),
+                'university'            => student_service_profile_header_text( $row['university'] ?? null ),
+                'faculty'               => student_service_profile_header_text( $row['faculty'] ?? null ),
+                'member_since'          => application_iso8601( $row['member_since'] ?? null ),
+            ],
+        ],
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Student Profile Header
+|--------------------------------------------------------------------------
+|
+| The six values the student Profile Header renders: the student's own
+| image, name, specialization, university, faculty, and member-since date.
+|
+| This is a read-only presentation of data the student already owns. It
+| adds no new state and no new table: every value is resolved from the
+| student's own row plus the lookup tables, and the member-since date is
+| the account creation timestamp. The `header` key is additive, so the
+| existing `student` and `profile` keys keep their exact shape.
+|
+| Names are resolved from the lookup tables rather than from client input,
+| so a header can never display a specialization / university / faculty
+| the student is not actually attached to.
+|
+*/
+
+function student_service_profile_header( int $student_id ): array {
+
+    $row = student_repository_find_profile_header( $student_id );
+
+    if ( !is_array( $row ) ) {
+        return [
+            'profile_image_url'    => null,
+            'profile_image_file_id'=> null,
+            'full_name'            => null,
+            'specialization'       => null,
+            'university'           => null,
+            'faculty'              => null,
+            'member_since'         => null,
+        ];
+    }
+
+    /*
+    | The image is only exposed when it resolves to a real profile_image
+    | file owned by this student (enforced in the repository join). A
+    | dangling or foreign profile_image_file_id degrades to null instead of
+    | pointing the header at a CV, a certificate, or another student's file.
+    */
+    $image_file_id = (int) ( $row['profile_image_id'] ?? 0 );
+
+    return [
+        'profile_image_url'     => file_signed_url( $image_file_id ),
+        'profile_image_file_id' => $image_file_id > 0 ? $image_file_id : null,
+        'full_name'             => student_service_profile_header_text( $row['full_name'] ?? null ),
+        'specialization'        => student_service_profile_header_text( $row['specialization'] ?? null ),
+        'university'            => student_service_profile_header_text( $row['university'] ?? null ),
+        'faculty'               => student_service_profile_header_text( $row['faculty'] ?? null ),
+        'member_since'          => application_iso8601( $row['member_since'] ?? null ),
+    ];
+}
+
+/*
+| Normalizes one header text value: a missing or blank lookup value is
+| reported as null rather than as an empty string, so the header can tell
+| "not set yet" apart from a real value.
+*/
+
+function student_service_profile_header_text( mixed $value ): ?string {
+
+    if ( !is_string( $value ) && !is_numeric( $value ) ) {
+        return null;
+    }
+
+    $value = trim( (string) $value );
+
+    return $value === '' ? null : $value;
 }
 
 function student_service_update_profile( int $user_id, array $data ): array {
@@ -308,20 +358,6 @@ function student_service_update_profile( int $user_id, array $data ): array {
 
     if ( array_key_exists( 'graduation_year', $data ) ) {
         $student_data['graduation_year'] = (int) $data['graduation_year'];
-    }
-
-    if ( array_key_exists( 'cv_file_id', $data ) ) {
-        $cv_file_id = (int) $data['cv_file_id'];
-
-        if ( $cv_file_id > 0 ) {
-            $cv_result = student_service_validate_cv_file_ownership( $user_id, $cv_file_id );
-            if ( !empty( $cv_result['error'] ) ) {
-                return $cv_result;
-            }
-            $student_data['cv_file_id'] = $cv_result['cv_file_id'];
-        } else {
-            $student_data['cv_file_id'] = null;
-        }
     }
 
     if (!empty($student_data)) {
@@ -385,14 +421,6 @@ function student_complete_profile_data( int $user_id, array $data ): array {
         $student_data['bio'] = trim( (string) $data['bio'] );
     }
 
-    if ( array_key_exists( 'cv_file_id', $data ) && (int) $data['cv_file_id'] > 0 ) {
-        $cv_result = student_service_validate_cv_file_ownership( $user_id, $data['cv_file_id'] );
-        if ( !empty( $cv_result['error'] ) ) {
-            return $cv_result;
-        }
-        $student_data['cv_file_id'] = $cv_result['cv_file_id'];
-    }
-
     $updated = student_repository_update( (int) $student['id'], $student_data );
 
     if (!$updated) {
@@ -409,37 +437,8 @@ function student_complete_profile_data( int $user_id, array $data ): array {
     return student_get_profile( $user_id );
 }
 
-function student_get_public_profile( int $student_id, array $current_user ): array {
 
-    if ($student_id <= 0) {
-        return [ 'error' => true, 'status' => 422, 'message' => 'Invalid student ID.' ];
-    }
 
-    $role = $current_user['role'] ?? '';
-    $allowed_roles = [ 'student', 'company', 'admin', ];
-
-    if ( !in_array( $role, $allowed_roles, true ) ) {
-        return [ 'error' => true, 'status' => 403, 'message' => 'You are not allowed to view student profiles.' ];
-    }
-
-    $student = student_repository_find_by_id( $student_id );
-
-    if (!$student) {
-        return [ 'error' => true, 'status' => 404, 'message' => 'Student not found.' ];
-    }
-
-    $profile = student_profile_repository_find_by_student_id( $student_id );
-    unset( $student['user_id'] );
-
-    if ( is_array($profile) ) {
-        unset( $profile['user_id'] );
-        unset( $profile['phone'] );
-        unset( $profile['cv_file_id'] );
-        unset( $profile['profile_image_file_id'] );
-    }
-
-    return [ 'data' => [ 'student' => $student, 'profile' => $profile, ], ];
-}
 
 function student_get_profile_status( int $user_id ): array {
 

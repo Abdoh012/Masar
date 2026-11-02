@@ -1521,6 +1521,13 @@ function application_service_list_student(
 
                 'data' => [
 
+                    'summary' => [
+                        'applied_count'   => 0,
+                        'accepted_count'  => 0,
+                        'rejected_count'  => 0,
+                        'withdrawn_count' => 0,
+                    ],
+
                     'items' => [],
 
                     'pagination' => [
@@ -1622,6 +1629,12 @@ function application_service_list_student(
             'Applications retrieved successfully.',
 
         'data' => [
+
+            'summary' =>
+                application_repository_count_status_summary_by_student(
+                    (int) $student['student_id'],
+                    $match_specialization_ids
+                ),
 
             'items' =>
                 $items,
@@ -1781,6 +1794,13 @@ function application_service_list_accepted(
 
                 'data' => [
 
+                    'summary' => [
+                        'applied_count'   => 0,
+                        'accepted_count'  => 0,
+                        'rejected_count'  => 0,
+                        'withdrawn_count' => 0,
+                    ],
+
                     'items' => [],
 
                     'pagination' => [
@@ -1858,6 +1878,12 @@ function application_service_list_accepted(
             'Applications retrieved successfully.',
 
         'data' => [
+
+            'summary' =>
+                application_repository_count_status_summary_by_student(
+                    (int) $student['student_id'],
+                    $match_specialization_ids
+                ),
 
             'items' =>
                 $items,
@@ -2018,6 +2044,13 @@ function application_service_list_rejected(
 
                 'data' => [
 
+                    'summary' => [
+                        'applied_count'   => 0,
+                        'accepted_count'  => 0,
+                        'rejected_count'  => 0,
+                        'withdrawn_count' => 0,
+                    ],
+
                     'items' => [],
 
                     'pagination' => [
@@ -2095,6 +2128,12 @@ function application_service_list_rejected(
             'Applications retrieved successfully.',
 
         'data' => [
+
+            'summary' =>
+                application_repository_count_status_summary_by_student(
+                    (int) $student['student_id'],
+                    $match_specialization_ids
+                ),
 
             'items' =>
                 $items,
@@ -2248,6 +2287,13 @@ function application_service_list_withdrawn(
 
                 'data' => [
 
+                    'summary' => [
+                        'applied_count'   => 0,
+                        'accepted_count'  => 0,
+                        'rejected_count'  => 0,
+                        'withdrawn_count' => 0,
+                    ],
+
                     'items' => [],
 
                     'pagination' => [
@@ -2325,6 +2371,12 @@ function application_service_list_withdrawn(
             'Applications retrieved successfully.',
 
         'data' => [
+
+            'summary' =>
+                application_repository_count_status_summary_by_student(
+                    (int) $student['student_id'],
+                    $match_specialization_ids
+                ),
 
             'items' =>
                 $items,

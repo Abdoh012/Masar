@@ -32,4 +32,14 @@ if (preg_match('#^/api/v1/lookups/study-fields/(\d+)/specializations$#', $path, 
     return;
 }
 
+if ($path === '/api/v1/lookups/skills' && $method === 'GET') {
+    lookup_controller_skills();
+    return;
+}
+
+if ($path === '/api/v1/lookups/education-degrees' && $method === 'GET') {
+    lookup_controller_education_degrees();
+    return;
+}
+
 response_not_found('Lookup endpoint not found.');

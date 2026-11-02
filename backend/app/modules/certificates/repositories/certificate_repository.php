@@ -20,6 +20,7 @@
 */
 
 require_once __DIR__ . '/../../../core/database/connection.php';
+require_once __DIR__ . '/../../../shared/enums/certificate_statuses.php';
 
 
 /*
@@ -1023,6 +1024,52 @@ function certificate_repository_count(
     }
 
 
+    /*
+     * Multi-status filter. Kept separate from the single "status" filter
+     * so the existing callers (and their exact SQL) stay untouched; a
+     * caller that needs "issued OR active OR valid" passes the whole set.
+     */
+
+    if (
+        !empty($filters['statuses'])
+        &&
+        is_array($filters['statuses'])
+    ) {
+
+        $status_placeholders = [];
+
+        foreach (
+            array_values(
+                $filters['statuses']
+            ) as $status_index => $status_value
+        ) {
+
+            $placeholder =
+                ':status_' .
+                $status_index;
+
+            $status_placeholders[] =
+                $placeholder;
+
+            $params[$placeholder] =
+                (string) $status_value;
+        }
+
+        if (
+            $status_placeholders
+        ) {
+
+            $where[] =
+                'c.status IN (' .
+                implode(
+                    ', ',
+                    $status_placeholders
+                ) .
+                ')';
+        }
+    }
+
+
     $sql = "
         SELECT COUNT(*) AS total
         FROM certificates c
@@ -1057,6 +1104,26 @@ function certificate_repository_count(
 |--------------------------------------------------------------------------
 | Statistics
 |--------------------------------------------------------------------------
+|
+| The API exposes the four canonical certificate states, which are NOT the
+| four persisted certificates.status values:
+|
+|   eligible : derived opportunities to request a certificate. Never a
+|              persisted certificate status, so it is counted with
+|              certificate_repository_count_eligible() and is never
+|              folded into `total`.
+|   pending  : persisted certificates.status = pending.
+|   issued   : persisted certificates.status in the shared
+|              "currently issued and not revoked" set (issued / active /
+|              valid), so it matches the student dashboard counters and
+|              the certificate presenter. Revoked is excluded, so a
+|              revoked certificate is never counted as issued.
+|   revoked  : persisted certificates.status = revoked.
+|
+| `total` is the number of PERSISTED certificate records in scope and
+| nothing else. The three persisted states are disjoint, so each record
+| falls into exactly one of them.
+|
 */
 
 function certificate_repository_statistics(
@@ -1068,32 +1135,24 @@ function certificate_repository_statistics(
             $filters
         );
 
+    $pending =
+        certificate_repository_count(
+            array_merge(
+                $filters,
+                [
+                    'status' =>
+                        CERTIFICATE_STATUS_PENDING
+                ]
+            )
+        );
+
     $issued =
         certificate_repository_count(
             array_merge(
                 $filters,
                 [
-                    'status' => 'issued'
-                ]
-            )
-        );
-
-    $active =
-        certificate_repository_count(
-            array_merge(
-                $filters,
-                [
-                    'status' => 'active'
-                ]
-            )
-        );
-
-    $valid =
-        certificate_repository_count(
-            array_merge(
-                $filters,
-                [
-                    'status' => 'valid'
+                    'statuses' =>
+                        certificate_currently_issued_statuses()
                 ]
             )
         );
@@ -1103,39 +1162,32 @@ function certificate_repository_statistics(
             array_merge(
                 $filters,
                 [
-                    'status' => 'revoked'
+                    'status' =>
+                        CERTIFICATE_STATUS_REVOKED
                 ]
             )
         );
 
-    $pending =
-        certificate_repository_count(
-            array_merge(
-                $filters,
-                [
-                    'status' => 'pending'
-                ]
-            )
+    $eligible =
+        certificate_repository_count_eligible(
+            $filters
         );
 
     return [
         'total' =>
             $total,
 
+        'eligible' =>
+            $eligible,
+
+        'pending' =>
+            $pending,
+
         'issued' =>
             $issued,
 
-        'active' =>
-            $active,
-
-        'valid' =>
-            $valid,
-
         'revoked' =>
-            $revoked,
-
-        'pending' =>
-            $pending
+            $revoked
     ];
 }
 
@@ -1464,14 +1516,17 @@ function certificate_repository_find_by_student_training(
 |   - company_id  : restrict to one company (company dashboard)
 |   - training_id : restrict to one training (pair eligibility check)
 |
+| The rules live in exactly one place: certificate_repository_eligible_sql().
+| The list view and the statistics count are two projections of that same
+| query, so eligibility can never drift between GET /certificates/eligible,
+| the dashboards and GET /certificates/statistics.
+|
 */
 
-function certificate_repository_eligible(
-    array $filters = []
+function certificate_repository_eligible_sql(
+    array $filters = [],
+    string $projection = ''
 ): array {
-
-    $db =
-        certificate_repository_db();
 
     $where = [];
 
@@ -1523,25 +1578,7 @@ function certificate_repository_eligible(
     }
 
     $sql = "
-        SELECT
-            t.id                                    AS training_id,
-            t.is_paid                               AS is_paid,
-            t.title                                 AS training_title,
-            t.company_id                            AS company_id,
-            c2.legal_name                           AS company_name,
-            ts.id                                   AS training_session_id,
-            COALESCE(
-                ts.actual_ended_at,
-                t.ends_at
-            )                                       AS completed_on,
-            COALESCE(
-                ts.started_at,
-                t.starts_at
-            )                                       AS started_on,
-            COALESCE(
-                ts.actual_ended_at,
-                t.ends_at
-            )                                       AS ended_on
+        {$projection}
         FROM training_applications a
 
         INNER JOIN training_listings t
@@ -1581,6 +1618,49 @@ function certificate_repository_eligible(
             );
     }
 
+    return [
+        $sql,
+        $params
+    ];
+}
+
+
+function certificate_repository_eligible(
+    array $filters = []
+): array {
+
+    $db =
+        certificate_repository_db();
+
+    [
+        $sql,
+        $params
+    ] =
+        certificate_repository_eligible_sql(
+            $filters,
+            "
+            SELECT
+                t.id                                    AS training_id,
+                t.is_paid                               AS is_paid,
+                t.title                                 AS training_title,
+                t.company_id                            AS company_id,
+                c2.legal_name                           AS company_name,
+                ts.id                                   AS training_session_id,
+                COALESCE(
+                    ts.actual_ended_at,
+                    t.ends_at
+                )                                       AS completed_on,
+                COALESCE(
+                    ts.started_at,
+                    t.starts_at
+                )                                       AS started_on,
+                COALESCE(
+                    ts.actual_ended_at,
+                    t.ends_at
+                )                                       AS ended_on
+            "
+        );
+
     $sql .= "
         ORDER BY
             t.id DESC,
@@ -1594,6 +1674,51 @@ function certificate_repository_eligible(
     $stmt->execute($params);
 
     return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Count Eligible Certificates
+|--------------------------------------------------------------------------
+|
+| Number of certificate opportunities that satisfy the eligibility rules,
+| i.e. the `eligible` canonical state. Same query as
+| certificate_repository_eligible() but counted, so it is not capped by the
+| list view's LIMIT 200 and no rows have to be materialised in PHP.
+|
+| The row count and COUNT(*) agree because training_applications is unique
+| per (training_id, student_id) and a student has at most one session per
+| application, so the joins cannot multiply rows.
+|
+*/
+
+function certificate_repository_count_eligible(
+    array $filters = []
+): int {
+
+    $db =
+        certificate_repository_db();
+
+    [
+        $sql,
+        $params
+    ] =
+        certificate_repository_eligible_sql(
+            $filters,
+            'SELECT COUNT(*) AS total'
+        );
+
+    $stmt =
+        $db->prepare($sql);
+
+    $stmt->execute($params);
+
+    return
+        (int) (
+            $stmt->fetchColumn()
+            ?: 0
+        );
 }
 
 

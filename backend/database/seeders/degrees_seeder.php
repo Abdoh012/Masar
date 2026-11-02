@@ -114,14 +114,52 @@ function seed_degrees(PDO $pdo): void
             'name_ar' => 'دكتوراه الفلسفة',
             'code' => 'PHD',
         ],
+        [
+            'name' => 'Elementary School',
+            'name_ar' => 'المدرسة الابتدائية',
+            'code' => 'ELEM',
+            'level' => 'other',
+        ],
+        [
+            'name' => 'Preparatory School',
+            'name_ar' => 'المدرسة التحضيرية',
+            'code' => 'PREP',
+            'level' => 'other',
+        ],
+        [
+            'name' => 'High School',
+            'name_ar' => 'المدرسة الثانوية',
+            'code' => 'HIGH',
+            'level' => 'other',
+        ],
+        [
+            'name' => "Bachelor's Degree",
+            'name_ar' => 'بكالوريوس',
+            'code' => 'BA',
+            'level' => 'bachelor',
+        ],
+        [
+            'name' => "Master's Degree",
+            'name_ar' => 'ماجستير',
+            'code' => 'MSC',
+            'level' => 'master',
+        ],
+        [
+            'name' => 'Doctorate',
+            'name_ar' => 'دكتوراه',
+            'code' => 'DOC',
+            'level' => 'doctorate',
+        ],
     ];
 
     $sql = "
         INSERT INTO degrees (
-            name
+            name,
+            level
         )
         VALUES (
-            :name
+            :name,
+            :level
         )
         ON DUPLICATE KEY UPDATE
             is_active = 1
@@ -132,6 +170,7 @@ function seed_degrees(PDO $pdo): void
     foreach ($degrees as $degree) {
         $statement->execute([
             ':name' => $degree['name'],
+            ':level' => $degree['level'] ?? 'bachelor',
         ]);
     }
 }

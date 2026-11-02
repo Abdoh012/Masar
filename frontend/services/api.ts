@@ -3,15 +3,13 @@
 import type { TryCatchRequest, TryCatchResponse } from "@/types/server-action";
 import { redirect } from "next/navigation";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
+import { env } from "@/config/env";
 import {
   ACCESS_TOKEN_COOKIE,
   SESSION_COOKIES,
   parseSetCookie,
 } from "@/shared/lib/authCookies";
 import { deleteCookie, getCookie } from "./cookies";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
 // Clears the whole session. Each delete is guarded individually: Next.js only
 // permits cookie mutation inside Server Actions and Route Handlers, so during
@@ -63,7 +61,7 @@ export async function serverFetch({
       fetchOptions.next = { revalidate };
     }
 
-    const res = await fetch(`${API_URL}/${url}`, fetchOptions);
+    const res = await fetch(`${env.apiUrl}/${url}`, fetchOptions);
 
     if (!res.ok) {
       // Error bodies aren't guaranteed JSON (e.g. a gateway 502/504 may return

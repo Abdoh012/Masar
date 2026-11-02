@@ -33,6 +33,7 @@ function search_repository_search(string $query, array $filters = []): array {
             'certificates' => ['certificates', ['id', 'student_id', 'certificate_code', 'title'], ['certificate_code', 'title']],
         ];
         if ($type === 'trainings') return search_repository_trainings($query, $filters);
+        if ($type === 'students') return search_repository_students($query, $filters);
         if (!isset($definitions[$type])) return ['items' => [], 'total' => 0];
         return search_repository_entity($definitions[$type][0], $definitions[$type][1], $definitions[$type][2], $query, $filters);
     }
@@ -50,6 +51,152 @@ function search_repository_search(string $query, array $filters = []): array {
     $items = search_repository_fetch_all($sql, $params);
     $count_params = array_filter($params, fn($key) => $key !== ':limit' && $key !== ':offset', ARRAY_FILTER_USE_KEY);
     return ['items' => $items, 'total' => (int) search_repository_fetch_value("SELECT COUNT(*) FROM {$table} WHERE {$where}", $count_params)];
+}
+
+/*
+|--------------------------------------------------------------------------
+| Normalize A Skill Id Filter Into A Unique, Ordered Integer List
+|--------------------------------------------------------------------------
+|
+| Accepts the shapes a query string can produce for a repeated parameter -
+| `skill_id=5`, `skill_id[]=5&skill_id[]=9` and `skill_id=5,9` - and returns
+| one canonical list of positive integers.
+|
+| Ids are used rather than names because the documented search contract
+| (docs/api/search.md) and the existing training filter both key on
+| `skill_id`. Non-numeric and non-positive entries are dropped here and the
+| controller has already rejected them with a 422, so a bad value can never
+| reach the SQL.
+*/
+function search_repository_normalize_skill_ids(mixed $raw): array {
+    if ($raw === null || $raw === '' || $raw === []) {
+        return [];
+    }
+
+    $values = is_array($raw) ? $raw : explode(',', (string) $raw);
+
+    $ids = [];
+
+    foreach ($values as $value) {
+        if (is_array($value)) {
+            continue;
+        }
+
+        $value = trim((string) $value);
+
+        if ($value === '' || filter_var($value, FILTER_VALIDATE_INT) === false) {
+            continue;
+        }
+
+        $id = (int) $value;
+
+        if ($id > 0) {
+            $ids[$id] = $id;
+        }
+    }
+
+    ksort($ids);
+
+    return array_values($ids);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Student Candidate Search
+|--------------------------------------------------------------------------
+|
+| Keyword search over student candidates, with an optional skill filter.
+|
+| Behaviour preserved from the generic entity search this replaces: the
+| keyword still matches `full_name` with LIKE, the ordering is still
+| `id DESC`, and page / limit are still clamped the same way. The only
+| addition is the skill filter, so an existing caller that sends no
+| `skill_id` gets exactly the rows it got before.
+|
+| The skill filter goes through the EXISTING normalized relation
+| (`student_skills`), never a text column, matching how the training search
+| reaches `training_skills`. It is an EXISTS subquery rather than a JOIN
+| precisely so a student holding three of the requested skills is still
+| returned once - a JOIN would multiply the row, break `total`, and let one
+| candidate occupy several result slots.
+|
+| SEMANTICS: multiple ids are ANY, not ALL - a candidate matches when they
+| hold at least one of the requested skills. That is the documented contract
+| (see docs/api/search.md "Skill Filtering", which requires the default to be
+| defined) and it is the useful behaviour for candidate filtering, where
+| narrowing by a skill list should widen the shortlist rather than demand the
+| perfect candidate. A single `skill_id` is the same rule with one element,
+| so it stays identical to the training filter.
+|
+| `username` is selected alongside the existing columns so a company
+| candidate list shows the student's public handle. It is nullable and never
+| substituted with the account email.
+*/
+function search_repository_students(string $query, array $filters = []): array {
+    $page = max(1, (int) ($filters['page'] ?? 1));
+    $limit = max(1, min(100, (int) ($filters['limit'] ?? 20)));
+    $offset = ($page - 1) * $limit;
+
+    $where = 'st.full_name LIKE :kw_student';
+    $params = [':kw_student' => '%' . $query . '%'];
+
+    $skill_ids = search_repository_normalize_skill_ids($filters['skill_id'] ?? null);
+
+    if (!empty($skill_ids)) {
+        /*
+         | Placeholders are generated from the COUNT of validated integers and
+         | bound as parameters, never interpolated from raw input. The ids
+         | themselves are integers produced by search_repository_normalize_skill_ids().
+         */
+        $placeholders = [];
+
+        foreach (array_values($skill_ids) as $index => $skill_id) {
+            $name = ':f_student_skill_' . $index;
+            $placeholders[] = $name;
+            $params[$name] = $skill_id;
+        }
+
+        $where .= "
+            AND EXISTS (
+                SELECT 1
+                FROM student_skills ssk
+                WHERE ssk.student_id = st.id
+                    AND ssk.skill_id IN ( " . implode(', ', $placeholders) . " )
+            )";
+    }
+
+    if (($filters['status'] ?? '') !== '') {
+        $where .= ' AND u.status = :status';
+        $params[':status'] = (string) $filters['status'];
+    }
+
+    $select = 'st.id, st.user_id, st.full_name, u.username';
+
+    $items = search_repository_fetch_all(
+        "SELECT {$select}
+         FROM students st
+         LEFT JOIN users u ON u.id = st.user_id
+         WHERE {$where}
+         ORDER BY st.id DESC
+         LIMIT :limit OFFSET :offset",
+        $params + [':limit' => $limit, ':offset' => $offset]
+    );
+
+    $count_params = array_filter(
+        $params,
+        fn($key) => $key !== ':limit' && $key !== ':offset',
+        ARRAY_FILTER_USE_KEY
+    );
+
+    $total = (int) search_repository_fetch_value(
+        "SELECT COUNT(*)
+         FROM students st
+         LEFT JOIN users u ON u.id = st.user_id
+         WHERE {$where}",
+        $count_params
+    );
+
+    return ['items' => $items, 'total' => $total];
 }
 
 function search_repository_entity(string $table, array $select, array $columns, string $query, array $filters): array {

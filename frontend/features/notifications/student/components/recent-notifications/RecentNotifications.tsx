@@ -1,33 +1,35 @@
-import Link from "next/link";
-
 import { DashboardSection } from "@/shared/components/dashboard-section/DashboardSection";
 import { DashboardSectionHeading } from "@/shared/components/dashboard-section/DashboardSectionHeading";
 
-import { RECENT_NOTIFICATIONS } from "./constants";
+import { NOTIFICATIONS_LABELS } from "./constants";
 import NoNotifications from "./NoNotifications";
 import Notifications from "./Notifications";
+import type { AppNotification } from "../../types";
 
-// RecentNotifications: first 3 notifications + link to the full center, or "Nothing new".
-export function RecentNotifications() {
-  const isEmpty = RECENT_NOTIFICATIONS.length === 0;
+interface RecentNotificationsProps {
+  notifications: AppNotification[];
+}
+
+// RecentNotifications: the student's recent notifications, or "Nothing new".
+//
+// The feed arrives from the dashboard orchestrator, which reads it off
+// GET /students/dashboard — the previous build rendered a static list of three
+// invented items, identical for every student.
+//
+// The section deliberately has no "view all" link: there is no notifications
+// centre route in the app yet, so the link this card used to carry resolved to a
+// 404. Nothing is hidden instead — the endpoint returns at most five rows and
+// the card renders all of them, so the whole feed is visible right here.
+export function RecentNotifications({
+  notifications,
+}: RecentNotificationsProps) {
+  const isEmpty = notifications.length === 0;
 
   return (
     <DashboardSection>
-      <DashboardSectionHeading
-        title="Recent notifications"
-        action={
-          !isEmpty ? (
-            <Link
-              href="/notifications"
-              className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              View all notifications
-            </Link>
-          ) : null
-        }
-      />
+      <DashboardSectionHeading title={NOTIFICATIONS_LABELS.title} />
 
-      {isEmpty ? <NoNotifications /> : <Notifications />}
+      {isEmpty ? <NoNotifications /> : <Notifications notifications={notifications} />}
     </DashboardSection>
   );
 }

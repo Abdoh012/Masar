@@ -221,19 +221,39 @@ paths:
   /students/me:
     get:
       tags: [Students]
-      summary: Get the authenticated student's profile
-      responses:
-        '200': { $ref: '#/components/responses/Success' }
+      summary: Get the authenticated student's profile header
+      description: >-
+        Returns ONE key under `data`: `header`, the thirteen-field student self
+        header. The `student` and `profile` objects this endpoint used to
+        expose were removed from the contract and are no longer built.
 
-  /students/{id}:
-    get:
-      tags: [Students]
-      summary: Get a student by id
-      parameters:
-        - $ref: '#/components/parameters/Id'
+        The header fields are id, academic_status, is_profile_complete,
+        updated_at, bio, field, profile_image_url, profile_image_file_id,
+        full_name, specialization, university, faculty and member_since.
+
+        is_profile_complete is a completion PERCENTAGE from 0 to 100 - the same
+        value GET /students/profile/status and the dashboard report - not the
+        raw students.is_profile_complete column, which remains a boolean flag
+        and is stored unchanged.
+
+        Contact details are NOT part of this response; the student reads them on
+        GET /students/me/contact. specialization, university and faculty are
+        resolved from the lookup tables behind the student's foreign keys.
+
+        The image only resolves when students.profile_image_file_id points at a
+        file this student owns AND that is typed profile_image, so a CV, an
+        academic certificate or another student's image degrades to null rather
+        than being displayed. member_since is users.created_at formatted as
+        ISO-8601.
+
+        This is the authenticated self-read; companies browse candidates
+        through GET /search/students.
       responses:
-        '200': { $ref: '#/components/responses/Success' }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '200': { $ref: '#/components/responses/StudentMeSuccess' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+
 
   /students/profile:
     post:
@@ -271,44 +291,455 @@ paths:
     post:
       tags: [Students]
       summary: Add a skill
+      description: >-
+        Adds one skill to the authenticated student's set. `skill` is the skill
+        taxonomy lookup id (integer) resolved through the `skills` lookup; a
+        free-text name is rejected. Unknown ids answer 422 and are never written
+        to the shared taxonomy; an already-held skill answers 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [skill]
+              properties:
+                skill: { type: integer, format: int64, description: Skill taxonomy lookup ID. Integer only; free-text skill names are rejected. }
+            example:
+              skill: 141
       responses:
         '201': { $ref: '#/components/responses/Success' }
     put:
       tags: [Students]
       summary: Update the student's skills
+      description: >-
+        Replaces the student's entire skill set. `skills` is a list of skill
+        taxonomy lookup ids (integers); every id must exist in the shared
+        `skills` lookup. Unknown ids answer 422 and nothing is changed; at most
+        50 skills and at least one are required. Never writes to the taxonomy.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [skills]
+              properties:
+                skills:
+                  type: array
+                  minItems: 1
+                  maxItems: 50
+                  items: { type: integer, format: int64 }
+            example:
+              skills: [131, 139, 152, 141]
       responses:
         '200': { $ref: '#/components/responses/Success' }
     delete:
       tags: [Students]
       summary: Remove a skill
+      description: >-
+        Removes one skill from the authenticated student's set. `skill` is the
+        skill taxonomy lookup id (integer) resolved through the `skills` lookup.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [skill]
+              properties:
+                skill: { type: integer, format: int64, description: Skill taxonomy lookup ID. Integer only; free-text skill names are rejected. }
+            example:
+              skill: 141
       responses:
         '200': { $ref: '#/components/responses/Success' }
 
-  /students/me/cv:
+  /students/me/full-name:
     get:
       tags: [Students]
-      summary: Get the student's CV metadata
+      summary: Get the authenticated student's full name
+      description: >-
+        Reads students.full_name for the student resolved from the access token.
+        No student id is accepted, so the endpoint can only read the caller's
+        own name. The response contains no username, email or password fields.
       responses:
         '200': { $ref: '#/components/responses/Success' }
-    post:
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
       tags: [Students]
-      summary: Upload the student's CV
+      summary: Update the authenticated student's full name
+      description: >-
+        Writes students.full_name for the student resolved from the access token.
+        Any student_id or user_id in the body is ignored. The value is trimmed
+        and must be valid UTF-8, 1-255 characters (multibyte characters count as
+        characters); control characters are refused. users.username and the
+        account password are untouched.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [full_name]
+              properties:
+                full_name:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                  example: Nour El Sayed
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /students/me/username:
+    get:
+      tags: [Students]
+      summary: Get the authenticated student's public handle
+      description: >-
+        The public handle is a separate identity from the account email: it is
+        what a company sees next to the student's name, and it is never derived
+        from, or exposed as, the email. It is nullable and is intentionally not
+        backfilled, so an account that has never chosen a handle returns null.
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    put:
+      tags: [Students]
+      summary: Update the authenticated student's public handle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username]
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 30
+                  pattern: '^[A-Za-z][A-Za-z0-9_.]{2,29}$'
+                  description: >-
+                    3-30 characters, must start with a letter, then letters,
+                    digits, underscores or dots. Compared case-insensitively and
+                    unique across all accounts.
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: The username is already taken by another account.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /students/me/contact:
+    get:
+      tags: [Students]
+      summary: Get the authenticated student's contact details
+      description: >-
+        Returns exactly five fields: `email` (users.email), `phone`, `website`,
+        `external_profile` and `address` (students.*). Unset optional fields are
+        `null`. This is the ONLY student endpoint that returns contact details;
+        they are deliberately not part of the public student profile, and a
+        company receives contact information through the application flow
+        instead.
+      responses:
+        '200': { $ref: '#/components/responses/StudentContactSuccess' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    put:
+      tags: [Students]
+      summary: Update the authenticated student's contact details
+      description: >-
+        Updates only the supplied fields. `phone`, `website`, `external_profile`
+        and `address` need no extra proof; send `null`, an empty string or a
+        whitespace-only string to clear an optional field. `website` and
+        `external_profile` must be valid URLs when non-empty and are limited to
+        255 characters; `address` is limited to 500 characters. Updating `email`
+        uses the existing email format and uniqueness checks and does not require
+        a password; on success it clears users.email_verified_at so the new
+        address is no longer treated as proven. Password changes remain the
+        separate POST /auth/change-password flow. The account keeps
+        authenticating with email + password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: The account email. Existing format and uniqueness rules apply; no password is required.
+                phone:
+                  type: string
+                  maxLength: 50
+                  nullable: true
+                  description: Optional phone; digits, spaces and + ( ) - . only, at least one digit; null or blank clears it.
+                website:
+                  type: string
+                  format: uri
+                  maxLength: 255
+                  nullable: true
+                  description: Optional personal website / portfolio URL; null or blank clears it.
+                external_profile:
+                  type: string
+                  format: uri
+                  maxLength: 255
+                  nullable: true
+                  description: Optional external professional profile URL; null or blank clears it.
+                address:
+                  type: string
+                  maxLength: 500
+                  nullable: true
+                  description: Optional free-text address; null or blank clears it.
+      responses:
+        '200': { $ref: '#/components/responses/StudentContactSuccess' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /students/me/academic-status:
+    get:
+      tags: [Students]
+      summary: Get the authenticated student's academic status
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    put:
+      tags: [Students]
+      summary: Update the authenticated student's academic status
+      description: >-
+        Writes students.academic_status ('student' | 'graduate') and, when the
+        status is 'graduate', the graduation date (students.graduation_year /
+        students.graduation_month, derived from `graduation_date`) and the
+        graduation certificate file reference (students.academic_certificate_file_id,
+        uploaded through the existing academic-certificate flow).
+
+        A 'student' status requires no further fields and never touches the
+        certificate. A 'graduate' status requires `graduation_date`
+        (YYYY-MM-DD) and `graduation_certificate` (file).
+
+        This column is NOT a training-eligibility input. Nothing in Applications,
+        Trainings or Certificates reads it, so changing it cannot allow or
+        disallow a training application. The separate per-application
+        training_applications.applicant_type ('student' | 'graduated') is
+        untouched.
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
               type: object
+              required: [academic_status]
               properties:
-                file: { type: string, format: binary }
+                academic_status:
+                  type: string
+                  enum: [student, graduate]
+                graduation_date:
+                  type: string
+                  format: date
+                  description: Required when academic_status is graduate (YYYY-MM-DD).
+                graduation_certificate:
+                  type: string
+                  format: binary
+                  description: Required when academic_status is graduate (pdf/png/jpg/jpeg, up to 5 MB).
       responses:
         '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /students/me/academic-status/certificate:
+    delete:
+      tags: [Students]
+      summary: Delete the authenticated student's graduation certificate
+      description: >-
+        Removes the graduation certificate associated with the authenticated
+        student: verifies ownership, removes the physical file and its record,
+        then clears the student reference. Returns 200 on success, 404 when no
+        certificate exists.
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /students/me/profile-views:
+    get:
+      tags: [Students]
+      summary: Get the authenticated student's profile-view total and recent viewers
+      description: >-
+        `total_views` is a real COUNT(*) over student_profile_views for this
+        student. `recent_viewers` lists who looked, resolved to a display name
+        BY ROLE (a student viewer from students.full_name, a company viewer from
+        companies.legal_name, an admin viewer falls back to the role label). The
+        viewer's email and phone are deliberately NOT exposed.
+
+        Existing rows are unique per viewer through the composite primary key
+        (student_id, viewer_id), and viewed_at means "first seen" rather than
+        "last seen".
+
+        The endpoint reports existing rows only; it does not create new views.
+        By default, `recent_viewers` returns the six most recent viewers;
+        `total_views` remains the full count and is not limited by that cap.
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: How many recent viewers to return. 1-100, default 6.
+          schema: { type: integer, minimum: 1, maximum: 100, default: 6 }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /students/me/profile-image:
+    post:
+      tags: [Students]
+      summary: Upload or replace the student's own profile image
+      description: >-
+        multipart/form-data, field `image` (also accepted: `file`,
+        `profile_image`). Allowed extensions jpg/jpeg/png/webp, maximum 5MB
+        (PROFILE_IMAGE_MAX_SIZE, applied before the file reaches the shared
+        upload service so a rejection is a real 422 rather than the generic
+        upload failure). The MIME type is
+        sniffed from the file's own bytes with finfo and must agree with the
+        extension, and the leading magic bytes must match too. Stored through
+        the shared upload service with a randomized filename, then referenced by
+        students.profile_image_file_id. A previous image is not deleted; the
+        reference is simply replaced. If the file cannot be attached the newly
+        uploaded file is discarded, so a failed upload never leaves an orphan
+        row or an unreferenced file on disk. The returned `profile_image_url` is
+        a short-lived signed URL (about one hour) that a browser <img> tag can
+        load without an Authorization header; the signed route only serves files
+        typed profile_image, never CVs or academic certificates.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image: { type: string, format: binary }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '422': { $ref: '#/components/responses/ValidationError' }
     delete:
       tags: [Students]
-      summary: Delete the student's CV
+      summary: Detach the student's profile image
       responses:
         '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /students/me/education:
+    get:
+      tags: [Students]
+      summary: List the authenticated student's education records
+      description: >-
+        Every read and write is scoped to the authenticated student, so an id
+        belonging to another student is reported as 404 rather than acted on.
+        Records are ordered end_year DESC then id DESC, so the most recent
+        qualification comes first and an ongoing one sorts to the top.
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Students]
+      summary: Add an education record
+      description: >-
+        Requires a degree or a university. `degree_name` is the education degree
+        lookup ID (integer) and is resolved through the degrees lookup; a value
+        that does not resolve is a 422 rather than a silent fallback. `university_name`
+        and `field_study` are free-text fields. A faculty must belong to the
+        record's university and a specialization to its field of study.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                degree_id: { type: integer, format: int64 }
+                degree_name: { type: integer, format: int64, description: Education degree lookup ID. Integer IDs are accepted; free-text degree names are rejected. }
+                university_id: { type: integer, format: int64 }
+                university_name: { type: string, maxLength: 255 }
+                faculty_id: { type: integer, format: int64 }
+                field_id: { type: integer, format: int64 }
+                field_study: { type: string, maxLength: 255 }
+                specialization_id: { type: integer, format: int64 }
+                study_mode: { type: string, enum: [onsite, online, hybrid] }
+                start_year: { type: integer }
+                end_year: { type: integer }
+                grade: { type: string, maxLength: 100 }
+                is_current: { type: boolean }
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /students/me/education/{id}:
+    put:
+      tags: [Students]
+      summary: Update one of the authenticated student's education records
+      description: >-
+        Partial: untouched fields keep their stored value, and the year-order
+        rules are evaluated against the record's final merged state rather than
+        against a half-filled payload. `is_current` cannot have an end year.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                degree_id: { type: integer, format: int64 }
+                degree_name: { type: integer, format: int64, description: Education degree lookup ID. Integer IDs are accepted; free-text degree names are rejected. }
+                university_id: { type: integer, format: int64 }
+                university_name: { type: string, maxLength: 255 }
+                faculty_id: { type: integer, format: int64 }
+                field_id: { type: integer, format: int64 }
+                field_study: { type: string, maxLength: 255 }
+                specialization_id: { type: integer, format: int64 }
+                study_mode: { type: string, enum: [onsite, online, hybrid] }
+                start_year: { type: integer }
+                end_year: { type: integer }
+                grade: { type: string, maxLength: 100 }
+                is_current: { type: boolean }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Students]
+      summary: Delete one of the authenticated student's education records
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
 
   /companies:
     post:
@@ -445,29 +876,45 @@ paths:
     get:
       tags: [Applications]
       summary: List the student's applied applications
+      description: >-
+        Returns the authenticated student's pending/submitted applications
+        scoped to the student's own specialization. `data.summary` carries the
+        total count per status across all pages, not just the current page.
       responses:
-        '200': { $ref: '#/components/responses/Success' }
+        '200': { $ref: '#/components/responses/StudentApplicationListSuccess' }
 
   /applications/accepted:
     get:
       tags: [Applications]
       summary: List accepted applications
+      description: >-
+        Returns the authenticated student's accepted applications scoped to the
+        student's own specialization. `data.summary` carries the total count per
+        status across all pages, not just the current page.
       responses:
-        '200': { $ref: '#/components/responses/Success' }
+        '200': { $ref: '#/components/responses/StudentApplicationListSuccess' }
 
   /applications/rejected:
     get:
       tags: [Applications]
       summary: List rejected applications
+      description: >-
+        Returns the authenticated student's rejected applications scoped to the
+        student's own specialization. `data.summary` carries the total count per
+        status across all pages, not just the current page.
       responses:
-        '200': { $ref: '#/components/responses/Success' }
+        '200': { $ref: '#/components/responses/StudentApplicationListSuccess' }
 
   /applications/withdrawn:
     get:
       tags: [Applications]
       summary: List withdrawn applications
+      description: >-
+        Returns the authenticated student's withdrawn applications scoped to the
+        student's own specialization. `data.summary` carries the total count per
+        status across all pages, not just the current page.
       responses:
-        '200': { $ref: '#/components/responses/Success' }
+        '200': { $ref: '#/components/responses/StudentApplicationListSuccess' }
 
   /applications/all:
     get:
@@ -607,10 +1054,21 @@ paths:
   /certificates/statistics:
     get:
       tags: [Certificates]
-      summary: Certificate statistics (admin)
+      summary: Certificate statistics scoped to the authenticated user (student / company / admin)
+      description: >-
+        Returns the four canonical certificate states. `eligible` counts
+        students currently eligible to request a certificate under the
+        existing eligibility rules; `pending` counts persisted requests
+        awaiting review; `issued` counts persisted certificates currently
+        issued and not revoked; `revoked` counts revoked certificates.
+        `total` is the number of persisted certificate records in scope and
+        deliberately does NOT include `eligible`, because an eligible
+        opportunity has no persisted certificate record yet. A
+        client-supplied student_id or company_id is ignored for students and
+        companies - the scope always derives from the bearer token.
       responses:
-        '200': { $ref: '#/components/responses/Success' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        '200': { $ref: '#/components/responses/CertificateStatisticsSuccess' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
 
   /certificates/{id}:
     get:
@@ -693,11 +1151,53 @@ paths:
   /files/{id}:
     get:
       tags: [Files]
-      summary: Get file metadata
+      summary: Get file metadata or download a signed profile image
+      description: >-
+        With a Bearer token, returns metadata for a file owned by the caller;
+        `?download=true` streams the bytes (attachment). A request carrying a
+        valid short-lived `expires` + `signature` pair issued by
+        `profile_image_url` instead streams the profile image inline and does
+        not need an Authorization header. Signed access is honoured ONLY for
+        rows typed profile_image whose bytes are an allowed image MIME
+        (png, jpeg or webp): a signed URL for a CV, an academic certificate or
+        any other file type resolves to 404, and those files still require a
+        Bearer token plus an ownership check. Expired or tampered signatures
+        are 401.
       parameters:
         - $ref: '#/components/parameters/Id'
+        - name: download
+          in: query
+          required: false
+          description: Stream the file bytes instead of returning metadata.
+          schema: { type: boolean }
+        - name: expires
+          in: query
+          required: false
+          description: Unix expiry of a signed profile-image URL.
+          schema: { type: integer }
+        - name: signature
+          in: query
+          required: false
+          description: HMAC-SHA256 signature for a signed profile-image URL.
+          schema: { type: string }
       responses:
-        '200': { $ref: '#/components/responses/Success' }
+        '200':
+          description: >-
+            JSON file metadata, an attachment stream for `?download=true`, or
+            the inline profile-image bytes for a valid signed URL. The signed
+            response uses the detected image MIME type (png, jpeg or webp).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessEnvelope' }
+            application/octet-stream:
+              schema: { type: string, format: binary }
+            image/png:
+              schema: { type: string, format: binary }
+            image/jpeg:
+              schema: { type: string, format: binary }
+            image/webp:
+              schema: { type: string, format: binary }
+        '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
     delete:
       tags: [Files]
@@ -711,13 +1211,31 @@ paths:
     get:
       tags: [Files]
       summary: Download a file through the controlled endpoint
+      description: >-
+        Requires a Bearer token and ownership. The same short-lived signed
+        `expires` + `signature` parameters documented on `/files/{id}` are also
+        accepted here for profile images, which are then served inline.
       parameters:
         - $ref: '#/components/parameters/Id'
+        - name: expires
+          in: query
+          required: false
+          description: Unix expiry of a signed profile-image URL.
+          schema: { type: integer }
+        - name: signature
+          in: query
+          required: false
+          description: HMAC-SHA256 signature for a signed profile-image URL.
+          schema: { type: string }
       responses:
         '200':
-          description: File stream
+          description: File stream, or the inline image bytes for a valid signed URL
           content:
             application/octet-stream: { schema: { type: string, format: binary } }
+            image/png: { schema: { type: string, format: binary } }
+            image/jpeg: { schema: { type: string, format: binary } }
+            image/webp: { schema: { type: string, format: binary } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
 
   /notifications:
@@ -837,9 +1355,63 @@ paths:
   /search/students:
     get:
       tags: [Search]
-      summary: Search students
+      summary: Search student candidates
+      description: >-
+        Keyword search over `students.full_name` (LIKE), ordered `id DESC`.
+        The keyword is REQUIRED and must be 2-255 characters; without it the
+        request is refused with 400 "Search query is required."
+
+        Optional `skill_id` narrows the result to candidates holding the given
+        skill(s), resolved through the existing normalized `student_skills`
+        relation - never a text column. It accepts a single id (`skill_id=5`),
+        a repeated parameter (`skill_id[]=5&skill_id[]=9`) or a comma-separated
+        list (`skill_id=5,9`). Ids are used rather than names, matching the
+        existing training filter and docs/api/search.md.
+
+        SEMANTICS: multiple ids mean ANY, not ALL. A candidate matches when they
+        hold at least one of the requested skills. A single id is the same rule
+        with one element.
+
+        Implemented with an EXISTS subquery, so a candidate holding several of
+        the requested skills is still returned exactly once and `total` stays
+        correct. A non-numeric or non-positive id is a 422; an id that simply
+        does not exist yields an empty result rather than an error.
+
+        Each row is `{ id, user_id, full_name, username }`. `username` is the
+        student's PUBLIC HANDLE, which is nullable and is not backfilled - it is
+        never substituted with the account email.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search keyword matched against full_name. 2-255 characters. Also accepted as `query` or `search`.
+          schema: { type: string, minLength: 2, maxLength: 255 }
+        - name: skill_id
+          in: query
+          required: false
+          description: >-
+            Filter by skill. Repeatable and comma-separated forms are accepted
+            and mean ANY of the listed skills.
+          schema:
+            oneOf:
+              - type: integer
+                minimum: 1
+              - type: array
+                items: { type: integer, minimum: 1 }
+          style: form
+          explode: true
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
       responses:
         '200': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/ValidationError' }
 
   /search/certificates:
     get:
@@ -890,6 +1462,16 @@ paths:
       responses:
         '200': { $ref: '#/components/responses/Success' }
 
+  /lookups/education-degrees:
+    get:
+      tags: [Lookups]
+      summary: List education degrees
+      description: >-
+        Education degrees available to students inside the profile education
+        history, read from the shared degrees lookup.
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
   /admin/dashboard:
     get:
       tags: [Admin]
@@ -934,6 +1516,116 @@ components:
       schema: { type: integer, format: int64 }
 
   schemas:
+    StudentHeader:
+      type: object
+      description: >-
+        The complete GET /students/me header contract. Exactly these thirteen
+        fields, no more.
+      required:
+        - id
+        - academic_status
+        - is_profile_complete
+        - updated_at
+        - bio
+        - field
+        - profile_image_url
+        - profile_image_file_id
+        - full_name
+        - specialization
+        - university
+        - faculty
+        - member_since
+      additionalProperties: false
+      properties:
+        id: { type: integer, example: 1498 }
+        academic_status: { type: string, nullable: true, example: student }
+        is_profile_complete:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: >-
+            Completion PERCENTAGE (0-100) computed from field_id,
+            specialization_id, at least one skill and an attached CV. The same
+            canonical value GET /students/profile/status returns. This is NOT
+            the stored students.is_profile_complete boolean column.
+          example: 50
+        updated_at: { type: string, nullable: true, example: '2026-10-01 02:48:57' }
+        bio: { type: string, nullable: true }
+        field:
+          type: string
+          nullable: true
+          description: study_fields.name behind students.field_id; null when unset.
+          example: Engineering
+        profile_image_url:
+          type: string
+          nullable: true
+          description: Public API download URL; the filesystem path is never exposed.
+          example: 'http://localhost/Masar/backend/api/v1/files/544?download=true'
+        profile_image_file_id: { type: integer, nullable: true, example: 544 }
+        full_name: { type: string, nullable: true, example: Mohamed Ahmed }
+        specialization: { type: string, nullable: true, example: Backend Development }
+        university: { type: string, nullable: true }
+        faculty: { type: string, nullable: true }
+        member_since:
+          type: string
+          nullable: true
+          description: users.created_at formatted as ISO-8601 with a timezone offset.
+          example: '2026-09-02T05:23:43+03:00'
+    StudentMeData:
+      type: object
+      required: [header]
+      additionalProperties: false
+      properties:
+        header: { $ref: '#/components/schemas/StudentHeader' }
+    StudentContactData:
+      type: object
+      required: [email, phone, website, external_profile, address]
+      additionalProperties: false
+      properties:
+        email: { type: string, format: email, example: student@example.com }
+        phone: { type: string, nullable: true, maxLength: 50, example: '01112345682' }
+        website: { type: string, format: uri, nullable: true, maxLength: 255, example: 'https://student.example.com' }
+        external_profile: { type: string, format: uri, nullable: true, maxLength: 255, example: 'https://www.linkedin.com/in/student' }
+        address: { type: string, nullable: true, maxLength: 500, example: 'New Cairo, Cairo' }
+    ApplicationStatusSummary:
+      type: object
+      description: >-
+        The student's total number of applications per lifecycle status across
+        all pages (not just the current page). The same summary is returned by
+        all four tab endpoints and only counts the authenticated student's own
+        applications.
+      required: [applied_count, accepted_count, rejected_count, withdrawn_count]
+      additionalProperties: false
+      properties:
+        applied_count:
+          type: integer
+          minimum: 0
+          description: Applications whose DB status is submitted (displayed as Applied).
+          example: 4
+        accepted_count: { type: integer, minimum: 0, example: 2 }
+        rejected_count: { type: integer, minimum: 0, example: 1 }
+        withdrawn_count: { type: integer, minimum: 0, example: 3 }
+    StudentApplicationListData:
+      type: object
+      required: [summary, items, pagination]
+      properties:
+        summary: { $ref: '#/components/schemas/ApplicationStatusSummary' }
+        items:
+          type: array
+          description: >-
+            The tab's card DTO items. The item shape depends on the endpoint
+            (Applied, Accepted, Rejected or Withdrawn card DTO).
+          items: { type: object }
+        pagination:
+          type: object
+          required: [current_page, per_page, total, total_pages, has_next_page, has_previous_page]
+          properties:
+            current_page: { type: integer, minimum: 1, example: 1 }
+            per_page: { type: integer, minimum: 1, example: 20 }
+            total: { type: integer, minimum: 0, example: 4 }
+            total_pages: { type: integer, minimum: 0, example: 1 }
+            has_next_page: { type: boolean, example: false }
+            has_previous_page: { type: boolean, example: false }
     SuccessEnvelope:
       type: object
       properties:
@@ -984,11 +1676,67 @@ components:
         password: { type: string, format: password }
     ChangePasswordRequest:
       type: object
-      required: [current_password, password, password_confirmation]
+      required: [current_password, new_password, new_password_confirmation]
       properties:
-        current_password: { type: string, format: password }
-        password: { type: string, format: password }
-        password_confirmation: { type: string, format: password }
+        current_password:
+          type: string
+          format: password
+          description: The account's current password. Must verify, otherwise the change is refused with 400.
+        new_password:
+          type: string
+          format: password
+          minLength: 12
+          description: >-
+            The new password. Policy (enforced by security_password_strength_errors(),
+            the single source of truth shared with register and reset-password):
+            at least 12 characters, with at least one lowercase letter, one
+            uppercase letter, one digit and one special character. Must differ
+            from the current password.
+        new_password_confirmation:
+          type: string
+          format: password
+          description: Must equal new_password exactly.
+      description: >-
+        Body of POST /auth/change-password. The field names are
+        current_password / new_password / new_password_confirmation.
+
+        On success the account's password_hash is rewritten and every row in
+        `auth_tokens` and `refresh_tokens` for that user is revoked, the current
+        device's access token is blacklisted, and the remember-me and refresh
+        cookies are cleared.
+
+        SESSION BEHAVIOUR: access tokens are stateless JWTs and are not
+        persisted when issued, so other devices are NOT signed out immediately.
+        An outstanding access token on another device remains valid until it
+        expires on its own (JWT_ACCESS_TTL, default 3600 seconds = 1 hour) and
+        then fails to refresh. See docs/api/authentication.md.
+
+        No application, training, payment or certificate record is read or
+        written by this endpoint.
+    CertificateStatistics:
+      type: object
+      required: [total, eligible, pending, issued, revoked]
+      properties:
+        total:
+          type: integer
+          description: Persisted certificate records in scope. Never includes eligible.
+          example: 14
+        eligible:
+          type: integer
+          description: Students eligible to request a certificate. Not a persisted status.
+          example: 8
+        pending:
+          type: integer
+          description: Persisted certificate requests awaiting review.
+          example: 5
+        issued:
+          type: integer
+          description: Certificates currently issued and not revoked.
+          example: 6
+        revoked:
+          type: integer
+          description: Certificates that have been revoked.
+          example: 3
 
   responses:
     Success:
@@ -996,6 +1744,52 @@ components:
       content:
         application/json:
           schema: { $ref: '#/components/schemas/SuccessEnvelope' }
+    StudentMeSuccess:
+      description: >-
+        The authenticated student's self header. `data` contains `header` and
+        nothing else.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/SuccessEnvelope'
+              - type: object
+                properties:
+                  data: { $ref: '#/components/schemas/StudentMeData' }
+    StudentContactSuccess:
+      description: >-
+        The authenticated student's five-field contact details. Unset optional
+        fields are null, and no other contact field is returned.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/SuccessEnvelope'
+              - type: object
+                properties:
+                  data: { $ref: '#/components/schemas/StudentContactData' }
+    StudentApplicationListSuccess:
+      description: >-
+        The authenticated student's applications for the tab plus a `summary`
+        object with the total count per status across all pages.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/SuccessEnvelope'
+              - type: object
+                properties:
+                  data: { $ref: '#/components/schemas/StudentApplicationListData' }
+    CertificateStatisticsSuccess:
+      description: Certificate statistics for the authenticated user's scope
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/SuccessEnvelope'
+              - type: object
+                properties:
+                  data: { $ref: '#/components/schemas/CertificateStatistics' }
     AuthSuccess:
       description: Authenticated successfully (access token returned; refresh cookie set)
       content:
@@ -1020,6 +1814,11 @@ components:
           schema: { $ref: '#/components/schemas/ErrorEnvelope' }
     NotFound:
       description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    Error:
+      description: The request could not be processed
       content:
         application/json:
           schema: { $ref: '#/components/schemas/ErrorEnvelope' }

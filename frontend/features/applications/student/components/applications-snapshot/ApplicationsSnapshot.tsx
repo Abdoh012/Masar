@@ -4,31 +4,42 @@ import { FileText } from "lucide-react";
 import { DashboardSection } from "@/shared/components/dashboard-section/DashboardSection";
 import { DashboardSectionHeading } from "@/shared/components/dashboard-section/DashboardSectionHeading";
 
+import type { RecentApplicationRow, StatusCounts } from "../../types";
 import {
   APPLICATION_STATUSES,
-  RECENT_APPLICATIONS,
+  SNAPSHOT_EMPTY,
   STATUS_COUNT_KEYS,
-  STATUS_COUNTS,
 } from "./constants";
-import type { StatusCounts } from "../../types";
-import { RecentApplicationRow } from "./RecentApplicationRow";
+import { RecentApplicationList } from "./RecentApplicationList";
+import { SnapshotTotals } from "./SnapshotTotals";
 import { StatusCountBadge } from "./StatusCountBadge";
 
-const COUNTS_ZERO: StatusCounts = {
-  applied: 0,
-  accepted: 0,
-  rejected: 0,
-  withdrawn: 0,
-};
+interface ApplicationsSnapshotProps {
+  counts: StatusCounts;
+  recent: RecentApplicationRow[];
+  /** Every application the student has ever submitted (`total`) and the share
+   *  that were accepted (`acceptance_rate`) — the two figures the four status
+   *  tiles break down but cannot state themselves. */
+  total: number;
+  acceptanceRate: number;
+}
 
-// ApplicationsSnapshot: status-count tiles + up to 3 recent rows, or the empty state.
-export function ApplicationsSnapshot() {
-  const isEmpty =
-    STATUS_COUNTS.applied === COUNTS_ZERO.applied &&
-    STATUS_COUNTS.accepted === COUNTS_ZERO.accepted &&
-    STATUS_COUNTS.rejected === COUNTS_ZERO.rejected &&
-    STATUS_COUNTS.withdrawn === COUNTS_ZERO.withdrawn &&
-    RECENT_APPLICATIONS.length === 0;
+// ApplicationsSnapshot: the headline totals, status-count tiles, and up to 3
+// recent rows, or the empty state. Every figure arrives from the dashboard
+// orchestrator, which reads them off GET /students/dashboard.
+//
+// The section is full-width, which is what gives the four tiles room: the 4-up
+// grid only engages at `lg`, where each tile has real width, and stacks to two
+// columns below that instead of squeezing four into a phone or a half-width
+// cell. The tiles themselves are compact and horizontal, so two columns on a
+// phone still read as a full tile rather than a truncated one.
+export function ApplicationsSnapshot({
+  counts,
+  recent,
+  total,
+  acceptanceRate,
+}: ApplicationsSnapshotProps) {
+  const isEmpty = counts.total === 0 && recent.length === 0;
 
   return (
     <DashboardSection>
@@ -36,12 +47,18 @@ export function ApplicationsSnapshot() {
         title="Applications snapshot"
         action={
           !isEmpty ? (
-            <Link
-              href="/applications"
-              className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary-text transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              View all applications
-            </Link>
+            <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
+              <SnapshotTotals
+                total={total}
+                acceptanceRate={acceptanceRate}
+              />
+              <Link
+                href="/applications"
+                className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary-text transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                View all applications
+              </Link>
+            </div>
           ) : null
         }
       />
@@ -54,32 +71,28 @@ export function ApplicationsSnapshot() {
             className="size-6 text-muted-foreground"
           />
           <p className="text-sm font-semibold text-foreground">
-            No applications yet
+            {SNAPSHOT_EMPTY.title}
           </p>
           <p className="text-xs text-muted-foreground">
-            Applications you submit will appear here.
+            {SNAPSHOT_EMPTY.message}
           </p>
         </div>
       ) : (
         <>
-          {/* Status count tiles — always 4 columns (2 on mobile) */}
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {/* Status count tiles — two columns until there is room for all four */}
+          <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
             {APPLICATION_STATUSES.map((status) => (
               <StatusCountBadge
                 key={status}
                 label={status}
-                count={STATUS_COUNTS[STATUS_COUNT_KEYS[status]]}
+                count={counts[STATUS_COUNT_KEYS[status]]}
                 status={status}
               />
             ))}
           </div>
 
-          {/* Recent applications list (up to 3 rows) */}
-          <ul className="mt-3">
-            {RECENT_APPLICATIONS.slice(0, 3).map((row) => (
-              <RecentApplicationRow key={row.id} row={row} />
-            ))}
-          </ul>
+          {/* Recent applications list */}
+          <RecentApplicationList rows={recent} />
         </>
       )}
     </DashboardSection>

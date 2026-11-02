@@ -1,569 +1,189 @@
-# MASAR API — Students
+# Students API
 
-## Overview
+The Students API manages the authenticated student's profile, academic information, and skills.
 
-The Students API manages the authenticated student's profile, academic information, skills, and CV.
+## 1. Get Current Student Header
 
-Base URL:
-
-```text
-http://localhost/Masar/backend/api/v1
-```
-
-All endpoints require a Bearer token unless stated otherwise.
-
-```http
-Authorization: Bearer ACCESS_TOKEN
-Accept: application/json
-Content-Type: application/json
-```
-
-All endpoints below require the authenticated user role `student`, except `GET /students/{id}` which also allows `company` and `admin`.
-
----
-
-## 1. Get Current Student Profile
-
-```http
-GET /api/v1/students/me
-```
-
-Returns the authenticated student's full profile including the attached CV file ID.
-
-### Response
-
-```json
-{
-    "success": true,
-    "data": {
-        "student": {
-            "id": 1,
-            "user_id": 25,
-            "full_name": "Test Student",
-            "phone": null,
-            "bio": null,
-            "field_id": 1,
-            "degree_id": 3,
-            "specialization_id": 5,
-            "graduation_year": 2027,
-            "city": null,
-            "profile_image_file_id": null,
-            "cv_file_id": 9,
-            "is_profile_complete": 1,
-            "created_at": "2026-08-01 12:00:00",
-            "updated_at": "2026-08-01 12:00:00"
-        },
-        "profile": {
-            "student_id": 1,
-            "skills": ["PHP", "MySQL"],
-            "cv_file_id": 9
-        }
-    }
-}
-```
-
----
+`GET /api/v1/students/me` — returns only `data.header` (thirteen fields: id, academic_status, is_profile_complete, updated_at, bio, field, profile_image_url, profile_image_file_id, full_name, specialization, university, faculty, member_since).
 
 ## 2. Create Student Profile
 
-```http
-POST /api/v1/students/profile
-```
-
-Creates the student profile for the authenticated user. Academic fields are name-based and resolved to internal IDs.
-
-### Request
-
-```json
-{
-    "full_name": "Test Student",
-    "field": "Engineering",
-    "specialization": "Artificial Intelligence",
-    "degree": "Bachelor of Computer Science",
-    "graduation_year": 2027,
-    "bio": "Backend developer",
-    "phone": "01000000002",
-    "city": "Cairo",
-    "skills": ["PHP", "MySQL"],
-    "cv_file_id": 9
-}
-```
-
-### Notes
-
-- `field` and `specialization` are required and must match seeded lookup data. The legacy `faculty` key is accepted as a fallback for the User Field (`faculty` + `specialization`), so clients sending the old key name still work.
-- `degree`, `graduation_year`, `bio`, `phone`, `city`, `skills`, and `cv_file_id` are optional.
-- If `cv_file_id` is supplied, the file must belong to the authenticated user.
-- `university` is no longer part of the student model and is ignored if sent.
-
-### Response
-
-`201 Created`
-
-```json
-{
-    "success": true,
-    "data": {
-        "student": {
-            "id": 1,
-            "full_name": "Test Student",
-            "field_id": 1,
-            "degree_id": 3,
-            "specialization_id": 5,
-            "graduation_year": 2027,
-            "is_profile_complete": 0
-        }
-    }
-}
-```
-
----
+`POST /api/v1/students/profile` — name-based academic fields; optional `skills` array and `cv_file_id`.
 
 ## 3. Update Student Profile
 
-```http
-PUT /api/v1/students/profile
-```
-
-Updates any subset of the authenticated student's profile fields.
-
-### Request
-
-```json
-{
-    "field": "Engineering",
-    "specialization": "Software Engineering",
-    "degree": "Bachelor of Computer Science",
-    "graduation_year": 2028,
-    "bio": "Updated bio",
-    "phone": "01000000002",
-    "city": "Giza",
-    "skills": ["PHP", "Laravel", "MySQL"],
-    "cv_file_id": 9
-}
-```
-
-### Notes
-
-- `field` and `specialization` must be provided together when either is updated. The legacy `faculty` key is accepted as a fallback for the User Field.
-- Pass an empty string for `degree`, or `0`/`null` for `cv_file_id`, to clear that field.
-- `cv_file_id` is only accepted when the file belongs to the authenticated user. Otherwise the request is rejected with `422`.
-- `university` is ignored if sent.
-
-### Response
-
-```json
-{
-    "success": true,
-    "data": {
-        "student": {
-            "id": 1,
-            "full_name": "Test Student",
-            "field_id": 1,
-            "degree_id": 3,
-            "specialization_id": 7,
-            "graduation_year": 2028,
-            "cv_file_id": 9
-        }
-    }
-}
-```
-
----
+`PUT /api/v1/students/profile` — partial update of profile fields; `skills` array and `cv_file_id` accepted.
 
 ## 4. Get Profile Completion Status
 
-```http
-GET /api/v1/students/profile/status
-```
-
-Reports whether the profile is complete and which fields are still missing.
-
-### Response
-
-```json
-{
-    "success": true,
-    "data": {
-        "completed": false,
-        "missing_fields": ["skills", "cv"],
-        "completion_percentage": 60
-    }
-}
-```
-
-Completion is based on `field_id`, `specialization_id`, skills, and an attached CV.
-
----
+`GET /api/v1/students/profile/status` — returns `completed`, `missing_fields`, `completion_percentage` (based on field_id, specialization_id, skills, and CV).
 
 ## 5. Complete Student Profile
 
-```http
-POST /api/v1/students/profile/complete
-```
+`POST /api/v1/students/profile/complete` — completes the profile in one request.
 
-Completes the profile in one request and sets `is_profile_complete = 1`.
+## 6. Get My Skills
 
-### Request
+`GET /api/v1/students/me/skills` — lists the authenticated student's current skills (names), alphabetically.
 
-```json
-{
-    "full_name": "Test Student",
-    "field": "Engineering",
-    "specialization": "Artificial Intelligence",
-    "degree": "Bachelor of Computer Science",
-    "bio": "Backend developer",
-    "skills": ["PHP", "Laravel", "MySQL"],
-    "cv_file_id": 9
-}
-```
+## 7. Add a Skill
 
-### Notes
+`POST /api/v1/students/me/skills` — body `{"skill": <id>}` (taxonomy lookup ID, integer). Returns 201, or 409 if already held, 422 if unknown.
 
-- `full_name`, `field`, `specialization`, `skills` and `cv_file_id` are required. The legacy `faculty` key is accepted as a fallback for the User Field.
-- `cv_file_id` must belong to the authenticated user.
+## 8. Replace All Skills
 
-### Response
+`PUT /api/v1/students/me/skills` — body `{"skills": [<id>, ...]}`. At most 50, at least 1. Unknown id rejects the whole request.
 
-```json
-{
-    "success": true,
-    "data": {
-        "student": {
-            "id": 1,
-            "is_profile_complete": 1,
-            "cv_file_id": 9
-        },
-        "profile": {
-            "skills": ["PHP", "Laravel", "MySQL"]
-        }
-    }
-}
-```
+## 9. Remove a Skill
 
----
+`DELETE /api/v1/students/me/skills` — body `{"skill": <id>}`. Returns 200 or 404.
 
-## 6. Get Public Student Profile
+## 10. Get / Update the Full Name
+
+`GET/PUT /api/v1/students/me/full-name`.
+
+## 11. Get / Update Contact Information
+
+`GET/PUT /api/v1/students/me/contact` — phone, website, external_profile, address, email.
+
+## 12. Get / Update Academic Status
 
 ```http
-GET /api/v1/students/{id}
+GET /api/v1/students/me/academic-status
+PUT /api/v1/students/me/academic-status
+DELETE /api/v1/students/me/academic-status/certificate
 ```
 
-Returns a sanitized public profile. `phone`, `user_id`, `cv_file_id`, and `profile_image_file_id` are removed.
+The profile-level Student / Graduate state (`students.academic_status`,
+`enum('student','graduate')`, default `student`). A graduate also stores a
+graduation date (`students.graduation_date`) and a graduation certificate
+(`students.academic_certificate_file_id`, uploaded through the shared file
+upload module).
 
-### Authentication
-
-Allowed roles: `student`, `company`, `admin`.
-
-### Response
-
-```json
-{
-    "success": true,
-    "data": {
-        "student": {
-            "id": 1,
-            "full_name": "Test Student",
-            "bio": "Backend developer",
-            "field_id": 1,
-            "degree_id": 3,
-            "specialization_id": 5,
-            "graduation_year": 2027,
-            "city": "Cairo"
-        },
-        "profile": {
-            "skills": ["PHP", "MySQL"]
-        }
-    }
-}
-```
-
----
-
-## 7. Get My Skills
-
-```http
-GET /api/v1/students/me/skills
-```
-
-Returns the skill names attached to the authenticated student.
-
-### Response
-
-```json
-{
-    "success": true,
-    "data": {
-        "skills": ["PHP", "MySQL"]
-    }
-}
-```
-
----
-
-## 8. Add a Skill
-
-```http
-POST /api/v1/students/me/skills
-```
-
-### Request
-
-```json
-{
-    "skill": "Laravel"
-}
-```
-
-The skill must exist in the `skills` lookup table. Duplicate skills are ignored.
-
-### Response
-
-`201 Created`
-
-```json
-{
-    "success": true,
-    "data": {
-        "skills": ["PHP", "MySQL", "Laravel"]
-    }
-}
-```
-
----
-
-## 9. Replace All Skills
-
-```http
-PUT /api/v1/students/me/skills
-```
-
-Replaces the student's full skill list.
-
-### Request
-
-```json
-{
-    "skills": ["PHP", "Laravel", "MySQL"]
-}
-```
-
-### Response
-
-```json
-{
-    "success": true,
-    "data": {
-        "student_id": 1,
-        "skills": ["PHP", "Laravel", "MySQL"]
-    }
-}
-```
-
----
-
-## 10. Remove a Skill
-
-```http
-DELETE /api/v1/students/me/skills
-```
-
-### Request
-
-```json
-{
-    "skill": "Laravel"
-}
-```
-
-### Response
-
-```json
-{
-    "success": true,
-    "data": {
-        "skills": ["PHP", "MySQL"]
-    }
-}
-```
-
----
-
-## 11. Get My CV
-
-```http
-GET /api/v1/students/me/cv
-```
-
-Returns the file ID of the attached CV, or `null` if none is attached.
-
-### Response
-
-```json
-{
-    "success": true,
-    "data": {
-        "cv_file_id": 9
-    }
-}
-```
-
----
-
-## 12. Attach CV
-
-```http
-POST /api/v1/students/me/cv
-```
-
-Attaches an uploaded file as the student's CV.
-
-### Request
-
-```json
-{
-    "file_id": 9
-}
-```
-
-The file must belong to the authenticated user. Otherwise the request is rejected with `422`.
-
-### Response
-
-```json
-{
-    "success": true,
-    "data": {
-        "message": "CV attached successfully.",
-        "cv_file_id": 9
-    }
-}
-```
-
----
-
-## 13. Remove CV
-
-```http
-DELETE /api/v1/students/me/cv
-```
-
-Requires a student Bearer token. Removes the current CV:
-
-- deletes the physical file from storage (`app/storage/uploads/...`),
-- deletes the corresponding `files` record,
-- clears the student's `cv_file_id` reference.
-
-The deletion is scoped to the authenticated student's stored CV record only; the
-physical path is resolved from the database and validated to stay inside the
-application's upload/storage directory, so no client-supplied or out-of-tree path
-can ever be deleted. Returns `404` with `No CV found.` when the student has no CV.
-
-### Response (success)
+### Response (student)
 
 ```json
 {
     "success": true,
     "message": null,
     "data": {
-        "message": "CV removed successfully."
+        "academic_status": "student"
     },
     "errors": null
 }
 ```
 
-### Response (no CV attached)
+### Response (graduate)
 
 ```json
 {
-    "success": false,
-    "message": "No CV found.",
-    "data": null,
+    "success": true,
+    "message": null,
+    "data": {
+        "academic_status": "graduate",
+        "graduation_date": "2025-06-15",
+        "graduation_certificate": {
+            "id": 123,
+            "file_name": "graduation_certificate.pdf",
+            "file_url": "http://localhost/Masar/backend/api/v1/files/123?download=true"
+        }
+    },
     "errors": null
 }
 ```
 
----
+`graduation_certificate` is only present when a certificate file is on file and
+still resolves to a file the student owns. `is_graduate`, `graduation_year`,
+`graduation_month` and `graduation_month_name` are no longer returned.
 
-## Related: Uploading the CV File
+### Request (PUT, multipart/form-data)
 
-The CV endpoints above accept a `file_id`. To create the file, upload it first:
+For `student`:
 
-```http
-POST /api/v1/files
-Content-Type: multipart/form-data
-
-type=cv
-file=<file>
+```
+academic_status = student
 ```
 
-The response contains the new file `id`, `url`, and safe metadata only. No filesystem paths are exposed. Download the file with:
+For `graduate`:
 
-```http
-GET /api/v1/files/{id}?download=true
+```
+academic_status = graduate
+graduation_date = 2026-06-30
+graduation_certificate = [Uploaded PDF or Image]
 ```
 
----
+`graduation_date` (YYYY-MM-DD) and `graduation_certificate` (pdf/png/jpg/jpeg,
+up to 5 MB) are both required when the status is `graduate`.
 
-## Standard Errors
+### Delete certificate
 
-### 401 Unauthorized
+`DELETE /api/v1/students/me/academic-status/certificate` removes the authenticated
+student's graduation certificate: verifies ownership, removes the physical file
+and its record, then clears the student reference. Returns `200` on success and
+`404` when no certificate exists.
 
-```json
-{
-    "success": false,
-    "message": "Unauthenticated."
-}
-```
+### Relationship to training eligibility
 
-### 403 Forbidden
+`students.academic_status` is **not** a training-eligibility input.
 
-```json
-{
-    "success": false,
-    "message": "Only students can access this resource."
-}
-```
+## 13. Get Profile Views
 
-### 404 Not Found
+`GET /api/v1/students/me/profile-views`.
 
-```json
-{
-    "success": false,
-    "message": "Student profile not found."
-}
-```
+## 14. Education Records
 
-### 422 Validation Error
+`/api/v1/students/me/education` — list/add/update/delete.
 
-```json
-{
-    "success": false,
-    "message": "Validation failed.",
-    "errors": {
-        "full_name": "Full name is required."
-    }
-}
-```
+## 15. Profile Image
 
----
+`POST/DELETE /api/v1/students/me/profile-image` (multipart, field `image`).
+
+## 16. Standard Errors
+
+Standard error envelope and validation errors.
 
 ## Endpoint Summary
 
-```text
+```
 GET    /api/v1/students/me
 POST   /api/v1/students/profile
 PUT    /api/v1/students/profile
 GET    /api/v1/students/profile/status
 POST   /api/v1/students/profile/complete
-GET    /api/v1/students/{id}
 
 GET    /api/v1/students/me/skills
 POST   /api/v1/students/me/skills
 PUT    /api/v1/students/me/skills
 DELETE /api/v1/students/me/skills
 
-GET    /api/v1/students/me/cv
-POST   /api/v1/students/me/cv
-DELETE /api/v1/students/me/cv
+GET    /api/v1/students/me/full-name
+PUT    /api/v1/students/me/full-name
+
+GET    /api/v1/students/me/username
+PUT    /api/v1/students/me/username
+
+GET    /api/v1/students/me/contact
+PUT    /api/v1/students/me/contact
+
+GET    /api/v1/students/me/academic-status
+PUT    /api/v1/students/me/academic-status
+DELETE /api/v1/students/me/academic-status/certificate
+
+GET    /api/v1/students/me/profile-views
+
+GET    /api/v1/students/me/education
+POST   /api/v1/students/me/education
+PUT    /api/v1/students/me/education/{id}
+DELETE /api/v1/students/me/education/{id}
+
+POST   /api/v1/students/me/profile-image
+DELETE /api/v1/students/me/profile-image
 ```
+
+## Related: Password Changes
+
+See `authentication.md`.
+
+## Related: Company Candidate Filtering
+
+See `search.md`.

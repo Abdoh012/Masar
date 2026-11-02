@@ -15,6 +15,7 @@
 
 require_once __DIR__ . '/../services/file_upload_service.php';
 require_once __DIR__ . '/../repositories/file_repository.php';
+require_once __DIR__ . '/../../../shared/functions/file_urls.php';
 
 
 /*
@@ -175,7 +176,7 @@ function file_controller_show( int $file_id ): array {
         $file = file_repository_find_for_user( $file_id, $user_id );
 
         if (!$file) {
-            return file_controller_error( 'File not found.' );
+            return file_controller_error( 'File not found.', 404 );
         }
 
         return file_controller_success( file_controller_sanitize_file($file) );
@@ -296,13 +297,13 @@ function file_controller_download( int $file_id ): array {
         $file = file_repository_find_for_user( $file_id, $user_id );
 
         if (!$file) {
-            return file_controller_error( 'File not found.' );
+            return file_controller_error( 'File not found.', 404 );
         }
 
         $path = $file['path'] ?? $file['storage_path'] ?? $file['file_path'] ?? null;
 
         if ( !$path || !is_file( $path ) ) {
-            return file_controller_error( 'Physical file not found.' );
+            return file_controller_error( 'Physical file not found.', 404 );
         }
 
         return [
@@ -323,6 +324,87 @@ function file_controller_download( int $file_id ): array {
             'mime_type' =>
                 $file['mime_type']
                 ?? 'application/octet-stream',
+
+            'size' =>
+                (int) ( $file['size'] ?? filesize($path) )
+        ];
+
+    } catch (Throwable $e) {
+        return file_controller_error( 'Unable to download file.' );
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Signed Profile Image
+|--------------------------------------------------------------------------
+|
+| Serves a profile image to a browser <img> request that cannot carry the
+| SPA's Bearer header. The caller has already presented a valid short-lived
+| signature for THIS file id.
+|
+| The signature alone is not enough: the row must be typed profile_image and
+| the bytes on disk must really be one of the allowed image types. A signed
+| URL for a CV or an academic certificate therefore still resolves to 404,
+| and the normal Bearer + ownership download path is untouched.
+|
+*/
+
+function file_controller_signed_profile_image( int $file_id, mixed $expires_at, mixed $signature ): array {
+
+    if ( !file_signed_url_verify( $file_id, $expires_at, $signature ) ) {
+        return file_controller_error( 'Authentication required.', 401 );
+    }
+
+    try {
+        $file = file_repository_find( $file_id );
+
+        if ( !is_array( $file ) || ( $file['type'] ?? '' ) !== FILE_TYPE_PROFILE_IMAGE ) {
+            return file_controller_error( 'File not found.', 404 );
+        }
+
+        $path = $file['path'] ?? $file['storage_path'] ?? $file['file_path'] ?? null;
+
+        if ( !is_string( $path ) || $path === '' || !is_file( $path ) ) {
+            return file_controller_error( 'Physical file not found.', 404 );
+        }
+
+        if ( !file_upload_service_is_safe_storage_path( $path ) ) {
+            return file_controller_error( 'File not found.', 404 );
+        }
+
+        /*
+         * Re-detect from the bytes on disk. Do NOT pass files.mime_type as a
+         * fallback here: if finfo is unavailable or fails, the safe outcome is
+         * to refuse the image rather than trust a client-influenced DB value.
+         */
+        $mime_type = file_upload_service_detect_mime_type( $path );
+
+        if ( !in_array( $mime_type, PROFILE_IMAGE_MIMES, true ) ) {
+            return file_controller_error( 'File not found.', 404 );
+        }
+
+        return [
+            'success' =>
+                true,
+
+            'download' =>
+                true,
+
+            'inline' =>
+                true,
+
+            'path' =>
+                $path,
+
+            'filename' =>
+                $file['original_name']
+                ?? $file['filename']
+                ?? basename($path),
+
+            'mime_type' =>
+                $mime_type,
 
             'size' =>
                 (int) ( $file['size'] ?? filesize($path) )
@@ -428,15 +510,14 @@ function file_controller_normalize_multiple_files( array $files ): array {
 |--------------------------------------------------------------------------
 |
 | Builds the public API download URL for a file. The absolute filesystem
-| path is never exposed to clients.
+| path is never exposed to clients. Delegates to the shared helper so
+| every module that references a file emits the same URL shape.
 |
 */
 
 function file_controller_public_file_url( int $file_id ): string {
 
-    $base = rtrim( (string) ( getenv('APP_URL') ?: request_base_url() ), '/' );
-
-    return $base . '/api/v1/files/' . $file_id . '?download=true';
+    return (string) file_public_url( $file_id );
 }
 
 
@@ -457,7 +538,22 @@ function file_controller_sanitize_file( array $file ): array {
     $file_id = (int) ( $file['id'] ?? 0 );
 
     if ($file_id > 0) {
-        $file['url'] = file_controller_public_file_url( $file_id );
+        /*
+         * A profile image is also rendered by a browser <img> tag, which
+         * cannot send the Bearer header. Emit the short-lived signed URL only
+         * when the signed route would actually accept the row: the type must
+         * be profile_image AND the stored MIME must be one of the allowed
+         * image types. Company logos reuse files.type = profile_image but may
+         * be GIF, so those keep the Bearer-protected URL instead of receiving
+         * a signed URL that would 404.
+         */
+        $signed_profile_image =
+            ( $file['type'] ?? '' ) === FILE_TYPE_PROFILE_IMAGE
+            && in_array( (string) ( $file['mime_type'] ?? '' ), PROFILE_IMAGE_MIMES, true );
+
+        $file['url'] = $signed_profile_image
+            ? file_signed_url( $file_id )
+            : file_controller_public_file_url( $file_id );
     }
 
     return $file;

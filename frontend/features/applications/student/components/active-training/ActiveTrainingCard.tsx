@@ -1,29 +1,22 @@
-import { cn } from "@/shared/lib/utils";
+import { TrainingProgressBar } from "./TrainingProgressBar";
 
 interface ActiveTrainingCardProps {
   company: string;
   listingTitle: string;
-  // Present only while a trial is running; both undefined for the
-  // part-time/full-time presentation, which shows no progress track.
-  daysRemaining?: number;
-  totalDays?: number;
+  /** Elapsed share of the run, 0..100 — computed by the orchestrator from the
+   *  training's start/end dates. Null hides the track. */
+  percent: number | null;
 }
 
-// Leaf: the active training's company + title, with a brand-coloured track
-// showing how far through the trial the run is. The track is decorative —
-// TrialCountdown below already states the day count out loud, so announcing
-// the same number twice would just be noise.
-export default function ActiveTrainingCard({
+// ActiveTrainingCard: leaf — the active training's company + title, with the
+// brand-coloured track showing how far through the run it is. Purely
+// presentational: the percentage arrives as a plain number so the card holds no
+// date logic of its own.
+export function ActiveTrainingCard({
   company,
   listingTitle,
-  daysRemaining,
-  totalDays,
+  percent,
 }: ActiveTrainingCardProps) {
-  const progress =
-    totalDays && daysRemaining != null
-      ? Math.min(100, Math.max(0, (daysRemaining / totalDays) * 100))
-      : null;
-
   return (
     <div className="rounded-xl border border-border bg-background p-4 transition-shadow duration-200 hover:shadow-card">
       <div className="flex items-center gap-3">
@@ -43,21 +36,8 @@ export default function ActiveTrainingCard({
         </div>
       </div>
 
-      {/* Trial progress — brand fill on a tinted track */}
-      {progress != null ? (
-        <div
-          aria-hidden="true"
-          className={cn(
-            "mt-4 h-1.5 overflow-hidden rounded-full",
-            "bg-primary-tint",
-          )}
-        >
-          <div
-            className="h-full rounded-full bg-primary transition-[width] duration-200"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      ) : null}
+      {/* Run progress — brand fill on a tinted track */}
+      <TrainingProgressBar percent={percent} />
     </div>
   );
 }

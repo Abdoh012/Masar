@@ -6,6 +6,7 @@ import {
   COMPANY_PENDING_ROUTE,
 } from "./config/routes";
 import type { Role } from "./types/auth";
+import { env } from "./config/env";
 import {
   ACCESS_TOKEN_COOKIE,
   ACCESS_TOKEN_MAX_AGE,
@@ -18,9 +19,6 @@ import {
   parseSetCookie,
   replaceCookiesInHeader,
 } from "./shared/lib/authCookies";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
 type RefreshedSession = {
   accessToken: string;
@@ -68,7 +66,7 @@ async function attemptRefresh(
 ): Promise<RefreshOutcome> {
   let res: Response;
   try {
-    res = await fetch(`${API_URL}/auth/refresh`, {
+    res = await fetch(`${env.apiUrl}/auth/refresh`, {
       method: "POST",
       headers: {
         Cookie: `${REFRESH_TOKEN_COOKIE}=${refreshToken}; ${CSRF_TOKEN_COOKIE}=${csrfToken}`,

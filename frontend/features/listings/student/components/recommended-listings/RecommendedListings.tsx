@@ -4,21 +4,23 @@ import { Sparkles } from "lucide-react";
 import { DashboardSection } from "@/shared/components/dashboard-section/DashboardSection";
 import { DashboardSectionHeading } from "@/shared/components/dashboard-section/DashboardSectionHeading";
 
-import {
-  FALLBACK_LISTINGS,
-  RECOMMENDED_LABELS,
-  RECOMMENDED_LIMIT,
-  RECOMMENDED_LISTINGS,
-} from "./constants";
+import { RECOMMENDED_LABELS, RECOMMENDED_LIMIT } from "./constants";
+import { NoRecommendations } from "./NoRecommendations";
 import { RecommendedTrainingRow } from "./RecommendedTrainingRow";
+import type { RecommendedTraining } from "../../types";
 
-// RecommendedListings: the two most relevant trainings as full-width rows.
-// Empty field → falls back to the general/newest set (never a blank section).
-export function RecommendedListings() {
-  const pool =
-    RECOMMENDED_LISTINGS.length > 0 ? RECOMMENDED_LISTINGS : FALLBACK_LISTINGS;
-  const listings = pool.slice(0, RECOMMENDED_LIMIT);
+interface RecommendedListingsProps {
+  trainings: RecommendedTraining[];
+}
 
+// RecommendedListings: the trainings the backend matched to this student, as
+// full-width rows, or an empty state when it matched none.
+//
+// The list arrives from the dashboard orchestrator, which reads it off
+// GET /students/dashboard — the section fetches nothing for itself. The
+// previous build drew this grid from a static mock pool, which meant the
+// "recommendations" were identical for every student on every visit.
+export function RecommendedListings({ trainings }: RecommendedListingsProps) {
   return (
     <DashboardSection>
       <DashboardSectionHeading
@@ -27,20 +29,26 @@ export function RecommendedListings() {
           <Sparkles aria-hidden="true" className="size-5 text-secondary-text" />
         }
         action={
-          <Link
-            href="/listings"
-            className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            {RECOMMENDED_LABELS.viewAll}
-          </Link>
+          trainings.length > 0 ? (
+            <Link
+              href="/listings"
+              className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {RECOMMENDED_LABELS.viewAll}
+            </Link>
+          ) : null
         }
       />
 
-      <div className="mt-5 flex flex-col gap-3">
-        {listings.map((listing) => (
-          <RecommendedTrainingRow key={listing.id} listing={listing} />
-        ))}
-      </div>
+      {trainings.length === 0 ? (
+        <NoRecommendations />
+      ) : (
+        <div className="mt-5 flex flex-col gap-3">
+          {trainings.slice(0, RECOMMENDED_LIMIT).map((training) => (
+            <RecommendedTrainingRow key={training.id} training={training} />
+          ))}
+        </div>
+      )}
     </DashboardSection>
   );
 }

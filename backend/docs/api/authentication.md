@@ -315,7 +315,7 @@ Changes the password of the authenticated user.
 ### Endpoint
 
 ```http
-POST /api/auth/change-password
+POST /api/v1/auth/change-password
 ```
 
 ### Authentication
@@ -327,32 +327,109 @@ Required.
 ```json
 {
     "current_password": "OldPassword@123",
-    "password": "NewPassword@123",
-    "password_confirmation": "NewPassword@123"
+    "new_password": "NewPassword@123",
+    "new_password_confirmation": "NewPassword@123"
 }
 ```
+
+> The field names are `current_password` / `new_password` /
+> `new_password_confirmation`. `password` and `password_confirmation` are **not**
+> read by this endpoint.
 
 ### Response
 
 ```json
 {
     "success": true,
-    "message": "Password changed successfully."
+    "message": null,
+    "data": {
+        "message": "Password changed successfully."
+    },
+    "errors": null
 }
 ```
 
-### Invalid Current Password
+### Password Policy
 
-```http
-422 Unprocessable Entity
-```
+The policy is defined once, in
+`security_password_strength_errors()` (`app/shared/functions/security.php`), and
+is applied by **register**, **change-password** and **reset-password** alike:
 
-```json
-{
-    "success": false,
-    "message": "Current password is incorrect."
-}
-```
+- at least **12 characters**
+- at least one lowercase letter
+- at least one uppercase letter
+- at least one digit
+- at least one special (non-alphanumeric) character
+
+> **12 characters, not 8.** If a client-side form advertises an 8-character
+> minimum it must be updated: the API rejects an 8-character password with
+> `"Password must be at least 12 characters long."`
+
+`auth_validate_reset_password()` additionally carries an older `strlen < 8`
+check, but the reset controller merges the strong policy on top of it, so the
+effective rule on reset is the strict one above. The 8-character message can
+only ever be an *additional*, still-true error, never a weaker outcome.
+
+A rate limit applies: four tiers (global, per IP, per user, sensitive) are
+checked before validation.
+
+### Rejections
+
+| Status | Condition |
+| ------ | --------- |
+| `400` | `current_password` is wrong → `"Current password is incorrect."` |
+| `422` | `new_password` is identical to the current one → `"New password must be different from the current password."` |
+| `422` | Validation: `current_password` missing, `new_password` failing the policy, or `new_password_confirmation` missing / mismatched. `errors` names the field. |
+| `429` | A rate-limit tier was exceeded. |
+
+The submitted passwords are never echoed back, and neither the plaintext nor the
+hash is ever logged.
+
+### What else the change touches
+
+On success the endpoint rewrites `users.password_hash` and revokes:
+
+- every row in the legacy `auth_tokens` table for that user,
+- every row in `refresh_tokens` for that user,
+- the **calling device's** access token, blacklisted explicitly.
+
+It also clears the remember-me cookie and the refresh cookie, writes a
+`change_password_success` security event and a `password_change_success` audit
+entry.
+
+**No application, training, payment or certificate record is read or written.**
+
+### Session behaviour after a change — read this before promising anything
+
+Access tokens are **stateless JWTs** and are not persisted when they are issued,
+so there is no list of a user's outstanding access tokens to walk and revoke.
+
+| Scenario | Result |
+| -------- | ------ |
+| The device that made the change | Signed out immediately: its access token is blacklisted and both cookies are cleared. |
+| Refresh tokens (any device) | Revoked. A stolen refresh token can no longer mint a new access token. |
+| **Another device's access token** | **Still valid until it expires on its own.** `JWT_ACCESS_TTL` defaults to `3600` seconds — one hour — after which its refresh fails and the user must log in again. |
+
+So the security window after a password change is **up to one hour** for a
+session that was already established on another device. Client copy must not
+claim that all other sessions are signed out immediately.
+
+Why this is not tightened here: immediate all-device invalidation needs either a
+per-user credential version or a persisted denylist of issued access tokens,
+checked on every request. Access tokens carry `iat` and `jti` but no
+password-version claim, and the existing `revoked_access_tokens` table is not
+wired into the auth flow at all — the only reference to it anywhere is
+`student_admin_repository_delete_user_tokens()`, which *deletes* rows when a user
+is removed, and it is currently empty. Re-populating it would not help either: a
+denylist only works for tokens that are already known. Either route is an
+authentication-architecture change affecting login, refresh, logout and
+remember-me.
+
+The minimal future path is recorded in the source at
+`auth_change_user_password()` in
+`app/modules/auth/services/auth_service.php`, and the current behaviour is
+pinned by `tests/auth_password_policy_regression.php` (cases 9–12) so it cannot
+drift silently.
 
 ---
 

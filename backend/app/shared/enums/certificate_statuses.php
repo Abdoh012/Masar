@@ -27,6 +27,21 @@ if (!defined('CERTIFICATE_STATUS_ACTIVE')) {
     );
 }
 
+/*
+| The certificates.status enum also allows "valid". It is deliberately
+| kept OUT of certificate_statuses() so is_valid_certificate_status() /
+| normalize_certificate_status() keep rejecting the same values as before;
+| it is only defined here so the "currently issued" set below can name it
+| without a bare string literal.
+*/
+
+if (!defined('CERTIFICATE_STATUS_VALID')) {
+    define(
+        'CERTIFICATE_STATUS_VALID',
+        'valid'
+    );
+}
+
 if (!defined('CERTIFICATE_STATUS_REVOKED')) {
     define(
         'CERTIFICATE_STATUS_REVOKED',
@@ -285,6 +300,32 @@ function certificate_active_statuses(): array
     return [
         CERTIFICATE_STATUS_ISSUED,
         CERTIFICATE_STATUS_ACTIVE
+    ];
+}
+
+/*
+|--------------------------------------------------------------------------
+| Currently Issued Statuses
+|--------------------------------------------------------------------------
+|
+| The single definition of "issued and not revoked". Every consumer that
+| needs to decide whether a persisted certificate is currently issued
+| (the certificate presenter, the student dashboard counters, the
+| certificate statistics) MUST use this set so the same certificate is
+| never reported as issued in one place and not issued in another.
+|
+| "valid" is a real certificates.status enum value even though the write
+| paths never produce it, and "revoked" is deliberately absent so a
+| revoked certificate is never double-counted as issued.
+|
+*/
+
+function certificate_currently_issued_statuses(): array
+{
+    return [
+        CERTIFICATE_STATUS_ISSUED,
+        CERTIFICATE_STATUS_ACTIVE,
+        CERTIFICATE_STATUS_VALID
     ];
 }
 

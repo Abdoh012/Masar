@@ -7,7 +7,11 @@ import { CARD_META_DEADLINE_PREFIX, CARD_META_POSTED_PREFIX } from "./constants"
 interface CardMetaProps {
   duration?: string;
   format: "in_person" | "remote" | "hybrid";
-  createdAt: string;
+  /** Optional: a card whose source has no created date (the dashboard's
+   *  recommendation presenter can omit one) simply drops the "Posted" line
+   *  rather than formatting an invalid Date, which `Intl` throws on. Every
+   *  other caller always has one, so their output is unchanged. */
+  createdAt?: string;
   deadline?: string;
 }
 
@@ -55,10 +59,12 @@ export function CardMeta({
         </span>
       ) : null}
 
-      <span className="flex items-center gap-1.5">
-        <CalendarDays className="size-3.5" />
-        {CARD_META_POSTED_PREFIX} {formatPostedDate(createdAt)}
-      </span>
+      {createdAt ? (
+        <span className="flex items-center gap-1.5">
+          <CalendarDays className="size-3.5" />
+          {CARD_META_POSTED_PREFIX} {formatPostedDate(createdAt)}
+        </span>
+      ) : null}
     </div>
   );
 }

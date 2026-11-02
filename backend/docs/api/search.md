@@ -739,26 +739,31 @@ Return results
 Request:
 
 ```http
-GET /api/search/students?q=PHP&skill_id=5&university_id=1
+GET /api/v1/search/students?q=PHP&skill_id=5&skill_id=9
 ```
+
+> `university_id` is shown in the historical design note below but is **not**
+> implemented on this endpoint; only `skill_id` is. Do not send it expecting a
+> filter.
 
 Processing:
 
 ```text
-Authenticated company
+Keyword required (2-255 chars, matches students.full_name)
         ↓
-Authorization check
+Validate skill_id -> positive integers, else 422
         ↓
-Validate filters
+EXISTS filter on student_skills   (ANY of the listed skills)
         ↓
-Search authorized students
+ORDER BY students.id DESC
         ↓
-Remove private fields
+Paginate (page, limit 1-100)
         ↓
-Paginate
-        ↓
-Return results
+Return { id, user_id, full_name, username }
 ```
+
+The returned columns contain no contact details and no document ids. `username`
+is the public handle and may be `null`.
 
 ---
 
@@ -962,15 +967,17 @@ Only enum-defined values are accepted.
 
 # Skill Filtering
 
+## Training skill filter (existing)
+
 A training may have multiple skills.
 
 Example:
 
 ```text
 Training
- ├── PHP
- ├── MySQL
- └── Git
+  ├── PHP
+  ├── MySQL
+  └── Git
 ```
 
 Searching by:
@@ -981,19 +988,89 @@ skill_id=5
 
 should return trainings associated with that skill.
 
-If multiple skill filters are supported, the API must clearly define whether they represent:
+Implemented in `training_repository.php` as a `JOIN training_skills` plus
+`tsk.skill_id = ?`, driven by `GET /api/v1/trainings?skill_id=<id>`.
 
-```text
-ANY skill
+## Student skill filter (implemented)
+
+```http
+GET /api/v1/search/students?q=<keyword>&skill_id=<id>
 ```
 
-or:
+The same `skill_id` parameter name, resolved through the existing normalized
+`student_skills` relation — never a text column — matching how the training
+search reaches `training_skills`.
 
-```text
-ALL skills
+### Accepted parameter shapes
+
+| Shape | Example |
+| ----- | ------- |
+| Single integer | `skill_id=5` |
+| Repeated parameter | `skill_id[]=5&skill_id[]=9` |
+| Comma-separated list | `skill_id=5,9` |
+
+All three normalise to one list of unique positive integers.
+
+### Resolved semantics: ANY, not ALL
+
+> **Multiple ids mean ANY.** A candidate is returned when they hold **at least
+> one** of the requested skills. A single `skill_id` is the same rule with one
+> element, so it behaves exactly like the training filter.
+
+`ALL` was rejected because candidate filtering uses a skill list to *narrow a
+shortlist*, not to demand a perfect match; an `ALL` filter would return almost
+nothing as soon as two skills were combined.
+
+Ids are used rather than names because the search contract keys on `skill_id`
+(and the existing training filter does the same).
+
+### No duplicate rows
+
+The filter is an `EXISTS` subquery, not a `JOIN`:
+
+```sql
+AND EXISTS (
+    SELECT 1 FROM student_skills ssk
+    WHERE ssk.student_id = st.id
+      AND ssk.skill_id IN ( :p0, :p1, ... )
+)
 ```
 
-The default behavior should be documented and consistent.
+A `JOIN` would multiply the row for every matching skill, so a candidate holding
+three of the requested skills would appear three times, occupy three result slots
+and break `total`. With `EXISTS` each candidate is returned exactly once and the
+count stays correct. Every id is bound as a parameter; the placeholder list is
+generated from the **count** of already-validated integers.
+
+### Rejections and edge cases
+
+| Input | Behaviour |
+| ----- | --------- |
+| A non-numeric, zero or negative `skill_id` | `422` — rejected at the controller, so it never reaches SQL |
+| An `skill_id` that does not exist | `200` with an empty result set, not an error |
+| No `skill_id` at all | No filtering; the result is byte-identical to the unfiltered search |
+| Duplicate ids (`skill_id[]=7&skill_id[]=7`) | Collapsed to one |
+
+### Keyword is still required
+
+`q` remains mandatory and must be 2–255 characters; without it the endpoint
+answers `400 "Search query is required."` The skill filter narrows the keyword
+result, it does not replace it. This is unchanged behaviour.
+
+### Response row
+
+```json
+{
+    "id": 1454,
+    "user_id": 100528,
+    "full_name": "Omar Khaled El-Shazly",
+    "username": null
+}
+```
+
+`username` is the student's **public handle** (`users.username`), which a company
+uses instead of the account email. It is nullable and is intentionally not
+backfilled, and it is never substituted with the email when absent.
 
 ---
 

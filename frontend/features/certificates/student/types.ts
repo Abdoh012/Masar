@@ -2,9 +2,35 @@
 
 import type { CertificateDocument } from "@/shared/types/certificateDocument";
 
-export interface CertificateSummary {
-  totalCount: number;
-  mostRecent: CertificateDocument | null;
+// --- Dashboard snapshot model (certificates-snapshot) ---
+
+/** The four lifecycle counts the dashboard's certificates card reports. Wider
+ *  than the page's `CertificateCounts` because the dashboard endpoint counts
+ *  the revoked set too, and dropping it would mean fetching a number the
+ *  section then throws away. */
+export interface CertificateSnapshotCounts {
+  eligible: number;
+  pending: number;
+  issued: number;
+  revoked: number;
+}
+
+/** One certificate record as the dashboard's `certificates.recent` preview
+ *  returns it, narrowed to the fields the certificate document prints. */
+export interface SnapshotCertificate {
+  id: number;
+  certificateNumber: string | null;
+  trainingTitle: string;
+  companyName: string | null;
+  specializationName: string | null;
+  /** The name printed on the document (`student.full_name`). */
+  studentName: string;
+  field: string | null;
+  grade?: string;
+  gradeLabel?: string;
+  /** MySQL datetime as the certificate repository stores it — formatted for
+   *  display by the section, never printed raw. */
+  issuedAt: string | null;
 }
 
 // Request status for eligible certificate items.
