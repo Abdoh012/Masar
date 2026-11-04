@@ -44,6 +44,13 @@ Student routes require `role=student`; company routes require `role=company`.
 Submission is transactional: the application record and all answers are created in a
 single DB transaction (`db_begin_transaction` / `db_commit` / `db_rollback`).
 
+The four student tab endpoints (`applied`, `accepted`, `rejected`, `withdrawn`) also
+return `data.summary` with `applied_count`, `accepted_count`, `rejected_count` and
+`withdrawn_count`. Each count is the authenticated student's total for that status
+across **all pages** (not just the current page), is computed in a single
+conditional-aggregation query, and only counts the student's own applications. The same
+summary object is returned by all four endpoints.
+
 ---
 
 # Authentication
@@ -101,6 +108,12 @@ or academic fields are exposed):
     "success": true,
     "message": "Applications retrieved successfully.",
     "data": {
+        "summary": {
+            "applied_count": 4,
+            "accepted_count": 2,
+            "rejected_count": 1,
+            "withdrawn_count": 3
+        },
         "items": [
             {
                 "id": 1881,
@@ -205,6 +218,12 @@ or academic fields are exposed):
     "success": true,
     "message": "Applications retrieved successfully.",
     "data": {
+        "summary": {
+            "applied_count": 4,
+            "accepted_count": 2,
+            "rejected_count": 1,
+            "withdrawn_count": 3
+        },
         "items": [
             {
                 "id": 1882,
@@ -328,6 +347,12 @@ fields, CV, or `withdrawn_at` are exposed):
     "success": true,
     "message": "Applications retrieved successfully.",
     "data": {
+        "summary": {
+            "applied_count": 4,
+            "accepted_count": 2,
+            "rejected_count": 1,
+            "withdrawn_count": 3
+        },
         "items": [
             {
                 "id": 1883,
@@ -424,6 +449,12 @@ fields, CV, or rejection info are exposed):
     "success": true,
     "message": "Applications retrieved successfully.",
     "data": {
+        "summary": {
+            "applied_count": 4,
+            "accepted_count": 2,
+            "rejected_count": 1,
+            "withdrawn_count": 3
+        },
         "items": [
             {
                 "id": 1884,

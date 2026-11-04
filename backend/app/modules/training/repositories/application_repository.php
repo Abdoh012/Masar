@@ -21,6 +21,7 @@
 |--------------------------------------------------------------------------
 */
 
+require_once __DIR__ . '/../../../config/constants.php';
 require_once __DIR__ . '/../../../core/database/connection.php';
 require_once __DIR__ . '/../../../core/database/query.php';
 
@@ -181,6 +182,18 @@ function application_repository_find_with_details(
             s.user_id AS student_user_id,
 
             s.full_name AS student_name,
+
+            /*
+            | The student's PUBLIC HANDLE, which is what the product shows a
+            | company next to the applicant's name instead of the account
+            | email. It is additive: `student_email` below is left exactly as
+            | it was, because a company is entitled to the contact address of
+            | somebody who applied to its training, and removing it would
+            | break that flow. `users.username` is nullable and is NOT
+            | backfilled, so this is null until the student picks a handle -
+            | a null here must never cause the email to be substituted in.
+            */
+            u.username AS student_username,
             u.email AS student_email
 
         FROM training_applications a
@@ -1689,6 +1702,116 @@ function application_repository_count_by_student(
 
 /*
 |--------------------------------------------------------------------------
+| Count Student Application Status Summary
+|--------------------------------------------------------------------------
+|
+| Returns the student's total application count per lifecycle status in a
+| single aggregate query. Conditional aggregation (SUM(CASE WHEN ...)) is
+| used so the four counts never require four separate round-trips.
+|
+| The optional specialization restriction mirrors application_repository_
+| count_by_student(), so each count is the across-all-pages total for the
+| same dataset the tab endpoints list.
+|
+*/
+
+function application_repository_count_status_summary_by_student(
+    int $student_id,
+    ?array $match_specialization_ids = null
+): array {
+
+    $empty_summary = [
+        'applied_count'   => 0,
+        'accepted_count'  => 0,
+        'rejected_count'  => 0,
+        'withdrawn_count' => 0,
+    ];
+
+    if ($student_id <= 0) {
+        return $empty_summary;
+    }
+
+    $specialization_join = '';
+    $specialization_condition = '';
+
+    if (
+        is_array($match_specialization_ids)
+        &&
+        !empty($match_specialization_ids)
+    ) {
+
+        $clean_ids = [];
+
+        foreach (
+            $match_specialization_ids
+            as $match_specialization_id
+        ) {
+
+            $match_specialization_id =
+                (int) $match_specialization_id;
+
+            if ($match_specialization_id > 0) {
+
+                $clean_ids[$match_specialization_id] =
+                    true;
+            }
+        }
+
+        if (!empty($clean_ids)) {
+
+            $specialization_join =
+                " INNER JOIN training_listings t
+                    ON t.id = a.training_id";
+
+            $specialization_condition =
+                ' AND t.specialization_id IN ('
+                . implode(
+                    ', ',
+                    array_keys($clean_ids)
+                )
+                . ')';
+        }
+    }
+
+    $sql = "
+        SELECT
+            SUM(CASE WHEN a.status = ? THEN 1 ELSE 0 END) AS applied_count,
+            SUM(CASE WHEN a.status = ? THEN 1 ELSE 0 END) AS accepted_count,
+            SUM(CASE WHEN a.status = ? THEN 1 ELSE 0 END) AS rejected_count,
+            SUM(CASE WHEN a.status = ? THEN 1 ELSE 0 END) AS withdrawn_count
+
+        FROM training_applications a
+        {$specialization_join}
+
+        WHERE a.student_id = ?{$specialization_condition}
+    ";
+
+    $row = db_fetch_one(
+        $sql,
+        [
+            APPLICATION_STATUS_SUBMITTED,
+            APPLICATION_STATUS_ACCEPTED,
+            APPLICATION_STATUS_REJECTED,
+            APPLICATION_STATUS_WITHDRAWN,
+            $student_id,
+        ]
+    );
+
+    if (!is_array($row)) {
+        return $empty_summary;
+    }
+
+    return [
+        'applied_count'   => (int) ($row['applied_count'] ?? 0),
+        'accepted_count'  => (int) ($row['accepted_count'] ?? 0),
+        'rejected_count'  => (int) ($row['rejected_count'] ?? 0),
+        'withdrawn_count' => (int) ($row['withdrawn_count'] ?? 0),
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
 | Get Accepted Applications By Training
 |--------------------------------------------------------------------------
 */
@@ -1709,6 +1832,9 @@ function application_repository_get_accepted_by_training(
             s.user_id AS student_user_id,
 
             s.full_name AS student_name,
+
+            /* Public handle, same additive rationale as find_with_details(). */
+            u.username AS student_username,
             u.email AS student_email
 
         FROM training_applications a

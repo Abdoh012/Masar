@@ -2450,6 +2450,8 @@ CREATE TABLE `students` (
   `user_id` bigint UNSIGNED NOT NULL,
   `full_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `phone` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `website` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `external_profile` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `bio` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `university_id` bigint UNSIGNED DEFAULT NULL,
   `faculty_id` bigint UNSIGNED DEFAULT NULL,
@@ -2457,9 +2459,13 @@ CREATE TABLE `students` (
   `degree_id` bigint UNSIGNED DEFAULT NULL,
   `specialization_id` bigint UNSIGNED DEFAULT NULL,
   `graduation_year` year DEFAULT NULL,
+  `graduation_month` tinyint UNSIGNED DEFAULT NULL,
+  `academic_status` enum('student','graduate') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'student',
   `city` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `address` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `profile_image_file_id` bigint UNSIGNED DEFAULT NULL,
   `cv_file_id` bigint UNSIGNED DEFAULT NULL,
+  `academic_certificate_file_id` bigint UNSIGNED DEFAULT NULL,
   `is_profile_complete` tinyint(1) NOT NULL DEFAULT '0',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -2469,48 +2475,87 @@ CREATE TABLE `students` (
 -- Dumping data for table `students`
 --
 
-INSERT INTO `students` (`id`, `user_id`, `full_name`, `phone`, `bio`, `university_id`, `faculty_id`, `field_id`, `degree_id`, `specialization_id`, `graduation_year`, `city`, `profile_image_file_id`, `cv_file_id`, `is_profile_complete`, `created_at`, `updated_at`) VALUES
-(1454, 100528, 'Omar Khaled El-Shazly', '01223456781', 'Omar Khaled El-Shazly is a computer science student at Cairo University specializing in Software Engineering, based in New Cairo. Seeking a hands-on training opportunity in Software Engineering to complement their academic background.', 51, 60, 12, 32, 103, '2026', 'New Cairo', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1455, 100529, 'Mariam Ahmed Hassan', '01112345682', 'Mariam Ahmed Hassan is a computer science student at Cairo University specializing in Mobile Development, based in Nasr City. Seeking a hands-on training opportunity in Mobile Development to complement their academic background.', 51, 60, 12, 32, 202, '2025', 'Nasr City', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1456, 100530, 'Youssef Mohamed Farouk', '01515678983', 'Youssef Mohamed Farouk is a computer science student at Ain Shams University specializing in Web Development, based in Heliopolis. Seeking a hands-on training opportunity in Web Development to complement their academic background.', 52, 65, 12, 32, 107, '2026', 'Heliopolis', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1457, 100531, 'Farida Tarek Lotfy', '01234567884', 'Farida Tarek Lotfy is a computer science student at Ain Shams University specializing in Frontend Development, based in Maadi. Seeking a hands-on training opportunity in Frontend Development to complement their academic background.', 52, 65, 12, 32, 200, '2024', 'Maadi', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1458, 100532, 'Ahmed Nabil Samir', '01115678985', 'Ahmed Nabil Samir is a computer science student at Alexandria University specializing in Backend Development, based in Alexandria. Seeking a hands-on training opportunity in Backend Development to complement their academic background.', 53, 69, 12, 32, 199, '2025', 'Alexandria', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1459, 100533, 'Nour Mahmoud Abdelaziz', '01521234586', 'Nour Mahmoud Abdelaziz is a computer science student at Alexandria University specializing in Full Stack Development, based in Alexandria. Seeking a hands-on training opportunity in Full Stack Development to complement their academic background.', 53, 69, 12, 32, 201, '2026', 'Alexandria', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1460, 100534, 'Karim Amr El-Deeb', '01232345687', 'Karim Amr El-Deeb is a computer science student at Egypt-Japan University of Science and Technology specializing in Software Engineering, based in Alexandria. Seeking a hands-on training opportunity in Software Engineering to complement their academic background.', 201, 233, 12, 32, 103, '2026', 'Alexandria', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1461, 100535, 'Salma Hossam El-Din', '01111345688', 'Salma Hossam El-Din is a computer science student at Mansoura University specializing in Frontend Development, based in Mansoura. Seeking a hands-on training opportunity in Frontend Development to complement their academic background.', 54, 73, 12, 32, 200, '2027', 'Mansoura', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1462, 100536, 'Mahmoud Khaled Gaballah', '01534567889', 'Mahmoud Khaled Gaballah is a computer science student at Tanta University specializing in Cyber Security, based in Tanta. Seeking a hands-on training opportunity in Cyber Security to complement their academic background.', 56, 76, 12, 32, 106, '2025', 'Tanta', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1463, 100537, 'Mohamed Ashraf Khattab', '01011223390', 'Mohamed Ashraf Khattab is a computer science student at Helwan University specializing in Data Analysis, based in Helwan. Seeking a hands-on training opportunity in Data Analysis to complement their academic background.', 59, 78, 12, 32, 205, '2025', 'Helwan', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1464, 100538, 'Sara Mohamed Fahim', '01122334491', 'Sara Mohamed Fahim is a computer science student at Helwan University specializing in Artificial Intelligence, based in Helwan. Seeking a hands-on training opportunity in Artificial Intelligence to complement their academic background.', 59, 78, 12, 32, 104, '2026', 'Helwan', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1465, 100539, 'Amr Sherif Abdelghany', '01533445592', 'Amr Sherif Abdelghany is a computer science student at German University in Cairo specializing in Machine Learning, based in New Cairo. Seeking a hands-on training opportunity in Machine Learning to complement their academic background.', 73, 82, 12, 32, 206, '2026', 'New Cairo', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1466, 100540, 'Menna Amr Nassar', '01044556693', 'Menna Amr Nassar is a computer science student at British University in Egypt specializing in Cloud Computing, based in El Shorouk. Seeking a hands-on training opportunity in Cloud Computing to complement their academic background.', 74, 84, 12, 32, 203, '2024', 'El Shorouk', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1467, 100541, 'Mohamed Adel Fathy', '01155667794', 'Mohamed Adel Fathy is a engineering student at Cairo University specializing in Mechanical Engineering, based in Giza. Seeking a hands-on training opportunity in Mechanical Engineering to complement their academic background.', 51, 59, 9, 28, 92, '2025', 'Giza', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1468, 100542, 'Youssef Omar Shawky', '01566778895', 'Youssef Omar Shawky is a engineering student at Ain Shams University specializing in Civil Engineering, based in Heliopolis. Seeking a hands-on training opportunity in Civil Engineering to complement their academic background.', 52, 64, 9, 28, 93, '2026', 'Heliopolis', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1469, 100543, 'Omar Hisham Mostafa', '01077889996', 'Omar Hisham Mostafa is a engineering student at German University in Cairo specializing in Electrical Engineering, based in Zamalek. Seeking a hands-on training opportunity in Electrical Engineering to complement their academic background.', 73, 82, 9, 28, 94, '2025', 'Zamalek', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1470, 100544, 'Malak Ahmed El-Shennawy', '01188990097', 'Malak Ahmed El-Shennawy is a engineering student at Pharos University in Alexandria specializing in Architecture, based in Alexandria. Seeking a hands-on training opportunity in Architecture to complement their academic background.', 202, 235, 9, 40, 95, '2026', 'Alexandria', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1471, 100545, 'Abdallah Yasser Kamel', '01599001198', 'Abdallah Yasser Kamel is a engineering student at Alexandria University specializing in Mechanical Engineering, based in Alexandria. Seeking a hands-on training opportunity in Mechanical Engineering to complement their academic background.', 53, 68, 9, 28, 92, '2025', 'Alexandria', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1472, 100546, 'Salma Wael El-Maghraby', '01011223399', 'Salma Wael El-Maghraby is a medicine student at Cairo University specializing in General Medicine, based in Nasr City. Seeking a hands-on training opportunity in General Medicine to complement their academic background.', 51, 63, 10, 35, 96, '2026', 'Nasr City', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1473, 100547, 'Yara Ibrahim Hassan', '01122233391', 'Yara Ibrahim Hassan is a medicine student at Ain Shams University specializing in Pediatrics, based in Maadi. Seeking a hands-on training opportunity in Pediatrics to complement their academic background.', 52, 643, 10, 35, 98, '2027', 'Maadi', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1474, 100548, 'Hana Mahmoud Ezzat', '01533344492', 'Hana Mahmoud Ezzat is a pharmacy student at Alexandria University specializing in Clinical Pharmacy, based in Alexandria. Seeking a hands-on training opportunity in Clinical Pharmacy to complement their academic background.', 53, 644, 11, 36, 100, '2026', 'Alexandria', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1475, 100549, 'Omar Khaled Soliman', '01044455593', 'Omar Khaled Soliman is a pharmacy student at Pharos University in Alexandria specializing in Pharmacology, based in Alexandria. Seeking a hands-on training opportunity in Pharmacology to complement their academic background.', 202, 236, 11, 36, 102, '2025', 'Alexandria', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1476, 100550, 'Youssef Amr El-Gohary', '01155566694', 'Youssef Amr El-Gohary is a business student at Cairo University specializing in Marketing, based in Nasr City. Seeking a hands-on training opportunity in Marketing to complement their academic background.', 51, 61, 13, 30, 108, '2026', 'Nasr City', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1477, 100551, 'Alaa Mohamed Fawzy', '01566677795', 'Alaa Mohamed Fawzy is a business student at Ain Shams University specializing in Marketing, based in Heliopolis. Seeking a hands-on training opportunity in Marketing to complement their academic background.', 52, 66, 13, 30, 108, '2025', 'Heliopolis', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1478, 100552, 'Menna Hassan Ibrahim', '01077788896', 'Menna Hassan Ibrahim is a business student at German University in Cairo specializing in Business Administration, based in New Cairo. Seeking a hands-on training opportunity in Business Administration to complement their academic background.', 73, 83, 13, 31, 110, '2026', 'New Cairo', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1479, 100553, 'Omar Sherif Shahin', '01188899997', 'Omar Sherif Shahin is a business student at The American University in Cairo specializing in Human Resources, based in New Cairo. Seeking a hands-on training opportunity in Human Resources to complement their academic background.', 72, 80, 13, 31, 109, '2025', 'New Cairo', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1480, 100554, 'Nourhan Samy Abdelsalam', '01599900098', 'Nourhan Samy Abdelsalam is a business student at Future University in Egypt specializing in Sales, based in New Cairo. Seeking a hands-on training opportunity in Sales to complement their academic background.', 75, 87, 13, 31, 111, '2026', 'New Cairo', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1481, 100555, 'Aya Mostafa El-Feky', '01011122299', 'Aya Mostafa El-Feky is a law student at Cairo University specializing in Corporate Law, based in Giza. Seeking a hands-on training opportunity in Corporate Law to complement their academic background.', 51, 646, 14, 38, 112, '2026', 'Giza', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1482, 100556, 'Mariam El-Sayed Lotfy', '01122233390', 'Mariam El-Sayed Lotfy is a law student at Alexandria University specializing in Commercial Law, based in Alexandria. Seeking a hands-on training opportunity in Commercial Law to complement their academic background.', 53, 645, 14, 38, 114, '2025', 'Alexandria', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1483, 100557, 'Hager Anwar El-Sayed', '01533344491', 'Hager Anwar El-Sayed is a media student at Cairo University specializing in Digital Media, based in Nasr City. Seeking a hands-on training opportunity in Digital Media to complement their academic background.', 51, 647, 15, 29, 116, '2026', 'Nasr City', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1484, 100558, 'Ahmed Seif El-Din', '01044455592', 'Ahmed Seif El-Din is a media student at Cairo University specializing in Journalism, based in Maadi. Seeking a hands-on training opportunity in Journalism to complement their academic background.', 51, 647, 15, 29, 115, '2025', 'Maadi', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1485, 100559, 'Esraa Hany El-Badrawi', '01155566693', 'Esraa Hany El-Badrawi is a design student at Cairo University specializing in UI/UX Design, based in Nasr City. Seeking a hands-on training opportunity in UI/UX Design to complement their academic background.', 51, 648, 16, 39, 119, '2026', 'Nasr City', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1486, 100560, 'George Magdy Saad', '01566677794', 'George Magdy Saad is a design student at Helwan University specializing in Graphic Design, based in Zamalek. Seeking a hands-on training opportunity in Graphic Design to complement their academic background.', 59, 649, 16, 39, 121, '2025', 'Zamalek', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1487, 100561, 'Salma Nabil El-Din', '01077788895', 'Salma Nabil El-Din is a design student at Cairo University specializing in Product Design, based in Dokki. Seeking a hands-on training opportunity in Product Design to complement their academic background.', 51, 648, 16, 39, 120, '2026', 'Dokki', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1488, 100562, 'Mariam Tarek Nabil', '01188899996', 'Mariam Tarek Nabil is a design student at Cairo University specializing in UI/UX Design, based in 6 October City. Seeking a hands-on training opportunity in UI/UX Design to complement their academic background.', 51, 648, 16, 39, 119, '2027', '6 October City', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1489, 100563, 'Mohamed Essam El-Hadidi', '01599900097', 'Mohamed Essam El-Hadidi is a accounting student at Ain Shams University specializing in Financial Accounting, based in Nasr City. Seeking a hands-on training opportunity in Financial Accounting to complement their academic background.', 52, 66, 17, 30, 122, '2025', 'Nasr City', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1490, 100564, 'Yasmin Ahmed Talaat', '01011122298', 'Yasmin Ahmed Talaat is a accounting student at Cairo University specializing in Auditing, based in Maadi. Seeking a hands-on training opportunity in Auditing to complement their academic background.', 51, 61, 17, 30, 124, '2026', 'Maadi', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1491, 100565, 'Abdullah Mohamed El-Rahman', '01122233399', 'Abdullah Mohamed El-Rahman is a accounting student at Mansoura University specializing in Management Accounting, based in Mansoura. Seeking a hands-on training opportunity in Management Accounting to complement their academic background.', 54, 74, 17, 30, 123, '2025', 'Mansoura', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1492, 100566, 'Rania Sameh Fouad', '01533344490', 'Rania Sameh Fouad is a accounting student at Alexandria University specializing in Financial Accounting, based in Alexandria. Seeking a hands-on training opportunity in Financial Accounting to complement their academic background.', 53, 70, 17, 30, 122, '2026', 'Alexandria', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1493, 100567, 'George Farid Naguib', '01212345678', 'George Farid Naguib is a computer science student at Cairo University specializing in DevOps, based in Giza. Seeking a hands-on training opportunity in DevOps to complement their academic background.', 51, 60, 12, 32, 204, '2026', 'Giza', NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1498, 100588, 'Mohamed Ahmed', NULL, NULL, NULL, NULL, 12, NULL, 199, NULL, NULL, NULL, NULL, 0, '2026-09-02 05:23:43', '2026-09-02 05:23:43');
+INSERT INTO `students` (`id`, `user_id`, `full_name`, `phone`, `bio`, `university_id`, `faculty_id`, `field_id`, `degree_id`, `specialization_id`, `graduation_year`, `graduation_month`, `academic_status`, `city`, `profile_image_file_id`, `cv_file_id`, `academic_certificate_file_id`, `is_profile_complete`, `created_at`, `updated_at`) VALUES
+(1454, 100528, 'Omar Khaled El-Shazly', '01223456781', 'Omar Khaled El-Shazly is a computer science student at Cairo University specializing in Software Engineering, based in New Cairo. Seeking a hands-on training opportunity in Software Engineering to complement their academic background.', 51, 60, 12, 32, 103, '2026', NULL, 'student', 'New Cairo', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1455, 100529, 'Mariam Ahmed Hassan', '01112345682', 'Mariam Ahmed Hassan is a computer science student at Cairo University specializing in Mobile Development, based in Nasr City. Seeking a hands-on training opportunity in Mobile Development to complement their academic background.', 51, 60, 12, 32, 202, '2025', NULL, 'student', 'Nasr City', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1456, 100530, 'Youssef Mohamed Farouk', '01515678983', 'Youssef Mohamed Farouk is a computer science student at Ain Shams University specializing in Web Development, based in Heliopolis. Seeking a hands-on training opportunity in Web Development to complement their academic background.', 52, 65, 12, 32, 107, '2026', NULL, 'student', 'Heliopolis', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1457, 100531, 'Farida Tarek Lotfy', '01234567884', 'Farida Tarek Lotfy is a computer science student at Ain Shams University specializing in Frontend Development, based in Maadi. Seeking a hands-on training opportunity in Frontend Development to complement their academic background.', 52, 65, 12, 32, 200, '2024', NULL, 'student', 'Maadi', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1458, 100532, 'Ahmed Nabil Samir', '01115678985', 'Ahmed Nabil Samir is a computer science student at Alexandria University specializing in Backend Development, based in Alexandria. Seeking a hands-on training opportunity in Backend Development to complement their academic background.', 53, 69, 12, 32, 199, '2025', NULL, 'student', 'Alexandria', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1459, 100533, 'Nour Mahmoud Abdelaziz', '01521234586', 'Nour Mahmoud Abdelaziz is a computer science student at Alexandria University specializing in Full Stack Development, based in Alexandria. Seeking a hands-on training opportunity in Full Stack Development to complement their academic background.', 53, 69, 12, 32, 201, '2026', NULL, 'student', 'Alexandria', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1460, 100534, 'Karim Amr El-Deeb', '01232345687', 'Karim Amr El-Deeb is a computer science student at Egypt-Japan University of Science and Technology specializing in Software Engineering, based in Alexandria. Seeking a hands-on training opportunity in Software Engineering to complement their academic background.', 201, 233, 12, 32, 103, '2026', NULL, 'student', 'Alexandria', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1461, 100535, 'Salma Hossam El-Din', '01111345688', 'Salma Hossam El-Din is a computer science student at Mansoura University specializing in Frontend Development, based in Mansoura. Seeking a hands-on training opportunity in Frontend Development to complement their academic background.', 54, 73, 12, 32, 200, '2027', NULL, 'student', 'Mansoura', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1462, 100536, 'Mahmoud Khaled Gaballah', '01534567889', 'Mahmoud Khaled Gaballah is a computer science student at Tanta University specializing in Cyber Security, based in Tanta. Seeking a hands-on training opportunity in Cyber Security to complement their academic background.', 56, 76, 12, 32, 106, '2025', NULL, 'student', 'Tanta', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1463, 100537, 'Mohamed Ashraf Khattab', '01011223390', 'Mohamed Ashraf Khattab is a computer science student at Helwan University specializing in Data Analysis, based in Helwan. Seeking a hands-on training opportunity in Data Analysis to complement their academic background.', 59, 78, 12, 32, 205, '2025', NULL, 'student', 'Helwan', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1464, 100538, 'Sara Mohamed Fahim', '01122334491', 'Sara Mohamed Fahim is a computer science student at Helwan University specializing in Artificial Intelligence, based in Helwan. Seeking a hands-on training opportunity in Artificial Intelligence to complement their academic background.', 59, 78, 12, 32, 104, '2026', NULL, 'student', 'Helwan', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1465, 100539, 'Amr Sherif Abdelghany', '01533445592', 'Amr Sherif Abdelghany is a computer science student at German University in Cairo specializing in Machine Learning, based in New Cairo. Seeking a hands-on training opportunity in Machine Learning to complement their academic background.', 73, 82, 12, 32, 206, '2026', NULL, 'student', 'New Cairo', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1466, 100540, 'Menna Amr Nassar', '01044556693', 'Menna Amr Nassar is a computer science student at British University in Egypt specializing in Cloud Computing, based in El Shorouk. Seeking a hands-on training opportunity in Cloud Computing to complement their academic background.', 74, 84, 12, 32, 203, '2024', NULL, 'student', 'El Shorouk', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1467, 100541, 'Mohamed Adel Fathy', '01155667794', 'Mohamed Adel Fathy is a engineering student at Cairo University specializing in Mechanical Engineering, based in Giza. Seeking a hands-on training opportunity in Mechanical Engineering to complement their academic background.', 51, 59, 9, 28, 92, '2025', NULL, 'student', 'Giza', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1468, 100542, 'Youssef Omar Shawky', '01566778895', 'Youssef Omar Shawky is a engineering student at Ain Shams University specializing in Civil Engineering, based in Heliopolis. Seeking a hands-on training opportunity in Civil Engineering to complement their academic background.', 52, 64, 9, 28, 93, '2026', NULL, 'student', 'Heliopolis', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1469, 100543, 'Omar Hisham Mostafa', '01077889996', 'Omar Hisham Mostafa is a engineering student at German University in Cairo specializing in Electrical Engineering, based in Zamalek. Seeking a hands-on training opportunity in Electrical Engineering to complement their academic background.', 73, 82, 9, 28, 94, '2025', NULL, 'student', 'Zamalek', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1470, 100544, 'Malak Ahmed El-Shennawy', '01188990097', 'Malak Ahmed El-Shennawy is a engineering student at Pharos University in Alexandria specializing in Architecture, based in Alexandria. Seeking a hands-on training opportunity in Architecture to complement their academic background.', 202, 235, 9, 40, 95, '2026', NULL, 'student', 'Alexandria', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1471, 100545, 'Abdallah Yasser Kamel', '01599001198', 'Abdallah Yasser Kamel is a engineering student at Alexandria University specializing in Mechanical Engineering, based in Alexandria. Seeking a hands-on training opportunity in Mechanical Engineering to complement their academic background.', 53, 68, 9, 28, 92, '2025', NULL, 'student', 'Alexandria', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1472, 100546, 'Salma Wael El-Maghraby', '01011223399', 'Salma Wael El-Maghraby is a medicine student at Cairo University specializing in General Medicine, based in Nasr City. Seeking a hands-on training opportunity in General Medicine to complement their academic background.', 51, 63, 10, 35, 96, '2026', NULL, 'student', 'Nasr City', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1473, 100547, 'Yara Ibrahim Hassan', '01122233391', 'Yara Ibrahim Hassan is a medicine student at Ain Shams University specializing in Pediatrics, based in Maadi. Seeking a hands-on training opportunity in Pediatrics to complement their academic background.', 52, 643, 10, 35, 98, '2027', NULL, 'student', 'Maadi', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1474, 100548, 'Hana Mahmoud Ezzat', '01533344492', 'Hana Mahmoud Ezzat is a pharmacy student at Alexandria University specializing in Clinical Pharmacy, based in Alexandria. Seeking a hands-on training opportunity in Clinical Pharmacy to complement their academic background.', 53, 644, 11, 36, 100, '2026', NULL, 'student', 'Alexandria', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1475, 100549, 'Omar Khaled Soliman', '01044455593', 'Omar Khaled Soliman is a pharmacy student at Pharos University in Alexandria specializing in Pharmacology, based in Alexandria. Seeking a hands-on training opportunity in Pharmacology to complement their academic background.', 202, 236, 11, 36, 102, '2025', NULL, 'student', 'Alexandria', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1476, 100550, 'Youssef Amr El-Gohary', '01155566694', 'Youssef Amr El-Gohary is a business student at Cairo University specializing in Marketing, based in Nasr City. Seeking a hands-on training opportunity in Marketing to complement their academic background.', 51, 61, 13, 30, 108, '2026', NULL, 'student', 'Nasr City', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1477, 100551, 'Alaa Mohamed Fawzy', '01566677795', 'Alaa Mohamed Fawzy is a business student at Ain Shams University specializing in Marketing, based in Heliopolis. Seeking a hands-on training opportunity in Marketing to complement their academic background.', 52, 66, 13, 30, 108, '2025', NULL, 'student', 'Heliopolis', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1478, 100552, 'Menna Hassan Ibrahim', '01077788896', 'Menna Hassan Ibrahim is a business student at German University in Cairo specializing in Business Administration, based in New Cairo. Seeking a hands-on training opportunity in Business Administration to complement their academic background.', 73, 83, 13, 31, 110, '2026', NULL, 'student', 'New Cairo', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1479, 100553, 'Omar Sherif Shahin', '01188899997', 'Omar Sherif Shahin is a business student at The American University in Cairo specializing in Human Resources, based in New Cairo. Seeking a hands-on training opportunity in Human Resources to complement their academic background.', 72, 80, 13, 31, 109, '2025', NULL, 'student', 'New Cairo', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1480, 100554, 'Nourhan Samy Abdelsalam', '01599900098', 'Nourhan Samy Abdelsalam is a business student at Future University in Egypt specializing in Sales, based in New Cairo. Seeking a hands-on training opportunity in Sales to complement their academic background.', 75, 87, 13, 31, 111, '2026', NULL, 'student', 'New Cairo', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1481, 100555, 'Aya Mostafa El-Feky', '01011122299', 'Aya Mostafa El-Feky is a law student at Cairo University specializing in Corporate Law, based in Giza. Seeking a hands-on training opportunity in Corporate Law to complement their academic background.', 51, 646, 14, 38, 112, '2026', NULL, 'student', 'Giza', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1482, 100556, 'Mariam El-Sayed Lotfy', '01122233390', 'Mariam El-Sayed Lotfy is a law student at Alexandria University specializing in Commercial Law, based in Alexandria. Seeking a hands-on training opportunity in Commercial Law to complement their academic background.', 53, 645, 14, 38, 114, '2025', NULL, 'student', 'Alexandria', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1483, 100557, 'Hager Anwar El-Sayed', '01533344491', 'Hager Anwar El-Sayed is a media student at Cairo University specializing in Digital Media, based in Nasr City. Seeking a hands-on training opportunity in Digital Media to complement their academic background.', 51, 647, 15, 29, 116, '2026', NULL, 'student', 'Nasr City', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1484, 100558, 'Ahmed Seif El-Din', '01044455592', 'Ahmed Seif El-Din is a media student at Cairo University specializing in Journalism, based in Maadi. Seeking a hands-on training opportunity in Journalism to complement their academic background.', 51, 647, 15, 29, 115, '2025', NULL, 'student', 'Maadi', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1485, 100559, 'Esraa Hany El-Badrawi', '01155566693', 'Esraa Hany El-Badrawi is a design student at Cairo University specializing in UI/UX Design, based in Nasr City. Seeking a hands-on training opportunity in UI/UX Design to complement their academic background.', 51, 648, 16, 39, 119, '2026', NULL, 'student', 'Nasr City', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1486, 100560, 'George Magdy Saad', '01566677794', 'George Magdy Saad is a design student at Helwan University specializing in Graphic Design, based in Zamalek. Seeking a hands-on training opportunity in Graphic Design to complement their academic background.', 59, 649, 16, 39, 121, '2025', NULL, 'student', 'Zamalek', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1487, 100561, 'Salma Nabil El-Din', '01077788895', 'Salma Nabil El-Din is a design student at Cairo University specializing in Product Design, based in Dokki. Seeking a hands-on training opportunity in Product Design to complement their academic background.', 51, 648, 16, 39, 120, '2026', NULL, 'student', 'Dokki', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1488, 100562, 'Mariam Tarek Nabil', '01188899996', 'Mariam Tarek Nabil is a design student at Cairo University specializing in UI/UX Design, based in 6 October City. Seeking a hands-on training opportunity in UI/UX Design to complement their academic background.', 51, 648, 16, 39, 119, '2027', NULL, 'student', '6 October City', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1489, 100563, 'Mohamed Essam El-Hadidi', '01599900097', 'Mohamed Essam El-Hadidi is a accounting student at Ain Shams University specializing in Financial Accounting, based in Nasr City. Seeking a hands-on training opportunity in Financial Accounting to complement their academic background.', 52, 66, 17, 30, 122, '2025', NULL, 'student', 'Nasr City', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1490, 100564, 'Yasmin Ahmed Talaat', '01011122298', 'Yasmin Ahmed Talaat is a accounting student at Cairo University specializing in Auditing, based in Maadi. Seeking a hands-on training opportunity in Auditing to complement their academic background.', 51, 61, 17, 30, 124, '2026', NULL, 'student', 'Maadi', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1491, 100565, 'Abdullah Mohamed El-Rahman', '01122233399', 'Abdullah Mohamed El-Rahman is a accounting student at Mansoura University specializing in Management Accounting, based in Mansoura. Seeking a hands-on training opportunity in Management Accounting to complement their academic background.', 54, 74, 17, 30, 123, '2025', NULL, 'student', 'Mansoura', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1492, 100566, 'Rania Sameh Fouad', '01533344490', 'Rania Sameh Fouad is a accounting student at Alexandria University specializing in Financial Accounting, based in Alexandria. Seeking a hands-on training opportunity in Financial Accounting to complement their academic background.', 53, 70, 17, 30, 122, '2026', NULL, 'student', 'Alexandria', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1493, 100567, 'George Farid Naguib', '01212345678', 'George Farid Naguib is a computer science student at Cairo University specializing in DevOps, based in Giza. Seeking a hands-on training opportunity in DevOps to complement their academic background.', 51, 60, 12, 32, 204, '2026', NULL, 'student', 'Giza', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1498, 100588, 'Mohamed Ahmed', NULL, NULL, NULL, NULL, 12, NULL, 199, NULL, NULL, 'student', NULL, NULL, NULL, NULL, 0, '2026-09-02 05:23:43', '2026-09-02 05:23:43');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `student_educations`
+--
+
+CREATE TABLE `student_educations` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `student_id` bigint UNSIGNED NOT NULL,
+  `degree_id` bigint UNSIGNED DEFAULT NULL,
+  `degree_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `university_id` bigint UNSIGNED DEFAULT NULL,
+  `university_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `faculty_id` bigint UNSIGNED DEFAULT NULL,
+  `field_id` bigint UNSIGNED DEFAULT NULL,
+  `specialization_id` bigint UNSIGNED DEFAULT NULL,
+  `study_mode` enum('onsite','online','hybrid') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `start_year` year DEFAULT NULL,
+  `end_year` year DEFAULT NULL,
+  `grade` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `is_current` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Table structure for table `student_profile_views`
+--
+
+CREATE TABLE `student_profile_views` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `student_id` bigint UNSIGNED NOT NULL,
+  `viewer_id` bigint UNSIGNED NOT NULL,
+  `viewer_role` enum('student','company','admin') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `viewed_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -3931,6 +3976,7 @@ CREATE TABLE `users` (
   `id` bigint UNSIGNED NOT NULL,
   `role` enum('student','company','admin') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `username` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `password_hash` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `status` enum('active','pending','suspended','rejected','deleted') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
   `email_verified_at` datetime DEFAULT NULL,
@@ -3944,66 +3990,66 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `role`, `email`, `password_hash`, `status`, `email_verified_at`, `last_login_at`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(100526, 'admin', 'admin@masar.eg', '$2y$12$Oz7mJ2BpVTC7vVkOP2kCBeh/kV4dCWM6pnZLwHoAZ7G7LaaVDmP1i', 'active', '2026-08-03 10:00:00', '2026-09-02 04:18:05', '2026-07-19 10:00:00', '2026-09-02 04:18:05', NULL),
-(100527, 'admin', 'compliance@masar.eg', '$2y$12$h5J0KJf0wg4pHigxURCrE.CYS2/9lnlNu5Ql/xW7Xj.hHYKwPggAm', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100528, 'student', 'omar.shazly@gmail.com', '$2y$12$ngzkGbxsTfzSRPtv/b15MepKA9vqEmYrKSjto/aCADLkg95iWnxvm', 'active', '2026-08-03 10:00:00', '2026-09-02 06:02:39', '2026-07-19 10:00:00', '2026-09-02 06:02:39', NULL),
-(100529, 'student', 'mariam.hassan@gmail.com', '$2y$12$B6J3OPTU0GVacs3UXKErdOTL29/ElZ4FFRTp09MSMc5pJJBCNIgvC', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100530, 'student', 'youssef.farouk@outlook.com', '$2y$12$XTa5LugEt3hw94chFcXLa.Hd/cLBthKE6kbVypZXc0zsQ2A024e/2', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100531, 'student', 'farida.lotfy@gmail.com', '$2y$12$qbmgce0kl329HsGgk7Dth.T1qyo8R4Ax8wxRgHpXdKZS5t0aQoHVC', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100532, 'student', 'ahmed.nabil@gmail.com', '$2y$12$41ObvngYglSvnVChRfjwd.wgSdYTU3OacNyfdMTAOLpZD5p3ekfqm', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100533, 'student', 'nour.abdelaziz@gmail.com', '$2y$12$oO7jyhgsB7I/mbqXlrCIZe2CFqztXFnbRHXHQI/.ey6sL/q1Wu9Ha', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100534, 'student', 'karim.eldeeb@gmail.com', '$2y$12$AQN1.2W7r/aHywnl4kr6xe.H4fvc445dErImrHnwZzeLpRrLYpfnW', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100535, 'student', 'salma.eldin@outlook.com', '$2y$12$HITuv6qJNTzEYQ5Ai3hLr.BnuN1leieIh9jb11hlFzkOtwW9EavMW', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100536, 'student', 'mahmoud.gaballah@gmail.com', '$2y$12$n8kkTCNuR2.qkn9S9csgE.f/wU6PC7YE/odY87ziVPmG6hcvzt35.', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100537, 'student', 'mohamed.khattab@gmail.com', '$2y$12$yyC1Czumo4syEQdW9rzpZ.0VTo/3G9aM6HVnbri0BQRAeQrFqaG6m', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100538, 'student', 'sara.fahim@gmail.com', '$2y$12$qwpERQcy4DZlSU3AqQJs7Ohns2m4t7pr7IDGroudfYqg2zITrKmfS', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100539, 'student', 'amr.abdulghany@gmail.com', '$2y$12$ROO6vpnTMJJCv29H9NGQJOQaxNDoUs9Onoxmx3zz7s5Npwk4JmUIa', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100540, 'student', 'menna.nassar@gmail.com', '$2y$12$RbF7zClYVm0jI535NcF53eW00h80XRJb9So0p/gbBN/.Q6sQYpICC', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100541, 'student', 'mohamed.fathy@outlook.com', '$2y$12$ulhBKxhlKpu0EvpAXUdVSOnj5ahAt7eZMJ4uYnNGnLZcFzxudgTFC', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100542, 'student', 'youssef.shawky@gmail.com', '$2y$12$coZ/1m4asPZrJQQSOCq5weVivo36tZ/abZyNyDszNMc9eovMB1DZO', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100543, 'student', 'omar.mostafa@gmail.com', '$2y$12$NdZGS5QLOoYgMFgwjB9AbuSdYiFXlXs2.hVk5kLY8kiypYOSGnoMW', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100544, 'student', 'malak.shennawy@gmail.com', '$2y$12$9pFE7AlHNqpZmCs1LPq/huOHBnapXIYvb7qADe/bWO3m50SEVqMAW', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100545, 'student', 'abdallah.kamel@gmail.com', '$2y$12$AQBk32WUaCA2eEqpvAfqkOteFdVP.OCUTxHyq6Fsm99pEzK5esyEi', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100546, 'student', 'salma.maghraby@gmail.com', '$2y$12$ShJx7WcAmmIUdWexsPNJ2uvLPnMCq7aajaeiu819vllK2Wm2dbTua', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100547, 'student', 'yara.hassan@gmail.com', '$2y$12$BfdkymoQ073/saitNh6xResaWTenSaIsE2tYxYHSEBmgWlt9iIrpe', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100548, 'student', 'hana.ezzat@gmail.com', '$2y$12$Jd99b6lsxzeGvlkHZHVOCepeTF1UfeLFtkZ6I58TV2K.NFqQURM0i', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100549, 'student', 'omar.soliman@gmail.com', '$2y$12$EjuQdREX/bHFNOvaYPPXQuxHjSXQky/cCScGaI6EvyV7RDA2FEt1C', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100550, 'student', 'youssef.gohary@gmail.com', '$2y$12$0uEqd2.IH/eBh8iaaiBI9ewBDaPAjbtcQfvTPz5iH1ZJ2tRKJmB7G', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100551, 'student', 'alaa.fawzy@gmail.com', '$2y$12$Sk3S3O9FwKVqPgNmBIuPiewVbUx2Y8Ek39SetqT3CICBdRAVx74DS', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100552, 'student', 'menna.ibrahim@gmail.com', '$2y$12$k.zHKblGdSpniWwU3vDn0u9Vc59Rpz1KhWont4Flfl4sNzBh6dkje', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100553, 'student', 'omar.shahin@gmail.com', '$2y$12$6q3uSR1RGLxbpe.760O2ZuC1XbyDfiIzBtAkhG5BsIKZpYlMTSc/W', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100554, 'student', 'nourhan.abdelsalam@gmail.com', '$2y$12$NW/7C/AGzQ803a.GAv3u9uS6d6bnGQPwo9Cr5uo2zYCq.YMNJSzH6', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100555, 'student', 'aya.feky@gmail.com', '$2y$12$lCn8GlSODpN3eUjmCedyeejCFFNBgRxRe5PwNjcpf9vsLPUsggqxS', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100556, 'student', 'mariam.lotfy@gmail.com', '$2y$12$1Xtqv237DWBCkiTuu0ZQo.io7Fy0T2L8BcPbFiR8ms2p0g4u7B8rO', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100557, 'student', 'hager.anwar@gmail.com', '$2y$12$FPmfZZotUa8wKKodvQ2iv.FNUUlTblYxDTHuuIgr.gjuERVyn2JKq', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100558, 'student', 'ahmed.seif@outlook.com', '$2y$12$nRZ/VrqwJwEaG5JhCjIlf.tpImQHrfx3sjIOi7vtrJxD4woFKyKYq', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100559, 'student', 'esraa.badrawi@gmail.com', '$2y$12$2Mjvl10clGfr2kIM324IjOv7Qgp9M2.0E3j8kE4PbjczvfDt0vNwW', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100560, 'student', 'george.saad@gmail.com', '$2y$12$fCzOxDpDjYvyp2RWw8dQJu0bxRk4UykHOLsPWBX9kNTRVF31W67Zy', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100561, 'student', 'salma.eldin2@gmail.com', '$2y$12$sq5V5N.uZFq8wOp6Xdjys.NRRY9TYn1W1RMsad5l0ywdE3HRZUGza', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100562, 'student', 'mariam.tarek@gmail.com', '$2y$12$5ustyobxP4KlzgULJ5a.AOVf9X6PUGYUlmqtD.T8NRexxs8pbksya', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100563, 'student', 'mohamed.hadidi@outlook.com', '$2y$12$kXuZLHfHlANgxjNOJvZ.XeOCpEv2lRnVqvwP/wKcao2p3.rDLErk.', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100564, 'student', 'yasmin.talaat@gmail.com', '$2y$12$gCmRYftUgrhRxUV18ursmeztxM0NZpW0eP9Q.80AbRq0koVR.3CUO', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100565, 'student', 'abdullah.rahman@gmail.com', '$2y$12$zTor5.xY/tXrBD9x76AEg.Qhw7hcuRY1I3CyOcEuJg8.OVkloNaqK', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100566, 'student', 'rania.fouad@gmail.com', '$2y$12$gc2dnSa3PNX8RbPZn5Kr4.sIwPnWljXOeSWElXVNsyVylKo7Z6hWS', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100567, 'student', 'george.farid@gmail.com', '$2y$12$ZiW3HiOQ18sFOkzeGnQCje83egb5N2YimLuyYeyBHPX9Dyt4...Lq', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100568, 'company', 'careers@niletech.eg', '$2y$12$93gtWms7JWjbtBw2t6E4fe8JFgD9yYccyEvhTkQjcHE71534QetAW', 'active', '2026-08-03 10:00:00', '2026-09-02 06:03:53', '2026-07-19 10:00:00', '2026-09-02 06:03:53', NULL),
-(100569, 'company', 'careers@alexdilabs.com', '$2y$12$xiAbCvcoHRfmovZqdETI1.eRozXDxQe1J0IX3U8Fy15YGPByKTTXC', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100570, 'company', 'hr@cairomed.eg', '$2y$12$7wiHmmr1T9mhiujMLv5Oh.j.h7hbe3GKTKQb.24qsgP5krLIfVkXq', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100571, 'company', 'info@atlaseng.eg', '$2y$12$QOddQaxgpCt.hWfUuoaHauJElSGW39KBxxzS9sBXI9s7Iloqohy7C', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100572, 'company', 'careers@brightreach.eg', '$2y$12$h.6JmnlV.QwJC1oct2TR1.PzWpTLUcpHDt0FZ5Zq2eLJGsVg/ln82', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100573, 'company', 'hr@luxorpharma.com', '$2y$12$VOtJ7CNSL2mtDdEOZGww5OzMSwOt8TsyHL0/ETnhSVswZVqA6MMea', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100574, 'company', 'mail@themis-law.com', '$2y$12$lB6pcrSZ.adbZqx0iu7nje1PfxKDeDk8..ywQ2Qoi62iAz1bD22aS', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100575, 'company', 'hr@ledgerpro.eg', '$2y$12$x2ta2o2UJ77gNmOQ2xEp2.t6NyHyIi2ngABaMP6mLNXA7fgKb2jYu', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100576, 'company', 'talent@futureworks.io', '$2y$12$Z3H7Om8KOgW4lSVcYvlmpubDajk.5INZD1LOR3XPxb87cCop73QGK', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100577, 'company', 'hr@greenretail.eg', '$2y$12$P4Ea16cEVG4D9AJkPqhiNesKxkDyE2FCGsr7lCEvUhG5SqDd4vpX2', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100578, 'company', 'careers@medpulse-dx.com', '$2y$12$btmvx2fy3kn9Vj.j.jwlle7Gvh.HKJLqmevKBlOgdsKtvm5TzDVXq', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100579, 'company', 'hr@solaroffshore.eg', '$2y$12$g8QauObDtJK9XQ/pK.vnruGlqujFfRP.pPTaQfE4fUQAAjWyM4isC', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100580, 'company', 'careers@nilevalley-log.com', '$2y$12$OkQoJqfifBkQaMLakrrNOuYiOE8THmeCr5ylmqnz7I6RTjuhX8o0S', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100581, 'company', 'jobs@cleofashion.com', '$2y$12$5k9UVJCUs.r07NEJcvYgGuDq1aVmUKm3tB8GT6J6NP25QIAMaZUfC', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100582, 'company', 'hr@hrpartners.eg', '$2y$12$f8b9LxPiON112fqq/OzOi.Yz7qBls20Rbg1mWNYJYdP6RGBfSWqKS', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100588, 'student', 'mammuslim2003@gmail.com', '$2y$12$zRtZATQwPlzfYnSKuUKAl.PM7aRG6gTAb8eowQ03XKW1aqiGjYPHu', 'active', '2026-09-02 05:23:46', '2026-09-16 20:57:57', '2026-09-02 05:23:43', '2026-09-16 20:57:57', NULL),
-(100595, 'company', 'company@test.local', '$2y$12$kYBqv.b34c//ynY6NI5YvuBVW5Ui29sPnLMjtQIjWTllAiSRGCUL6', 'active', '2026-09-08 00:16:40', '2026-09-14 00:55:44', '2026-09-08 00:16:40', '2026-09-14 00:55:44', NULL);
+INSERT INTO `users` (`id`, `role`, `email`, `username`, `password_hash`, `status`, `email_verified_at`, `last_login_at`, `created_at`, `updated_at`, `deleted_at`) VALUES
+(100526, 'admin', 'admin@masar.eg', NULL, '$2y$12$Oz7mJ2BpVTC7vVkOP2kCBeh/kV4dCWM6pnZLwHoAZ7G7LaaVDmP1i', 'active', '2026-08-03 10:00:00', '2026-09-02 04:18:05', '2026-07-19 10:00:00', '2026-09-02 04:18:05', NULL),
+(100527, 'admin', 'compliance@masar.eg', NULL, '$2y$12$h5J0KJf0wg4pHigxURCrE.CYS2/9lnlNu5Ql/xW7Xj.hHYKwPggAm', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100528, 'student', 'omar.shazly@gmail.com', NULL, '$2y$12$ngzkGbxsTfzSRPtv/b15MepKA9vqEmYrKSjto/aCADLkg95iWnxvm', 'active', '2026-08-03 10:00:00', '2026-09-02 06:02:39', '2026-07-19 10:00:00', '2026-09-02 06:02:39', NULL),
+(100529, 'student', 'mariam.hassan@gmail.com', NULL, '$2y$12$B6J3OPTU0GVacs3UXKErdOTL29/ElZ4FFRTp09MSMc5pJJBCNIgvC', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100530, 'student', 'youssef.farouk@outlook.com', NULL, '$2y$12$XTa5LugEt3hw94chFcXLa.Hd/cLBthKE6kbVypZXc0zsQ2A024e/2', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100531, 'student', 'farida.lotfy@gmail.com', NULL, '$2y$12$qbmgce0kl329HsGgk7Dth.T1qyo8R4Ax8wxRgHpXdKZS5t0aQoHVC', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100532, 'student', 'ahmed.nabil@gmail.com', NULL, '$2y$12$41ObvngYglSvnVChRfjwd.wgSdYTU3OacNyfdMTAOLpZD5p3ekfqm', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100533, 'student', 'nour.abdelaziz@gmail.com', NULL, '$2y$12$oO7jyhgsB7I/mbqXlrCIZe2CFqztXFnbRHXHQI/.ey6sL/q1Wu9Ha', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100534, 'student', 'karim.eldeeb@gmail.com', NULL, '$2y$12$AQN1.2W7r/aHywnl4kr6xe.H4fvc445dErImrHnwZzeLpRrLYpfnW', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100535, 'student', 'salma.eldin@outlook.com', NULL, '$2y$12$HITuv6qJNTzEYQ5Ai3hLr.BnuN1leieIh9jb11hlFzkOtwW9EavMW', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100536, 'student', 'mahmoud.gaballah@gmail.com', NULL, '$2y$12$n8kkTCNuR2.qkn9S9csgE.f/wU6PC7YE/odY87ziVPmG6hcvzt35.', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100537, 'student', 'mohamed.khattab@gmail.com', NULL, '$2y$12$yyC1Czumo4syEQdW9rzpZ.0VTo/3G9aM6HVnbri0BQRAeQrFqaG6m', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100538, 'student', 'sara.fahim@gmail.com', NULL, '$2y$12$qwpERQcy4DZlSU3AqQJs7Ohns2m4t7pr7IDGroudfYqg2zITrKmfS', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100539, 'student', 'amr.abdulghany@gmail.com', NULL, '$2y$12$ROO6vpnTMJJCv29H9NGQJOQaxNDoUs9Onoxmx3zz7s5Npwk4JmUIa', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100540, 'student', 'menna.nassar@gmail.com', NULL, '$2y$12$RbF7zClYVm0jI535NcF53eW00h80XRJb9So0p/gbBN/.Q6sQYpICC', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100541, 'student', 'mohamed.fathy@outlook.com', NULL, '$2y$12$ulhBKxhlKpu0EvpAXUdVSOnj5ahAt7eZMJ4uYnNGnLZcFzxudgTFC', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100542, 'student', 'youssef.shawky@gmail.com', NULL, '$2y$12$coZ/1m4asPZrJQQSOCq5weVivo36tZ/abZyNyDszNMc9eovMB1DZO', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100543, 'student', 'omar.mostafa@gmail.com', NULL, '$2y$12$NdZGS5QLOoYgMFgwjB9AbuSdYiFXlXs2.hVk5kLY8kiypYOSGnoMW', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100544, 'student', 'malak.shennawy@gmail.com', NULL, '$2y$12$9pFE7AlHNqpZmCs1LPq/huOHBnapXIYvb7qADe/bWO3m50SEVqMAW', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100545, 'student', 'abdallah.kamel@gmail.com', NULL, '$2y$12$AQBk32WUaCA2eEqpvAfqkOteFdVP.OCUTxHyq6Fsm99pEzK5esyEi', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100546, 'student', 'salma.maghraby@gmail.com', NULL, '$2y$12$ShJx7WcAmmIUdWexsPNJ2uvLPnMCq7aajaeiu819vllK2Wm2dbTua', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100547, 'student', 'yara.hassan@gmail.com', NULL, '$2y$12$BfdkymoQ073/saitNh6xResaWTenSaIsE2tYxYHSEBmgWlt9iIrpe', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100548, 'student', 'hana.ezzat@gmail.com', NULL, '$2y$12$Jd99b6lsxzeGvlkHZHVOCepeTF1UfeLFtkZ6I58TV2K.NFqQURM0i', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100549, 'student', 'omar.soliman@gmail.com', NULL, '$2y$12$EjuQdREX/bHFNOvaYPPXQuxHjSXQky/cCScGaI6EvyV7RDA2FEt1C', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100550, 'student', 'youssef.gohary@gmail.com', NULL, '$2y$12$0uEqd2.IH/eBh8iaaiBI9ewBDaPAjbtcQfvTPz5iH1ZJ2tRKJmB7G', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100551, 'student', 'alaa.fawzy@gmail.com', NULL, '$2y$12$Sk3S3O9FwKVqPgNmBIuPiewVbUx2Y8Ek39SetqT3CICBdRAVx74DS', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100552, 'student', 'menna.ibrahim@gmail.com', NULL, '$2y$12$k.zHKblGdSpniWwU3vDn0u9Vc59Rpz1KhWont4Flfl4sNzBh6dkje', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100553, 'student', 'omar.shahin@gmail.com', NULL, '$2y$12$6q3uSR1RGLxbpe.760O2ZuC1XbyDfiIzBtAkhG5BsIKZpYlMTSc/W', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100554, 'student', 'nourhan.abdelsalam@gmail.com', NULL, '$2y$12$NW/7C/AGzQ803a.GAv3u9uS6d6bnGQPwo9Cr5uo2zYCq.YMNJSzH6', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100555, 'student', 'aya.feky@gmail.com', NULL, '$2y$12$lCn8GlSODpN3eUjmCedyeejCFFNBgRxRe5PwNjcpf9vsLPUsggqxS', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100556, 'student', 'mariam.lotfy@gmail.com', NULL, '$2y$12$1Xtqv237DWBCkiTuu0ZQo.io7Fy0T2L8BcPbFiR8ms2p0g4u7B8rO', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100557, 'student', 'hager.anwar@gmail.com', NULL, '$2y$12$FPmfZZotUa8wKKodvQ2iv.FNUUlTblYxDTHuuIgr.gjuERVyn2JKq', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100558, 'student', 'ahmed.seif@outlook.com', NULL, '$2y$12$nRZ/VrqwJwEaG5JhCjIlf.tpImQHrfx3sjIOi7vtrJxD4woFKyKYq', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100559, 'student', 'esraa.badrawi@gmail.com', NULL, '$2y$12$2Mjvl10clGfr2kIM324IjOv7Qgp9M2.0E3j8kE4PbjczvfDt0vNwW', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100560, 'student', 'george.saad@gmail.com', NULL, '$2y$12$fCzOxDpDjYvyp2RWw8dQJu0bxRk4UykHOLsPWBX9kNTRVF31W67Zy', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100561, 'student', 'salma.eldin2@gmail.com', NULL, '$2y$12$sq5V5N.uZFq8wOp6Xdjys.NRRY9TYn1W1RMsad5l0ywdE3HRZUGza', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100562, 'student', 'mariam.tarek@gmail.com', NULL, '$2y$12$5ustyobxP4KlzgULJ5a.AOVf9X6PUGYUlmqtD.T8NRexxs8pbksya', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100563, 'student', 'mohamed.hadidi@outlook.com', NULL, '$2y$12$kXuZLHfHlANgxjNOJvZ.XeOCpEv2lRnVqvwP/wKcao2p3.rDLErk.', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100564, 'student', 'yasmin.talaat@gmail.com', NULL, '$2y$12$gCmRYftUgrhRxUV18ursmeztxM0NZpW0eP9Q.80AbRq0koVR.3CUO', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100565, 'student', 'abdullah.rahman@gmail.com', NULL, '$2y$12$zTor5.xY/tXrBD9x76AEg.Qhw7hcuRY1I3CyOcEuJg8.OVkloNaqK', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100566, 'student', 'rania.fouad@gmail.com', NULL, '$2y$12$gc2dnSa3PNX8RbPZn5Kr4.sIwPnWljXOeSWElXVNsyVylKo7Z6hWS', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100567, 'student', 'george.farid@gmail.com', NULL, '$2y$12$ZiW3HiOQ18sFOkzeGnQCje83egb5N2YimLuyYeyBHPX9Dyt4...Lq', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100568, 'company', 'careers@niletech.eg', NULL, '$2y$12$93gtWms7JWjbtBw2t6E4fe8JFgD9yYccyEvhTkQjcHE71534QetAW', 'active', '2026-08-03 10:00:00', '2026-09-02 06:03:53', '2026-07-19 10:00:00', '2026-09-02 06:03:53', NULL),
+(100569, 'company', 'careers@alexdilabs.com', NULL, '$2y$12$xiAbCvcoHRfmovZqdETI1.eRozXDxQe1J0IX3U8Fy15YGPByKTTXC', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100570, 'company', 'hr@cairomed.eg', NULL, '$2y$12$7wiHmmr1T9mhiujMLv5Oh.j.h7hbe3GKTKQb.24qsgP5krLIfVkXq', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100571, 'company', 'info@atlaseng.eg', NULL, '$2y$12$QOddQaxgpCt.hWfUuoaHauJElSGW39KBxxzS9sBXI9s7Iloqohy7C', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100572, 'company', 'careers@brightreach.eg', NULL, '$2y$12$h.6JmnlV.QwJC1oct2TR1.PzWpTLUcpHDt0FZ5Zq2eLJGsVg/ln82', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100573, 'company', 'hr@luxorpharma.com', NULL, '$2y$12$VOtJ7CNSL2mtDdEOZGww5OzMSwOt8TsyHL0/ETnhSVswZVqA6MMea', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100574, 'company', 'mail@themis-law.com', NULL, '$2y$12$lB6pcrSZ.adbZqx0iu7nje1PfxKDeDk8..ywQ2Qoi62iAz1bD22aS', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100575, 'company', 'hr@ledgerpro.eg', NULL, '$2y$12$x2ta2o2UJ77gNmOQ2xEp2.t6NyHyIi2ngABaMP6mLNXA7fgKb2jYu', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100576, 'company', 'talent@futureworks.io', NULL, '$2y$12$Z3H7Om8KOgW4lSVcYvlmpubDajk.5INZD1LOR3XPxb87cCop73QGK', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100577, 'company', 'hr@greenretail.eg', NULL, '$2y$12$P4Ea16cEVG4D9AJkPqhiNesKxkDyE2FCGsr7lCEvUhG5SqDd4vpX2', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100578, 'company', 'careers@medpulse-dx.com', NULL, '$2y$12$btmvx2fy3kn9Vj.j.jwlle7Gvh.HKJLqmevKBlOgdsKtvm5TzDVXq', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100579, 'company', 'hr@solaroffshore.eg', NULL, '$2y$12$g8QauObDtJK9XQ/pK.vnruGlqujFfRP.pPTaQfE4fUQAAjWyM4isC', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100580, 'company', 'careers@nilevalley-log.com', NULL, '$2y$12$OkQoJqfifBkQaMLakrrNOuYiOE8THmeCr5ylmqnz7I6RTjuhX8o0S', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100581, 'company', 'jobs@cleofashion.com', NULL, '$2y$12$5k9UVJCUs.r07NEJcvYgGuDq1aVmUKm3tB8GT6J6NP25QIAMaZUfC', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100582, 'company', 'hr@hrpartners.eg', NULL, '$2y$12$f8b9LxPiON112fqq/OzOi.Yz7qBls20Rbg1mWNYJYdP6RGBfSWqKS', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100588, 'student', 'mammuslim2003@gmail.com', NULL, '$2y$12$zRtZATQwPlzfYnSKuUKAl.PM7aRG6gTAb8eowQ03XKW1aqiGjYPHu', 'active', '2026-09-02 05:23:46', '2026-09-16 20:57:57', '2026-09-02 05:23:43', '2026-09-16 20:57:57', NULL),
+(100595, 'company', 'company@test.local', NULL, '$2y$12$kYBqv.b34c//ynY6NI5YvuBVW5Ui29sPnLMjtQIjWTllAiSRGCUL6', 'active', '2026-09-08 00:16:40', '2026-09-14 00:55:44', '2026-09-08 00:16:40', '2026-09-14 00:55:44', NULL);
 
 -- --------------------------------------------------------
 
@@ -4244,8 +4290,31 @@ ALTER TABLE `students`
   ADD KEY `idx_students_city` (`city`),
   ADD KEY `fk_students_profile_image_file` (`profile_image_file_id`),
   ADD KEY `fk_students_cv_file` (`cv_file_id`),
+  ADD KEY `idx_students_academic_certificate_file` (`academic_certificate_file_id`),
   ADD KEY `idx_students_specialization_university` (`specialization_id`,`university_id`),
   ADD KEY `idx_students_field` (`field_id`);
+
+--
+-- Indexes for table `student_educations`
+--
+
+ALTER TABLE `student_educations`
+  ADD KEY `idx_student_educations_student` (`student_id`),
+  ADD KEY `idx_student_educations_university` (`university_id`),
+  ADD KEY `idx_student_educations_faculty` (`faculty_id`),
+  ADD KEY `idx_student_educations_field` (`field_id`),
+  ADD KEY `idx_student_educations_specialization` (`specialization_id`),
+  ADD KEY `idx_student_educations_degree` (`degree_id`);
+
+--
+-- Indexes for table `student_profile_views`
+--
+
+ALTER TABLE `student_profile_views`
+  ADD UNIQUE KEY `uq_student_profile_views_viewer` (`student_id`,`viewer_id`),
+  ADD KEY `idx_student_profile_views_recent` (`student_id`,`viewed_at`),
+  ADD KEY `idx_student_profile_views_viewed_at` (`viewed_at`),
+  ADD KEY `fk_student_profile_views_viewer` (`viewer_id`);
 
 --
 -- Indexes for table `student_skills`
@@ -4337,6 +4406,7 @@ ALTER TABLE `universities`
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `email` (`email`),
+  ADD UNIQUE KEY `uq_users_username` (`username`),
   ADD KEY `idx_users_role` (`role`),
   ADD KEY `idx_users_status` (`status`),
   ADD KEY `idx_users_email_status` (`email`,`status`);
@@ -4479,6 +4549,20 @@ ALTER TABLE `skills`
 --
 ALTER TABLE `specializations`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=735;
+
+--
+-- AUTO_INCREMENT for table `student_educations`
+--
+
+ALTER TABLE `student_educations`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+
+--
+-- AUTO_INCREMENT for table `student_profile_views`
+--
+
+ALTER TABLE `student_profile_views`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
 
 --
 -- AUTO_INCREMENT for table `students`
@@ -4663,6 +4747,26 @@ ALTER TABLE `specializations`
 ALTER TABLE `students`
   ADD CONSTRAINT `fk_students_field` FOREIGN KEY (`field_id`) REFERENCES `study_fields` (`id`) ON DELETE SET NULL;
 
+--
+-- Constraints for table `student_educations`
+--
+
+ALTER TABLE `student_educations`
+  ADD CONSTRAINT `fk_student_educations_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_student_educations_degree` FOREIGN KEY (`degree_id`) REFERENCES `degrees` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_student_educations_university` FOREIGN KEY (`university_id`) REFERENCES `universities` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_student_educations_faculty` FOREIGN KEY (`faculty_id`) REFERENCES `faculties` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_student_educations_field` FOREIGN KEY (`field_id`) REFERENCES `study_fields` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_student_educations_specialization` FOREIGN KEY (`specialization_id`) REFERENCES `specializations` (`id`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `student_profile_views`
+--
+
+ALTER TABLE `student_profile_views`
+  ADD CONSTRAINT `fk_student_profile_views_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_student_profile_views_viewer` FOREIGN KEY (`viewer_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+   
 --
 -- Constraints for table `training_applications`
 --

@@ -222,6 +222,51 @@ function security_require_admin_reauth(?array $user, array $context = [], string
     }
 }
 
+/*
+|--------------------------------------------------------------------------
+| Password Strength Policy - The Single Source Of Truth
+|--------------------------------------------------------------------------
+|
+| This function IS the password policy. Every self-service flow that sets a
+| password routes through it, so the effective rule for all of them is:
+|
+|   - at least 12 characters
+|   - at least one lowercase letter
+|   - at least one uppercase letter
+|   - at least one digit
+|   - at least one special (non-alphanumeric) character
+|
+| Callers:
+|   auth_validate_register()          -> POST /api/v1/auth/register
+|   auth_validate_change_password()   -> POST /api/v1/auth/change-password
+|   auth_handle_reset_password()      -> POST /api/v1/auth/reset-password
+|   (and the admin re-auth / user-management paths)
+|
+| WHY THE POLICY IS NOT LOWERED
+| -----------------------------
+| An earlier audit found the Profile UI describing an 8-character minimum
+| while the API demanded 12. The backend rule is the intentional one and was
+| deliberately KEPT: a client-side minimum is a usability hint, whereas this
+| function is the only thing standing between a weak credential and the
+| account. Weakening it to match a UI label would also loosen registration and
+| password reset at the same time, which is a far larger blast radius than
+| the profile page.
+|
+| The 8-character checks that still exist elsewhere are NOT a weaker policy
+| path:
+|
+|   - auth_validate_reset_password() checks `strlen < 8`, but
+|     auth_handle_reset_password() ALSO calls this function and merges the
+|     results, so the effective rule on reset is the strict one above. The
+|     8-character message is only ever an ADDITIONAL, still-true error.
+|   - password_validate() in app/core/auth/password.php, and the admin
+|     user-creation minimum, are separate 8-character caps. Neither is on a
+|     student self-service path, and changing them is out of scope here.
+|
+| If the product genuinely wants a lower minimum, the change belongs here -
+| once - and not in a single endpoint.
+|
+*/
 function security_password_strength_errors(string $password): array
 {
     $errors = [];

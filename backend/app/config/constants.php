@@ -61,9 +61,101 @@ define('FILE_TYPE_CV', 'cv');
 define('FILE_TYPE_CERTIFICATE', 'certificate');
 define('FILE_TYPE_PROFILE_IMAGE', 'profile_image');
 define('FILE_TYPE_OTHER', 'other');
+
+/*
+ * Lifetime of a signed profile-image URL, in seconds. The URL is only used by
+ * browser <img> tags, which cannot send a Bearer header; every other file
+ * access still goes through the normal Bearer + ownership path.
+ */
+define('FILE_SIGNED_URL_TTL', 60 * 60);
+/*
+ * A student's OWN academic certificate document.
+ *
+ * NOTE: this is the literal member of the files.type enum
+ * ('cv','profile_image','certificate_attachment','other'). FILE_TYPE_CERTIFICATE
+ * above is 'certificate', which is NOT a member of that enum, so it must not
+ * be used for a files row. 'certificate_attachment' is reused deliberately:
+ * it is the existing enum member for "a certificate document belonging to a
+ * user" and it is otherwise unused, which avoids widening the enum. It is
+ * unrelated to the MASAR-issued `certificates` table, which requires a
+ * training and a completed session.
+ */
+define('FILE_TYPE_ACADEMIC_CERTIFICATE', 'certificate_attachment');
 define('FILE_EXTENSION_PDF', 'pdf');
 define('FILE_EXTENSION_DOC', 'doc');
 define('FILE_EXTENSION_DOCX', 'docx');
+
+/*
+|--------------------------------------------------------------------------
+| Public Username
+|--------------------------------------------------------------------------
+|
+| A student's public handle. It is a SEPARATE identity from the account
+| email: the product states companies see the handle next to the name, not
+| the email, and the handle must survive an email change.
+|
+| The rules below are the policy agreed for this field, which previously did
+| not exist anywhere in the schema or the validators.
+|
+*/
+
+define('USERNAME_MIN_LENGTH', 3);
+define('USERNAME_MAX_LENGTH', 30);
+define('USERNAME_PATTERN', '/^[A-Za-z][A-Za-z0-9_.]{2,29}$/');
+
+/*
+|--------------------------------------------------------------------------
+| Academic Certificate Upload
+|--------------------------------------------------------------------------
+|
+| The Student Profile accepts a PDF / PNG / JPG academic certificate up to
+| 5MB. The shared upload service enforces its own broader policy (10MB and
+| twelve extensions); this is the tighter, feature-specific policy applied
+| before the file is handed to it, so a rejection is reported as a real 422
+| instead of the generic upload failure.
+|
+*/
+
+define('ACADEMIC_CERTIFICATE_MAX_SIZE', 5 * 1024 * 1024);
+define('ACADEMIC_CERTIFICATE_EXTENSIONS', ['pdf', 'png', 'jpg', 'jpeg']);
+define('ACADEMIC_CERTIFICATE_MIMES', [
+    'application/pdf',
+    'image/png',
+    'image/jpeg',
+]);
+
+/*
+|--------------------------------------------------------------------------
+| Student Profile Image Upload
+|--------------------------------------------------------------------------
+|
+| The student profile header image. Mirrors the company logo policy: an
+ | actual image, never a document.
+ |
+ | The size cap is the same 5MB as the academic certificate. It has to be
+ | stated explicitly: student_account_validate_upload() only applies a size
+ | check when the caller passes a positive limit, so passing 0 would fall
+ | through to the shared upload service's broader 10MB policy.
+ |
+ */
+
+define('PROFILE_IMAGE_MAX_SIZE', 5 * 1024 * 1024);
+define('PROFILE_IMAGE_EXTENSIONS', ['jpg', 'jpeg', 'png', 'webp']);
+define('PROFILE_IMAGE_MIMES', [
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+]);
+
+/*
+|--------------------------------------------------------------------------
+| Student Profile Views
+|--------------------------------------------------------------------------
+*/
+
+define('PROFILE_VIEW_RECENT_LIMIT', 6);
+define('STUDENT_MAX_SKILLS', 50);
+define('STUDENT_MAX_EDUCATIONS', 20);
 define('DEFAULT_PAGE', 1);
 define('DEFAULT_PER_PAGE', 20);
 define('MAX_PER_PAGE', 100);
@@ -115,7 +207,8 @@ $shared_enum_files = [
 	__DIR__ . '/../shared/enums/payment_types.php',
 	__DIR__ . '/../shared/enums/notification_types.php',
 	__DIR__ . '/../shared/enums/rejection_reasons.php',
-	__DIR__ . '/../shared/enums/training_session_statuses.php',
+    __DIR__ . '/../shared/enums/training_session_statuses.php',
+    __DIR__ . '/../shared/enums/academic_statuses.php',
 ];
 
 foreach ($shared_enum_files as $shared_enum_file) {

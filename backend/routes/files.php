@@ -13,9 +13,11 @@ $method = request_method();
 
 function file_route_respond( array $result, int $success_status = 200 ): void {
     if ( !empty( $result['download'] ) && !empty( $result['path'] ) && is_file( $result['path'] ) ) {
+        $disposition = !empty( $result['inline'] ) ? 'inline' : 'attachment';
+
         header( 'Content-Type: ' . ( $result['mime_type'] ?? 'application/octet-stream' ) );
         header( 'Content-Length: ' . (int) ( $result['size'] ?? filesize( $result['path'] ) ) );
-        header( 'Content-Disposition: attachment; filename="' . addslashes( $result['filename'] ?? basename( $result['path'] ) ) . '"' );
+        header( 'Content-Disposition: ' . $disposition . '; filename="' . addslashes( $result['filename'] ?? basename( $result['path'] ) ) . '"' );
         readfile( $result['path'] );
         exit;
     }
@@ -60,16 +62,46 @@ if ($path === '/api/v1/files/multiple' && $method === 'POST') {
     return;
 }
 
+/*
+ * A short-lived signed URL is a profile-image-only alternative to the Bearer
+ * header. It is checked BEFORE middleware_auth() because the whole point is
+ * that a browser <img> request has no Authorization header. The controller
+ * rejects anything that is not a real profile_image row, so CVs and academic
+ * certificates cannot be reached this way.
+ */
 if (preg_match('#^/api/v1/files/([0-9]+)/download$#', $path, $matches) && $method === 'GET') {
+    $file_id = (int) $matches[1];
+
+    if ( request_get( 'expires' ) !== null || request_get( 'signature' ) !== null ) {
+        $result = file_controller_signed_profile_image(
+            $file_id,
+            request_get( 'expires' ),
+            request_get( 'signature' )
+        );
+        file_route_respond($result);
+        return;
+    }
+
     middleware_auth();
-    $result = file_controller_download((int) $matches[1]);
+    $result = file_controller_download($file_id);
     file_route_respond($result);
     return;
 }
 
 if (preg_match('#^/api/v1/files/([0-9]+)$#', $path, $matches) && $method === 'GET') {
-    middleware_auth();
     $file_id = (int) $matches[1];
+
+    if ( request_get( 'expires' ) !== null || request_get( 'signature' ) !== null ) {
+        $result = file_controller_signed_profile_image(
+            $file_id,
+            request_get( 'expires' ),
+            request_get( 'signature' )
+        );
+        file_route_respond($result);
+        return;
+    }
+
+    middleware_auth();
     $download = request_get( 'download' );
     if ( $download === 'true' || $download === '1' ) {
         $result = file_controller_download( $file_id );

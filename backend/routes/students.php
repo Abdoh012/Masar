@@ -65,33 +65,105 @@ if ($path === '/api/v1/students/me/skills' && $method === 'DELETE') {
     return;
 }
 
-if ($path === '/api/v1/students/me/cv' && $method === 'GET') {
+if ($path === '/api/v1/students/me/full-name' && $method === 'GET') {
     middleware_student();
-    student_cv_show();
+    student_full_name_index();
     return;
 }
 
-if ($path === '/api/v1/students/me/cv' && $method === 'POST') {
+if ($path === '/api/v1/students/me/full-name' && $method === 'PUT') {
     middleware_student();
-    student_cv_set();
+    student_full_name_update();
     return;
 }
 
-if ($path === '/api/v1/students/me/cv' && $method === 'DELETE') {
+if ($path === '/api/v1/students/me/username' && $method === 'GET') {
     middleware_student();
-    student_cv_remove();
+    student_username_index();
+    return;
+}
+
+if ($path === '/api/v1/students/me/username' && $method === 'PUT') {
+    middleware_student();
+    student_username_update();
+    return;
+}
+
+if ($path === '/api/v1/students/me/contact' && $method === 'GET') {
+    middleware_student();
+    student_contact_index();
+    return;
+}
+
+if ($path === '/api/v1/students/me/contact' && $method === 'PUT') {
+    middleware_student();
+    student_contact_update();
+    return;
+}
+
+if ($path === '/api/v1/students/me/academic-status' && $method === 'GET') {
+    middleware_student();
+    student_academic_status_index();
+    return;
+}
+
+if ($path === '/api/v1/students/me/academic-status' && $method === 'PUT') {
+    middleware_student();
+    student_academic_status_update();
+    return;
+}
+
+if ($path === '/api/v1/students/me/academic-status/certificate' && $method === 'DELETE') {
+    middleware_student();
+    student_academic_status_remove_certificate();
+    return;
+}
+
+if ($path === '/api/v1/students/me/profile-image' && $method === 'POST') {
+    middleware_student();
+    student_profile_image_store();
+    return;
+}
+
+if ($path === '/api/v1/students/me/profile-image' && $method === 'DELETE') {
+    middleware_student();
+    student_profile_image_remove();
+    return;
+}
+
+if ($path === '/api/v1/students/me/profile-views' && $method === 'GET') {
+    middleware_student();
+    student_profile_views_index();
+    return;
+}
+
+if ($path === '/api/v1/students/me/education' && $method === 'GET') {
+    middleware_student();
+    student_education_index();
+    return;
+}
+
+if ($path === '/api/v1/students/me/education' && $method === 'POST') {
+    middleware_student();
+    student_education_store();
+    return;
+}
+
+if (preg_match('#^/api/v1/students/me/education/([0-9]+)$#', $path, $matches) && $method === 'PUT') {
+    middleware_student();
+    student_update_education((int) $matches[1]);
+    return;
+}
+
+if (preg_match('#^/api/v1/students/me/education/([0-9]+)$#', $path, $matches) && $method === 'DELETE') {
+    middleware_student();
+    student_education_destroy((int) $matches[1]);
     return;
 }
 
 if ($path === '/api/v1/students/dashboard' && $method === 'GET') {
     middleware_student();
     student_dashboard();
-    return;
-}
-
-if (preg_match('#^/api/v1/students/([0-9]+)$#', $path, $matches) && $method === 'GET') {
-    middleware_auth();
-    student_show((int) $matches[1]);
     return;
 }
 

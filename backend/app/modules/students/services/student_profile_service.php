@@ -9,11 +9,9 @@
  * - Manage student skills.
  * - Manage profile information.
  * - Prepare profile data for display.
- * - Handle CV reference information.
  * - Check profile completeness.
  *
  * IMPORTANT:
- * - CV file storage/upload is handled by the files module.
  * - Database operations are handled by student_profile_repository.php.
  * - No HTTP logic belongs here.
  */
@@ -45,7 +43,6 @@ function student_profile_get( int $student_id ): array {
     }
 
     $profile['skills'] = student_profile_normalize_skills( $profile['skills'] ?? [] );
-    $profile['cv'] = student_profile_normalize_cv( $profile );
     return [ 'data' => $profile, ];
 }
 
@@ -55,7 +52,25 @@ function student_profile_update_skills( int $student_id, array $skills ): array 
         return [ 'error' => true, 'status' => 422, 'message' => 'Invalid student ID.' ];
     }
 
-    $skills = student_profile_clean_skills( $skills );
+    $names = [];
+    $unknown = [];
+
+    foreach ( $skills as $skill_id ) {
+        $resolved = student_profile_repository_find_skill_by_id( (int) $skill_id );
+
+        if ( $resolved === null ) {
+            $unknown[] = (int) $skill_id;
+            continue;
+        }
+
+        $names[] = trim( (string) ( $resolved['name'] ?? '' ) );
+    }
+
+    if ( !empty( $unknown ) ) {
+        return student_profile_unknown_skills_error( $unknown );
+    }
+
+    $skills = student_profile_clean_skills( $names );
 
     if (empty($skills)) {
         return [ 'error' => true, 'status' => 422, 'message' => 'At least one skill is required.' ];
@@ -76,13 +91,31 @@ function student_profile_update_skills( int $student_id, array $skills ): array 
     return student_profile_get( $student_id );
 }
 
-function student_profile_add_skill( int $student_id, string $skill ): array {
+function student_profile_add_skill( int $student_id, int $skill ): array {
 
     if ($student_id <= 0) {
         return [ 'error' => true, 'status' => 422, 'message' => 'Invalid student ID.' ];
     }
 
-    $skill = trim($skill);
+    /*
+     | The caller sends the skill as its taxonomy lookup id. Resolve the id to
+     | the human-readable name first, then run the existing name-based workflow
+     | so the duplicate guard, the shared-taxonomy checks and the sync all keep
+     | reading from the same source of truth.
+     */
+
+    $resolved = student_profile_repository_find_skill_by_id( $skill );
+
+    if ( $resolved === null ) {
+        return [
+            'error'   => true,
+            'status'  => 422,
+            'message' => 'The selected skill is not recognized.',
+            'errors'  => [ 'skill' => 'Unknown skill.' ],
+        ];
+    }
+
+    $skill = trim( (string) ( $resolved['name'] ?? '' ) );
 
     if ($skill === '') {
         return [ 'error' => true, 'status' => 422, 'message' => 'Skill cannot be empty.' ];
@@ -102,6 +135,25 @@ function student_profile_add_skill( int $student_id, string $skill ): array {
         }
     }
 
+    /*
+     | The bulk PUT path caps the set, so the single add path is capped too.
+     | Without this, repeated POSTs grow a student's skill list without limit
+     | while the equivalent PUT would have been refused.
+     */
+    if ( count( $skills ) >= STUDENT_MAX_SKILLS ) {
+        return [
+            'error'   => true,
+            'status'  => 422,
+            'message' => 'You cannot add more than ' . STUDENT_MAX_SKILLS . ' skills.',
+        ];
+    }
+
+    $unknown = student_profile_unknown_skills( [ $skill ] );
+
+    if ( !empty( $unknown ) ) {
+        return student_profile_unknown_skills_error( $unknown );
+    }
+
     $skills[] = $skill;
     $updated = student_profile_repository_update( $student_id, [ 'skills' => $skills ] );
 
@@ -112,13 +164,80 @@ function student_profile_add_skill( int $student_id, string $skill ): array {
     return [ 'data' => [ 'skills' => $skills, ], ];
 }
 
-function student_profile_remove_skill( int $student_id, string $skill ): array {
+/*
+|--------------------------------------------------------------------------
+| Unknown Skills
+|--------------------------------------------------------------------------
+|
+| A student's skills must come from the shared `skills` taxonomy, because that
+| same list is what companies filter candidates by. A name that is not in the
+| taxonomy is refused here with a 422 naming the offending skills, rather than
+| being added to the shared table.
+|
+| The repository resolves rather than inserts as a second line of defence, so
+| even a caller reaching sync_skills without going through here cannot write a
+| new taxonomy row.
+|
+*/
+
+function student_profile_unknown_skills( array $skills ): array {
+
+    $names = [];
+
+    foreach ( $skills as $skill ) {
+        if ( is_string( $skill ) || is_numeric( $skill ) ) {
+            $name = trim( (string) $skill );
+
+            if ( $name !== '' ) {
+                $names[] = $name;
+            }
+        }
+    }
+
+    if ( empty( $names ) ) {
+        return [];
+    }
+
+    $resolved = student_profile_repository_find_skill_ids( $names );
+
+    $unknown = [];
+
+    foreach ( array_unique( $names ) as $name ) {
+        if ( !isset( $resolved[ strtolower( $name ) ] ) ) {
+            $unknown[] = $name;
+        }
+    }
+
+    return $unknown;
+}
+
+function student_profile_unknown_skills_error( array $unknown ): array {
+
+    return [
+        'error'   => true,
+        'status'  => 422,
+        'message' => 'One or more skills are not in the available skills list.',
+        'errors'  => [ 'skills' => 'Unknown skill: ' . implode( ', ', $unknown ) . '.' ],
+    ];
+}
+
+function student_profile_remove_skill( int $student_id, int $skill ): array {
 
     if ($student_id <= 0) {
         return [ 'error' => true, 'status' => 422, 'message' => 'Invalid student ID.' ];
     }
 
-    $skill = trim($skill);
+    /*
+     | The caller sends the skill as its taxonomy lookup id; resolve it to the
+     | human-readable name so the removal can compare against the stored list.
+     */
+    $resolved = student_profile_repository_find_skill_by_id( $skill );
+
+    if ( $resolved === null ) {
+        return [ 'error' => true, 'status' => 422, 'message' => 'The selected skill is not recognized.', 'errors' => [ 'skill' => 'Unknown skill.' ] ];
+    }
+
+    $skill = trim( (string) ( $resolved['name'] ?? '' ) );
 
     if ($skill === '') {
         return [ 'error' => true, 'status' => 422, 'message' => 'Skill cannot be empty.' ];
@@ -151,120 +270,6 @@ function student_profile_remove_skill( int $student_id, string $skill ): array {
 
     return [ 'data' => [ 'skills' => $new_skills, ], ];
 }
-
-function student_profile_set_cv( int $student_id, int $file_id ): array {
-
-    if ($student_id <= 0) {
-        return [ 'error' => true, 'status' => 422, 'message' => 'Invalid student ID.' ];
-    }
-
-    if ($file_id <= 0) {
-        return [ 'error' => true, 'status' => 422, 'message' => 'Invalid file ID.' ];
-    }
-
-    $student = student_repository_find_by_id( $student_id );
-
-    if (!$student) {
-        return [ 'error' => true, 'status' => 404, 'message' => 'Student not found.' ];
-    }
-
-    $updated = student_profile_repository_update( $student_id, [ 'cv_file_id' => $file_id ] );
-
-    if (!$updated) {
-        return [ 'error' => true, 'status' => 500, 'message' => 'Unable to attach CV.' ];
-    }
-
-    return [ 'data' => [ 'message' => 'CV attached successfully.', 'cv_file_id' => $file_id, ], ];
-}
-
-function student_profile_remove_cv( int $student_id ): array {
-
-    if ($student_id <= 0) {
-        return [ 'error' => true, 'status' => 422, 'message' => 'Invalid student ID.' ];
-    }
-
-    $student = student_repository_find_by_id( $student_id );
-
-    if (!$student) {
-        return [ 'error' => true, 'status' => 404, 'message' => 'Student not found.' ];
-    }
-
-    $file_id = student_profile_repository_get_cv_file_id( $student_id );
-
-    if (!$file_id) {
-        return [ 'error' => true, 'status' => 404, 'message' => 'No CV found.' ];
-    }
-
-    $user_id = (int) ( $student['user_id'] ?? 0 );
-
-    /*
-     * The file record is resolved from the student's stored CV reference and is
-     * scoped to the authenticated user, so a student can never touch another
-     * user's file and the path is never taken from the client.
-     */
-
-    $file = file_repository_find_for_user( $file_id, $user_id );
-
-    /*
-     * Stale reference: the file row is missing or does not belong to this user.
-     * Clear the reference so the profile no longer points at a phantom file.
-     * Nothing is deleted because we cannot attribute the file to this user.
-     */
-
-    if (!$file) {
-        student_profile_repository_remove_cv( $student_id );
-        return [ 'data' => [ 'message' => 'CV removed successfully.', ], ];
-    }
-
-    /*
-     * Security: never unlink a path that is not stored inside the application's
-     * upload/storage directory. An unsafe (relative, traversal or otherwise
-     * out-of-tree) stored path is logged and left untouched.
-     */
-
-    $path = (string) ( $file['path'] ?? '' );
-    $safe = file_upload_service_is_safe_storage_path( $path );
-
-    if (!$safe) {
-        error_log( 'MASAR CV removal: refusing to delete unsafe stored path: ' . $path );
-    } elseif (is_file( $path )) {
-
-        if (!@unlink( $path )) {
-            return [ 'error' => true, 'status' => 500, 'message' => 'Unable to delete the CV file.' ];
-        }
-    }
-
-    /*
-     * If the physical file is already missing, continue and clean the metadata.
-     * The filesystem and the database cannot be rolled back together, so the two
-     * database writes (delete the file record, clear the CV reference) run inside
-     * one transaction after the physical file is removed. If the database part
-     * fails we do not silently report success.
-     */
-
-    db_begin_transaction();
-
-    try {
-
-        $cv_cleared = student_profile_repository_remove_cv( $student_id );
-        $file_deleted = file_repository_delete( $file_id, $user_id );
-
-        if ( !$cv_cleared || !$file_deleted ) {
-            db_rollback();
-            return [ 'error' => true, 'status' => 500, 'message' => 'Unable to remove CV metadata.' ];
-        }
-
-        db_commit();
-
-    } catch (Throwable $e) {
-
-        db_rollback();
-        return [ 'error' => true, 'status' => 500, 'message' => 'Unable to remove CV metadata.' ];
-    }
-
-    return [ 'data' => [ 'message' => 'CV removed successfully.', ], ];
-}
-
 
 function student_profile_is_complete( int $student_id ): array {
     if ($student_id <= 0) {
@@ -356,14 +361,4 @@ function student_profile_clean_skills( array $skills ): array {
     }
 
     return array_values( $clean );
-}
-
-function student_profile_normalize_cv( array $profile ): ?array {
-    $file_id = $profile['cv_file_id'] ?? null;
-
-    if ( empty($file_id) ) {
-        return null;
-    }
-
-    return [ 'file_id' => (int) $file_id, ];
 }

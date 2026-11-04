@@ -9,7 +9,6 @@
  * - Get authenticated student's profile.
  * - Create student profile.
  * - Update student profile.
- * - View student profiles.
  *
  * Business logic belongs to student_service.php.
  * Database operations belong to student_repository.php.
@@ -30,10 +29,86 @@ require_once __DIR__ . '/../../../core/auth/auth.php';
 
 require_once __DIR__ . '/../services/student_service.php';
 require_once __DIR__ . '/../services/student_profile_service.php';
+require_once __DIR__ . '/../services/student_account_service.php';
+require_once __DIR__ . '/../services/student_education_service.php';
+require_once __DIR__ . '/../services/student_profile_view_service.php';
 
 require_once __DIR__ . '/../validators/student_validator.php';
 
 require_once __DIR__ . '/../../../modules/files/repositories/file_repository.php';
+
+
+/*
+|--------------------------------------------------------------------------
+| Authenticated Student Context
+|--------------------------------------------------------------------------
+|
+| Every "me" endpoint below resolves its target through this one helper. The
+| user id comes from the auth context and the student row is then looked up by
+| that id, so no endpoint in this file can be pointed at another student: a
+| client-supplied student_id is never read.
+|
+| The 401/403 split mirrors the existing endpoints in this file - no session
+| is 401, and a session that is not a student is 403 - and middleware_student()
+| has already run, so in practice this is the second, defence-in-depth check.
+|
+*/
+function student_controller_auth_student(): ?array
+{
+    $user = auth_user();
+
+    if (!$user) {
+        response_unauthorized('Authentication required.');
+        return null;
+    }
+
+    if (($user['role'] ?? '') !== 'student') {
+        response_forbidden('Only students can access this resource.');
+        return null;
+    }
+
+    $student = student_repository_find_by_user_id((int) $user['id']);
+
+    if (!$student) {
+        response_not_found('Student profile not found.');
+        return null;
+    }
+
+    return ['user' => $user, 'student' => $student];
+}
+
+/*
+| Student Controller Response
+|
+| The shared pass-through for the service results below. `created` selects
+| response_created() (201) for the endpoints that add a resource, matching how
+| the existing create endpoints in this file answer.
+*/
+function student_controller_respond(array $result, bool $created = false): void
+{
+    if (isset($result['error']) && $result['error'] === true) {
+        response_error(
+            $result['message'] ?? 'Unable to process the request.',
+            $result['status'] ?? 400
+        );
+        return;
+    }
+
+    if (!empty($result['errors']) && is_array($result['errors'])) {
+        response_validation_error($result['errors']);
+        return;
+    }
+
+    $data = $result['data'] ?? null;
+    $message = $result['message'] ?? null;
+
+    if ($created) {
+        response_created($data, $message);
+        return;
+    }
+
+    response_success($data, $message);
+}
 
 
 /*
@@ -77,6 +152,13 @@ function student_dashboard(): void
 |
 | GET /api/students/me
 |
+| Returns ONLY `data.header`, the thirteen-field student self header.
+|
+| The `student` and `profile` objects this endpoint used to expose were removed
+| from the contract, so it no longer builds them. The service call was switched
+| rather than the old response being post-processed, because doing the work and
+| then dropping it would keep two queries alive for nothing.
+|
 */
 
 function student_me(): void
@@ -93,7 +175,7 @@ function student_me(): void
         return;
     }
 
-    $result = student_get_profile( (int) $user['id'] );
+    $result = student_service_me_header( (int) $user['id'] );
 
     if ( isset($result['error']) && $result['error'] === true ) {
         response_error( $result['message'] ?? 'Unable to retrieve student profile.', $result['status'] ?? 404 );
@@ -181,40 +263,6 @@ function student_update_profile(): void
 
     if ( isset($result['error']) && $result['error'] === true ) {
         response_error( $result['message'] ?? 'Unable to update student profile.', $result['status'] ?? 400 );
-        return;
-    }
-
-    response_success( $result['data'] ?? $result );
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| Get Student Profile By ID
-|--------------------------------------------------------------------------
-|
-| GET /api/students/{id}
-|
-*/
-
-function student_show( int $student_id ): void {
-
-    $user = auth_user();
-
-    if (!$user) {
-        response_unauthorized( 'Authentication required.' );
-        return;
-    }
-
-    if ($student_id <= 0) {
-        response_error( 'Invalid student ID.', 422 );
-        return;
-    }
-
-    $result = student_get_public_profile( $student_id, $user );
-
-    if ( isset($result['error']) && $result['error'] === true ) {
-        response_error( $result['message'] ?? 'Unable to retrieve student profile.', $result['status'] ?? 404 );
         return;
     }
 
@@ -358,8 +406,7 @@ function student_skill_add(): void
     }
 
     $data = request_input();
-    $skill = trim( (string) ( $data['skill'] ?? '' ) );
-    $validation = student_validator_add_skill( $skill );
+    $validation = student_validator_add_skill( $data['skill'] ?? null );
 
     if ( !$validation['valid'] ) {
         response_validation_error( $validation['errors'] );
@@ -373,7 +420,7 @@ function student_skill_add(): void
         return;
     }
 
-    $result = student_profile_add_skill( (int) $student['id'], $skill );
+    $result = student_profile_add_skill( (int) $student['id'], (int) ( $data['skill'] ?? 0 ) );
 
     if ( isset($result['error']) && $result['error'] === true ) {
         response_error( $result['message'] ?? 'Unable to add skill.', $result['status'] ?? 400 );
@@ -409,7 +456,7 @@ function student_skills_update(): void
 
     $data = request_input();
     $skills = $data['skills'] ?? null;
-    $validation = student_validator_skills( $skills );
+    $validation = student_validator_skill_ids( $skills );
 
     if ( !$validation['valid'] ) {
         response_validation_error( $validation['errors'] );
@@ -458,8 +505,7 @@ function student_skill_remove(): void
     }
 
     $data = request_input();
-    $skill = trim( (string) ( $data['skill'] ?? '' ) );
-    $validation = student_validator_add_skill( $skill );
+    $validation = student_validator_add_skill( $data['skill'] ?? null );
 
     if ( !$validation['valid'] ) {
         response_validation_error( $validation['errors'] );
@@ -473,7 +519,7 @@ function student_skill_remove(): void
         return;
     }
 
-    $result = student_profile_remove_skill( (int) $student['id'], $skill );
+    $result = student_profile_remove_skill( (int) $student['id'], (int) ( $data['skill'] ?? 0 ) );
 
     if ( isset($result['error']) && $result['error'] === true ) {
         response_error( $result['message'] ?? 'Unable to remove skill.', $result['status'] ?? 400 );
@@ -486,133 +532,315 @@ function student_skill_remove(): void
 
 /*
 |--------------------------------------------------------------------------
-| Get My CV
+| Full Name
 |--------------------------------------------------------------------------
 |
-| GET /api/students/me/cv
+| GET  /api/v1/students/me/full-name
+| PUT  /api/v1/students/me/full-name
+|
+| The account's real name (students.full_name), not the public username. The
+| student is resolved from the auth context only; no client-supplied id is read.
 |
 */
 
-function student_cv_show(): void
+function student_full_name_index(): void
 {
-    $user = auth_user();
+    $context = student_controller_auth_student();
 
-    if (!$user) {
-        response_unauthorized( 'Authentication required.' );
+    if ($context === null) {
         return;
     }
 
-    if ( ($user['role'] ?? '') !== 'student' ) {
-        response_forbidden( 'Only students can access this resource.' );
+    student_controller_respond(student_account_full_name($context['user']));
+}
+
+function student_full_name_update(): void
+{
+    $context = student_controller_auth_student();
+
+    if ($context === null) {
         return;
     }
 
-    $student = student_repository_find_by_user_id( (int) $user['id'] );
-
-    if (!$student) {
-        response_not_found( 'Student profile not found.' );
-        return;
-    }
-
-    $file_id = student_profile_repository_get_cv_file_id( (int) $student['id'] );
-
-    response_success( [ 'cv_file_id' => $file_id, ] );
+    student_controller_respond(student_account_update_full_name($context['user'], request_input()));
 }
 
 
 /*
 |--------------------------------------------------------------------------
-| Set CV
+| Username
 |--------------------------------------------------------------------------
 |
-| POST /api/students/me/cv
+| GET  /api/v1/students/me/username
+| PUT  /api/v1/students/me/username
+|
+| The public handle. It is a separate identity from the account email: the
+| handle is what is shown next to the student's name, and the email is never
+| returned as the handle.
 |
 */
 
-function student_cv_set(): void
+function student_username_index(): void
 {
-    $user = auth_user();
+    $context = student_controller_auth_student();
 
-    if (!$user) {
-        response_unauthorized( 'Authentication required.' );
+    if ($context === null) {
         return;
     }
 
-    if ( ($user['role'] ?? '') !== 'student' ) {
-        response_forbidden( 'Only students can access this resource.' );
+    student_controller_respond(student_account_username($context['user']));
+}
+
+function student_username_update(): void
+{
+    $context = student_controller_auth_student();
+
+    if ($context === null) {
+        return;
+    }
+
+    student_controller_respond(student_account_update_username($context['user'], request_input()));
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Contact Info
+|--------------------------------------------------------------------------
+|
+| GET  /api/v1/students/me/contact
+| PUT  /api/v1/students/me/contact
+|
+| Reuses users.email and the students contact columns. This endpoint does not
+| verify a password; password changes remain the separate auth flow.
+|
+*/
+
+function student_contact_index(): void
+{
+    $context = student_controller_auth_student();
+
+    if ($context === null) {
+        return;
+    }
+
+    student_controller_respond(student_account_contact($context['user']));
+}
+
+function student_contact_update(): void
+{
+    $context = student_controller_auth_student();
+
+    if ($context === null) {
+        return;
+    }
+
+    student_controller_respond(student_account_update_contact($context['user'], request_input()));
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Academic Status
+|--------------------------------------------------------------------------
+|
+| GET  /api/v1/students/me/academic-status
+| PUT  /api/v1/students/me/academic-status
+|
+*/
+
+function student_academic_status_index(): void
+{
+    $context = student_controller_auth_student();
+
+    if ($context === null) {
+        return;
+    }
+
+    student_controller_respond(student_account_academic_status($context['user']));
+}
+
+function student_academic_status_update(): void
+{
+    $context = student_controller_auth_student();
+
+    if ($context === null) {
         return;
     }
 
     $data = request_input();
-    $file_id = (int) ( $data['file_id'] ?? 0 );
-    $validation = student_validator_cv_file_id( $file_id );
+    $file = request_file('graduation_certificate');
 
-    if ( !$validation['valid'] ) {
-        response_validation_error( $validation['errors'] );
+    student_controller_respond(student_account_update_academic_status($context['user'], $data, $file));
+}
+
+function student_academic_status_remove_certificate(): void
+{
+    $context = student_controller_auth_student();
+
+    if ($context === null) {
         return;
     }
 
-    $file = file_repository_find_for_user( $file_id, (int) $user['id'] );
-
-    if (!$file) {
-        response_error( 'File not found or does not belong to you.', 422 );
-        return;
-    }
-
-    $student = student_repository_find_by_user_id( (int) $user['id'] );
-
-    if (!$student) {
-        response_not_found( 'Student profile not found.' );
-        return;
-    }
-
-    $result = student_profile_set_cv( (int) $student['id'], $file_id );
-
-    if ( isset($result['error']) && $result['error'] === true ) {
-        response_error( $result['message'] ?? 'Unable to attach CV.', $result['status'] ?? 400 );
-        return;
-    }
-
-    response_success( $result['data'] ?? $result );
+    student_controller_respond(student_account_remove_graduation_certificate($context['user']));
 }
 
 
 /*
 |--------------------------------------------------------------------------
-| Remove CV
+| Profile Image
 |--------------------------------------------------------------------------
 |
-| DELETE /api/students/me/cv
+| POST   /api/v1/students/me/profile-image   (multipart, field `image`)
+| DELETE /api/v1/students/me/profile-image
+|
+| This writes the field the profile header already reads, so the header image
+| becomes a real value instead of a permanent null.
+|
+| The upload goes through the shared upload service. This controller only
+| resolves WHICH file and reports the result; every content check lives in
+| student_account_validate_upload() before the upload service is called.
 |
 */
 
-function student_cv_remove(): void
+function student_profile_image_store(): void
 {
-    $user = auth_user();
+    $context = student_controller_auth_student();
 
-    if (!$user) {
-        response_unauthorized( 'Authentication required.' );
+    if ($context === null) {
         return;
     }
 
-    if ( ($user['role'] ?? '') !== 'student' ) {
-        response_forbidden( 'Only students can access this resource.' );
+    $file = request_file('image') ?? request_file('file') ?? request_file('profile_image');
+
+    if (empty($file)) {
+        response_validation_error(['image' => 'An image file is required.']);
         return;
     }
 
-    $student = student_repository_find_by_user_id( (int) $user['id'] );
+    student_controller_respond(student_account_upload_profile_image($context['user'], $file));
+}
 
-    if (!$student) {
-        response_not_found( 'Student profile not found.' );
+function student_profile_image_remove(): void
+{
+    $context = student_controller_auth_student();
+
+    if ($context === null) {
         return;
     }
 
-    $result = student_profile_remove_cv( (int) $student['id'] );
+    student_controller_respond(student_account_remove_profile_image($context['user']));
+}
 
-    if ( isset($result['error']) && $result['error'] === true ) {
-        response_error( $result['message'] ?? 'Unable to remove CV.', $result['status'] ?? 400 );
+
+/*
+|--------------------------------------------------------------------------
+| Profile Views
+|--------------------------------------------------------------------------
+|
+| GET /api/v1/students/me/profile-views
+|
+| The "N people viewed your profile" total and the recent viewers. The total
+| is a count of real rows; nothing here is a placeholder number.
+|
+*/
+
+function student_profile_views_index(): void
+{
+    $context = student_controller_auth_student();
+
+    if ($context === null) {
         return;
     }
 
-    response_success( $result['data'] ?? $result );
+    $limit = request_get_int('limit', PROFILE_VIEW_RECENT_LIMIT);
+
+    student_controller_respond(
+        student_profile_view_summary((int) $context['student']['id'], $limit === null ? null : $limit)
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Education
+|--------------------------------------------------------------------------
+|
+| GET    /api/v1/students/me/education
+| POST   /api/v1/students/me/education
+| PUT    /api/v1/students/me/education/{id}
+| DELETE /api/v1/students/me/education/{id}
+|
+| Every read and write is scoped to the authenticated student, so an id
+| belonging to another student is reported as not found rather than acted on.
+|
+*/
+
+function student_education_index(): void
+{
+    $context = student_controller_auth_student();
+
+    if ($context === null) {
+        return;
+    }
+
+    student_controller_respond(student_education_service_list((int) $context['student']['id']));
+}
+
+function student_education_store(): void
+{
+    $context = student_controller_auth_student();
+
+    if ($context === null) {
+        return;
+    }
+
+    $data = request_input();
+
+    $errors = student_validate_education($data);
+
+    if (!empty($errors)) {
+        response_validation_error($errors);
+        return;
+    }
+
+    student_controller_respond(
+        student_education_service_create((int) $context['student']['id'], $data),
+        true
+    );
+}
+
+function student_update_education(int $education_id): void
+{
+    $context = student_controller_auth_student();
+
+    if ($context === null) {
+        return;
+    }
+
+    $data = request_input();
+
+    $errors = student_validate_education($data, true);
+
+    if (!empty($errors)) {
+        response_validation_error($errors);
+        return;
+    }
+
+    student_controller_respond(
+        student_education_service_update((int) $context['student']['id'], $education_id, $data)
+    );
+}
+
+function student_education_destroy(int $education_id): void
+{
+    $context = student_controller_auth_student();
+
+    if ($context === null) {
+        return;
+    }
+
+    student_controller_respond(
+        student_education_service_delete((int) $context['student']['id'], $education_id)
+    );
 }

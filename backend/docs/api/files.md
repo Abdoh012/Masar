@@ -36,6 +36,26 @@ The authenticated user is determined from the access token.
 
 The client must never be trusted to determine file ownership.
 
+### Exception: signed profile-image URLs
+
+A profile image is also rendered by a browser `<img>` tag, which cannot send an
+`Authorization` header. For that one case the API accepts a short-lived signed
+URL:
+
+```text
+GET /api/v1/files/{id}?download=true&expires={unix_ts}&signature={hmac_sha256}
+```
+
+The signature is an HMAC-SHA256 over the file id and expiry, derived from the
+existing `JWT_SECRET` with a file-URL-specific domain separation. It is not an
+access token and cannot be used on any other endpoint.
+
+The route serves the bytes `inline` and only when the `files` row is typed
+`profile_image` **and** the bytes on disk really are an allowed image type.
+A signed URL for a CV, an academic certificate or any other file type returns
+`404`; those files still require a Bearer token plus an ownership check.
+Expired or tampered signatures return `401`.
+
 ---
 
 # 1. Upload File
@@ -141,6 +161,21 @@ Content-Disposition: attachment; filename="resume.pdf"
 ```
 
 The download endpoint must verify authorization before reading the physical file.
+
+### Signed profile-image access
+
+`GET /api/files/{fileId}?download=true` also accepts the signed query parameters
+described in [Authentication](#authentication). When the signature is valid and
+the file is typed `profile_image`, the response is streamed inline:
+
+```http
+Content-Type: image/png
+Content-Disposition: inline; filename="..."
+```
+
+This is the only unauthenticated path to stored file bytes. It is deliberately
+limited to profile images; CVs and academic certificates cannot be fetched
+through it.
 
 ---
 

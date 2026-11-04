@@ -51,8 +51,10 @@
  *                         auth-derived.
  *   Revoked directory    GET /certificates/revoked - ONLY status=revoked, kept
  *                         stable number + original issued_at + reason.
- *   Statistics           GET /certificates/statistics - scoped counts per
- *                         status; client student_id/company_id ignored.
+ *   Statistics           GET /certificates/statistics - the four canonical
+ *                         states (eligible / pending / issued / revoked) plus
+ *                         `total` = persisted certificate records only;
+ *                         client student_id/company_id ignored.
  *   Search               GET /certificates/search - keyword matches the
  *                         certificate title/code; scope auth-derived; 422
  *                         without a keyword.
@@ -236,16 +238,16 @@ check('student B (isolation) /eligible returns 200 with an empty list', $elig_b[
 
 $stats_initial = run_api('bearer', $student_token, 'GET', $base . '/statistics');
 check('student A statistics expose the seeded dataset (multiple certs)', $stats_initial['status'] === 200 && is_array($stats_initial['data']) && (int) ($stats_initial['data']['total'] ?? -1) >= 8);
+check('student A statistics expose eligible as a real count, not a persisted bucket', (int) ($stats_initial['data']['eligible'] ?? -1) >= 2 && array_key_exists('eligible', $stats_initial['data']));
 
 // Baselines captured BEFORE this run mutates anything, so every later
 // statistics/search assertion is a delta on the already-seeded dataset.
 $base_a = [
-    'total'   => (int) ($stats_initial['data']['total'] ?? 0),
-    'pending' => (int) ($stats_initial['data']['pending'] ?? 0),
-    'issued'  => (int) ($stats_initial['data']['issued'] ?? 0),
-    'revoked' => (int) ($stats_initial['data']['revoked'] ?? 0),
-    'active'  => (int) ($stats_initial['data']['active'] ?? 0),
-    'valid'   => (int) ($stats_initial['data']['valid'] ?? 0),
+    'total'     => (int) ($stats_initial['data']['total'] ?? 0),
+    'eligible'  => (int) ($stats_initial['data']['eligible'] ?? 0),
+    'pending'   => (int) ($stats_initial['data']['pending'] ?? 0),
+    'issued'    => (int) ($stats_initial['data']['issued'] ?? 0),
+    'revoked'   => (int) ($stats_initial['data']['revoked'] ?? 0),
 ];
 $stats_company_base = run_api('bearer', $company_token, 'GET', $base . '/statistics');
 $base_c_total = (int) (($stats_company_base['data']['total'] ?? 0));
@@ -718,28 +720,128 @@ check('paid revoked cert cannot be downloaded (route not found)', run_api('beare
 
 echo "\n== Case group 11: certificate statistics ==\n";
 
+/*
+ * The four canonical states are eligible / pending / issued / revoked.
+ * `total` counts PERSISTED certificate records only and never adds
+ * `eligible` on top, because an eligible opportunity has no persisted
+ * certificate row yet.
+ */
+
+$stats_guest = run_api('guest', '', 'GET', $base . '/statistics');
+check('statistics requires auth (guest 401)', $stats_guest['status'] === 401);
+
 $stats_admin = run_api('bearer', $admin_token, 'GET', $base . '/statistics');
 check('admin statistics requires auth-enabled access and returns 200', $stats_admin['status'] === 200 && $stats_admin['success'] === true);
 $stats_admin_data = is_array($stats_admin['data']) ? $stats_admin['data'] : [];
-$stats_keys = ['total', 'issued', 'active', 'valid', 'revoked', 'pending'];
-check('statistics exposes all six status counts', count(array_filter($stats_keys, static fn ($k) => !is_numeric($stats_admin_data[$k] ?? null))) === 0);
+$stats_keys = ['total', 'eligible', 'pending', 'issued', 'revoked'];
+check('statistics exposes exactly the four canonical states plus total', array_keys($stats_admin_data) === $stats_keys);
+check('statistics exposes the four canonical states as numbers', count(array_filter($stats_keys, static fn ($k) => !is_int($stats_admin_data[$k] ?? null))) === 0);
+check('statistics no longer exposes the non-canonical active/valid buckets', !array_key_exists('active', $stats_admin_data) && !array_key_exists('valid', $stats_admin_data));
 check('admin statistics include the baseline dataset plus the test pair (delta +2)', (int) ($stats_admin_data['total'] ?? 0) === $base_am_total + 2 && (int) ($stats_admin_data['revoked'] ?? 0) === $base_am_revoked + 2);
+
+$db_cert_total = (int) ((db_fetch_one("SELECT COUNT(*) AS n FROM certificates"))['n'] ?? 0);
+check('admin total equals the persisted certificate row count', (int) ($stats_admin_data['total'] ?? -1) === $db_cert_total);
+check('admin pending equals COUNT(status=pending)', (int) ($stats_admin_data['pending'] ?? -1) === (int) ((db_fetch_one("SELECT COUNT(*) AS n FROM certificates WHERE status = 'pending'"))['n'] ?? 0));
+check('admin issued equals COUNT(status IN issued/active/valid)', (int) ($stats_admin_data['issued'] ?? -1) === (int) ((db_fetch_one("SELECT COUNT(*) AS n FROM certificates WHERE status IN ('issued','active','valid')"))['n'] ?? 0));
+check('admin revoked equals COUNT(status=revoked)', (int) ($stats_admin_data['revoked'] ?? -1) === (int) ((db_fetch_one("SELECT COUNT(*) AS n FROM certificates WHERE status = 'revoked'"))['n'] ?? 0));
 
 $stats_a = run_api('bearer', $student_token, 'GET', $base . '/statistics');
 $stats_a_data = is_array($stats_a['data']) ? $stats_a['data'] : [];
 check('student A statistics total is baseline + 2 (free + paid, both now revoked)', $stats_a['status'] === 200 && (int) ($stats_a_data['total'] ?? -1) === $base_a['total'] + 2);
 check('student A statistics revoked = baseline revoked + 2', (int) ($stats_a_data['revoked'] ?? -1) === $base_a['revoked'] + 2);
 check('student A statistics pending unchanged from baseline', (int) ($stats_a_data['pending'] ?? -1) === (int) $base_a['pending']);
-check('student A statistics issued unchanged from baseline', (int) ($stats_a_data['issued'] ?? -1) === (int) $base_a['issued']);
-check('student A statistics active/valid unchanged from baseline', (int) ($stats_a_data['active'] ?? -1) === (int) $base_a['active'] && (int) ($stats_a_data['valid'] ?? -1) === (int) $base_a['valid']);
+check('student A statistics issued unchanged from baseline (revoked pair not counted as issued)', (int) ($stats_a_data['issued'] ?? -1) === (int) $base_a['issued']);
+
+/*
+ * Cross-check every canonical count against the DB inside the caller's
+ * scope, and prove the three persisted states partition the rows: no
+ * certificate is counted twice, and nothing persisted is silently lost.
+ */
+
+$db_pending_a = (int) ((db_fetch_one("SELECT COUNT(*) AS n FROM certificates WHERE student_id = ? AND status = 'pending'", [$a_sid]))['n'] ?? 0);
+$db_issued_a = (int) ((db_fetch_one("SELECT COUNT(*) AS n FROM certificates WHERE student_id = ? AND status IN ('issued','active','valid')", [$a_sid]))['n'] ?? 0);
+$db_revoked_a = (int) ((db_fetch_one("SELECT COUNT(*) AS n FROM certificates WHERE student_id = ? AND status = 'revoked'", [$a_sid]))['n'] ?? 0);
+$db_total_a = (int) ((db_fetch_one("SELECT COUNT(*) AS n FROM certificates WHERE student_id = ?", [$a_sid]))['n'] ?? 0);
+
+check('student A pending matches the DB', (int) ($stats_a_data['pending'] ?? -1) === $db_pending_a);
+check('student A issued matches the DB', (int) ($stats_a_data['issued'] ?? -1) === $db_issued_a);
+check('student A revoked matches the DB', (int) ($stats_a_data['revoked'] ?? -1) === $db_revoked_a);
+check('student A total counts persisted records only', (int) ($stats_a_data['total'] ?? -1) === $db_total_a);
+
+/*
+ * Rows whose status falls outside the three persisted buckets (the enum
+ * also allows "expired") are counted in `total` but in no bucket, so the
+ * invariant is checked against the DB rather than assumed.
+ */
+$db_other_a = (int) ((db_fetch_one("SELECT COUNT(*) AS n FROM certificates WHERE student_id = ? AND status NOT IN ('pending','issued','active','valid','revoked')", [$a_sid]))['n'] ?? 0);
+check('the three persisted states partition the rows exactly once (no double count, none lost)', $db_pending_a + $db_issued_a + $db_revoked_a + $db_other_a === $db_total_a);
+$issued_and_revoked = (int) ((db_fetch_one("SELECT COUNT(*) AS n FROM certificates WHERE student_id = ? AND status IN ('issued','active','valid','revoked')", [$a_sid]))['n'] ?? 0);
+check('revoked certificates are never counted as issued (disjoint status sets)', (int) ($stats_a_data['issued'] ?? -1) + (int) ($stats_a_data['revoked'] ?? -1) === $issued_and_revoked && $db_issued_a + $db_revoked_a === $issued_and_revoked);
+$pair_revoked = (int) ((db_fetch_one("SELECT COUNT(*) AS n FROM certificates WHERE id IN (?, ?) AND status = 'revoked'", [$cert_a_id, $paid_cert_id]))['n'] ?? 0);
+$pair_issued = (int) ((db_fetch_one("SELECT COUNT(*) AS n FROM certificates WHERE id IN (?, ?) AND status IN ('issued','active','valid')", [$cert_a_id, $paid_cert_id]))['n'] ?? 0);
+check('the pair this run revoked is counted in revoked only, never in issued', $pair_revoked === 2 && $pair_issued === 0);
+
+/*
+ * `eligible` must equal the existing eligibility logic for the same scope,
+ * and must never be folded into `total`.
+ */
+$elig_a_now = run_api('bearer', $student_token, 'GET', $base . '/eligible');
+$elig_a_now_ids = array_values(array_unique(array_map(static fn ($i) => (int) ($i['training_id'] ?? 0), array_filter(
+    is_array($elig_a_now['data']) ? $elig_a_now['data'] : [],
+    static fn ($i) => is_array($i)
+))));
+sort($elig_a_now_ids);
+$db_eligible_a = (int) ((db_fetch_one(
+    "SELECT COUNT(*) AS n
+     FROM training_applications a
+     INNER JOIN training_listings t ON t.id = a.training_id
+     INNER JOIN training_sessions ts
+        ON ts.training_id = a.training_id AND ts.student_id = a.student_id AND ts.status = 'completed'
+     INNER JOIN students st ON st.id = a.student_id
+     WHERE a.student_id = ?
+       AND a.status = 'accepted'
+       AND t.ends_at <= NOW()
+       AND t.specialization_id = st.specialization_id
+       AND NOT EXISTS (SELECT 1 FROM certificates c WHERE c.student_id = a.student_id AND c.training_id = a.training_id)",
+    [$a_sid]
+))['n'] ?? 0);
+check('student A eligible matches the existing eligibility rules', (int) ($stats_a_data['eligible'] ?? -1) === $db_eligible_a);
+check('student A eligible equals the size of GET /certificates/eligible', (int) ($stats_a_data['eligible'] ?? -1) === count($elig_a_now_ids));
+check('eligible count is 0 after both driver trainings were requested (opportunity consumed)', $db_eligible_a === count($elig_a_now_ids));
+check('requesting a certificate consumes exactly one eligible opportunity (baseline - 2)', (int) ($stats_a_data['eligible'] ?? -1) === (int) $base_a['eligible'] - 2);
+
+/*
+ * Every eligible opportunity has no persisted certificate for that
+ * (student, training) pair - that is the eligibility rule itself - so
+ * eligible opportunities can never inflate `total`.
+ */
+$elig_pairs_in_total = 0;
+foreach ($elig_a_now_ids as $tid) {
+    $n = (int) ((db_fetch_one("SELECT COUNT(*) AS n FROM certificates WHERE student_id = ? AND training_id = ?", [$a_sid, $tid]))['n'] ?? 0);
+    $elig_pairs_in_total += $n;
+}
+check('eligible opportunities carry no persisted certificate row', $elig_pairs_in_total === 0);
+check('total excludes eligible opportunities (total is persisted records only)', (int) ($stats_a_data['total'] ?? -1) === $db_total_a);
 
 $stats_a_spoof = run_api('bearer', $student_token, 'GET', $base . '/statistics?student_id=' . $b_sid);
 check('statistics ignore a client student_id (still scoped to the caller)', is_array($stats_a_spoof['data']) && (int) ($stats_a_spoof['data']['total'] ?? -1) === $base_a['total'] + 2);
+check('statistics ignore a client student_id for eligible too', is_array($stats_a_spoof['data']) && (int) ($stats_a_spoof['data']['eligible'] ?? -1) === (int) ($stats_a_data['eligible'] ?? -2));
 
 $stats_company = run_api('bearer', $company_token, 'GET', $base . '/statistics');
 $stats_company_data = is_array($stats_company['data']) ? $stats_company['data'] : [];
 check('company statistics scoped to its own trainings (baseline + 2 for TestHire)', $stats_company['status'] === 200 && (int) ($stats_company_data['total'] ?? -1) === $base_c_total + 2 && (int) ($stats_company_data['revoked'] ?? -1) === $base_c_revoked + 2);
+check('company statistics expose the four canonical states too', array_keys($stats_company_data) === $stats_keys);
 check('company statistics ignore a client company_id', is_array(run_api('bearer', $company_token, 'GET', $base . '/statistics?company_id=100144')['data']) && (int) (run_api('bearer', $company_token, 'GET', $base . '/statistics?company_id=100144')['data']['total'] ?? -1) === $base_c_total + 2);
+
+/*
+ * Empty dataset: an isolated student with no certificates and no eligible
+ * training must get all five zeros, not a missing key and not nulls.
+ */
+$stats_b = run_api('bearer', $sara_token, 'GET', $base . '/statistics');
+$stats_b_data = is_array($stats_b['data']) ? $stats_b['data'] : [];
+check('empty dataset still returns the five canonical keys', $stats_b['status'] === 200 && array_keys($stats_b_data) === $stats_keys);
+check('empty dataset returns zero for every count', count(array_filter($stats_keys, static fn ($k) => $stats_b_data[$k] !== 0)) === 0);
+check('empty dataset total is 0 (no eligible rows added to total)', (int) ($stats_b_data['total'] ?? -1) === 0);
 
 echo "\n== Case group 12: certificate search ==\n";
 

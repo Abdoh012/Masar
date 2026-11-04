@@ -113,3 +113,61 @@ function lookup_repository_find_active_study_field(int $field_id): ?array
 
     return is_array($row) ? $row : null;
 }
+
+
+/*
+|--------------------------------------------------------------------------
+| Get Active Skills
+|--------------------------------------------------------------------------
+|
+| The shared skill taxonomy: the single source of truth for the skills a
+| student may attach and the skills a company may filter by. It is read from
+| the `skills` table rather than being listed in code, so the set a client sees
+| is always exactly the set the API will accept.
+|
+| Inactive rows are excluded here, which is what makes is_active meaningful:
+| a retired skill disappears from the picker and can no longer be attached,
+| while the existing student_skills links of anyone who already had it are
+| left intact.
+|
+*/
+
+function lookup_repository_get_active_skills(): array
+{
+    $sql = "
+        SELECT
+            id,
+            name
+        FROM skills
+        WHERE is_active = 1
+        ORDER BY name ASC
+    ";
+
+    return db_fetch_all($sql);
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Get Active Education Degrees
+|--------------------------------------------------------------------------
+|
+| The education degrees a student can pick from inside the student profile.
+| It reads the shared `degrees` lookup (the same table the education history
+| resolves against), so the picker and the persisted value can never drift.
+|
+*/
+
+function lookup_repository_get_active_education_degrees(): array
+{
+    $sql = "
+        SELECT
+            id,
+            name
+        FROM degrees
+        WHERE is_active = 1
+        ORDER BY id ASC
+    ";
+
+    return db_fetch_all($sql);
+}

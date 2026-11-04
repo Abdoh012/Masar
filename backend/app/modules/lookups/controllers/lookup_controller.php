@@ -38,3 +38,13 @@ function lookup_controller_specializations(): void
 {
     lookup_controller_respond(lookup_service_specializations());
 }
+
+function lookup_controller_skills(): void
+{
+    lookup_controller_respond(lookup_service_skills());
+}
+
+function lookup_controller_education_degrees(): void
+{
+    lookup_controller_respond(lookup_service_education_degrees());
+}

@@ -619,6 +619,67 @@ POST /api/certificates/{certificateId}/appeals/{appealId}/reject
 
 ---
 
+# 16. Certificate Statistics
+
+Returns the four canonical certificate states for the caller's scope.
+
+### Endpoint
+
+```http
+GET /api/certificates/statistics
+```
+
+### Authorization
+
+Allowed for:
+
+* Student (own certificates and own eligibility only).
+* Company (certificates of its own trainings and its students' eligibility).
+* Authorized administrator.
+
+A client-supplied `student_id` or `company_id` query parameter is **ignored**
+for students and companies; the scope always derives from the bearer token.
+
+### Response
+
+```json
+{
+    "success": true,
+    "message": "Certificate statistics retrieved successfully.",
+    "data": {
+        "total": 14,
+        "eligible": 8,
+        "pending": 5,
+        "issued": 6,
+        "revoked": 3
+    },
+    "errors": null
+}
+```
+
+### Definitions
+
+| Key | Definition |
+| --- | --- |
+| `total` | Number of **persisted** certificate records in scope. `eligible` is deliberately **not** added, because an eligible opportunity has no certificate record yet. |
+| `eligible` | Students eligible to request a certificate under the existing eligibility rules (see Certificate Eligibility). Never a persisted certificate status. |
+| `pending` | Persisted certificate requests awaiting review. |
+| `issued` | Persisted certificates currently issued and not revoked. `revoked` is excluded, so a revoked certificate is never counted as issued. |
+| `revoked` | Persisted certificates that have been revoked. |
+
+`pending`, `issued` and `revoked` are disjoint, so every persisted record is
+counted in exactly one of them. An empty scope returns `0` for every key.
+
+### Removed fields
+
+The legacy `active` and `valid` counters were removed. They are not canonical
+certificate states: they are internal `certificates.status` enum values that
+the write paths never produce, they were always `0`, and they split the real
+"issued" number across three keys. Their rows are now counted inside `issued`,
+which is the same definition the student dashboard uses.
+
+---
+
 # Certificate Status
 
 Certificate status is controlled by:
@@ -661,9 +722,12 @@ The exact values must come from the configured enum.
 
 # Certificate Eligibility
 
-A certificate should be issued only after the required training conditions have been satisfied.
+A certificate may be issued only after the required training conditions have been satisfied.
 
-Typical eligibility chain:
+Eligibility is **derived**, never persisted: `eligible` is not a
+`certificates.status` value. The same rules drive `GET /certificates/eligible`,
+the student and company dashboards, the request validation and the `eligible`
+counter in Certificate Statistics.
 
 ```text
 Training
@@ -680,6 +744,14 @@ Certificate created
    ↓
 Certificate issued
 ```
+
+The exact rules enforced by the API:
+
+1. The student has an **accepted** application for the training.
+2. A **completed** training session exists for that student and training.
+3. The training's specialization matches the student's specialization.
+4. The training has already ended (`training_listings.ends_at <= NOW()`).
+5. No certificate row exists yet for that student and training pair.
 
 The API must not allow a client to bypass these conditions by directly submitting a forged status.
 
