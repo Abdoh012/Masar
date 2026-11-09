@@ -3,12 +3,10 @@ import { CertificatesSnapshot } from "@/features/certificates";
 import { RecommendedListings } from "@/features/listings";
 import { RecentNotifications } from "@/features/notifications";
 import { ProfileHeader } from "@/features/profiles";
+import { toInitials } from "@/shared/lib/initials";
 
 import { fetchStudentDashboard } from "../../api";
-import {
-  normalizeStudentDashboard,
-  toInitials,
-} from "../../lib/normalize";
+import { normalizeStudentDashboard } from "../../lib/normalize";
 import { DashboardStatsContainer } from "../stats-overview/DashboardStatsContainer";
 
 // DashboardContainer: the student dashboard's single orchestrator. It issues the

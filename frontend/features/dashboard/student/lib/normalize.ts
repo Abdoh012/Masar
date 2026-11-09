@@ -87,16 +87,6 @@ function toDeliveryMode(value: unknown): DashboardDeliveryMode {
   return DELIVERY_MODES.find((known) => known === mode) ?? "in_person";
 }
 
-/** Two-letter monogram for the identity avatar, from the student's own name.
- *  Derived here (rather than in the header) so the API→UI mapping stays the one
- *  place presentation data is produced. */
-export function toInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
-}
-
 /** Maps `active_training`, or null when the student has no accepted
  *  application. The ISO strings keep their UTC offset untouched — see
  *  applications/student/lib/training-progress.ts, which parses them. */

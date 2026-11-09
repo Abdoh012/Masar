@@ -9,20 +9,27 @@ import { cn } from "@/shared/lib/utils";
 
 interface PasswordFieldProps {
   id: string;
+  /** Backend field name — the surrounding form sends FormData, never a payload. */
+  name: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
+  autoComplete?: string;
   invalid?: boolean;
 }
 
 // PasswordField: a labelled password control that owns its own reveal toggle, so
-// the two fields in the password form don't each have to repeat it. Visibility
-// is local state; the input's type is driven by it.
+// the three fields in the password form don't each have to repeat it. Visibility
+// is local state; the input's type is driven by it. The value stays controlled
+// because the form's live checklist and confirm-match check read it — the
+// documented per-field exception in structure rules §10.
 export function PasswordField({
   id,
+  name,
   label,
   value,
   onChange,
+  autoComplete,
   invalid = false,
 }: PasswordFieldProps) {
   const [isRevealed, setIsRevealed] = useState(false);
@@ -35,9 +42,12 @@ export function PasswordField({
       <div className="relative">
         <Input
           id={id}
+          name={name}
           type={isRevealed ? "text" : "password"}
           value={value}
+          autoComplete={autoComplete}
           aria-invalid={invalid}
+          required
           onChange={(event) => onChange(event.target.value)}
           className={cn(invalid && "border-destructive")}
         />

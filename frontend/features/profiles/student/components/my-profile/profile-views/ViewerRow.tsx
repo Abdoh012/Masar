@@ -6,10 +6,6 @@ interface ViewerRowProps {
   viewer: ProfileViewer;
 }
 
-// ViewerRow: one person in the profile-views list — initials avatar, name, the
-// company or role they came from, and how long ago they looked. The tint is
-// picked from the viewer's id so the same person keeps the same colour between
-// renders without the list having to pass presentation down.
 export function ViewerRow({ viewer }: ViewerRowProps) {
   const { id, name, role, initials, viewedAt } = viewer;
   const tint = VIEWER_TINTS[id % VIEWER_TINTS.length];

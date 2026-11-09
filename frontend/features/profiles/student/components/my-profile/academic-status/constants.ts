@@ -42,4 +42,19 @@ export const CERTIFICATE_UPLOAD_LABELS = {
   browse: "Browse files",
   localOnly: "Preview only — nothing is uploaded yet.",
   remove: "Remove",
+  uploaded: "Saved certificate",
+} as const;
+
+// Save / removal button copy for the graduate form.
+export const GRADUATION_FORM_LABELS = {
+  save: "Save academic status",
+  saving: "Saving…",
+  saveGraduate: "Save graduate status",
+} as const;
+
+// Client-side validation messages for graduate status (the backend re-validates
+// everything on its own and reports field errors via toast).
+export const GRADUATION_VALIDATION = {
+  dateRequired: "Pick a graduation date.",
+  certificateRequired: "Upload your graduation certificate.",
 } as const;

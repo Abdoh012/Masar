@@ -1,12 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 
 interface ProfileSubPanelProps {
-  icon: LucideIcon;
+  icon: ReactNode;
   title: string;
   description?: string;
   className?: string;
@@ -18,7 +17,7 @@ interface ProfileSubPanelProps {
 // ProfileSection: a tinted icon tile with a sentence-case title instead of the
 // uppercase eyebrow, and a darker surface so the nesting reads.
 export function ProfileSubPanel({
-  icon: Icon,
+  icon,
   title,
   description,
   className,
@@ -33,7 +32,7 @@ export function ProfileSubPanel({
     >
       <div className="flex items-start gap-3">
         <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary-tint text-primary-text">
-          <Icon className="size-4" />
+          {icon}
         </span>
 
         <div className="min-w-0 flex-1">

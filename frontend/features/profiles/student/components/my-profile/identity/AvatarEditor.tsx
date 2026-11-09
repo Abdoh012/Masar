@@ -1,68 +1,105 @@
 "use client";
 
-import { Camera } from "lucide-react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
+import { showError, showSuccess } from "@/shared/lib/notifications";
+
+import { removeProfilePhoto, uploadProfilePhoto } from "../../../actions";
 import { useFilePreview } from "../../../hooks/useFilePreview";
-
-import { IDENTITY_LABELS } from "./constants";
+import { AvatarActions } from "./AvatarActions";
+import { AvatarPreview } from "./AvatarPreview";
+import {
+  IDENTITY_LABELS,
+  PROFILE_IMAGE_MAX_BYTES,
+  PROFILE_IMAGE_MIME_TYPES,
+} from "./constants";
 
 interface AvatarEditorProps {
-  name: string;
+  name: string | null;
   initials: string;
   src?: string;
 }
 
-// AvatarEditor: the identity card's photo. The whole circle is a <label> over a
-// visually-hidden file input, so clicking or keyboard-focusing it opens the
-// picker, and a camera overlay fades in on hover/focus. The picked image is
-// previewed from a local object URL — no upload yet, so the file only exists in
-// the tab. Falls back to the initials avatar until a photo exists.
 export function AvatarEditor({ name, initials, src }: AvatarEditorProps) {
-  const { file, select } = useFilePreview();
-  const preview = file?.previewUrl ?? src;
+  const { file, select, clear } = useFilePreview();
+  const [displayUrl, setDisplayUrl] = useState<string | undefined>(src);
+  const [isPending, startTransition] = useTransition();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // The refreshed server value wins whenever it changes (upload reports a new
+  // signed URL, removal reports none). Resetting after an upload also stops a
+  // revoked object URL from outliving the write.
+  useEffect(() => {
+    setDisplayUrl(src);
+  }, [src]);
+
+  const previewUrl = file?.previewUrl ?? displayUrl;
+  // Reflect a stored photo, not the transient local preview: Remove should not
+  // appear the instant a first upload starts.
+  const hasPhoto = Boolean(displayUrl);
+
+  const openPicker = () => inputRef.current?.click();
+
+  function handleSelect(picked: File) {
+    if (!PROFILE_IMAGE_MIME_TYPES.some((mime) => mime === picked.type)) {
+      showError(IDENTITY_LABELS.invalidType);
+      return;
+    }
+
+    if (picked.size > PROFILE_IMAGE_MAX_BYTES) {
+      showError(IDENTITY_LABELS.tooLarge);
+      return;
+    }
+
+    select(picked);
+
+    startTransition(async () => {
+      const result = await uploadProfilePhoto(picked);
+
+      if (result.success) {
+        setDisplayUrl(result.data?.profileImageUrl ?? undefined);
+        clear();
+        showSuccess(result.message ?? IDENTITY_LABELS.uploaded);
+        return;
+      }
+
+      clear();
+      showError(result.error ?? IDENTITY_LABELS.uploadFailed);
+    });
+  }
+
+  function handleRemove() {
+    startTransition(async () => {
+      const result = await removeProfilePhoto();
+
+      if (result.success) {
+        setDisplayUrl(undefined);
+        clear();
+        showSuccess(result.message ?? IDENTITY_LABELS.removed);
+        return;
+      }
+
+      showError(result.error ?? IDENTITY_LABELS.removeFailed);
+    });
+  }
 
   return (
-    <span className="group relative shrink-0">
-      <label className="block cursor-pointer rounded-full bg-secondary-tint p-1 ring-1 ring-secondary/40 transition-shadow focus-within:ring-2 focus-within:ring-ring">
-        <span className="relative block size-24 overflow-hidden rounded-full sm:size-28">
-          {preview ? (
-            // Local object URL (or a future CDN path) — next/image can't optimize
-            // a blob, and the "fill" layout would need a positioned parent.
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={preview}
-              alt={`${name}'s profile photo`}
-              className="size-full object-cover"
-            />
-          ) : (
-            <span className="grid size-full place-items-center rounded-full bg-primary text-xl font-semibold text-primary-foreground sm:text-2xl">
-              {initials}
-            </span>
-          )}
+    <div className="flex shrink-0 flex-col items-center gap-2.5">
+      <AvatarPreview
+        name={name}
+        initials={initials}
+        previewUrl={previewUrl}
+        isPending={isPending}
+        inputRef={inputRef}
+        onSelect={handleSelect}
+      />
 
-          {/* Inset by the gold padding ring so the overlay hugs the photo. */}
-          <span className="absolute inset-0 grid place-items-center rounded-full bg-primary/75 text-primary-foreground opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
-            <Camera className="size-5" />
-            <span className="sr-only">{IDENTITY_LABELS.changePhoto}</span>
-          </span>
-        </span>
-
-        <input
-          type="file"
-          accept="image/*"
-          className="sr-only"
-          onChange={(event) => {
-            const picked = event.target.files?.[0];
-
-            if (picked) {
-              select(picked);
-            }
-
-            // Reset so re-picking the same file fires another change event.
-            event.target.value = "";
-          }}
-        />
-      </label>
-    </span>
+      <AvatarActions
+        hasPhoto={hasPhoto}
+        isPending={isPending}
+        onChangePhoto={openPicker}
+        onRemove={handleRemove}
+      />
+    </div>
   );
 }

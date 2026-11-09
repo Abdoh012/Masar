@@ -25,11 +25,19 @@ export const EDUCATION_LABELS = {
   emptyTitle: "No education added yet.",
   // A new, still-empty row needs a title before it has a degree to show.
   newEntryTitle: "New entry",
+  edit: "Edit entry",
   remove: "Remove entry",
+  save: "Save",
+  cancel: "Cancel",
+  saving: "Saving…",
+  degreeRequiredOrUniversity:
+    "Add a degree or an institution before saving.",
   fields: {
     degree: "Degree",
     institution: "Institution",
     fieldOfStudy: "Field of study",
+    studyMode: "Study mode",
+    grade: "Grade",
     startedAt: "Started",
     endedAt: "Ended",
   },
@@ -37,5 +45,9 @@ export const EDUCATION_LABELS = {
     degree: "Bachelor of Science",
     institution: "Cairo University",
     fieldOfStudy: "Computer science",
+    studyMode: "Full-time / Part-time",
+    grade: "e.g. A, 3.8/4, Excellent",
+    startedAt: "2022",
+    endedAt: "2026",
   },
 } as const;

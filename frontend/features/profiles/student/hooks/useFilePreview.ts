@@ -15,7 +15,9 @@ interface FilePreview {
 // replaced, cleared, or the owning component unmounts — an object URL pins the
 // blob in memory until it's released. Shared by the identity avatar and the
 // academic-status certificate dropzone (the same local-preview behaviour in two
-// places). Nothing is uploaded: the file never leaves the page.
+// places). This hook only owns the preview: the certificate never leaves the
+// page, and the avatar uploads the original File separately (or clears the
+// preview once the server-reported URL takes over).
 export function useFilePreview(): FilePreview {
   const [file, setFile] = useState<SelectedFile | null>(null);
   const previewUrlRef = useRef<string | null>(null);
@@ -34,9 +36,15 @@ export function useFilePreview(): FilePreview {
       release();
 
       const previewUrl = URL.createObjectURL(next);
+
       previewUrlRef.current = previewUrl;
 
-      setFile({ name: next.name, size: next.size, type: next.type, previewUrl });
+      setFile({
+        name: next.name,
+        size: next.size,
+        type: next.type,
+        previewUrl,
+      });
     },
     [release],
   );

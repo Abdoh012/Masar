@@ -8,6 +8,7 @@ import {
   REFRESH_TOKEN_COOKIE,
   REFRESH_TOKEN_MAX_AGE,
   ROLE_COOKIE,
+  SESSION_COOKIES,
 } from "@/shared/lib/authCookies";
 
 // Names/lifetimes live in shared/lib/authCookies so middleware (Edge runtime,
@@ -44,4 +45,14 @@ export async function setCookie(
 export async function deleteCookie(name: string) {
   const store = await cookies();
   store.delete(name);
+}
+
+// Drops the whole session (access/role/company-status plus the backend-minted
+// refresh pair). Only callable where Next permits cookie mutation — a Server
+// Action or a Route Handler — so callers are responsible for navigating the user
+// somewhere afterwards.
+export async function clearSessionCookies(): Promise<void> {
+  for (const name of SESSION_COOKIES) {
+    await deleteCookie(name);
+  }
 }

@@ -5,21 +5,19 @@ import { Check, Minus } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 
 import { PASSWORD_RULES } from "./constants";
+import type { PasswordRuleId } from "./constants";
 
 interface PasswordRulesProps {
-  minLengthMet: boolean;
-  matches: boolean;
+  met: Record<PasswordRuleId, boolean>;
 }
 
-// PasswordRules: the live requirement checklist under the password fields. It
-// takes the two resolved booleans (the form owns the state, this leaf owns
-// nothing but the display) and maps them onto PASSWORD_RULES for the labels, so
-// the checklist and the validation can never drift apart. Requirements are shown
-// from the first keystroke — a submit-gated error would say nothing until the
-// user already got it wrong.
-export function PasswordRules({ minLengthMet, matches }: PasswordRulesProps) {
-  const met: Record<string, boolean> = { length: minLengthMet, match: matches };
-
+// PasswordRules: the live requirement checklist under the password fields. The
+// form owns the state and resolves one boolean per rule id; this leaf only maps
+// them onto PASSWORD_RULES for the labels, so the checklist, the submit gate and
+// the backend policy can never drift apart. Requirements are shown from the
+// first keystroke — a submit-gated error would say nothing until the user
+// already got it wrong.
+export function PasswordRules({ met }: PasswordRulesProps) {
   return (
     <ul className="space-y-1.5">
       {PASSWORD_RULES.map((rule) => {

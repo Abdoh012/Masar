@@ -1,28 +1,21 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
 
 import Motion from "@/shared/components/animation/Motion";
 import { fadeInUp } from "@/shared/lib/animations";
 import { cn } from "@/shared/lib/utils";
 
 interface ProfileSectionProps {
-  icon: LucideIcon;
+  icon: ReactNode;
   title: string;
   description?: string;
   className?: string;
   children: ReactNode;
 }
 
-// ProfileSection: the card shell every profile section sits in — the same
-// rounded panel and the same icon + uppercase-label heading the "How
-// certificates work" panel uses, so the six sections read as one system
-// instead of six one-offs. Presentational: a section composes its own body as
-// children. Client-side because the entrance animation is a Motion wrapper and
-// because every section that uses it keeps local state.
 export function ProfileSection({
-  icon: Icon,
+  icon,
   title,
   description,
   className,
@@ -42,7 +35,7 @@ export function ProfileSection({
     >
       <div className="space-y-1.5">
         <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-secondary-text">
-          <Icon className="size-4" />
+          <span className="size-4 shrink-0">{icon}</span>
           {title}
         </h2>
 

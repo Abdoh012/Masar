@@ -10,6 +10,7 @@ export const PROFILE_VIEWS_LABELS = {
   show: "Show recent viewers",
   hide: "Hide viewers",
   listNote: "Showing the most recent viewers only.",
+  emptyNote: "No one has viewed your profile yet.",
 } as const;
 
 // Initials avatars cycle through these tints so a long list stays scannable

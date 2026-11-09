@@ -8,30 +8,39 @@ import { cn } from "@/shared/lib/utils";
 
 interface ProfileFieldInputProps {
   id: string;
+  name?: string;
   label: string;
-  value: string;
-  onChange: (value: string) => void;
+  /** Controlled mode: pass both value and onChange. */
+  value?: string;
+  onChange?: (value: string) => void;
+  /** Uncontrolled mode: used when no value is provided (form submissions). */
+  defaultValue?: string;
   type?: "text" | "email" | "tel" | "url" | "month";
   placeholder?: string;
   icon?: LucideIcon;
   className?: string;
+  min?: string;
+  max?: string;
+  required?: boolean;
 }
 
-// ProfileFieldInput: the labelled text control both profile forms are built
-// from — Label + Input, with an optional leading icon for the contact fields
-// (icons sit inside the field so the labels stay plain). Controlled by its
-// owner: each form keeps its own state, so no value is threaded through the
-// page. `className` lets a caller span a field across a grid track.
 export function ProfileFieldInput({
   id,
+  name,
   label,
   value,
   onChange,
+  defaultValue,
   type = "text",
   placeholder,
   icon: Icon,
   className,
+  min,
+  max,
+  required,
 }: ProfileFieldInputProps) {
+  const isControlled = value !== undefined;
+
   return (
     <div className={cn("space-y-1.5", className)}>
       <Label htmlFor={id}>{label}</Label>
@@ -43,10 +52,17 @@ export function ProfileFieldInput({
 
         <Input
           id={id}
+          name={name}
           type={type}
-          value={value}
+          value={isControlled ? value : undefined}
+          defaultValue={isControlled ? undefined : defaultValue}
           placeholder={placeholder}
-          onChange={(event) => onChange(event.target.value)}
+          min={min}
+          max={max}
+          required={required}
+          onChange={
+            isControlled ? (event) => onChange?.(event.target.value) : undefined
+          }
           className={cn(Icon && "pl-10")}
         />
       </div>
