@@ -44,9 +44,9 @@ Copy `.env.example` to `.env`:
 | Apply | `/listings/[id]/apply` | Backend-wired |
 | Applications | `/applications` | Backend-wired |
 | Certificates | `/certificates` | Backend-wired |
-| Profile | `/profile` | UI-only (local state) |
+| Profile | `/profile` | Backend-wired |
 | Company listings | `/company/listings`, `/company/listings/new`, `/company/listings/[id]` | UI-only (feature-local mock store) |
-| Admin moderation | `/admin/listings` | UI-only (local state) |
+| Admin moderation | `/admin/listings` | Backend-wired |
 | Placeholders | company dashboard/students/messages/profile, admin companies/certificates, student messages | Not built |
 
 ## Architecture

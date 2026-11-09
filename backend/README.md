@@ -115,11 +115,11 @@ php -l path/to/file.php             # PHP syntax lint
 | [`SECURITY_CHECKLIST.md`](SECURITY_CHECKLIST.md) | Pre-deployment security checklist |
 | [`DEPLOYMENT.md`](DEPLOYMENT.md) | Production deployment |
 | [`CHANGELOG.md`](CHANGELOG.md) | Notable changes |
-| [`docs/AGENTS.md`](docs/AGENTS.md) | Authoritative engineering rules for AI agents |
+| [`docs/AGENTS.md (deleted; backend/AGENTS.md supersedes it)`](docs/AGENTS.md (deleted; backend/AGENTS.md supersedes it)) | Authoritative engineering rules for AI agents |
 | [`docs/SETUP_LARAGON.md`](docs/SETUP_LARAGON.md) | Local Windows/Laragon setup |
 
 ## Contributing
 
-Follow the project rules in [`docs/AGENTS.md`](docs/AGENTS.md): thin controllers,
+Follow the project rules in [`docs/AGENTS.md (deleted; backend/AGENTS.md supersedes it)`](docs/AGENTS.md (deleted; backend/AGENTS.md supersedes it)): thin controllers,
 business logic in services, all SQL in repositories, parameterized queries only,
 and never commit `.env`, secrets, or `vendor/`.

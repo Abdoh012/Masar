@@ -28,7 +28,7 @@ Both applications are real and runnable. The **student journey is end-to-end aga
 | --- | --- |
 | Backend API | Implemented — 13 domain modules, MySQL schema + migrations, OpenAPI contract, Postman collection, regression suites. |
 | Frontend — auth | Implemented and backend-wired (student/company sign-up, sign-in, password reset via OTP, company approval gate). |
-| Frontend — student area | Implemented: dashboard, listings, applications, certificates, profile (UI-only), public marketing pages. |
+| Frontend — student area | Implemented: dashboard, listings, applications, certificates, profile (mostly backend-wired), public marketing pages. |
 | Frontend — company area | Listings create/edit/close are UI-only (feature-local mock store); dashboard, students, messages, profile are placeholders. |
 | Frontend — admin area | Listings moderation is UI-only; companies and certificates are placeholders. |
 | Chat / notifications | Backend exists; the frontend chat is a placeholder and notifications render from the dashboard payload. |
@@ -143,3 +143,4 @@ Full visual identity lives in `frontend/masar-identity.html` and is implemented 
 - `backend/README.md` — backend stack, layout, and commands.
 - `backend/docs/` — architecture, auth, database, security, deployment, and per-domain API references.
 - `backend/openapi.yaml` — machine-readable API contract.
+
