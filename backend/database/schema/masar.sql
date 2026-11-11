@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Sep 16, 2026 at 06:04 PM
+-- Generation Time: Nov 11, 2026 at 09:21 PM
 -- Server version: 9.1.0
 -- PHP Version: 8.4.5
 
@@ -1044,7 +1044,130 @@ INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `entity_type`, `entity_id`,
 (1531, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.6.0', '2026-09-16 01:40:37'),
 (1532, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.6.0', '2026-09-16 04:43:59'),
 (1533, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.6.0', '2026-09-16 19:54:54'),
-(1534, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.6.0', '2026-09-16 20:57:58');
+(1534, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.6.0', '2026-09-16 20:57:58'),
+(1535, NULL, 'login_failed', 'user', NULL, '[]', '{\"ip\": \"127.0.0.1\", \"email\": \"a@b.com\"}', '127.0.0.1', 'Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.22621.6133', '2026-09-18 02:15:23'),
+(1536, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.6.0', '2026-09-20 23:39:57'),
+(1537, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', NULL, '2026-09-21 00:59:37'),
+(1538, 100595, 'login_success', 'user', 100595, '[]', '{\"ip\": \"::1\", \"role\": \"company\"}', '::1', NULL, '2026-09-21 00:59:39'),
+(1539, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.7.0', '2026-09-21 01:08:20'),
+(1540, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.7.0', '2026-09-21 01:09:57'),
+(1541, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.7.0', '2026-09-23 04:59:45'),
+(1542, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.7.0', '2026-09-25 03:12:40'),
+(1543, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.7.0', '2026-09-27 00:49:36'),
+(1544, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.7.0', '2026-09-27 04:31:56'),
+(1545, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.8.0', '2026-09-27 17:48:02'),
+(1546, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.8.0', '2026-09-27 19:38:23'),
+(1547, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.8.0', '2026-09-29 21:27:34'),
+(1548, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.8.0', '2026-09-30 00:12:28'),
+(1549, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.8.0', '2026-09-30 00:39:37'),
+(1550, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.8.0', '2026-09-30 00:40:09'),
+(1551, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-09-30 02:53:46'),
+(1552, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-09-30 02:59:24'),
+(1553, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-09-30 03:01:58'),
+(1554, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-09-30 03:06:41'),
+(1555, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-09-30 03:08:11'),
+(1556, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-09-30 03:10:16'),
+(1557, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-09-30 03:57:55'),
+(1558, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-09-30 04:06:39'),
+(1559, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-09-30 04:50:33'),
+(1560, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-09-30 04:51:58'),
+(1561, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-09-30 04:52:11'),
+(1562, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-09-30 05:16:24'),
+(1563, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-09-30 05:17:18'),
+(1564, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-09-30 05:19:26'),
+(1565, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-09-30 05:25:44'),
+(1566, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-09-30 05:27:57'),
+(1567, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-09-30 05:30:31'),
+(1568, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.10.0', '2026-10-01 01:37:08'),
+(1569, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.10.0', '2026-10-01 01:44:42'),
+(1570, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-01 02:11:44'),
+(1571, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-01 02:29:03'),
+(1572, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-01 02:38:19'),
+(1573, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-01 02:40:55'),
+(1574, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.10.0', '2026-10-01 02:44:52'),
+(1575, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-01 03:43:15'),
+(1576, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-01 03:56:18'),
+(1577, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-01 04:04:43'),
+(1578, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-01 04:17:38'),
+(1579, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-01 04:20:08'),
+(1580, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.10.0', '2026-10-01 04:26:58'),
+(1581, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.10.0', '2026-10-25 23:06:47'),
+(1582, NULL, 'login_failed', 'user', NULL, '[]', '{\"ip\": \"::1\", \"email\": \"invalid@example.invalid\"}', '::1', 'node', '2026-10-25 23:23:58'),
+(1583, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'node', '2026-10-25 23:31:33'),
+(1584, NULL, 'login_failed', 'user', NULL, '[]', '{\"ip\": \"::1\", \"email\": \"mammuslim2003@gmail.com\"}', '::1', 'node', '2026-10-25 23:40:36'),
+(1585, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'node', '2026-10-25 23:41:03'),
+(1586, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.10.0', '2026-10-26 00:09:31'),
+(1587, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.12.2', '2026-10-26 01:12:40'),
+(1588, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'node', '2026-10-26 17:42:31'),
+(1589, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-26 18:08:31'),
+(1590, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-26 18:12:15'),
+(1591, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-26 18:16:41'),
+(1592, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-26 18:33:34'),
+(1593, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-26 18:35:52'),
+(1594, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-26 18:37:18'),
+(1595, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-26 18:43:04'),
+(1596, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-26 18:58:26'),
+(1597, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-26 18:59:34'),
+(1598, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-26 19:03:25'),
+(1599, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.12.2', '2026-10-26 19:14:07'),
+(1600, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-27 17:14:39'),
+(1601, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-27 17:26:05'),
+(1602, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.12.2', '2026-10-27 18:01:41'),
+(1603, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-27 18:06:22'),
+(1604, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.12.2', '2026-10-27 18:11:17'),
+(1605, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-27 18:24:31'),
+(1606, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-27 18:59:09'),
+(1607, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-27 19:11:56'),
+(1608, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-27 19:15:30'),
+(1609, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-27 19:22:37'),
+(1610, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-27 19:30:23'),
+(1611, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.12.2', '2026-10-27 19:32:48'),
+(1612, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.12.2', '2026-10-27 19:38:23'),
+(1613, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-27 19:48:57'),
+(1614, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-27 19:49:48'),
+(1615, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-27 19:51:32'),
+(1616, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-27 20:02:22'),
+(1617, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-27 20:02:28'),
+(1618, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.12.2', '2026-10-27 20:52:43'),
+(1619, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-27 22:10:05'),
+(1620, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-10-27 22:16:48'),
+(1621, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.12.2', '2026-10-27 22:21:30'),
+(1622, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.12.2', '2026-11-01 18:16:09'),
+(1623, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-11-01 18:33:55'),
+(1624, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.12.2', '2026-11-01 20:15:30'),
+(1625, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.12.2', '2026-11-01 20:42:03'),
+(1626, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.12.2', '2026-11-01 20:46:50'),
+(1627, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'node', '2026-11-01 21:24:08'),
+(1628, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.12.2', '2026-11-01 22:08:15'),
+(1629, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.12.2', '2026-11-01 22:33:36'),
+(1630, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-11-01 23:19:15'),
+(1631, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-11-01 23:21:13'),
+(1632, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.12.2', '2026-11-01 23:23:47'),
+(1633, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.12.2', '2026-11-01 23:41:01'),
+(1634, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-11-02 00:02:36'),
+(1635, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-11-02 00:14:35'),
+(1636, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-11-02 00:17:15'),
+(1637, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-11-02 00:19:01'),
+(1638, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-11-02 00:19:56'),
+(1639, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.12.2', '2026-11-02 00:23:36'),
+(1640, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-11-02 00:37:25'),
+(1641, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-11-02 00:55:00'),
+(1642, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-11-02 00:56:21'),
+(1643, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-11-02 00:59:20'),
+(1644, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-11-02 01:00:37'),
+(1645, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.12.2', '2026-11-02 21:46:32'),
+(1646, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'node', '2026-11-03 00:52:20'),
+(1647, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.14.0', '2026-11-05 11:59:18'),
+(1648, NULL, 'login_failed', 'user', NULL, '[]', '{\"ip\": \"::1\", \"email\": \"mammuslim2003@gmail.com\"}', '::1', 'PostmanRuntime/2.14.0', '2026-11-05 13:37:09'),
+(1649, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.14.0', '2026-11-05 13:37:46'),
+(1650, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-11-05 13:58:20'),
+(1651, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.16.1', '2026-11-11 11:36:18'),
+(1652, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-11-11 11:51:18'),
+(1653, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-11-11 12:13:14'),
+(1654, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-11-11 12:24:24'),
+(1655, 100528, 'password_change_failed', 'user', 100528, '[]', '{\"ip\": \"unknown\"}', NULL, NULL, '2026-11-11 12:52:44'),
+(1656, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.16.1', '2026-11-11 22:52:39'),
+(1657, 100588, 'login_success', 'user', 100588, '[]', '{\"ip\": \"::1\", \"role\": \"student\"}', '::1', 'PostmanRuntime/2.16.1', '2026-11-11 22:52:52');
 
 -- --------------------------------------------------------
 
@@ -1123,7 +1246,8 @@ INSERT INTO `certificates` (`id`, `certificate_code`, `student_id`, `company_id`
 (137, 'MASAR-2026-E645E5D4', 1498, 100161, 100418, 304, 'issued', 'Certificate of Completion - Performance Budgeting for APIs', '2026-07-15', '2026-09-02', 'C', 'Good', 0, '2026-09-16 04:15:00', '2026-09-16 04:15:01', '2026-09-16 04:15:01', NULL, 100595, NULL, NULL, '2026-09-16 04:15:00', '2026-09-16 20:26:47'),
 (138, 'MASAR-2026-0AFDDD93', 1498, 100161, 100419, 305, 'revoked', 'Certificate of Completion - Incident Response Runbooks', '2026-06-15', '2026-07-20', 'A', 'Excellent', 0, '2026-09-16 04:15:55', '2026-09-16 04:15:57', '2026-09-16 04:15:57', '2026-09-16 04:15:59', 100595, NULL, 'Administrative verification failed', '2026-09-16 04:15:55', '2026-09-16 20:26:47'),
 (139, 'MASAR-2026-D94D0487', 1498, 100161, 100420, 306, 'revoked', 'Certificate of Completion - WebSockets & Streaming APIs', '2026-06-10', '2026-08-05', 'B+', 'Very Good', 0, '2026-09-16 04:15:59', '2026-09-16 04:16:00', '2026-09-16 04:16:00', '2026-09-16 04:16:00', 100595, NULL, 'Duplicate certificate issued', '2026-09-16 04:15:59', '2026-09-16 20:26:47'),
-(140, 'MASAR-2026-DA9CB143', 1498, 100161, 100421, 307, 'revoked', 'Certificate of Completion - Multi-Tenancy Backend Course', '2026-05-14', '2026-07-16', 'C+', 'Good', 0, '2026-09-16 04:16:01', '2026-09-16 04:16:01', '2026-09-16 04:16:01', '2026-09-16 04:16:02', 100595, NULL, 'Training records could not be verified', '2026-09-16 04:16:01', '2026-09-16 20:26:47');
+(140, 'MASAR-2026-DA9CB143', 1498, 100161, 100421, 307, 'revoked', 'Certificate of Completion - Multi-Tenancy Backend Course', '2026-05-14', '2026-07-16', 'C+', 'Good', 0, '2026-09-16 04:16:01', '2026-09-16 04:16:01', '2026-09-16 04:16:01', '2026-09-16 04:16:02', 100595, NULL, 'Training records could not be verified', '2026-09-16 04:16:01', '2026-09-16 20:26:47'),
+(921, 'MASAR-2026-C21C60F6', 1498, 100161, 100422, 308, 'pending', 'Certificate of Completion - Cache Invalidation Strategies Sprint', '2026-08-04', '2026-09-11', NULL, NULL, 0, '2026-11-11 12:13:34', NULL, NULL, NULL, NULL, NULL, NULL, '2026-11-11 12:13:34', '2026-11-11 12:13:34');
 
 -- --------------------------------------------------------
 
@@ -1338,7 +1462,8 @@ INSERT INTO `conversations` (`id`, `student_id`, `company_id`, `application_id`,
 (258, 1456, 100156, 1830, '2026-08-01 11:30:00', '2026-08-13 10:00:00'),
 (259, 1466, 100155, 1835, '2026-08-01 11:30:00', '2026-08-13 10:00:00'),
 (260, 1476, 100158, 1840, '2026-08-01 11:30:00', '2026-08-13 10:00:00'),
-(261, 1486, 100158, 1845, '2026-08-01 11:30:00', '2026-08-13 10:00:00');
+(261, 1486, 100158, 1845, '2026-08-01 11:30:00', '2026-08-13 10:00:00'),
+(262, 1498, 100161, 1878, '2026-11-05 12:07:20', '2026-11-05 12:08:04');
 
 -- --------------------------------------------------------
 
@@ -1472,7 +1597,18 @@ INSERT INTO `files` (`id`, `user_id`, `type`, `original_name`, `stored_name`, `p
 (318, 100588, 'cv', '46f4ccf6-719f-4f0a-a002-57c7d5cdbda6 (2).docx', '20260910_83ec3e16011dc6975a884af563b47576.docx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260910_83ec3e16011dc6975a884af563b47576.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 404214, '2026-09-11 01:51:13'),
 (319, 100588, 'cv', '46f4ccf6-719f-4f0a-a002-57c7d5cdbda6 (2).docx', '20260910_084d100c909ea82633c88ab99f96ecf0.docx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260910_084d100c909ea82633c88ab99f96ecf0.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 404214, '2026-09-11 01:51:36'),
 (320, 100588, 'cv', '46f4ccf6-719f-4f0a-a002-57c7d5cdbda6 (2).docx', '20260910_f444dd23ad2de32fc698280b9579c0c5.docx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260910_f444dd23ad2de32fc698280b9579c0c5.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 404214, '2026-09-11 01:51:59'),
-(321, 100588, 'cv', '46f4ccf6-719f-4f0a-a002-57c7d5cdbda6 (2).docx', '20260910_5bd72f6dc18c9065555d73e6037da7b6.docx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260910_5bd72f6dc18c9065555d73e6037da7b6.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 404214, '2026-09-11 01:58:37');
+(321, 100588, 'cv', '46f4ccf6-719f-4f0a-a002-57c7d5cdbda6 (2).docx', '20260910_5bd72f6dc18c9065555d73e6037da7b6.docx', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\general\\20260910_5bd72f6dc18c9065555d73e6037da7b6.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 404214, '2026-09-11 01:58:37'),
+(544, 100588, 'profile_image', 'images.jpg', '20260930_e8e985f30fd4fc0ec19d0c7b848758d8.jpg', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\profile\\20260930_e8e985f30fd4fc0ec19d0c7b848758d8.jpg', 'image/jpeg', 7439, '2026-10-01 02:48:57'),
+(625, 100588, 'profile_image', 'images1.jpg', '20261025_9c0e7702771c79e8aebe293caa1dc205.jpg', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\profile\\20261025_9c0e7702771c79e8aebe293caa1dc205.jpg', 'image/jpeg', 27216, '2026-10-26 01:28:41'),
+(943, 100588, 'profile_image', 'images1.jpg', '20261027_dd43679aa30c0f9ea74bdfc96459c573.jpg', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\profile\\20261027_dd43679aa30c0f9ea74bdfc96459c573.jpg', 'image/jpeg', 27216, '2026-10-27 18:28:09'),
+(1043, 100528, 'certificate_attachment', 'regression_grad_cert.pdf', '20261101_dd00c258dd48113842058d877764d161.pdf', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\certificates\\20261101_dd00c258dd48113842058d877764d161.pdf', 'application/pdf', 242, '2026-11-02 00:15:38'),
+(1072, 100528, 'profile_image', '_avatar.png', '20261101_7ad3e458207367c7d2ed861e219f2ffa.png', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\profile\\20261101_7ad3e458207367c7d2ed861e219f2ffa.png', 'image/png', 98, '2026-11-02 00:56:19'),
+(1074, 100528, 'profile_image', '_avatar.png', '20261101_3177e5be2aa2792d4faffd4269327784.png', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\profile\\20261101_3177e5be2aa2792d4faffd4269327784.png', 'image/png', 98, '2026-11-02 00:59:17'),
+(1083, 100528, 'profile_image', '_avatar.png', '20261101_f5aa45aee6c8c9067354c95584936794.png', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\profile\\20261101_f5aa45aee6c8c9067354c95584936794.png', 'image/png', 98, '2026-11-02 01:00:35'),
+(1091, 100528, 'profile_image', '_avatar.png', '20261105_19770bfcd34fdaa419675457dcfd8c62.png', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\profile\\20261105_19770bfcd34fdaa419675457dcfd8c62.png', 'image/png', 98, '2026-11-05 13:58:16'),
+(1093, 100528, 'profile_image', '_avatar.png', '20261111_6203e48992e29327c2884c3dd48154dd.png', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\profile\\20261111_6203e48992e29327c2884c3dd48154dd.png', 'image/png', 98, '2026-11-11 11:50:35'),
+(1109, 100528, 'profile_image', '_avatar.png', '20261111_955f14279132f2545e029d66d4c3b084.png', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\profile\\20261111_955f14279132f2545e029d66d4c3b084.png', 'image/png', 98, '2026-11-11 12:23:57'),
+(1124, 100528, 'profile_image', '_avatar.png', '20261111_81b5743704e7bf208731772abd206b68.png', 'C:\\laragon\\www\\Masar\\backend\\app/storage/uploads\\profile\\20261111_81b5743704e7bf208731772abd206b68.png', 'image/png', 98, '2026-11-11 12:52:41');
 
 -- --------------------------------------------------------
 
@@ -1678,7 +1814,8 @@ INSERT INTO `messages` (`id`, `conversation_id`, `sender_user_id`, `body`, `is_r
 (1285, 261, 100560, 'Thank you for the warm welcome! I am very excited to start.', 1, '2026-08-14 12:00:00', '2026-08-14 11:00:00'),
 (1286, 261, 100582, 'Please join the onboarding call tomorrow at 10am.', 1, '2026-08-14 12:00:00', '2026-08-15 11:00:00'),
 (1287, 261, 100560, 'I will be there. Should I prepare anything in advance?', 1, '2026-08-14 12:00:00', '2026-08-16 11:00:00'),
-(1288, 261, 100582, 'Just bring your laptop and any portfolio pieces you mentioned.', 0, NULL, '2026-08-17 11:00:00');
+(1288, 261, 100582, 'Just bring your laptop and any portfolio pieces you mentioned.', 0, NULL, '2026-08-17 11:00:00'),
+(1289, 262, 100588, 'Hello, I look forward to discussing the internship.', 0, NULL, '2026-11-05 12:08:04');
 
 -- --------------------------------------------------------
 
@@ -2083,7 +2220,112 @@ INSERT INTO `notifications` (`id`, `user_id`, `type`, `title`, `body`, `entity_t
 (2390, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2175, 0, NULL, NULL, '2026-09-16 04:27:59'),
 (2391, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2176, 0, NULL, NULL, '2026-09-16 04:28:00'),
 (2392, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2177, 0, NULL, NULL, '2026-09-16 04:28:00'),
-(2393, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2178, 0, NULL, NULL, '2026-09-16 04:28:01');
+(2393, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2178, 0, NULL, NULL, '2026-09-16 04:28:01'),
+(2462, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2291, 0, NULL, NULL, '2026-09-27 02:19:32'),
+(2463, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2292, 0, NULL, NULL, '2026-09-27 02:19:32'),
+(2464, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2293, 0, NULL, NULL, '2026-09-27 02:19:33'),
+(2465, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2294, 0, NULL, NULL, '2026-09-27 02:19:33'),
+(2466, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2295, 0, NULL, NULL, '2026-09-27 02:19:42'),
+(2467, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2296, 0, NULL, NULL, '2026-09-27 02:19:42'),
+(2468, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2297, 0, NULL, NULL, '2026-09-27 02:19:43'),
+(2469, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2298, 0, NULL, NULL, '2026-09-27 02:19:43'),
+(2470, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2905, 0, NULL, NULL, '2026-09-27 02:51:03'),
+(2471, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 2906, 0, NULL, NULL, '2026-09-27 02:51:46'),
+(2480, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 3561, 0, NULL, NULL, '2026-09-27 03:07:45'),
+(2481, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 3562, 0, NULL, NULL, '2026-09-27 03:07:45'),
+(2482, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 3563, 0, NULL, NULL, '2026-09-27 03:07:45'),
+(2483, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 3564, 0, NULL, NULL, '2026-09-27 03:07:45'),
+(2492, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 4238, 0, NULL, NULL, '2026-09-27 03:19:36'),
+(2493, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 4239, 0, NULL, NULL, '2026-09-27 03:19:36'),
+(2494, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 4240, 0, NULL, NULL, '2026-09-27 03:19:36'),
+(2495, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 4241, 0, NULL, NULL, '2026-09-27 03:19:37'),
+(2539, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 4819, 0, NULL, NULL, '2026-09-27 03:38:58'),
+(2540, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 4820, 0, NULL, NULL, '2026-09-27 03:38:58'),
+(2541, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 4821, 0, NULL, NULL, '2026-09-27 03:38:58'),
+(2542, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 4822, 0, NULL, NULL, '2026-09-27 03:38:59'),
+(2572, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 5169, 0, NULL, NULL, '2026-09-27 03:47:01'),
+(2573, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 5175, 0, NULL, NULL, '2026-09-27 03:49:15'),
+(2574, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 5176, 0, NULL, NULL, '2026-09-27 03:49:15'),
+(2575, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 5177, 0, NULL, NULL, '2026-09-27 03:49:15'),
+(2576, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 5178, 0, NULL, NULL, '2026-09-27 03:49:16'),
+(2592, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 5297, 0, NULL, NULL, '2026-09-27 03:52:42'),
+(2593, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 5637, 0, NULL, NULL, '2026-09-27 18:55:33'),
+(2594, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 5638, 0, NULL, NULL, '2026-09-27 18:55:33'),
+(2595, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 5639, 0, NULL, NULL, '2026-09-27 18:55:34'),
+(2596, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 5640, 0, NULL, NULL, '2026-09-27 18:55:34'),
+(2604, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 5755, 0, NULL, NULL, '2026-09-27 18:56:25'),
+(2612, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 5890, 0, NULL, NULL, '2026-09-27 19:05:25'),
+(2613, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 5916, 0, NULL, NULL, '2026-09-27 19:07:33'),
+(2614, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 5917, 0, NULL, NULL, '2026-09-27 19:07:34'),
+(2615, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 5918, 0, NULL, NULL, '2026-09-27 19:07:34'),
+(2616, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 5919, 0, NULL, NULL, '2026-09-27 19:07:34'),
+(2632, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6038, 0, NULL, NULL, '2026-09-27 19:10:10'),
+(2666, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6182, 0, NULL, NULL, '2026-09-29 23:35:44'),
+(2667, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6183, 0, NULL, NULL, '2026-09-29 23:35:45'),
+(2668, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6184, 0, NULL, NULL, '2026-09-29 23:35:45'),
+(2669, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6185, 0, NULL, NULL, '2026-09-29 23:35:46'),
+(2670, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6186, 0, NULL, NULL, '2026-09-29 23:35:47'),
+(2678, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6326, 0, NULL, NULL, '2026-09-30 00:17:13'),
+(2679, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6327, 0, NULL, NULL, '2026-09-30 00:17:14'),
+(2680, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6328, 0, NULL, NULL, '2026-09-30 00:17:14'),
+(2681, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6329, 0, NULL, NULL, '2026-09-30 00:17:15'),
+(2690, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6334, 0, NULL, NULL, '2026-09-30 00:19:13'),
+(2691, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6335, 0, NULL, NULL, '2026-09-30 00:19:25'),
+(2692, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6361, 0, NULL, NULL, '2026-09-30 02:01:53'),
+(2693, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6362, 0, NULL, NULL, '2026-09-30 02:01:53'),
+(2694, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6363, 0, NULL, NULL, '2026-09-30 02:01:53'),
+(2695, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6364, 0, NULL, NULL, '2026-09-30 02:01:53'),
+(2711, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6483, 0, NULL, NULL, '2026-09-30 02:06:58'),
+(2726, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6757, 0, NULL, NULL, '2026-09-30 02:26:32'),
+(2727, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6758, 0, NULL, NULL, '2026-09-30 02:26:32'),
+(2728, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6759, 0, NULL, NULL, '2026-09-30 02:26:33'),
+(2729, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6760, 0, NULL, NULL, '2026-09-30 02:26:33'),
+(2745, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6879, 0, NULL, NULL, '2026-09-30 02:29:58'),
+(2746, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6905, 0, NULL, NULL, '2026-09-30 03:55:24'),
+(2747, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6906, 0, NULL, NULL, '2026-09-30 03:55:25'),
+(2748, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6907, 0, NULL, NULL, '2026-09-30 03:55:25'),
+(2749, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 6908, 0, NULL, NULL, '2026-09-30 03:55:25'),
+(2765, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7027, 0, NULL, NULL, '2026-09-30 03:58:04'),
+(2766, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7028, 0, NULL, NULL, '2026-09-30 03:59:17'),
+(2767, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7054, 0, NULL, NULL, '2026-09-30 04:03:15'),
+(2768, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7055, 0, NULL, NULL, '2026-09-30 04:03:15'),
+(2769, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7056, 0, NULL, NULL, '2026-09-30 04:03:15'),
+(2770, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7057, 0, NULL, NULL, '2026-09-30 04:03:15'),
+(2786, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7176, 0, NULL, NULL, '2026-09-30 04:06:58'),
+(2787, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7202, 0, NULL, NULL, '2026-09-30 05:17:12'),
+(2788, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7203, 0, NULL, NULL, '2026-09-30 05:17:12'),
+(2789, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7204, 0, NULL, NULL, '2026-09-30 05:17:13'),
+(2790, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7205, 0, NULL, NULL, '2026-09-30 05:17:13'),
+(2806, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7324, 0, NULL, NULL, '2026-09-30 05:19:40'),
+(2807, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7325, 0, NULL, NULL, '2026-09-30 05:19:53'),
+(2808, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7351, 0, NULL, NULL, '2026-09-30 05:25:39'),
+(2809, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7352, 0, NULL, NULL, '2026-09-30 05:25:39'),
+(2810, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7353, 0, NULL, NULL, '2026-09-30 05:25:40'),
+(2811, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7354, 0, NULL, NULL, '2026-09-30 05:25:40'),
+(2827, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7473, 0, NULL, NULL, '2026-09-30 05:28:15'),
+(2835, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7613, 0, NULL, NULL, '2026-10-01 02:38:11'),
+(2836, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7614, 0, NULL, NULL, '2026-10-01 02:38:12'),
+(2837, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7615, 0, NULL, NULL, '2026-10-01 02:38:12'),
+(2838, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7616, 0, NULL, NULL, '2026-10-01 02:38:13'),
+(2854, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7735, 0, NULL, NULL, '2026-10-01 02:41:27'),
+(2855, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7736, 0, NULL, NULL, '2026-10-01 02:41:41'),
+(2856, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7737, 0, NULL, NULL, '2026-10-01 02:41:42'),
+(2857, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7763, 0, NULL, NULL, '2026-10-01 03:56:06'),
+(2858, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7764, 0, NULL, NULL, '2026-10-01 03:56:07'),
+(2859, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7765, 0, NULL, NULL, '2026-10-01 03:56:08'),
+(2860, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7766, 0, NULL, NULL, '2026-10-01 03:56:08'),
+(2876, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7885, 0, NULL, NULL, '2026-10-01 04:06:25'),
+(2877, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7911, 0, NULL, NULL, '2026-10-01 04:17:32'),
+(2878, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7912, 0, NULL, NULL, '2026-10-01 04:17:33'),
+(2879, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7913, 0, NULL, NULL, '2026-10-01 04:17:33'),
+(2880, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 7914, 0, NULL, NULL, '2026-10-01 04:17:33'),
+(2896, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 8033, 0, NULL, NULL, '2026-10-01 04:20:38'),
+(2897, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 8100, 0, NULL, NULL, '2026-11-11 12:13:00'),
+(2898, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 8101, 0, NULL, NULL, '2026-11-11 12:13:01'),
+(2899, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 8102, 0, NULL, NULL, '2026-11-11 12:13:04'),
+(2900, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 8103, 0, NULL, NULL, '2026-11-11 12:13:05'),
+(2902, 100588, 'certificate', 'Certificate Requested', 'Your certificate request is awaiting approval.', 'certificate', 921, 0, NULL, NULL, '2026-11-11 12:13:35'),
+(2917, 100588, 'application', 'Application Submitted', 'Your application has been submitted successfully.', 'application', 8222, 0, NULL, NULL, '2026-11-11 12:27:12');
 
 -- --------------------------------------------------------
 
@@ -2148,7 +2390,7 @@ INSERT INTO `payments` (`id`, `training_id`, `training_session_id`, `student_id`
 (48, 100224, 247, 1468, 100149, 1800.00, 'EGP', 10.00, 180.00, 1620.00, 'manual', 'pending', 'MANUAL-20260902-00004', NULL, '2026-08-24 15:00:00', '2026-08-24 15:00:00'),
 (49, 100228, 251, 1466, 100151, 2200.00, 'EGP', 10.00, 220.00, 1980.00, 'paymob', 'pending', 'PAYMOB-00000005', NULL, '2026-08-24 15:00:00', '2026-08-24 15:00:00'),
 (50, 100231, 254, 1456, 100152, 3500.00, 'EGP', 10.00, 350.00, 3150.00, 'manual', 'pending', 'MANUAL-20260902-00006', NULL, '2026-08-24 15:00:00', '2026-08-24 15:00:00'),
-(63, 100262, NULL, 1498, 100145, 3600.00, 'EGP', 0.00, 0.00, 3600.00, 'manual', 'pending', 'TRANSFER-SEEDED-PENDING', NULL, '2026-09-09 05:55:20', '2026-09-16 04:28:04'),
+(63, 100262, NULL, 1498, 100145, 3600.00, 'EGP', 0.00, 0.00, 3600.00, 'manual', 'pending', 'TRANSFER-SEEDED-PENDING', NULL, '2026-09-09 05:55:20', '2026-11-11 12:12:00'),
 (64, 100304, NULL, 1498, 100161, 2500.00, 'EGP', 0.00, 0.00, 2500.00, 'manual', 'paid', 'TRANSFER-SEEDED-PAID', '2026-09-09 14:30:00', '2026-09-14 02:18:07', '2026-09-15 02:22:35'),
 (65, 100258, NULL, 1498, 100152, 1800.00, 'EGP', 0.00, 0.00, 1800.00, 'manual', 'failed', 'TRANSFER-SEEDED-FAILED', NULL, '2026-09-14 02:18:07', '2026-09-15 02:22:35');
 
@@ -2172,10 +2414,12 @@ CREATE TABLE `refresh_tokens` (
 
 INSERT INTO `refresh_tokens` (`id`, `user_id`, `token_hash`, `expires_at`, `revoked_at`, `created_at`) VALUES
 (1045, 100526, '396696d4416b5f2ee60b539828970ce22b8ad9c3a47866d6bb8727857c82eb5e', '2026-10-02 01:18:05', NULL, '2026-09-02 04:18:06'),
-(1052, 100528, '4103cf549ec8dfb9ef3ed7cae70510ada4487c3796c75f9aa947d19dfaafbc1a', '2026-10-02 03:02:39', NULL, '2026-09-02 06:02:40'),
+(1052, 100528, '4103cf549ec8dfb9ef3ed7cae70510ada4487c3796c75f9aa947d19dfaafbc1a', '2026-10-02 03:02:39', '2026-09-30 04:50:33', '2026-09-02 06:02:40'),
 (1053, 100568, '149d0ef4051abda64eccd31521e2abce377735cfbd22b202d20fbc54e2fb6a2a', '2026-10-02 03:03:53', NULL, '2026-09-02 06:03:53'),
-(1089, 100595, 'fa0665440ee23a578d90393b3915de918a87131bb024dc0bf06f32550f87a3ed', '2026-10-13 21:55:44', NULL, '2026-09-14 00:55:44'),
-(1098, 100588, '3585a36eccd082ecf273d47f6b8961a853aa7859de47aa53bea75ba72f6d7f5c', '2026-10-16 17:57:57', NULL, '2026-09-16 20:57:57');
+(1101, 100595, '1950b6174faa82834d8eb99826663864ada268158cc965ccdaa681852d5dd373', '2026-10-20 21:59:38', NULL, '2026-09-21 00:59:38'),
+(1114, 100528, 'bbddea1be75d2b673a57346e2faa4182b6be6f419aba38af5a80c92f611c754e', '2026-09-30 02:50:33', '2026-09-30 04:50:33', '2026-09-30 04:50:33'),
+(1115, 100528, 'd9900859a44661c099c161342e838d63d334fabad407805287a31fc54d988907', '2026-09-30 02:50:33', '2026-09-30 04:50:33', '2026-09-30 04:50:33'),
+(1173, 100588, '4e2b5ce10fd4cfc98ef8ca2b002adf6804f6769dc06bd452d84db04d59dfad59', '2026-12-11 20:52:52', NULL, '2026-11-11 22:52:52');
 
 -- --------------------------------------------------------
 
@@ -2460,6 +2704,7 @@ CREATE TABLE `students` (
   `specialization_id` bigint UNSIGNED DEFAULT NULL,
   `graduation_year` year DEFAULT NULL,
   `graduation_month` tinyint UNSIGNED DEFAULT NULL,
+  `graduation_date` date DEFAULT NULL,
   `academic_status` enum('student','graduate') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'student',
   `city` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `address` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -2475,57 +2720,56 @@ CREATE TABLE `students` (
 -- Dumping data for table `students`
 --
 
-INSERT INTO `students` (`id`, `user_id`, `full_name`, `phone`, `bio`, `university_id`, `faculty_id`, `field_id`, `degree_id`, `specialization_id`, `graduation_year`, `graduation_month`, `academic_status`, `city`, `profile_image_file_id`, `cv_file_id`, `academic_certificate_file_id`, `is_profile_complete`, `created_at`, `updated_at`) VALUES
-(1454, 100528, 'Omar Khaled El-Shazly', '01223456781', 'Omar Khaled El-Shazly is a computer science student at Cairo University specializing in Software Engineering, based in New Cairo. Seeking a hands-on training opportunity in Software Engineering to complement their academic background.', 51, 60, 12, 32, 103, '2026', NULL, 'student', 'New Cairo', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1455, 100529, 'Mariam Ahmed Hassan', '01112345682', 'Mariam Ahmed Hassan is a computer science student at Cairo University specializing in Mobile Development, based in Nasr City. Seeking a hands-on training opportunity in Mobile Development to complement their academic background.', 51, 60, 12, 32, 202, '2025', NULL, 'student', 'Nasr City', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1456, 100530, 'Youssef Mohamed Farouk', '01515678983', 'Youssef Mohamed Farouk is a computer science student at Ain Shams University specializing in Web Development, based in Heliopolis. Seeking a hands-on training opportunity in Web Development to complement their academic background.', 52, 65, 12, 32, 107, '2026', NULL, 'student', 'Heliopolis', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1457, 100531, 'Farida Tarek Lotfy', '01234567884', 'Farida Tarek Lotfy is a computer science student at Ain Shams University specializing in Frontend Development, based in Maadi. Seeking a hands-on training opportunity in Frontend Development to complement their academic background.', 52, 65, 12, 32, 200, '2024', NULL, 'student', 'Maadi', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1458, 100532, 'Ahmed Nabil Samir', '01115678985', 'Ahmed Nabil Samir is a computer science student at Alexandria University specializing in Backend Development, based in Alexandria. Seeking a hands-on training opportunity in Backend Development to complement their academic background.', 53, 69, 12, 32, 199, '2025', NULL, 'student', 'Alexandria', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1459, 100533, 'Nour Mahmoud Abdelaziz', '01521234586', 'Nour Mahmoud Abdelaziz is a computer science student at Alexandria University specializing in Full Stack Development, based in Alexandria. Seeking a hands-on training opportunity in Full Stack Development to complement their academic background.', 53, 69, 12, 32, 201, '2026', NULL, 'student', 'Alexandria', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1460, 100534, 'Karim Amr El-Deeb', '01232345687', 'Karim Amr El-Deeb is a computer science student at Egypt-Japan University of Science and Technology specializing in Software Engineering, based in Alexandria. Seeking a hands-on training opportunity in Software Engineering to complement their academic background.', 201, 233, 12, 32, 103, '2026', NULL, 'student', 'Alexandria', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1461, 100535, 'Salma Hossam El-Din', '01111345688', 'Salma Hossam El-Din is a computer science student at Mansoura University specializing in Frontend Development, based in Mansoura. Seeking a hands-on training opportunity in Frontend Development to complement their academic background.', 54, 73, 12, 32, 200, '2027', NULL, 'student', 'Mansoura', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1462, 100536, 'Mahmoud Khaled Gaballah', '01534567889', 'Mahmoud Khaled Gaballah is a computer science student at Tanta University specializing in Cyber Security, based in Tanta. Seeking a hands-on training opportunity in Cyber Security to complement their academic background.', 56, 76, 12, 32, 106, '2025', NULL, 'student', 'Tanta', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1463, 100537, 'Mohamed Ashraf Khattab', '01011223390', 'Mohamed Ashraf Khattab is a computer science student at Helwan University specializing in Data Analysis, based in Helwan. Seeking a hands-on training opportunity in Data Analysis to complement their academic background.', 59, 78, 12, 32, 205, '2025', NULL, 'student', 'Helwan', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1464, 100538, 'Sara Mohamed Fahim', '01122334491', 'Sara Mohamed Fahim is a computer science student at Helwan University specializing in Artificial Intelligence, based in Helwan. Seeking a hands-on training opportunity in Artificial Intelligence to complement their academic background.', 59, 78, 12, 32, 104, '2026', NULL, 'student', 'Helwan', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1465, 100539, 'Amr Sherif Abdelghany', '01533445592', 'Amr Sherif Abdelghany is a computer science student at German University in Cairo specializing in Machine Learning, based in New Cairo. Seeking a hands-on training opportunity in Machine Learning to complement their academic background.', 73, 82, 12, 32, 206, '2026', NULL, 'student', 'New Cairo', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1466, 100540, 'Menna Amr Nassar', '01044556693', 'Menna Amr Nassar is a computer science student at British University in Egypt specializing in Cloud Computing, based in El Shorouk. Seeking a hands-on training opportunity in Cloud Computing to complement their academic background.', 74, 84, 12, 32, 203, '2024', NULL, 'student', 'El Shorouk', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1467, 100541, 'Mohamed Adel Fathy', '01155667794', 'Mohamed Adel Fathy is a engineering student at Cairo University specializing in Mechanical Engineering, based in Giza. Seeking a hands-on training opportunity in Mechanical Engineering to complement their academic background.', 51, 59, 9, 28, 92, '2025', NULL, 'student', 'Giza', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1468, 100542, 'Youssef Omar Shawky', '01566778895', 'Youssef Omar Shawky is a engineering student at Ain Shams University specializing in Civil Engineering, based in Heliopolis. Seeking a hands-on training opportunity in Civil Engineering to complement their academic background.', 52, 64, 9, 28, 93, '2026', NULL, 'student', 'Heliopolis', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1469, 100543, 'Omar Hisham Mostafa', '01077889996', 'Omar Hisham Mostafa is a engineering student at German University in Cairo specializing in Electrical Engineering, based in Zamalek. Seeking a hands-on training opportunity in Electrical Engineering to complement their academic background.', 73, 82, 9, 28, 94, '2025', NULL, 'student', 'Zamalek', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1470, 100544, 'Malak Ahmed El-Shennawy', '01188990097', 'Malak Ahmed El-Shennawy is a engineering student at Pharos University in Alexandria specializing in Architecture, based in Alexandria. Seeking a hands-on training opportunity in Architecture to complement their academic background.', 202, 235, 9, 40, 95, '2026', NULL, 'student', 'Alexandria', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1471, 100545, 'Abdallah Yasser Kamel', '01599001198', 'Abdallah Yasser Kamel is a engineering student at Alexandria University specializing in Mechanical Engineering, based in Alexandria. Seeking a hands-on training opportunity in Mechanical Engineering to complement their academic background.', 53, 68, 9, 28, 92, '2025', NULL, 'student', 'Alexandria', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1472, 100546, 'Salma Wael El-Maghraby', '01011223399', 'Salma Wael El-Maghraby is a medicine student at Cairo University specializing in General Medicine, based in Nasr City. Seeking a hands-on training opportunity in General Medicine to complement their academic background.', 51, 63, 10, 35, 96, '2026', NULL, 'student', 'Nasr City', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1473, 100547, 'Yara Ibrahim Hassan', '01122233391', 'Yara Ibrahim Hassan is a medicine student at Ain Shams University specializing in Pediatrics, based in Maadi. Seeking a hands-on training opportunity in Pediatrics to complement their academic background.', 52, 643, 10, 35, 98, '2027', NULL, 'student', 'Maadi', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1474, 100548, 'Hana Mahmoud Ezzat', '01533344492', 'Hana Mahmoud Ezzat is a pharmacy student at Alexandria University specializing in Clinical Pharmacy, based in Alexandria. Seeking a hands-on training opportunity in Clinical Pharmacy to complement their academic background.', 53, 644, 11, 36, 100, '2026', NULL, 'student', 'Alexandria', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1475, 100549, 'Omar Khaled Soliman', '01044455593', 'Omar Khaled Soliman is a pharmacy student at Pharos University in Alexandria specializing in Pharmacology, based in Alexandria. Seeking a hands-on training opportunity in Pharmacology to complement their academic background.', 202, 236, 11, 36, 102, '2025', NULL, 'student', 'Alexandria', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1476, 100550, 'Youssef Amr El-Gohary', '01155566694', 'Youssef Amr El-Gohary is a business student at Cairo University specializing in Marketing, based in Nasr City. Seeking a hands-on training opportunity in Marketing to complement their academic background.', 51, 61, 13, 30, 108, '2026', NULL, 'student', 'Nasr City', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1477, 100551, 'Alaa Mohamed Fawzy', '01566677795', 'Alaa Mohamed Fawzy is a business student at Ain Shams University specializing in Marketing, based in Heliopolis. Seeking a hands-on training opportunity in Marketing to complement their academic background.', 52, 66, 13, 30, 108, '2025', NULL, 'student', 'Heliopolis', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1478, 100552, 'Menna Hassan Ibrahim', '01077788896', 'Menna Hassan Ibrahim is a business student at German University in Cairo specializing in Business Administration, based in New Cairo. Seeking a hands-on training opportunity in Business Administration to complement their academic background.', 73, 83, 13, 31, 110, '2026', NULL, 'student', 'New Cairo', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1479, 100553, 'Omar Sherif Shahin', '01188899997', 'Omar Sherif Shahin is a business student at The American University in Cairo specializing in Human Resources, based in New Cairo. Seeking a hands-on training opportunity in Human Resources to complement their academic background.', 72, 80, 13, 31, 109, '2025', NULL, 'student', 'New Cairo', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1480, 100554, 'Nourhan Samy Abdelsalam', '01599900098', 'Nourhan Samy Abdelsalam is a business student at Future University in Egypt specializing in Sales, based in New Cairo. Seeking a hands-on training opportunity in Sales to complement their academic background.', 75, 87, 13, 31, 111, '2026', NULL, 'student', 'New Cairo', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1481, 100555, 'Aya Mostafa El-Feky', '01011122299', 'Aya Mostafa El-Feky is a law student at Cairo University specializing in Corporate Law, based in Giza. Seeking a hands-on training opportunity in Corporate Law to complement their academic background.', 51, 646, 14, 38, 112, '2026', NULL, 'student', 'Giza', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1482, 100556, 'Mariam El-Sayed Lotfy', '01122233390', 'Mariam El-Sayed Lotfy is a law student at Alexandria University specializing in Commercial Law, based in Alexandria. Seeking a hands-on training opportunity in Commercial Law to complement their academic background.', 53, 645, 14, 38, 114, '2025', NULL, 'student', 'Alexandria', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1483, 100557, 'Hager Anwar El-Sayed', '01533344491', 'Hager Anwar El-Sayed is a media student at Cairo University specializing in Digital Media, based in Nasr City. Seeking a hands-on training opportunity in Digital Media to complement their academic background.', 51, 647, 15, 29, 116, '2026', NULL, 'student', 'Nasr City', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1484, 100558, 'Ahmed Seif El-Din', '01044455592', 'Ahmed Seif El-Din is a media student at Cairo University specializing in Journalism, based in Maadi. Seeking a hands-on training opportunity in Journalism to complement their academic background.', 51, 647, 15, 29, 115, '2025', NULL, 'student', 'Maadi', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1485, 100559, 'Esraa Hany El-Badrawi', '01155566693', 'Esraa Hany El-Badrawi is a design student at Cairo University specializing in UI/UX Design, based in Nasr City. Seeking a hands-on training opportunity in UI/UX Design to complement their academic background.', 51, 648, 16, 39, 119, '2026', NULL, 'student', 'Nasr City', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1486, 100560, 'George Magdy Saad', '01566677794', 'George Magdy Saad is a design student at Helwan University specializing in Graphic Design, based in Zamalek. Seeking a hands-on training opportunity in Graphic Design to complement their academic background.', 59, 649, 16, 39, 121, '2025', NULL, 'student', 'Zamalek', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1487, 100561, 'Salma Nabil El-Din', '01077788895', 'Salma Nabil El-Din is a design student at Cairo University specializing in Product Design, based in Dokki. Seeking a hands-on training opportunity in Product Design to complement their academic background.', 51, 648, 16, 39, 120, '2026', NULL, 'student', 'Dokki', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1488, 100562, 'Mariam Tarek Nabil', '01188899996', 'Mariam Tarek Nabil is a design student at Cairo University specializing in UI/UX Design, based in 6 October City. Seeking a hands-on training opportunity in UI/UX Design to complement their academic background.', 51, 648, 16, 39, 119, '2027', NULL, 'student', '6 October City', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1489, 100563, 'Mohamed Essam El-Hadidi', '01599900097', 'Mohamed Essam El-Hadidi is a accounting student at Ain Shams University specializing in Financial Accounting, based in Nasr City. Seeking a hands-on training opportunity in Financial Accounting to complement their academic background.', 52, 66, 17, 30, 122, '2025', NULL, 'student', 'Nasr City', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1490, 100564, 'Yasmin Ahmed Talaat', '01011122298', 'Yasmin Ahmed Talaat is a accounting student at Cairo University specializing in Auditing, based in Maadi. Seeking a hands-on training opportunity in Auditing to complement their academic background.', 51, 61, 17, 30, 124, '2026', NULL, 'student', 'Maadi', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1491, 100565, 'Abdullah Mohamed El-Rahman', '01122233399', 'Abdullah Mohamed El-Rahman is a accounting student at Mansoura University specializing in Management Accounting, based in Mansoura. Seeking a hands-on training opportunity in Management Accounting to complement their academic background.', 54, 74, 17, 30, 123, '2025', NULL, 'student', 'Mansoura', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1492, 100566, 'Rania Sameh Fouad', '01533344490', 'Rania Sameh Fouad is a accounting student at Alexandria University specializing in Financial Accounting, based in Alexandria. Seeking a hands-on training opportunity in Financial Accounting to complement their academic background.', 53, 70, 17, 30, 122, '2026', NULL, 'student', 'Alexandria', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1493, 100567, 'George Farid Naguib', '01212345678', 'George Farid Naguib is a computer science student at Cairo University specializing in DevOps, based in Giza. Seeking a hands-on training opportunity in DevOps to complement their academic background.', 51, 60, 12, 32, 204, '2026', NULL, 'student', 'Giza', NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
-(1498, 100588, 'Mohamed Ahmed', NULL, NULL, NULL, NULL, 12, NULL, 199, NULL, NULL, 'student', NULL, NULL, NULL, NULL, 0, '2026-09-02 05:23:43', '2026-09-02 05:23:43');
+INSERT INTO `students` (`id`, `user_id`, `full_name`, `phone`, `website`, `external_profile`, `bio`, `university_id`, `faculty_id`, `field_id`, `degree_id`, `specialization_id`, `graduation_year`, `graduation_month`, `graduation_date`, `academic_status`, `city`, `address`, `profile_image_file_id`, `cv_file_id`, `academic_certificate_file_id`, `is_profile_complete`, `created_at`, `updated_at`) VALUES
+(1454, 100528, 'Omar Khaled El-Shazly', NULL, NULL, NULL, 'Omar Khaled El-Shazly is a computer science student at Cairo University specializing in Software Engineering, based in New Cairo. Seeking a hands-on training opportunity in Software Engineering to complement their academic background.', 51, 60, 12, 32, 103, '2026', NULL, '2026-06-30', 'student', 'New Cairo', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-11-11 12:52:46'),
+(1455, 100529, 'Mariam Ahmed Hassan', NULL, NULL, NULL, 'Mariam Ahmed Hassan is a computer science student at Cairo University specializing in Mobile Development, based in Nasr City. Seeking a hands-on training opportunity in Mobile Development to complement their academic background.', 51, 60, 12, 32, 202, '2025', NULL, NULL, 'student', 'Nasr City', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-11-11 12:26:54'),
+(1456, 100530, 'Youssef Mohamed Farouk', '01515678983', NULL, NULL, 'Youssef Mohamed Farouk is a computer science student at Ain Shams University specializing in Web Development, based in Heliopolis. Seeking a hands-on training opportunity in Web Development to complement their academic background.', 52, 65, 12, 32, 107, '2026', NULL, NULL, 'student', 'Heliopolis', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1457, 100531, 'Farida Tarek Lotfy', '01234567884', NULL, NULL, 'Farida Tarek Lotfy is a computer science student at Ain Shams University specializing in Frontend Development, based in Maadi. Seeking a hands-on training opportunity in Frontend Development to complement their academic background.', 52, 65, 12, 32, 200, '2024', NULL, NULL, 'student', 'Maadi', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1458, 100532, 'Ahmed Nabil Samir', '01115678985', NULL, NULL, 'Ahmed Nabil Samir is a computer science student at Alexandria University specializing in Backend Development, based in Alexandria. Seeking a hands-on training opportunity in Backend Development to complement their academic background.', 53, 69, 12, 32, 199, '2025', NULL, NULL, 'student', 'Alexandria', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1459, 100533, 'Nour Mahmoud Abdelaziz', '01521234586', NULL, NULL, 'Nour Mahmoud Abdelaziz is a computer science student at Alexandria University specializing in Full Stack Development, based in Alexandria. Seeking a hands-on training opportunity in Full Stack Development to complement their academic background.', 53, 69, 12, 32, 201, '2026', NULL, NULL, 'student', 'Alexandria', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1460, 100534, 'Karim Amr El-Deeb', '01232345687', NULL, NULL, 'Karim Amr El-Deeb is a computer science student at Egypt-Japan University of Science and Technology specializing in Software Engineering, based in Alexandria. Seeking a hands-on training opportunity in Software Engineering to complement their academic background.', 201, 233, 12, 32, 103, '2026', NULL, NULL, 'student', 'Alexandria', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1461, 100535, 'Salma Hossam El-Din', '01111345688', NULL, NULL, 'Salma Hossam El-Din is a computer science student at Mansoura University specializing in Frontend Development, based in Mansoura. Seeking a hands-on training opportunity in Frontend Development to complement their academic background.', 54, 73, 12, 32, 200, '2027', NULL, NULL, 'student', 'Mansoura', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1462, 100536, 'Mahmoud Khaled Gaballah', '01534567889', NULL, NULL, 'Mahmoud Khaled Gaballah is a computer science student at Tanta University specializing in Cyber Security, based in Tanta. Seeking a hands-on training opportunity in Cyber Security to complement their academic background.', 56, 76, 12, 32, 106, '2025', NULL, NULL, 'student', 'Tanta', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1463, 100537, 'Mohamed Ashraf Khattab', '01011223390', NULL, NULL, 'Mohamed Ashraf Khattab is a computer science student at Helwan University specializing in Data Analysis, based in Helwan. Seeking a hands-on training opportunity in Data Analysis to complement their academic background.', 59, 78, 12, 32, 205, '2025', NULL, NULL, 'student', 'Helwan', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1464, 100538, 'Sara Mohamed Fahim', '01122334491', NULL, NULL, 'Sara Mohamed Fahim is a computer science student at Helwan University specializing in Artificial Intelligence, based in Helwan. Seeking a hands-on training opportunity in Artificial Intelligence to complement their academic background.', 59, 78, 12, 32, 104, '2026', NULL, NULL, 'student', 'Helwan', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1465, 100539, 'Amr Sherif Abdelghany', '01533445592', NULL, NULL, 'Amr Sherif Abdelghany is a computer science student at German University in Cairo specializing in Machine Learning, based in New Cairo. Seeking a hands-on training opportunity in Machine Learning to complement their academic background.', 73, 82, 12, 32, 206, '2026', NULL, NULL, 'student', 'New Cairo', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1466, 100540, 'Menna Amr Nassar', '01044556693', NULL, NULL, 'Menna Amr Nassar is a computer science student at British University in Egypt specializing in Cloud Computing, based in El Shorouk. Seeking a hands-on training opportunity in Cloud Computing to complement their academic background.', 74, 84, 12, 32, 203, '2024', NULL, NULL, 'student', 'El Shorouk', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1467, 100541, 'Mohamed Adel Fathy', '01155667794', NULL, NULL, 'Mohamed Adel Fathy is a engineering student at Cairo University specializing in Mechanical Engineering, based in Giza. Seeking a hands-on training opportunity in Mechanical Engineering to complement their academic background.', 51, 59, 9, 28, 92, '2025', NULL, NULL, 'student', 'Giza', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1468, 100542, 'Youssef Omar Shawky', '01566778895', NULL, NULL, 'Youssef Omar Shawky is a engineering student at Ain Shams University specializing in Civil Engineering, based in Heliopolis. Seeking a hands-on training opportunity in Civil Engineering to complement their academic background.', 52, 64, 9, 28, 93, '2026', NULL, NULL, 'student', 'Heliopolis', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1469, 100543, 'Omar Hisham Mostafa', '01077889996', NULL, NULL, 'Omar Hisham Mostafa is a engineering student at German University in Cairo specializing in Electrical Engineering, based in Zamalek. Seeking a hands-on training opportunity in Electrical Engineering to complement their academic background.', 73, 82, 9, 28, 94, '2025', NULL, NULL, 'student', 'Zamalek', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1470, 100544, 'Malak Ahmed El-Shennawy', '01188990097', NULL, NULL, 'Malak Ahmed El-Shennawy is a engineering student at Pharos University in Alexandria specializing in Architecture, based in Alexandria. Seeking a hands-on training opportunity in Architecture to complement their academic background.', 202, 235, 9, 40, 95, '2026', NULL, NULL, 'student', 'Alexandria', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1471, 100545, 'Abdallah Yasser Kamel', '01599001198', NULL, NULL, 'Abdallah Yasser Kamel is a engineering student at Alexandria University specializing in Mechanical Engineering, based in Alexandria. Seeking a hands-on training opportunity in Mechanical Engineering to complement their academic background.', 53, 68, 9, 28, 92, '2025', NULL, NULL, 'student', 'Alexandria', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1472, 100546, 'Salma Wael El-Maghraby', '01011223399', NULL, NULL, 'Salma Wael El-Maghraby is a medicine student at Cairo University specializing in General Medicine, based in Nasr City. Seeking a hands-on training opportunity in General Medicine to complement their academic background.', 51, 63, 10, 35, 96, '2026', NULL, NULL, 'student', 'Nasr City', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1473, 100547, 'Yara Ibrahim Hassan', '01122233391', NULL, NULL, 'Yara Ibrahim Hassan is a medicine student at Ain Shams University specializing in Pediatrics, based in Maadi. Seeking a hands-on training opportunity in Pediatrics to complement their academic background.', 52, 643, 10, 35, 98, '2027', NULL, NULL, 'student', 'Maadi', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1474, 100548, 'Hana Mahmoud Ezzat', '01533344492', NULL, NULL, 'Hana Mahmoud Ezzat is a pharmacy student at Alexandria University specializing in Clinical Pharmacy, based in Alexandria. Seeking a hands-on training opportunity in Clinical Pharmacy to complement their academic background.', 53, 644, 11, 36, 100, '2026', NULL, NULL, 'student', 'Alexandria', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1475, 100549, 'Omar Khaled Soliman', '01044455593', NULL, NULL, 'Omar Khaled Soliman is a pharmacy student at Pharos University in Alexandria specializing in Pharmacology, based in Alexandria. Seeking a hands-on training opportunity in Pharmacology to complement their academic background.', 202, 236, 11, 36, 102, '2025', NULL, NULL, 'student', 'Alexandria', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1476, 100550, 'Youssef Amr El-Gohary', '01155566694', NULL, NULL, 'Youssef Amr El-Gohary is a business student at Cairo University specializing in Marketing, based in Nasr City. Seeking a hands-on training opportunity in Marketing to complement their academic background.', 51, 61, 13, 30, 108, '2026', NULL, NULL, 'student', 'Nasr City', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1477, 100551, 'Alaa Mohamed Fawzy', '01566677795', NULL, NULL, 'Alaa Mohamed Fawzy is a business student at Ain Shams University specializing in Marketing, based in Heliopolis. Seeking a hands-on training opportunity in Marketing to complement their academic background.', 52, 66, 13, 30, 108, '2025', NULL, NULL, 'student', 'Heliopolis', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1478, 100552, 'Menna Hassan Ibrahim', '01077788896', NULL, NULL, 'Menna Hassan Ibrahim is a business student at German University in Cairo specializing in Business Administration, based in New Cairo. Seeking a hands-on training opportunity in Business Administration to complement their academic background.', 73, 83, 13, 31, 110, '2026', NULL, NULL, 'student', 'New Cairo', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1479, 100553, 'Omar Sherif Shahin', '01188899997', NULL, NULL, 'Omar Sherif Shahin is a business student at The American University in Cairo specializing in Human Resources, based in New Cairo. Seeking a hands-on training opportunity in Human Resources to complement their academic background.', 72, 80, 13, 31, 109, '2025', NULL, NULL, 'student', 'New Cairo', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1480, 100554, 'Nourhan Samy Abdelsalam', '01599900098', NULL, NULL, 'Nourhan Samy Abdelsalam is a business student at Future University in Egypt specializing in Sales, based in New Cairo. Seeking a hands-on training opportunity in Sales to complement their academic background.', 75, 87, 13, 31, 111, '2026', NULL, NULL, 'student', 'New Cairo', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1481, 100555, 'Aya Mostafa El-Feky', '01011122299', NULL, NULL, 'Aya Mostafa El-Feky is a law student at Cairo University specializing in Corporate Law, based in Giza. Seeking a hands-on training opportunity in Corporate Law to complement their academic background.', 51, 646, 14, 38, 112, '2026', NULL, NULL, 'student', 'Giza', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1482, 100556, 'Mariam El-Sayed Lotfy', '01122233390', NULL, NULL, 'Mariam El-Sayed Lotfy is a law student at Alexandria University specializing in Commercial Law, based in Alexandria. Seeking a hands-on training opportunity in Commercial Law to complement their academic background.', 53, 645, 14, 38, 114, '2025', NULL, NULL, 'student', 'Alexandria', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1483, 100557, 'Hager Anwar El-Sayed', '01533344491', NULL, NULL, 'Hager Anwar El-Sayed is a media student at Cairo University specializing in Digital Media, based in Nasr City. Seeking a hands-on training opportunity in Digital Media to complement their academic background.', 51, 647, 15, 29, 116, '2026', NULL, NULL, 'student', 'Nasr City', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1484, 100558, 'Ahmed Seif El-Din', '01044455592', NULL, NULL, 'Ahmed Seif El-Din is a media student at Cairo University specializing in Journalism, based in Maadi. Seeking a hands-on training opportunity in Journalism to complement their academic background.', 51, 647, 15, 29, 115, '2025', NULL, NULL, 'student', 'Maadi', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1485, 100559, 'Esraa Hany El-Badrawi', '01155566693', NULL, NULL, 'Esraa Hany El-Badrawi is a design student at Cairo University specializing in UI/UX Design, based in Nasr City. Seeking a hands-on training opportunity in UI/UX Design to complement their academic background.', 51, 648, 16, 39, 119, '2026', NULL, NULL, 'student', 'Nasr City', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1486, 100560, 'George Magdy Saad', '01566677794', NULL, NULL, 'George Magdy Saad is a design student at Helwan University specializing in Graphic Design, based in Zamalek. Seeking a hands-on training opportunity in Graphic Design to complement their academic background.', 59, 649, 16, 39, 121, '2025', NULL, NULL, 'student', 'Zamalek', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1487, 100561, 'Salma Nabil El-Din', '01077788895', NULL, NULL, 'Salma Nabil El-Din is a design student at Cairo University specializing in Product Design, based in Dokki. Seeking a hands-on training opportunity in Product Design to complement their academic background.', 51, 648, 16, 39, 120, '2026', NULL, NULL, 'student', 'Dokki', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1488, 100562, 'Mariam Tarek Nabil', '01188899996', NULL, NULL, 'Mariam Tarek Nabil is a design student at Cairo University specializing in UI/UX Design, based in 6 October City. Seeking a hands-on training opportunity in UI/UX Design to complement their academic background.', 51, 648, 16, 39, 119, '2027', NULL, NULL, 'student', '6 October City', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1489, 100563, 'Mohamed Essam El-Hadidi', '01599900097', NULL, NULL, 'Mohamed Essam El-Hadidi is a accounting student at Ain Shams University specializing in Financial Accounting, based in Nasr City. Seeking a hands-on training opportunity in Financial Accounting to complement their academic background.', 52, 66, 17, 30, 122, '2025', NULL, NULL, 'student', 'Nasr City', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1490, 100564, 'Yasmin Ahmed Talaat', '01011122298', NULL, NULL, 'Yasmin Ahmed Talaat is a accounting student at Cairo University specializing in Auditing, based in Maadi. Seeking a hands-on training opportunity in Auditing to complement their academic background.', 51, 61, 17, 30, 124, '2026', NULL, NULL, 'student', 'Maadi', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1491, 100565, 'Abdullah Mohamed El-Rahman', '01122233399', NULL, NULL, 'Abdullah Mohamed El-Rahman is a accounting student at Mansoura University specializing in Management Accounting, based in Mansoura. Seeking a hands-on training opportunity in Management Accounting to complement their academic background.', 54, 74, 17, 30, 123, '2025', NULL, NULL, 'student', 'Mansoura', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1492, 100566, 'Rania Sameh Fouad', '01533344490', NULL, NULL, 'Rania Sameh Fouad is a accounting student at Alexandria University specializing in Financial Accounting, based in Alexandria. Seeking a hands-on training opportunity in Financial Accounting to complement their academic background.', 53, 70, 17, 30, 122, '2026', NULL, NULL, 'student', 'Alexandria', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1493, 100567, 'George Farid Naguib', '01212345678', NULL, NULL, 'George Farid Naguib is a computer science student at Cairo University specializing in DevOps, based in Giza. Seeking a hands-on training opportunity in DevOps to complement their academic background.', 51, 60, 12, 32, 204, '2026', NULL, NULL, 'student', 'Giza', NULL, NULL, NULL, NULL, 1, '2026-07-24 10:00:00', '2026-07-24 10:00:00'),
+(1498, 100588, 'Mohamed Ahmed', '+2011228986414', 'https://student.example.com', 'https://www.linkedin.com/in/student', NULL, NULL, NULL, 12, NULL, 199, NULL, NULL, NULL, 'student', NULL, 'New Cairo, Cairo', NULL, NULL, NULL, 0, '2026-09-02 05:23:43', '2026-11-11 11:40:46');
 
 -- --------------------------------------------------------
 
 --
 -- Table structure for table `student_educations`
 --
-
 CREATE TABLE `student_educations` (
-  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `id` bigint UNSIGNED NOT NULL,
   `student_id` bigint UNSIGNED NOT NULL,
   `degree_id` bigint UNSIGNED DEFAULT NULL,
   `degree_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -2540,22 +2784,48 @@ CREATE TABLE `student_educations` (
   `grade` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `is_current` tinyint(1) NOT NULL DEFAULT '0',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `student_educations`
+--
+
+INSERT INTO `student_educations` (`id`, `student_id`, `degree_id`, `degree_name`, `university_id`, `university_name`, `faculty_id`, `field_id`, `specialization_id`, `study_mode`, `start_year`, `end_year`, `grade`, `is_current`, `created_at`, `updated_at`) VALUES
+(48, 1498, 27, 'Bachelor of Science', 51, 'Cairo University', NULL, 12, NULL, NULL, '2022', '2026', 'A', 0, '2026-11-01 23:42:09', '2026-11-01 23:42:09'),
+(49, 1498, 28, 'Bachelor of Engineering', 51, 'Cairo University', NULL, 12, NULL, NULL, '2022', '2026', 'A', 0, '2026-11-01 23:42:50', '2026-11-01 23:42:50');
+
+-- --------------------------------------------------------
 
 --
 -- Table structure for table `student_profile_views`
 --
-
 CREATE TABLE `student_profile_views` (
-  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `id` bigint UNSIGNED NOT NULL,
   `student_id` bigint UNSIGNED NOT NULL,
   `viewer_id` bigint UNSIGNED NOT NULL,
   `viewer_role` enum('student','company','admin') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `viewed_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  `viewed_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `student_profile_views`
+--
+
+INSERT INTO `student_profile_views` (`id`, `student_id`, `viewer_id`, `viewer_role`, `viewed_at`) VALUES
+(146, 1498, 100568, 'company', '2026-10-26 09:15:00'),
+(147, 1498, 100576, 'company', '2026-10-25 14:30:00'),
+(148, 1498, 100570, 'company', '2026-10-24 11:05:00'),
+(149, 1498, 100528, 'student', '2026-10-23 16:45:00'),
+(150, 1498, 100569, 'company', '2026-10-22 10:20:00'),
+(151, 1498, 100529, 'student', '2026-10-21 13:10:00'),
+(152, 1498, 100571, 'company', '2026-10-20 09:00:00'),
+(153, 1498, 100572, 'company', '2026-10-19 15:35:00'),
+(154, 1498, 100530, 'student', '2026-10-18 12:25:00'),
+(155, 1498, 100573, 'company', '2026-10-17 08:50:00'),
+(156, 1498, 100574, 'company', '2026-10-16 17:05:00'),
+(157, 1498, 100575, 'company', '2026-10-15 10:40:00'),
+(158, 1498, 100531, 'student', '2026-10-14 11:30:00');
 
 -- --------------------------------------------------------
 
@@ -2574,13 +2844,13 @@ CREATE TABLE `student_skills` (
 --
 
 INSERT INTO `student_skills` (`student_id`, `skill_id`, `proficiency`, `created_at`) VALUES
-(1454, 131, 'beginner', '2026-07-24 10:00:00'),
-(1454, 132, 'intermediate', '2026-07-24 10:00:00'),
-(1454, 139, 'intermediate', '2026-07-24 10:00:00'),
-(1454, 150, 'expert', '2026-07-24 10:00:00'),
-(1454, 152, 'advanced', '2026-07-24 10:00:00'),
-(1454, 156, 'beginner', '2026-07-24 10:00:00'),
-(1454, 182, 'advanced', '2026-07-24 10:00:00'),
+(1454, 131, NULL, '2026-11-11 12:52:30'),
+(1454, 132, NULL, '2026-11-11 12:52:30'),
+(1454, 133, NULL, '2026-11-11 12:52:31'),
+(1454, 139, NULL, '2026-11-11 12:52:30'),
+(1454, 150, NULL, '2026-11-11 12:52:30'),
+(1454, 152, NULL, '2026-11-11 12:52:30'),
+(1454, 182, NULL, '2026-11-11 12:52:31'),
 (1455, 156, 'expert', '2026-07-24 10:00:00'),
 (1455, 171, 'beginner', '2026-07-24 10:00:00'),
 (1455, 181, 'intermediate', '2026-07-24 10:00:00'),
@@ -3993,8 +4263,8 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`id`, `role`, `email`, `username`, `password_hash`, `status`, `email_verified_at`, `last_login_at`, `created_at`, `updated_at`, `deleted_at`) VALUES
 (100526, 'admin', 'admin@masar.eg', NULL, '$2y$12$Oz7mJ2BpVTC7vVkOP2kCBeh/kV4dCWM6pnZLwHoAZ7G7LaaVDmP1i', 'active', '2026-08-03 10:00:00', '2026-09-02 04:18:05', '2026-07-19 10:00:00', '2026-09-02 04:18:05', NULL),
 (100527, 'admin', 'compliance@masar.eg', NULL, '$2y$12$h5J0KJf0wg4pHigxURCrE.CYS2/9lnlNu5Ql/xW7Xj.hHYKwPggAm', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100528, 'student', 'omar.shazly@gmail.com', NULL, '$2y$12$ngzkGbxsTfzSRPtv/b15MepKA9vqEmYrKSjto/aCADLkg95iWnxvm', 'active', '2026-08-03 10:00:00', '2026-09-02 06:02:39', '2026-07-19 10:00:00', '2026-09-02 06:02:39', NULL),
-(100529, 'student', 'mariam.hassan@gmail.com', NULL, '$2y$12$B6J3OPTU0GVacs3UXKErdOTL29/ElZ4FFRTp09MSMc5pJJBCNIgvC', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
+(100528, 'student', 'omar.shazly@gmail.com', NULL, '$2y$12$ngzkGbxsTfzSRPtv/b15MepKA9vqEmYrKSjto/aCADLkg95iWnxvm', 'active', '2026-08-03 10:00:00', '2026-09-02 06:02:39', '2026-07-19 10:00:00', '2026-11-11 12:52:46', NULL),
+(100529, 'student', 'mariam.hassan@gmail.com', NULL, '$2y$12$B6J3OPTU0GVacs3UXKErdOTL29/ElZ4FFRTp09MSMc5pJJBCNIgvC', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-11-11 12:52:47', NULL),
 (100530, 'student', 'youssef.farouk@outlook.com', NULL, '$2y$12$XTa5LugEt3hw94chFcXLa.Hd/cLBthKE6kbVypZXc0zsQ2A024e/2', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
 (100531, 'student', 'farida.lotfy@gmail.com', NULL, '$2y$12$qbmgce0kl329HsGgk7Dth.T1qyo8R4Ax8wxRgHpXdKZS5t0aQoHVC', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
 (100532, 'student', 'ahmed.nabil@gmail.com', NULL, '$2y$12$41ObvngYglSvnVChRfjwd.wgSdYTU3OacNyfdMTAOLpZD5p3ekfqm', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
@@ -4048,8 +4318,8 @@ INSERT INTO `users` (`id`, `role`, `email`, `username`, `password_hash`, `status
 (100580, 'company', 'careers@nilevalley-log.com', NULL, '$2y$12$OkQoJqfifBkQaMLakrrNOuYiOE8THmeCr5ylmqnz7I6RTjuhX8o0S', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
 (100581, 'company', 'jobs@cleofashion.com', NULL, '$2y$12$5k9UVJCUs.r07NEJcvYgGuDq1aVmUKm3tB8GT6J6NP25QIAMaZUfC', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
 (100582, 'company', 'hr@hrpartners.eg', NULL, '$2y$12$f8b9LxPiON112fqq/OzOi.Yz7qBls20Rbg1mWNYJYdP6RGBfSWqKS', 'active', '2026-08-03 10:00:00', '2026-09-01 10:00:00', '2026-07-19 10:00:00', '2026-07-19 10:00:00', NULL),
-(100588, 'student', 'mammuslim2003@gmail.com', NULL, '$2y$12$zRtZATQwPlzfYnSKuUKAl.PM7aRG6gTAb8eowQ03XKW1aqiGjYPHu', 'active', '2026-09-02 05:23:46', '2026-09-16 20:57:57', '2026-09-02 05:23:43', '2026-09-16 20:57:57', NULL),
-(100595, 'company', 'company@test.local', NULL, '$2y$12$kYBqv.b34c//ynY6NI5YvuBVW5Ui29sPnLMjtQIjWTllAiSRGCUL6', 'active', '2026-09-08 00:16:40', '2026-09-14 00:55:44', '2026-09-08 00:16:40', '2026-09-14 00:55:44', NULL);
+(100588, 'student', 'mammuslim2003@gmail.com', NULL, '$2y$12$zRtZATQwPlzfYnSKuUKAl.PM7aRG6gTAb8eowQ03XKW1aqiGjYPHu', 'active', NULL, '2026-11-11 22:52:52', '2026-09-02 05:23:43', '2026-11-11 22:52:52', NULL),
+(100595, 'company', 'company@test.local', NULL, '$2y$12$kYBqv.b34c//ynY6NI5YvuBVW5Ui29sPnLMjtQIjWTllAiSRGCUL6', 'active', '2026-09-08 00:16:40', '2026-09-21 00:59:38', '2026-09-08 00:16:40', '2026-09-21 00:59:38', NULL);
 
 -- --------------------------------------------------------
 
@@ -4290,15 +4560,15 @@ ALTER TABLE `students`
   ADD KEY `idx_students_city` (`city`),
   ADD KEY `fk_students_profile_image_file` (`profile_image_file_id`),
   ADD KEY `fk_students_cv_file` (`cv_file_id`),
-  ADD KEY `idx_students_academic_certificate_file` (`academic_certificate_file_id`),
   ADD KEY `idx_students_specialization_university` (`specialization_id`,`university_id`),
-  ADD KEY `idx_students_field` (`field_id`);
+  ADD KEY `idx_students_field` (`field_id`),
+  ADD KEY `idx_students_academic_certificate_file` (`academic_certificate_file_id`);
 
 --
 -- Indexes for table `student_educations`
 --
-
 ALTER TABLE `student_educations`
+  ADD PRIMARY KEY (`id`),
   ADD KEY `idx_student_educations_student` (`student_id`),
   ADD KEY `idx_student_educations_university` (`university_id`),
   ADD KEY `idx_student_educations_faculty` (`faculty_id`),
@@ -4309,8 +4579,8 @@ ALTER TABLE `student_educations`
 --
 -- Indexes for table `student_profile_views`
 --
-
 ALTER TABLE `student_profile_views`
+  ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `uq_student_profile_views_viewer` (`student_id`,`viewer_id`),
   ADD KEY `idx_student_profile_views_recent` (`student_id`,`viewed_at`),
   ADD KEY `idx_student_profile_views_viewed_at` (`viewed_at`),
@@ -4434,7 +4704,7 @@ ALTER TABLE `application_answers`
 -- AUTO_INCREMENT for table `audit_logs`
 --
 ALTER TABLE `audit_logs`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1535;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1658;
 
 --
 -- AUTO_INCREMENT for table `auth_tokens`
@@ -4446,7 +4716,7 @@ ALTER TABLE `auth_tokens`
 -- AUTO_INCREMENT for table `certificates`
 --
 ALTER TABLE `certificates`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=172;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=951;
 
 --
 -- AUTO_INCREMENT for table `certificate_appeals`
@@ -4470,7 +4740,7 @@ ALTER TABLE `company_work_fields`
 -- AUTO_INCREMENT for table `conversations`
 --
 ALTER TABLE `conversations`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=262;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=305;
 
 --
 -- AUTO_INCREMENT for table `degrees`
@@ -4488,19 +4758,19 @@ ALTER TABLE `faculties`
 -- AUTO_INCREMENT for table `files`
 --
 ALTER TABLE `files`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=322;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1125;
 
 --
 -- AUTO_INCREMENT for table `messages`
 --
 ALTER TABLE `messages`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1289;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2879;
 
 --
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2436;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2927;
 
 --
 -- AUTO_INCREMENT for table `oauth_states`
@@ -4524,7 +4794,7 @@ ALTER TABLE `payments`
 -- AUTO_INCREMENT for table `refresh_tokens`
 --
 ALTER TABLE `refresh_tokens`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1099;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1174;
 
 --
 -- AUTO_INCREMENT for table `revoked_access_tokens`
@@ -4536,13 +4806,13 @@ ALTER TABLE `revoked_access_tokens`
 -- AUTO_INCREMENT for table `saved_trainings`
 --
 ALTER TABLE `saved_trainings`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=618;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=672;
 
 --
 -- AUTO_INCREMENT for table `skills`
 --
 ALTER TABLE `skills`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1428;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1430;
 
 --
 -- AUTO_INCREMENT for table `specializations`
@@ -4551,24 +4821,22 @@ ALTER TABLE `specializations`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=735;
 
 --
+-- AUTO_INCREMENT for table `students`
+--
+ALTER TABLE `students`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1508;
+
+--
 -- AUTO_INCREMENT for table `student_educations`
 --
-
 ALTER TABLE `student_educations`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=64;
 
 --
 -- AUTO_INCREMENT for table `student_profile_views`
 --
-
 ALTER TABLE `student_profile_views`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
-
---
--- AUTO_INCREMENT for table `students`
---
-ALTER TABLE `students`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1504;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=470;
 
 --
 -- AUTO_INCREMENT for table `study_fields`
@@ -4580,13 +4848,13 @@ ALTER TABLE `study_fields`
 -- AUTO_INCREMENT for table `training_applications`
 --
 ALTER TABLE `training_applications`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2213;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8343;
 
 --
 -- AUTO_INCREMENT for table `training_listings`
 --
 ALTER TABLE `training_listings`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100432;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=101305;
 
 --
 -- AUTO_INCREMENT for table `training_questions`
@@ -4598,7 +4866,7 @@ ALTER TABLE `training_questions`
 -- AUTO_INCREMENT for table `training_sessions`
 --
 ALTER TABLE `training_sessions`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=319;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=365;
 
 --
 -- AUTO_INCREMENT for table `universities`
@@ -4610,7 +4878,7 @@ ALTER TABLE `universities`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100603;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=900900006;
 
 --
 -- AUTO_INCREMENT for table `verification_tokens`
@@ -4750,23 +5018,21 @@ ALTER TABLE `students`
 --
 -- Constraints for table `student_educations`
 --
-
 ALTER TABLE `student_educations`
-  ADD CONSTRAINT `fk_student_educations_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_student_educations_degree` FOREIGN KEY (`degree_id`) REFERENCES `degrees` (`id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `fk_student_educations_university` FOREIGN KEY (`university_id`) REFERENCES `universities` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `fk_student_educations_faculty` FOREIGN KEY (`faculty_id`) REFERENCES `faculties` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `fk_student_educations_field` FOREIGN KEY (`field_id`) REFERENCES `study_fields` (`id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `fk_student_educations_specialization` FOREIGN KEY (`specialization_id`) REFERENCES `specializations` (`id`) ON DELETE SET NULL;
+  ADD CONSTRAINT `fk_student_educations_specialization` FOREIGN KEY (`specialization_id`) REFERENCES `specializations` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_student_educations_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_student_educations_university` FOREIGN KEY (`university_id`) REFERENCES `universities` (`id`) ON DELETE SET NULL;
 
 --
 -- Constraints for table `student_profile_views`
 --
-
 ALTER TABLE `student_profile_views`
   ADD CONSTRAINT `fk_student_profile_views_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_student_profile_views_viewer` FOREIGN KEY (`viewer_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
-   
+
 --
 -- Constraints for table `training_applications`
 --
