@@ -459,16 +459,24 @@ paths:
       tags: [Students]
       summary: Update the authenticated student's contact details
       description: >-
-        Updates only the supplied fields. `phone`, `website`, `external_profile`
-        and `address` need no extra proof; send `null`, an empty string or a
-        whitespace-only string to clear an optional field. `website` and
-        `external_profile` must be valid URLs when non-empty and are limited to
-        255 characters; `address` is limited to 500 characters. Updating `email`
-        uses the existing email format and uniqueness checks and does not require
-        a password; on success it clears users.email_verified_at so the new
-        address is no longer treated as proven. Password changes remain the
-        separate POST /auth/change-password flow. The account keeps
-        authenticating with email + password.
+        Partial update: only the supplied fields are written, and every omitted
+        field keeps its stored value, so `email`, `phone`, `website`,
+        `external_profile` and `address` can each be updated on their own.
+        `phone`, `website`, `external_profile` and `address` need no extra
+        proof; send `null`, an empty string or a whitespace-only string to clear
+        an optional field. `website` and `external_profile` must be valid URLs
+        when non-empty and are limited to 255 characters; `address` is limited
+        to 500 characters.
+
+        The `email` is validated only when it is supplied. Sending the account's
+        current address is accepted as a no-op, so resubmitting the whole contact
+        form while changing another field succeeds. A valid new address is
+        written; an address already owned by another account is rejected with an
+        `email` validation error. No password is required, and only a CHANGED
+        email clears users.email_verified_at so the new address is no longer
+        treated as proven. Password changes remain the separate
+        POST /auth/change-password flow. The account keeps authenticating with
+        email + password.
       requestBody:
         required: true
         content:
@@ -479,7 +487,11 @@ paths:
                 email:
                   type: string
                   format: email
-                  description: The account email. Existing format and uniqueness rules apply; no password is required.
+                  description: >-
+                    The account email. Optional; validated only when supplied.
+                    Sending the current address is accepted as a no-op, and an
+                    address owned by another account is rejected. No password is
+                    required, and only a changed address clears email_verified_at.
                 phone:
                   type: string
                   maxLength: 50
@@ -1289,40 +1301,271 @@ paths:
     get:
       tags: [Messaging]
       summary: List conversations for the current user
+      description: >-
+        Requires a Bearer token. Returns the conversations the authenticated
+        user participates in, on the student or company side of an application.
+        `data` is a flat array of conversation rows - there is no pagination
+        envelope.
+
+        Optional filters are `application_id`, `keyword`, `limit` (default 50,
+        clamped to 100) and `offset` (default 0). Filtering by an
+        `application_id` the user does not participate in returns an empty array
+        rather than an error.
+
+        Withdrawal does NOT hide a conversation or its history: both
+        participants keep read access, only sending is refused (403).
+      parameters:
+        - name: application_id
+          in: query
+          required: false
+          description: Only the conversation linked to this training application.
+          schema: { type: integer, format: int64, minimum: 1 }
+        - name: keyword
+          in: query
+          required: false
+          description: LIKE filter over the student name, company name and training title.
+          schema: { type: string }
+        - name: limit
+          in: query
+          required: false
+          description: Maximum rows. Defaults to 50 and is clamped to 100.
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+        - name: offset
+          in: query
+          required: false
+          description: Rows to skip. Defaults to 0.
+          schema: { type: integer, minimum: 0, default: 0 }
       responses:
-        '200': { $ref: '#/components/responses/Success' }
+        '200':
+          description: The authenticated user's conversations.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/MessagingConversation' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/Error' }
     post:
       tags: [Messaging]
-      summary: Start a conversation
+      summary: Start (or return) the conversation for an accepted application
+      description: >-
+        Requires a Bearer token and a body containing `application_id`.
+
+        The participants are derived from the application: the student and the
+        company are read from the application/training, never from the client.
+        The application must exist (404), be `accepted` (422), and the
+        authenticated user must be its student or its company (403). A missing
+        or non-numeric `application_id` is a 422.
+
+        `application_id` is unique per conversation, so the endpoint is
+        idempotent: an existing conversation is returned with 200 and
+        `Conversation already exists.`; a new one is 201 with
+        `Conversation created successfully.`. Concurrent requests resolve to the
+        same conversation instead of creating duplicates.
+
+        `title`, `name`, `participant_id`, `participant_ids` and `participants`
+        are not persisted by the conversations table and are rejected with 422
+        instead of being silently ignored. Group conversations are not
+        supported.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MessagingConversationCreateRequest' }
       responses:
-        '201': { $ref: '#/components/responses/Success' }
+        '201':
+          description: Conversation created successfully.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/MessagingConversation' }
+        '200':
+          description: Conversation already exists; the existing row is returned unchanged.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/MessagingConversation' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/Error' }
 
   /conversations/{id}:
     get:
       tags: [Messaging]
       summary: Get a conversation
+      description: >-
+        Requires a Bearer token. The conversation is returned only to its
+        student or company participant; anyone else receives 403 and a
+        nonexistent conversation is a 404. Reading is not blocked by a
+        withdrawn application.
       parameters:
         - $ref: '#/components/parameters/Id'
       responses:
-        '200': { $ref: '#/components/responses/Success' }
+        '200':
+          description: The conversation with its joined display fields.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/MessagingConversation' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/Error' }
 
   /conversations/{id}/messages:
     get:
       tags: [Messaging]
       summary: List messages in a conversation
+      description: >-
+        Requires a Bearer token. `data` is a flat array ordered by
+        `created_at` then `id`, ascending by default; there is no pagination
+        envelope.
+
+        Query parameters are read from the query string only (never from a
+        body) and are validated: an out-of-range or non-numeric value is a 400
+        with the offending field in `errors`.
+
+        `limit` defaults to 50 and accepts 1-100; `offset` defaults to 0 and
+        must be >= 0. `order` accepts `asc` or `desc`. `before_id` / `after_id`
+        are exclusive id cursors, and `sender_id` filters on the sending user
+        id. `from_date` / `to_date` accept `Y-m-d` or `Y-m-d H:i:s`; a
+        date-only `to_date` covers the whole day (until 23:59:59). Any other
+        format is a 400.
+
+        A nonexistent conversation is a 404, a conversation the user does not
+        participate in is a 403, and a missing/invalid token is a 401.
+        Withdrawal does not change reading: the full history stays available to
+        both participants.
       parameters:
         - $ref: '#/components/parameters/Id'
+        - name: limit
+          in: query
+          required: false
+          description: Page size. Must be between 1 and 100; defaults to 50.
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+        - name: offset
+          in: query
+          required: false
+          description: Rows to skip. Must be >= 0; defaults to 0.
+          schema: { type: integer, minimum: 0, default: 0 }
+        - name: order
+          in: query
+          required: false
+          description: Sort direction applied to created_at and id.
+          schema: { type: string, enum: [asc, desc], default: asc }
+        - name: before_id
+          in: query
+          required: false
+          description: Only messages with an id lower than this value (exclusive).
+          schema: { type: integer, format: int64, minimum: 1 }
+        - name: after_id
+          in: query
+          required: false
+          description: Only messages with an id greater than this value (exclusive).
+          schema: { type: integer, format: int64, minimum: 1 }
+        - name: sender_id
+          in: query
+          required: false
+          description: Only messages sent by this user id.
+          schema: { type: integer, format: int64, minimum: 1 }
+        - name: from_date
+          in: query
+          required: false
+          description: Lower bound on created_at. Accepts Y-m-d or Y-m-d H:i:s.
+          schema: { type: string, example: '2026-08-14 11:00:00' }
+        - name: to_date
+          in: query
+          required: false
+          description: >-
+            Upper bound on created_at. Accepts Y-m-d or Y-m-d H:i:s; a
+            date-only value is expanded to 23:59:59 of that day.
+          schema: { type: string, example: '2026-08-15' }
       responses:
-        '200': { $ref: '#/components/responses/Success' }
+        '200':
+          description: The conversation's messages, oldest first by default.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/MessagingMessage' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/Error' }
     post:
       tags: [Messaging]
       summary: Send a message in a conversation
+      description: >-
+        Requires a Bearer token. The conversation id is taken from the URL and
+        is authoritative. A body `conversation_id` is optional, but when it is
+        present and does not match the URL the request is refused with 422.
+
+        The sender is always the authenticated user. `sender_user_id`,
+        `sender_id` and `user_id` are never accepted as authority: a value that
+        differs from the token's user is a 422, and the field is ignored when
+        identical.
+
+        `body` is the canonical field (5000 characters maximum, valid UTF-8,
+        trimmed, non-empty). `message` and `content` remain accepted as
+        aliases. `message_type`, `reply_to_id`, `attachment_ids`, `attachments`
+        and `file_id` have no persistent storage in this phase and are rejected
+        with 422 rather than ignored.
+
+        The insert and the conversation's `updated_at` update happen in one
+        transaction: on any failure both are rolled back and the client receives
+        a safe 500 without database details.
+
+        Sending is refused with 403 when the linked training application is
+        `withdrawn` (status is re-read from the database on every send). Reading
+        the conversation and its history is unaffected.
       parameters:
         - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MessagingMessageCreateRequest' }
       responses:
-        '201': { $ref: '#/components/responses/Success' }
+        '201':
+          description: The message was stored in the URL conversation.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/MessagingMessage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/Error' }
 
   /search:
     get:
@@ -1737,6 +1980,81 @@ components:
           type: integer
           description: Certificates that have been revoked.
           example: 3
+    MessagingConversation:
+      type: object
+      description: >-
+        A conversation row. The participants are always the student and the
+        company of one training application; there is no title column and no
+        arbitrary participant list.
+      required: [id, student_id, company_id, application_id, created_at, updated_at]
+      properties:
+        id: { type: integer, format: int64, example: 225 }
+        student_id: { type: integer, format: int64, example: 1458 }
+        company_id: { type: integer, format: int64, example: 100144 }
+        application_id: { type: integer, format: int64, example: 1671 }
+        created_at: { type: string, example: '2026-08-01 11:30:00' }
+        updated_at: { type: string, example: '2026-08-13 10:00:00' }
+        student_name: { type: string, nullable: true }
+        company_name: { type: string, nullable: true }
+        training_title: { type: string, nullable: true }
+        unread_count:
+          type: integer
+          minimum: 0
+          description: >-
+            Messages from the other participant that are not read yet. Only
+            present on the list endpoint.
+          example: 1
+    MessagingMessage:
+      type: object
+      description: A stored message. `sender_id` is an alias of `sender_user_id`.
+      required: [id, conversation_id, sender_user_id, body, is_read, created_at]
+      properties:
+        id: { type: integer, format: int64, example: 1104 }
+        conversation_id: { type: integer, format: int64, example: 225 }
+        sender_user_id: { type: integer, format: int64, example: 100568 }
+        body: { type: string, maxLength: 5000 }
+        is_read: { type: integer, enum: [0, 1], example: 1 }
+        read_at: { type: string, nullable: true, example: '2026-08-14 12:00:00' }
+        created_at: { type: string, example: '2026-08-13 11:00:00' }
+        sender_id: { type: integer, format: int64, example: 100568 }
+    MessagingConversationCreateRequest:
+      type: object
+      required: [application_id]
+      additionalProperties: true
+      properties:
+        application_id:
+          type: integer
+          format: int64
+          minimum: 1
+          description: The accepted training application to open a conversation for.
+          example: 2009
+      description: >-
+        Only `application_id` is used. `title`, `name`, `participant_id`,
+        `participant_ids` and `participants` are rejected with 422 because the
+        conversations table cannot persist them.
+    MessagingMessageCreateRequest:
+      type: object
+      required: [body]
+      additionalProperties: true
+      properties:
+        body:
+          type: string
+          minLength: 1
+          maxLength: 5000
+          description: >-
+            Message text. Trimmed before validation; must be non-empty and valid
+            UTF-8. `message` and `content` are accepted aliases.
+          example: Hello, thank you for accepting my application.
+        conversation_id:
+          type: integer
+          format: int64
+          description: >-
+            Optional. The URL id is authoritative; a differing value is a 422.
+      description: >-
+        `sender_user_id`, `sender_id` and `user_id` are ignored when they equal
+        the authenticated user and rejected with 422 when they differ.
+        `message_type`, `reply_to_id`, `attachment_ids`, `attachments` and
+        `file_id` are rejected with 422 because they are not persisted.
 
   responses:
     Success:

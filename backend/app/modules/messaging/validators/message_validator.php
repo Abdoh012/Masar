@@ -1212,6 +1212,444 @@ function message_validator_sanitize(
 
 /*
 |--------------------------------------------------------------------------
+| Message Payload (Phase 1 request flow)
+|--------------------------------------------------------------------------
+|
+| Only the fields the schema actually supports are accepted. message_type,
+| reply_to_id and attachment fields have no persistent storage, so they are
+| rejected instead of being silently ignored.
+*/
+
+function message_validator_body_value(
+    mixed $body
+): array {
+
+    $errors = [];
+
+
+    if (is_array($body) || is_object($body)) {
+
+        return [
+            'valid'  => false,
+            'errors' => ['body' => 'Message body must be a string.'],
+            'value'  => '',
+        ];
+    }
+
+
+    if (
+        !is_string($body) &&
+        !is_numeric($body)
+    ) {
+
+        return [
+            'valid'  => false,
+            'errors' => ['body' => 'Message body is required.'],
+            'value'  => '',
+        ];
+    }
+
+
+    $value = trim((string) $body);
+
+
+    if ($value === '') {
+
+        return [
+            'valid'  => false,
+            'errors' => ['body' => 'Message body cannot be empty.'],
+            'value'  => '',
+        ];
+    }
+
+
+    if (!mb_check_encoding($value, 'UTF-8')) {
+
+        return [
+            'valid'  => false,
+            'errors' => ['body' => 'Message body must be valid UTF-8.'],
+            'value'  => '',
+        ];
+    }
+
+
+    if (mb_strlen($value, 'UTF-8') > MESSAGE_MAX_LENGTH) {
+
+        return [
+            'valid'  => false,
+            'errors' => [
+                'body' =>
+                    'Message body may not exceed '
+                    . MESSAGE_MAX_LENGTH
+                    . ' characters.',
+            ],
+            'value'  => '',
+        ];
+    }
+
+
+    return [
+        'valid'  => true,
+        'errors' => $errors,
+        'value'  => $value,
+    ];
+}
+
+
+function message_validator_create_payload(
+    array $data
+): array {
+
+    $errors = [];
+
+
+    /*
+     * body is canonical; message/content remain accepted aliases for
+     * backward compatibility with clients written against the old service.
+     */
+
+    $raw_body = null;
+
+    foreach (['body', 'message', 'content'] as $field) {
+
+        if (array_key_exists($field, $data)) {
+            $raw_body = $data[$field];
+            break;
+        }
+    }
+
+
+    $body =
+        message_validator_body_value(
+            $raw_body
+        );
+
+
+    if (!$body['valid']) {
+
+        $errors =
+            array_merge(
+                $errors,
+                $body['errors']
+            );
+    }
+
+
+    /*
+     * Fields that the messages table cannot persist.
+     */
+
+    foreach (
+        [
+            'message_type',
+            'reply_to_id',
+            'attachment_ids',
+            'attachments',
+            'file_id',
+        ]
+        as $field
+    ) {
+
+        if (!array_key_exists($field, $data)) {
+            continue;
+        }
+
+
+        $value = $data[$field];
+
+
+        if (
+            $value === null ||
+            $value === '' ||
+            $value === []
+        ) {
+            continue;
+        }
+
+
+        $errors[$field] =
+            str_replace('_', ' ', $field)
+            . ' is not supported by the messaging API.';
+    }
+
+
+    return [
+        'valid'  => empty($errors),
+        'errors' => $errors,
+        'value'  => [
+            'body' => $body['value'],
+        ],
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| List Query Filters
+|--------------------------------------------------------------------------
+|
+| Supports exactly the filters implemented by message_repository_list().
+*/
+
+function message_validator_query_date(
+    mixed $value,
+    bool $end_of_day
+): ?string {
+
+    if (!is_string($value) || trim($value) === '') {
+        return null;
+    }
+
+
+    $value = trim($value);
+
+    $timezone =
+        new DateTimeZone(
+            (string) (
+                getenv('APP_TIMEZONE')
+                ?: 'Africa/Cairo'
+            )
+        );
+
+
+    try {
+
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1) {
+
+            $date =
+                DateTimeImmutable::createFromFormat(
+                    '!Y-m-d',
+                    $value,
+                    $timezone
+                );
+
+
+            if (
+                !$date ||
+                $date->format('Y-m-d') !== $value
+            ) {
+                return null;
+            }
+
+
+            if ($end_of_day) {
+                $date = $date->setTime(23, 59, 59);
+            }
+
+        } else {
+
+            $date =
+                new DateTimeImmutable(
+                    $value,
+                    $timezone
+                );
+        }
+
+    } catch (Throwable $exception) {
+
+        return null;
+    }
+
+
+    return $date->format('Y-m-d H:i:s');
+}
+
+
+function message_validator_list_filters(
+    array $query
+): array {
+
+    $errors = [];
+
+    $clean = [
+        'limit'  => 50,
+        'offset' => 0,
+        'order'  => 'asc',
+    ];
+
+
+    /*
+     * limit: 1..100, default 50.
+     */
+
+    if (
+        array_key_exists('limit', $query) &&
+        $query['limit'] !== ''
+    ) {
+
+        $limit =
+            filter_var(
+                $query['limit'],
+                FILTER_VALIDATE_INT
+            );
+
+
+        if (
+            $limit === false ||
+            $limit < 1 ||
+            $limit > 100
+        ) {
+
+            $errors['limit'] =
+                'Limit must be an integer between 1 and 100.';
+
+        } else {
+
+            $clean['limit'] =
+                (int) $limit;
+        }
+    }
+
+
+    /*
+     * offset: >= 0, default 0.
+     */
+
+    if (
+        array_key_exists('offset', $query) &&
+        $query['offset'] !== ''
+    ) {
+
+        $offset =
+            filter_var(
+                $query['offset'],
+                FILTER_VALIDATE_INT
+            );
+
+
+        if (
+            $offset === false ||
+            $offset < 0
+        ) {
+
+            $errors['offset'] =
+                'Offset must be an integer greater than or equal to 0.';
+
+        } else {
+
+            $clean['offset'] =
+                (int) $offset;
+        }
+    }
+
+
+    /*
+     * Positive message ID filters.
+     */
+
+    foreach (['before_id', 'after_id', 'sender_id'] as $field) {
+
+        if (
+            !array_key_exists($field, $query) ||
+            $query[$field] === ''
+        ) {
+            continue;
+        }
+
+
+        $id =
+            filter_var(
+                $query[$field],
+                FILTER_VALIDATE_INT
+            );
+
+
+        if (
+            $id === false ||
+            $id < 1
+        ) {
+
+            $errors[$field] =
+                'A valid positive ' . $field . ' is required.';
+
+        } else {
+
+            $clean[$field] =
+                (int) $id;
+        }
+    }
+
+
+    /*
+     * Date filters.
+     */
+
+    foreach (
+        [
+            'from_date' => false,
+            'to_date'   => true,
+        ]
+        as $field => $end_of_day
+    ) {
+
+        if (
+            !array_key_exists($field, $query) ||
+            $query[$field] === ''
+        ) {
+            continue;
+        }
+
+
+        $date =
+            message_validator_query_date(
+                $query[$field],
+                $end_of_day
+            );
+
+
+        if ($date === null) {
+
+            $errors[$field] =
+                'Invalid ' . $field . '; expected Y-m-d or Y-m-d H:i:s.';
+
+        } else {
+
+            $clean[$field] =
+                $date;
+        }
+    }
+
+
+    /*
+     * Ordering.
+     */
+
+    if (
+        array_key_exists('order', $query) &&
+        $query['order'] !== ''
+    ) {
+
+        $order =
+            strtolower(
+                message_validator_string(
+                    $query['order']
+                )
+            );
+
+
+        if (!in_array($order, ['asc', 'desc'], true)) {
+
+            $errors['order'] =
+                'Order must be asc or desc.';
+
+        } else {
+
+            $clean['order'] =
+                $order;
+        }
+    }
+
+
+    return [
+        'valid'  => empty($errors),
+        'errors' => $errors,
+        'value'  => $clean,
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
 | Convenience Aliases
 |--------------------------------------------------------------------------
 */

@@ -24,6 +24,7 @@
 */
 
 require_once __DIR__ . '/../services/message_service.php';
+require_once __DIR__ . '/../validators/message_validator.php';
 
 
 /*
@@ -215,39 +216,38 @@ function message_controller_index(
         message_controller_user_id();
 
     if (!$user_id) {
+        response_unauthorized();
+    }
 
-        message_controller_error(
-            'Authentication required.',
-            401
+
+    if ($conversation_id <= 0) {
+
+        response_validation_error(
+            [
+                'conversation_id' =>
+                    'Conversation ID must be a positive integer.',
+            ],
+            'Conversation ID is required.'
         );
     }
 
 
-    $data =
-        message_controller_request_data();
+    /*
+     * GET filters come from the query string, not the request body.
+     */
+
+    $filters =
+        message_validator_list_filters(
+            request_query()
+        );
 
 
-    if ($conversation_id <= 0) {
+    if (!$filters['valid']) {
 
-        $conversation_id =
-            isset(
-                $data['conversation_id']
-            )
-            ? (int)
-                $data['conversation_id']
-            : 0;
-    }
-
-
-    if ($conversation_id <= 0) {
-
-        message_controller_error(
-            'Conversation ID is required.',
-            422,
-            [
-                'conversation_id' =>
-                    'Conversation ID must be a positive integer.'
-            ]
+        response_error(
+            'Invalid query parameters.',
+            400,
+            $filters['errors']
         );
     }
 
@@ -256,21 +256,51 @@ function message_controller_index(
         message_service_list(
             $conversation_id,
             $user_id,
-            $data
+            $filters['value']
         );
 
 
-    if ($result === false) {
+    if (empty($result['ok'])) {
 
-        message_controller_error(
-            'Unable to retrieve messages.',
-            500
-        );
+        $status =
+            (int) (
+                $result['status']
+                ?? 500
+            );
+
+        $message =
+            (string) (
+                $result['message']
+                ?? 'Unable to retrieve messages.'
+            );
+
+        $errors =
+            is_array($result['errors'] ?? null)
+            ? $result['errors']
+            : [];
+
+        if ($status === 404) {
+            response_not_found($message);
+        }
+
+        if ($status === 403) {
+            response_forbidden($message);
+        }
+
+        if ($status === 401) {
+            response_unauthorized($message);
+        }
+
+        if ($status === 422) {
+            response_validation_error($errors, $message);
+        }
+
+        response_server_error($message);
     }
 
 
-    message_controller_success(
-        $result,
+    response_success(
+        $result['data'],
         'Messages retrieved successfully.'
     );
 }
@@ -356,16 +386,26 @@ function message_controller_show(
 |--------------------------------------------------------------------------
 */
 
-function message_controller_create(): void
-{
+function message_controller_create(
+    int $conversation_id = 0
+): void {
+
     $user_id =
         message_controller_user_id();
 
     if (!$user_id) {
+        response_unauthorized();
+    }
 
-        message_controller_error(
-            'Authentication required.',
-            401
+
+    if ($conversation_id <= 0) {
+
+        response_validation_error(
+            [
+                'conversation_id' =>
+                    'Conversation ID must be a positive integer.',
+            ],
+            'Conversation ID is required.'
         );
     }
 
@@ -375,14 +415,67 @@ function message_controller_create(): void
 
 
     /*
-     * Sender must always be
-     * the authenticated user.
+     * The URL conversation ID is authoritative. A body conversation_id is
+     * optional, but when present it must agree with the URL.
      */
 
-    $data['sender_id'] =
-        $user_id;
+    if (array_key_exists('conversation_id', $data)) {
 
-    $data['user_id'] =
+        $body_conversation_id =
+            filter_var(
+                $data['conversation_id'],
+                FILTER_VALIDATE_INT
+            );
+
+
+        if (
+            $body_conversation_id === false ||
+            (int) $body_conversation_id !== $conversation_id
+        ) {
+
+            response_validation_error(
+                [
+                    'conversation_id' =>
+                        'The body conversation_id must match the URL conversation ID.',
+                ],
+                'Conversation ID mismatch.'
+            );
+        }
+    }
+
+
+    /*
+     * The sender is always the authenticated user. Reject an attempt to
+     * impersonate someone else; silently accept only an identical value.
+     */
+
+    foreach (['sender_user_id', 'sender_id', 'user_id'] as $field) {
+
+        if (!array_key_exists($field, $data)) {
+            continue;
+        }
+
+
+        if ((int) $data[$field] !== $user_id) {
+
+            response_validation_error(
+                [
+                    $field =>
+                        'The sender is always the authenticated user.',
+                ],
+                'Invalid sender.'
+            );
+        }
+
+
+        unset($data[$field]);
+    }
+
+
+    $data['conversation_id'] =
+        $conversation_id;
+
+    $data['sender_id'] =
         $user_id;
 
 
@@ -392,40 +485,59 @@ function message_controller_create(): void
         );
 
 
+    if (!is_array($result)) {
+
+        response_server_error(
+            'Unable to send message.'
+        );
+    }
+
+
     if (
-        is_array($result)
-        &&
-        isset(
-            $result['errors']
-        )
-        &&
-        !empty(
-            $result['errors']
-        )
+        isset($result['ok']) &&
+        $result['ok'] === false
     ) {
 
-        message_controller_error(
-            $result['message']
-                ?? 'Unable to send message.',
-            422,
-            $result['errors']
-        );
+        $status =
+            (int) (
+                $result['status']
+                ?? 500
+            );
+
+        $message =
+            (string) (
+                $result['message']
+                ?? 'Unable to send message.'
+            );
+
+        $errors =
+            is_array($result['errors'] ?? null)
+            ? $result['errors']
+            : [];
+
+        if ($status === 404) {
+            response_not_found($message);
+        }
+
+        if ($status === 403) {
+            response_forbidden($message);
+        }
+
+        if ($status === 401) {
+            response_unauthorized($message);
+        }
+
+        if ($status === 422) {
+            response_validation_error($errors, $message);
+        }
+
+        response_server_error($message);
     }
 
 
-    if (!$result) {
-
-        message_controller_error(
-            'Unable to send message.',
-            500
-        );
-    }
-
-
-    message_controller_success(
+    response_created(
         $result,
-        'Message sent successfully.',
-        201
+        'Message sent successfully.'
     );
 }
 

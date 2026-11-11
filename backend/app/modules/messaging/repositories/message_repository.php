@@ -37,6 +37,9 @@ if (
         __DIR__ . '/../../../core/database/connection.php';
 }
 
+require_once __DIR__ . '/../../../core/database/query.php';
+require_once __DIR__ . '/../../../core/logging/logger.php';
+
 
 /*
 |--------------------------------------------------------------------------
@@ -217,11 +220,8 @@ function message_repository_list(
     $sql = "
         SELECT
             m.*,
-            m.sender_user_id AS sender_id,
-            u.email AS sender_email
+            m.sender_user_id AS sender_id
         FROM messages m
-        LEFT JOIN users u
-            ON u.id = m.sender_user_id
         WHERE m.conversation_id = :conversation_id
     ";
 
@@ -410,11 +410,8 @@ function message_repository_find(
         "
         SELECT
             m.*,
-            m.sender_user_id AS sender_id,
-            u.email AS sender_email
+            m.sender_user_id AS sender_id
         FROM messages m
-        LEFT JOIN users u
-            ON u.id = m.sender_user_id
         WHERE m.id = :message_id
         LIMIT 1
         ",
@@ -449,15 +446,11 @@ function message_repository_find_for_user(
         "
         SELECT
             m.*,
-            m.sender_user_id AS sender_id,
-            u.email AS sender_email
+            m.sender_user_id AS sender_id
         FROM messages m
 
         INNER JOIN conversations c
             ON c.id = m.conversation_id
-
-        LEFT JOIN users u
-            ON u.id = m.sender_user_id
 
         WHERE m.id = :message_id
           AND (
@@ -499,9 +492,6 @@ function message_repository_create(
     array $data
 ): array|false {
 
-    $db = message_repository_db();
-
-
     $conversation_id =
         isset($data['conversation_id'])
             ? (int) $data['conversation_id']
@@ -532,112 +522,134 @@ function message_repository_create(
     }
 
 
-    $sql = "
-        INSERT INTO messages
-        (
-            conversation_id,
-            sender_user_id,
-            body,
-            is_read,
-            created_at
-        )
-        VALUES
-        (
-            :conversation_id,
-            :sender_id,
-            :body,
-            0,
-            CURRENT_TIMESTAMP
-        )
-    ";
-
-
-    $stmt =
-        $db->prepare($sql);
-
-
-    try {
-
-        $success =
-            $stmt->execute(
-                [
-                    ':conversation_id' =>
-                        $conversation_id,
-
-                    ':sender_id' =>
-                        $sender_id,
-
-                    ':body' =>
-                        $body
-                ]
-            );
-
-    } catch (Throwable $e) {
-
-        return false;
-    }
-
-
-    if (!$success) {
-        return false;
-    }
-
-
-    $id =
-        (int)
-            $db->lastInsertId();
-
-
-    if ($id <= 0) {
-        return false;
-    }
-
-
     /*
-     * Update conversation timestamp.
+     * The insert and the conversation timestamp update must succeed or fail
+     * together. db_transaction() rolls back and rethrows on any failure, so a
+     * failed message never leaves a misleading conversation timestamp.
      */
 
     try {
 
-        $stmt =
-            $db->prepare(
-                "
-                UPDATE conversations
-                SET
-                    updated_at =
-                        CURRENT_TIMESTAMP
-                WHERE id = :conversation_id
-                "
-            );
+        return db_transaction(
+            static function (PDO $db) use (
+                $conversation_id,
+                $sender_id,
+                $body
+            ): array {
+
+                $stmt =
+                    $db->prepare(
+                        "
+                        INSERT INTO messages
+                        (
+                            conversation_id,
+                            sender_user_id,
+                            body,
+                            is_read,
+                            created_at
+                        )
+                        VALUES
+                        (
+                            :conversation_id,
+                            :sender_id,
+                            :body,
+                            0,
+                            CURRENT_TIMESTAMP
+                        )
+                        "
+                    );
 
 
-        $stmt->execute(
+                $stmt->execute(
+                    [
+                        ':conversation_id' =>
+                            $conversation_id,
+
+                        ':sender_id' =>
+                            $sender_id,
+
+                        ':body' =>
+                            $body
+                    ]
+                );
+
+
+                $id =
+                    (int) $db->lastInsertId();
+
+
+                if ($id <= 0) {
+
+                    throw new RuntimeException(
+                        'Message insert did not return an id.'
+                    );
+                }
+
+
+                $stmt =
+                    $db->prepare(
+                        "
+                        UPDATE conversations
+                        SET updated_at = CURRENT_TIMESTAMP
+                        WHERE id = :conversation_id
+                        "
+                    );
+
+
+                $stmt->execute(
+                    [
+                        ':conversation_id' =>
+                            $conversation_id
+                    ]
+                );
+
+
+                return message_repository_find(
+                    $id
+                ) ?? [
+                    'id' =>
+                        $id,
+
+                    'conversation_id' =>
+                        $conversation_id,
+
+                    'sender_id' =>
+                        $sender_id,
+
+                    'body' =>
+                        $body,
+
+                    'is_read' =>
+                        0,
+
+                    'read_at' =>
+                        null,
+
+                    'created_at' =>
+                        date('Y-m-d H:i:s')
+                ];
+            }
+        );
+
+    } catch (Throwable $exception) {
+
+        logger_database_error(
+            'Message creation failed and was rolled back.',
             [
-                ':conversation_id' =>
-                    $conversation_id
+                'conversation_id' =>
+                    $conversation_id,
+
+                'sender_id' =>
+                    $sender_id,
+
+                'exception' =>
+                    $exception->getMessage(),
             ]
         );
 
-    } catch (Throwable $e) {
-        // Message was already created.
+
+        throw $exception;
     }
-
-
-    return message_repository_find(
-        $id
-    ) ?? [
-        'id' =>
-            $id,
-
-        'conversation_id' =>
-            $conversation_id,
-
-        'sender_id' =>
-            $sender_id,
-
-        'body' =>
-            $body
-    ];
 }
 
 
@@ -1038,15 +1050,11 @@ function message_repository_search(
     $sql = "
         SELECT
             m.*,
-            m.sender_user_id AS sender_id,
-            u.email AS sender_email
+            m.sender_user_id AS sender_id
         FROM messages m
 
         INNER JOIN conversations c
             ON c.id = m.conversation_id
-
-        LEFT JOIN users u
-            ON u.id = m.sender_user_id
 
         WHERE (
             c.student_id IN (

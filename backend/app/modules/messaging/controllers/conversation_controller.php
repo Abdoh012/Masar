@@ -202,11 +202,7 @@ function conversation_controller_index(): void
         conversation_controller_user_id();
 
     if (!$user_id) {
-
-        conversation_controller_error(
-            'Authentication required.',
-            401
-        );
+        response_unauthorized();
     }
 
     $data =
@@ -218,7 +214,7 @@ function conversation_controller_index(): void
             $data
         );
 
-    conversation_controller_success(
+    response_success(
         $result,
         'Conversations retrieved successfully.'
     );
@@ -251,60 +247,70 @@ function conversation_controller_show(
         conversation_controller_user_id();
 
     if (!$user_id) {
-
-        conversation_controller_error(
-            'Authentication required.',
-            401
-        );
+        response_unauthorized();
     }
 
 
     if ($conversation_id <= 0) {
 
-        $data =
-            conversation_controller_request_data();
-
-        $conversation_id =
-            isset(
-                $data['conversation_id']
-            )
-            ? (int)
-                $data['conversation_id']
-            : 0;
-    }
-
-
-    if ($conversation_id <= 0) {
-
-        conversation_controller_error(
-            'Conversation ID is required.',
-            422,
+        response_validation_error(
             [
                 'conversation_id' =>
-                    'Conversation ID must be a positive integer.'
-            ]
+                    'Conversation ID must be a positive integer.',
+            ],
+            'Conversation ID is required.'
         );
     }
 
 
-    $conversation =
+    $result =
         conversation_service_find(
             $conversation_id,
             $user_id
         );
 
 
-    if (!$conversation) {
+    if (empty($result['ok'])) {
 
-        conversation_controller_error(
-            'Conversation not found.',
-            404
-        );
+        $status =
+            (int) (
+                $result['status']
+                ?? 500
+            );
+
+        $message =
+            (string) (
+                $result['message']
+                ?? 'Unable to retrieve conversation.'
+            );
+
+        $errors =
+            is_array($result['errors'] ?? null)
+            ? $result['errors']
+            : [];
+
+        if ($status === 404) {
+            response_not_found($message);
+        }
+
+        if ($status === 403) {
+            response_forbidden($message);
+        }
+
+        if ($status === 401) {
+            response_unauthorized($message);
+        }
+
+        if ($status === 422) {
+            response_validation_error($errors, $message);
+        }
+
+        response_server_error($message);
     }
 
 
-    conversation_controller_success(
-        $conversation,
+    response_success(
+        $result['conversation'],
         'Conversation retrieved successfully.'
     );
 }
@@ -322,11 +328,7 @@ function conversation_controller_create(): void
         conversation_controller_user_id();
 
     if (!$user_id) {
-
-        conversation_controller_error(
-            'Authentication required.',
-            401
-        );
+        response_unauthorized();
     }
 
 
@@ -335,8 +337,7 @@ function conversation_controller_create(): void
 
 
     /*
-     * Always use authenticated user
-     * as the conversation owner.
+     * Always use the authenticated user as the conversation owner.
      */
 
     $data['user_id'] =
@@ -349,36 +350,62 @@ function conversation_controller_create(): void
         );
 
 
-    if (
-        is_array($result)
-        &&
-        isset($result['errors'])
-        &&
-        !empty($result['errors'])
-    ) {
+    if (empty($result['ok'])) {
 
-        conversation_controller_error(
-            $result['message']
-                ?? 'Unable to create conversation.',
-            422,
-            $result['errors']
+        $status =
+            (int) (
+                $result['status']
+                ?? 500
+            );
+
+        $message =
+            (string) (
+                $result['message']
+                ?? 'Unable to create conversation.'
+            );
+
+        $errors =
+            is_array($result['errors'] ?? null)
+            ? $result['errors']
+            : [];
+
+        if ($status === 404) {
+            response_not_found($message);
+        }
+
+        if ($status === 403) {
+            response_forbidden($message);
+        }
+
+        if ($status === 401) {
+            response_unauthorized($message);
+        }
+
+        if ($status === 422) {
+            response_validation_error($errors, $message);
+        }
+
+        response_server_error($message);
+    }
+
+
+    if (empty($result['conversation'])) {
+        response_server_error('Unable to create conversation.');
+    }
+
+
+    if (!empty($result['created'])) {
+
+        response_created(
+            $result['conversation'],
+            'Conversation created successfully.'
         );
     }
 
 
-    if (!$result) {
-
-        conversation_controller_error(
-            'Unable to create conversation.',
-            500
-        );
-    }
-
-
-    conversation_controller_success(
-        $result,
-        'Conversation created successfully.',
-        201
+    response_success(
+        $result['conversation'],
+        'Conversation already exists.'
     );
 }
 

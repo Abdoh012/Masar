@@ -2739,7 +2739,7 @@
         {
           "name": "Contact",
           "description": {
-            "content": "Five contact fields for the authenticated student: email, phone, website, external_profile and address. Changing the email also requires the current password.",
+            "content": "Five contact fields for the authenticated student: email, phone, website, external_profile and address. Send only the fields to change; every omitted field keeps its stored value, and resubmitting the current email is accepted as a no-op. Changing the email does not require a password.",
             "type": "text/plain"
           },
           "item": [
@@ -2823,10 +2823,10 @@
                     "contact"
                   ]
                 },
-                "description": "Requires a student Bearer token. Accepts `email`, `phone`, `website`, `external_profile`, `address`, or any combination. Send only the fields to change; an optional field can be cleared with null, an empty string or a whitespace-only string.\\n\\nChanging the EMAIL uses the existing email format and uniqueness checks and does not require a password; a changed address is not treated as verified. Password changes remain the separate POST /auth/change-password flow. The authentication identity model is unchanged.\\n\\nValidation: a malformed email is refused, an email already used by another account is refused, a phone may only contain digits, spaces and the symbols + ( ) - . with at least one digit (up to 50 characters), website and external_profile must be valid URLs up to 255 characters, and address is limited to 500 characters.\\n\\nResponses: 200 with the stored five-field contact, 422 with field-specific errors for validation, 401, 403.",
+                "description": "Requires a student Bearer token. Partial update: send only the fields to change - `email`, `phone`, `website`, `external_profile`, `address`, or any combination. Every omitted field keeps its stored value, so any one field can be updated on its own. An optional field can be cleared with null, an empty string or a whitespace-only string.\\n\\nThe EMAIL is validated only when it is supplied: sending the account's CURRENT email is accepted as a no-op, so resubmitting the whole contact form while changing another field succeeds; a valid new address is written; and an address already owned by ANOTHER account is refused with an `email` validation error. No password is required, and only a CHANGED email clears users.email_verified_at. Password changes remain the separate POST /auth/change-password flow. The authentication identity model is unchanged.\\n\\nValidation: a malformed email is refused, a phone may only contain digits, spaces and the symbols + ( ) - . with at least one digit (up to 50 characters), website and external_profile must be valid URLs up to 255 characters, and address is limited to 500 characters.\\n\\nResponses: 200 with the stored five-field contact, 422 with field-specific errors for validation, 401, 403.",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"email\": \"student.new@example.com\",\n    \"phone\": \"+201001234567\",\n    \"website\": \"https://student.example.com\",\n    \"external_profile\": \"https://www.linkedin.com/in/student\",\n    \"address\": \"New Cairo, Cairo\"\n}",
+                  "raw": "{\n    \"phone\": \"+201001234567\",\n    \"website\": \"https://student.example.com\",\n    \"external_profile\": \"https://www.linkedin.com/in/student\",\n    \"address\": \"New Cairo, Cairo\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2851,15 +2851,12 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.test(\"Contact info updated\", function () {",
-                      "    pm.expect([200, 422]).to.include(pm.response.code);",
+                      "    pm.expect(pm.response.code).to.eql(200);",
                       "    const json = pm.response.json();",
+                      "    pm.expect(json.success).to.eql(true);",
+                      "    pm.expect(json.errors).to.eql(null);",
                       "    pm.expect(json).to.not.have.property('password_hash');",
-                      "    if (pm.response.code === 200) {",
-                      "        pm.expect(Object.keys(json.data).sort()).to.eql(['address', 'email', 'external_profile', 'phone', 'website']);",
-                      "    }",
-                      "    if (pm.response.code === 422) {",
-                      "        pm.expect(json).to.have.property('errors');",
-                      "    }",
+                      "    pm.expect(Object.keys(json.data).sort()).to.eql(['address', 'email', 'external_profile', 'phone', 'website']);",
                       "});"
                     ]
                   }
@@ -7787,7 +7784,7 @@
                 "conversations"
               ]
             },
-            "description": "Requires Bearer token. Lists the conversations the authenticated user participates in (student or company side of accepted applications). data is an array of conversation rows. The backend does not consume query-string filters for this endpoint."
+            "description": "Requires Bearer token. Lists the conversations the authenticated user participates in (student or company side of an application). data is a flat array of conversation rows with student_name, company_name, training_title and unread_count. Optional query filters: application_id, keyword, limit (default 50, clamped to 100) and offset (default 0). An application_id the user is not part of returns an empty array, not an error."
           },
           "event": [
             {
@@ -7819,7 +7816,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"title\": \"Internship Discussion\",\n    \"application_id\": {{accepted_application_id}}\n}",
+              "raw": "{\n    \"application_id\": {{accepted_application_id}}\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -7847,7 +7844,7 @@
                 "conversations"
               ]
             },
-            "description": "Requires Bearer token. Creates a conversation (or returns the existing one) for an accepted training application. Required body field: application_id (an accepted application the authenticated user is the student or company of). title is optional (defaults to \"New Conversation\"). Expected: 201 with the conversation in data. The test stores the conversation id into the conversation_id collection variable. A 422 is returned when the application is not accepted or the user is not linked to it."
+            "description": "Requires Bearer token. Creates (or returns) the conversation of an accepted training application. Required body field: application_id - an accepted application the authenticated user is the student or company of; the participants are derived from the application, never from the body. 201 = created (messages: Conversation created successfully.); 200 = Conversation already exists. (the existing row is returned unchanged, so the endpoint is idempotent and safe against concurrent requests). 404 = application not found; 403 = the user is not a participant of that application; 422 = missing/non-numeric application_id, a non-accepted application, or an unsupported field (title, name, participant_id, participant_ids, participants are not persisted and are rejected). The test stores the conversation id into the conversation_id collection variable."
           },
           "event": [
             {
@@ -7856,12 +7853,12 @@
                 "type": "text/javascript",
                 "exec": [
                   "const json = pm.response.json();",
-                  "pm.test(\"Create conversation succeeds\", function () {",
-                  "    pm.expect(pm.response.code).to.eql(201);",
+                  "pm.test(\"Create conversation succeeds (created or already existing)\", function () {",
+                  "    pm.expect([200, 201]).to.include(pm.response.code);",
                   "    pm.expect(json.success).to.eql(true);",
                   "    pm.expect(json.data).to.have.property('id');",
                   "});",
-                  "if (pm.response.code === 201 && json.data && json.data.id !== undefined) {",
+                  "if ([200, 201].includes(pm.response.code) && json.data && json.data.id !== undefined) {",
                   "    pm.collectionVariables.set('conversation_id', String(json.data.id));",
                   "}"
                 ]
@@ -7895,7 +7892,7 @@
                 "{{conversation_id}}"
               ]
             },
-            "description": "Requires Bearer token. Returns a single conversation the authenticated user participates in, by id. Uses the conversation_id collection variable captured by Create Conversation. Expected: 200 with the conversation in data; 404 when the conversation does not exist for this user."
+            "description": "Requires Bearer token. Returns a single conversation, by id, only to its student or company participant. Uses the conversation_id collection variable captured by Create Conversation. 200 = the conversation in data; 403 = the conversation exists but the authenticated user is not a participant; 404 = the conversation does not exist. Reading stays available after the training application is withdrawn."
           },
           "event": [
             {
@@ -7946,9 +7943,59 @@
                 "conversations",
                 "{{conversation_id}}",
                 "messages"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "description": "Page size 1-100. Default 50. Out of range or non-numeric is a 400.",
+                  "disabled": true
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Rows to skip, >= 0. Default 0. Negative or non-numeric is a 400.",
+                  "disabled": true
+                },
+                {
+                  "key": "order",
+                  "value": "desc",
+                  "description": "asc (default) or desc, applied to created_at then id.",
+                  "disabled": true
+                },
+                {
+                  "key": "before_id",
+                  "value": "1108",
+                  "description": "Exclusive cursor: only messages with a lower id.",
+                  "disabled": true
+                },
+                {
+                  "key": "after_id",
+                  "value": "1104",
+                  "description": "Exclusive cursor: only messages with a greater id.",
+                  "disabled": true
+                },
+                {
+                  "key": "sender_id",
+                  "value": "100568",
+                  "description": "Only messages sent by this user id.",
+                  "disabled": true
+                },
+                {
+                  "key": "from_date",
+                  "value": "2026-08-14",
+                  "description": "Y-m-d or Y-m-d H:i:s lower bound on created_at.",
+                  "disabled": true
+                },
+                {
+                  "key": "to_date",
+                  "value": "2026-08-15",
+                  "description": "Y-m-d or Y-m-d H:i:s upper bound; a date-only value covers the whole day (23:59:59).",
+                  "disabled": true
+                }
               ]
             },
-            "description": "Requires Bearer token. Lists the messages of a conversation for the authenticated user (must be a participant). data is an array of message rows, ordered oldest-first. The backend controller does not read query-string parameters for this endpoint, so no pagination query parameters are documented. Uses the conversation_id collection variable."
+            "description": "Requires Bearer token. Lists the messages of a conversation for the authenticated user (must be the student or company of the conversation). data is a flat array ordered by created_at then id, oldest first by default. Query parameters are read from the query string and validated: limit 1-100 (default 50), offset >= 0 (default 0), order asc|desc, before_id / after_id exclusive id cursors, sender_id, and from_date / to_date as Y-m-d or Y-m-d H:i:s (a date-only to_date covers the whole day). Any invalid value is a 400. 401 = unauthenticated; 403 = not a participant; 404 = conversation not found. Reading is unaffected by a withdrawn application. Uses the conversation_id collection variable."
           },
           "event": [
             {
@@ -7980,7 +8027,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"conversation_id\": {{conversation_id}},\n    \"body\": \"Hello, I look forward to discussing the internship.\"\n}",
+              "raw": "{\n    \"body\": \"Hello, I look forward to discussing the internship.\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -8010,7 +8057,7 @@
                 "messages"
               ]
             },
-            "description": "Requires Bearer token. Sends a message to a conversation. Required body fields: conversation_id and body (the backend stores the message text under body; message and content are accepted aliases). The authenticated user is always the sender. message_type (text|file|image|document|system, default text) and reply_to_id are optional. Expected: 201 with the created message in data; 422 when body is empty or the conversation is invalid/unavailable."
+            "description": "Requires Bearer token. Sends a message to the conversation in the URL; the URL id is authoritative and conversation_id does NOT need to be sent in the body (a differing value is a 422). Required body field: body - trimmed, non-empty, valid UTF-8, max 5000 characters (message and content are accepted aliases). The authenticated user is always the sender: sender_user_id / sender_id / user_id are rejected with 422 when they differ from the token's user. message_type, reply_to_id, attachment_ids, attachments and file_id are not persisted in this phase and are rejected with 422. 201 = message stored in data; 401 = unauthenticated; 403 = not a participant, or the linked application was withdrawn (Messaging is disabled because the training application was withdrawn.); 404 = conversation not found; 422 = validation failure; 500 = unexpected database failure, rolled back, with a safe generic message. The insert and the conversation updated_at update commit in one transaction."
           },
           "event": [
             {

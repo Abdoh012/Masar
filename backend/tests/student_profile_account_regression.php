@@ -10,10 +10,10 @@
  *   Case 2   Username    : read, valid update, persistence, every rejection rule,
  *            case-insensitive uniqueness, and that it is NOT the email
  *   Case 3   Username isolation: a student can only change their OWN handle
- *   Case 4   Contact     : the five-field read, phone / website / external_profile
- *            / address updates, URL and length validation, clearing, password-free
- *            email updates with format/uniqueness checks, and isolation from
- *            another student
+ *   Case 4   Contact     : the five-field read, INDEPENDENT phone / website /
+ *            external_profile / address updates, URL and length validation,
+ *            clearing, the unchanged-email no-op, password-free email updates with
+ *            format/uniqueness checks, and isolation from another student
  *   Case 5   Academic    : Student / Graduate, the graduation month required for
  *            graduate, month names and numbers, and that a stored month survives a
  *            status-only update
@@ -192,6 +192,25 @@ function student_context(string $email): ?array
 function token_for(int $user_id, string $role = 'student'): string
 {
     return jwt_issue_access_token(['id' => $user_id, 'role' => $role]);
+}
+
+/**
+ * The five stored contact values for one student, in one array, so a partial
+ * update can be asserted to have changed EXACTLY one field and left the rest
+ * (including the account email) untouched.
+ */
+function contact_snapshot(int $student_id): array
+{
+    $row = db_fetch_one(
+        'SELECT s.phone, s.website, s.external_profile, s.address, u.email
+         FROM students s
+         INNER JOIN users u ON u.id = s.user_id
+         WHERE s.id = ?
+         LIMIT 1',
+        [$student_id]
+    );
+
+    return is_array($row) ? $row : [];
 }
 
 /*
@@ -679,12 +698,108 @@ check(
         && db_fetch_column('SELECT address FROM students WHERE id = ?', [$secondary_id]) === null
 );
 
+/*
+ | The reported bug: a client that resubmits the WHOLE contact form (email
+ | included, unchanged) while changing another field was refused with
+ | "That is already your email address." An unchanged email is now a no-op,
+ | so the request succeeds and the address is left exactly as it was.
+ */
 $same_email = request_api('/api/v1/students/me/contact', 'PUT', 'bearer', $primary_token, [
     'email' => (string) $primary['email'],
 ]);
 
-check('Case 4: the current email is refused as a change', $same_email['status'] === 422);
-check('Case 4: the current email returns an email error', isset($same_email['errors']['email']));
+check('Case 4: submitting the current email succeeds', $same_email['status'] === 200);
+check('Case 4: the current email returns no email error', empty($same_email['errors']['email']));
+check('Case 4: the current email is echoed back unchanged', ($same_email['data']['email'] ?? null) === $primary['email']);
+check(
+    'Case 4: an unchanged email does not clear email_verified_at',
+    db_fetch_column('SELECT email_verified_at FROM users WHERE id = ?', [$primary_user]) === $primary['email_verified_at']
+);
+
+$unchanged_email_with_phone = request_api('/api/v1/students/me/contact', 'PUT', 'bearer', $primary_token, [
+    'email' => (string) $primary['email'],
+    'phone' => '+20 100 555 0002',
+]);
+
+check('Case 4: a phone change with the unchanged email is accepted', $unchanged_email_with_phone['status'] === 200);
+check(
+    'Case 4: the phone is saved although the email was included unchanged',
+    db_fetch_column('SELECT phone FROM students WHERE id = ?', [$primary_id]) === '+20 100 555 0002'
+);
+check(
+    'Case 4: the email is still the original after that update',
+    db_fetch_column('SELECT email FROM users WHERE id = ?', [$primary_user]) === $primary['email']
+);
+
+/*
+ | Independent updates: with the email OMITTED from the payload, each field is
+ | written on its own and every omitted field keeps its stored value. The
+ | baseline is re-read so these assertions compare against what is actually in
+ | the database, not against an assumption.
+ */
+$contact_baseline = contact_snapshot($primary_id);
+
+$website_only = request_api('/api/v1/students/me/contact', 'PUT', 'bearer', $primary_token, [
+    'website' => 'https://website-only.example.com',
+]);
+
+check('Case 4: a website-only update succeeds without an email', $website_only['status'] === 200);
+check(
+    'Case 4: a website-only update changes only the website',
+    contact_snapshot($primary_id) === array_merge($contact_baseline, ['website' => 'https://website-only.example.com'])
+);
+
+$external_only = request_api('/api/v1/students/me/contact', 'PUT', 'bearer', $primary_token, [
+    'external_profile' => 'https://www.linkedin.com/in/external-only',
+]);
+
+check('Case 4: an external_profile-only update succeeds without an email', $external_only['status'] === 200);
+check(
+    'Case 4: an external_profile-only update changes only that field',
+    contact_snapshot($primary_id) === array_merge(
+        $contact_baseline,
+        [
+            'website'          => 'https://website-only.example.com',
+            'external_profile' => 'https://www.linkedin.com/in/external-only',
+        ]
+    )
+);
+
+$address_only = request_api('/api/v1/students/me/contact', 'PUT', 'bearer', $primary_token, [
+    'address' => 'Address Only, Cairo',
+]);
+
+check('Case 4: an address-only update succeeds without an email', $address_only['status'] === 200);
+check(
+    'Case 4: an address-only update changes only the address',
+    contact_snapshot($primary_id) === array_merge(
+        $contact_baseline,
+        [
+            'website'          => 'https://website-only.example.com',
+            'external_profile' => 'https://www.linkedin.com/in/external-only',
+            'address'          => 'Address Only, Cairo',
+        ]
+    )
+);
+
+$phone_only_again = request_api('/api/v1/students/me/contact', 'PUT', 'bearer', $primary_token, [
+    'phone' => '+20 100 555 0003',
+]);
+
+check('Case 4: a phone-only update succeeds without an email', $phone_only_again['status'] === 200);
+check(
+    'Case 4: a phone-only update changes only the phone',
+    contact_snapshot($primary_id) === array_merge(
+        $contact_baseline,
+        [
+            'phone'            => '+20 100 555 0003',
+            'website'          => 'https://website-only.example.com',
+            'external_profile' => 'https://www.linkedin.com/in/external-only',
+            'address'          => 'Address Only, Cairo',
+        ]
+    )
+);
+
 
 $malformed_email = request_api('/api/v1/students/me/contact', 'PUT', 'bearer', $primary_token, [
     'email' => 'not-an-email',

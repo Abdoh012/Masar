@@ -319,9 +319,24 @@ function student_account_update_contact( array $auth_user, array $data ): array 
         }
     }
 
-    $email = null;
+    /*
+     | The email is the account identity (users.email), so it is only read from
+     | the request when the client actually sends the field - an omitted email
+     | is never validated and never written. An address identical to the one
+     | already stored is a NO-OP, not an error: clients resubmit the whole
+     | contact form, and an unchanged email must not stop the other fields from
+     | being saved. Uniqueness excludes this account's own user id, so only an
+     | address owned by a DIFFERENT user is refused.
+     |
+     | $email stays null in both the omitted and the unchanged case, which is
+     | what makes the "nothing to write, nothing to re-verify" branch below
+     | skip user_repository_update_email() and
+     | user_repository_clear_email_verified_at().
+     */
+    $email          = null;
+    $email_provided = array_key_exists( 'email', $data );
 
-    if ( array_key_exists( 'email', $data ) ) {
+    if ( $email_provided ) {
         $email = normalize_email( $data['email'] );
 
         if ( $email === null ) {
@@ -334,7 +349,8 @@ function student_account_update_contact( array $auth_user, array $data ): array 
             }
 
             if ( strcasecmp( (string) ( $user['email'] ?? '' ), $email ) === 0 ) {
-                $errors['email'] = 'That is already your email address.';
+                // Already this account's address: allow the request, write nothing.
+                $email = null;
             } elseif ( user_repository_email_exists_for_other_user( $email, $user_id ) ) {
                 $errors['email'] = 'That email address is already in use.';
             }
@@ -351,7 +367,7 @@ function student_account_update_contact( array $auth_user, array $data ): array 
         return [ 'errors' => $errors ];
     }
 
-    if ( empty( $updates ) && $email === null ) {
+    if ( empty( $updates ) && $email === null && !$email_provided ) {
         return [ 'error' => true, 'status' => 422, 'message' => 'No contact information was provided.' ];
     }
 

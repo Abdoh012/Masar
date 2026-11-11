@@ -135,6 +135,153 @@ function conversation_service_application_is_accepted(
 
 /*
 |--------------------------------------------------------------------------
+| Conversation Access Helper
+|--------------------------------------------------------------------------
+|
+| Single authorization boundary for conversation-scoped operations:
+|   404 when the conversation does not exist
+|   403 when it exists but the authenticated user may not access it
+|
+| Keeping this in the service layer prevents the controllers and the message
+| service from drifting apart on the disclosure policy.
+*/
+
+function conversation_service_access(
+    int $conversation_id,
+    int $user_id
+): array {
+
+    if (
+        $conversation_id <= 0 ||
+        $user_id <= 0
+    ) {
+
+        return [
+            'ok'      => false,
+            'status'  => 404,
+            'message' => 'Conversation not found.',
+            'errors'  => [],
+        ];
+    }
+
+
+    $conversation =
+        conversation_repository_find(
+            $conversation_id
+        );
+
+
+    if (!$conversation) {
+
+        return [
+            'ok'      => false,
+            'status'  => 404,
+            'message' => 'Conversation not found.',
+            'errors'  => [],
+        ];
+    }
+
+
+    if (
+        !conversation_repository_is_participant(
+            $conversation_id,
+            $user_id
+        )
+    ) {
+
+        return [
+            'ok'      => false,
+            'status'  => 403,
+            'message' => 'You are not a participant in this conversation.',
+            'errors'  => [],
+        ];
+    }
+
+
+    $application_id =
+        (int) (
+            $conversation['application_id']
+            ?? 0
+        );
+
+
+    if (
+        $application_id > 0 &&
+        !conversation_service_application_participant(
+            $application_id,
+            $user_id
+        )
+    ) {
+
+        return [
+            'ok'      => false,
+            'status'  => 403,
+            'message' => 'You are not authorized to access this conversation.',
+            'errors'  => [],
+        ];
+    }
+
+
+    return [
+        'ok'           => true,
+        'conversation' => $conversation,
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Application Messaging Status
+|--------------------------------------------------------------------------
+|
+| Read fresh from the database on every call. The withdrawal policy is a
+| business rule, so it must never rely on a status cached in the conversation
+| row or in the request.
+*/
+
+function conversation_service_messaging_blocked_reason(
+    int $application_id
+): ?string {
+
+    if ($application_id <= 0) {
+        return null;
+    }
+
+
+    $application =
+        application_repository_find_by_id(
+            $application_id
+        );
+
+
+    if (!$application) {
+        return null;
+    }
+
+
+    $status =
+        strtolower(
+            trim(
+                (string) (
+                    $application['status']
+                    ?? ''
+                )
+            )
+        );
+
+
+    if ($status === APPLICATION_STATUS_WITHDRAWN) {
+
+        return 'Messaging is disabled because the training application was withdrawn.';
+    }
+
+
+    return null;
+}
+
+
+/*
+|--------------------------------------------------------------------------
 | List Conversations
 |--------------------------------------------------------------------------
 */
@@ -201,20 +348,22 @@ function conversation_service_list(
 function conversation_service_find(
     int $conversation_id,
     int $user_id
-): ?array {
+): array {
 
-    if ($conversation_id <= 0 || $user_id <= 0) {
-        return null;
+    $access =
+        conversation_service_access(
+            $conversation_id,
+            $user_id
+        );
+
+
+    if (empty($access['ok'])) {
+        return $access;
     }
 
 
-    $role =
-        auth_role();
-
-
     /*
-     * If the conversation is linked to an application,
-     * verify the user is authorized for that application.
+     * Re-read with the joined display fields used by the API response.
      */
 
     $conversation =
@@ -224,36 +373,21 @@ function conversation_service_find(
         );
 
 
-    if (
-        $conversation
-        &&
-        isset($conversation['application_id'])
-        &&
-        $conversation['application_id'] > 0
-    ) {
+    if (!$conversation) {
 
-        $application_id =
-            (int) $conversation['application_id'];
-
-
-        /*
-         * Check authorization based on user role.
-         */
-
-        $authorized =
-            conversation_service_application_participant(
-                $application_id,
-                $user_id
-            );
-
-
-        if (!$authorized) {
-            return null;
-        }
+        return [
+            'ok'      => false,
+            'status'  => 404,
+            'message' => 'Conversation not found.',
+            'errors'  => [],
+        ];
     }
 
 
-    return $conversation;
+    return [
+        'ok'           => true,
+        'conversation' => $conversation,
+    ];
 }
 
 
@@ -265,7 +399,7 @@ function conversation_service_find(
 
 function conversation_service_create(
     array $data
-) {
+): array {
 
     $user_id =
         isset($data['user_id'])
@@ -275,223 +409,234 @@ function conversation_service_create(
     if ($user_id <= 0) {
 
         return [
-            'message' => 'Invalid user.',
-            'errors' => [
-                'user_id' => 'A valid user ID is required.'
-            ]
+            'ok'      => false,
+            'status'  => 401,
+            'message' => 'Authentication required.',
+            'errors'  => [],
         ];
     }
 
 
-    $title =
-        trim(
-            (string) (
-                $data['title']
-                ?? $data['name']
-                ?? ''
-            )
-        );
+    $errors = [];
 
 
     /*
-     * A conversation may be created
-     * without an explicit title.
+     * The conversations table has no title and no participant list. Reject
+     * these instead of accepting data that would never be persisted.
      */
 
-    if ($title === '') {
-        $title = 'New Conversation';
-    }
-
-
-    $participant_ids =
-        $data['participant_ids']
-        ?? [];
-
-
-    if (
-        !is_array($participant_ids)
+    foreach (
+        [
+            'title',
+            'name',
+            'participant_id',
+            'participant_ids',
+            'participants',
+        ]
+        as $field
     ) {
-        $participant_ids = [];
-    }
+
+        if (!array_key_exists($field, $data)) {
+            continue;
+        }
 
 
-    /*
-     * Authenticated user must always
-     * be included as a participant.
-     */
-
-    $participant_ids[] =
-        $user_id;
-
-
-    $participant_ids =
-        array_map(
-            'intval',
-            $participant_ids
-        );
-
-
-    $participant_ids =
-        array_filter(
-            $participant_ids,
-            static function ($id) {
-                return $id > 0;
-            }
-        );
-
-
-    $participant_ids =
-        array_values(
-            array_unique(
-                $participant_ids
-            )
-        );
-
-
-    /*
-     * Determine the application_id from the data.
-     * If application_id is provided, validate that
-     * the authenticated user is linked to that application
-     * and the application status is ACCEPTED.
-     */
-
-    $application_id =
-        isset($data['application_id'])
-        ? (int) $data['application_id']
-        : 0;
-
-
-    if ($application_id > 0) {
-
-
-        $application =
-            application_repository_find_by_id(
-                $application_id
-            );
+        $value = $data[$field];
 
 
         if (
-            !$application
-            ||
-            !conversation_service_application_is_accepted(
-                $application
-            )
+            $value === null ||
+            $value === '' ||
+            $value === []
         ) {
-
-            return [
-                'message' =>
-                    'Chat is not available for this application status.',
-                'errors' => [
-                    'application_id' =>
-                        'Chat is only available for accepted training applications.'
-                ]
-            ];
+            continue;
         }
 
 
-        /*
-         * Verify the user is linked to this application.
-         */
-        $user_can_access =
-            conversation_service_application_participant(
-                $application_id,
-                $user_id
-            );
-
-
-        if (!$user_can_access) {
-
-            return [
-                'message' =>
-                    'You are not authorized to create a chat for this application.',
-                'errors' => [
-                    'application_id' =>
-                        'You must be the student or company associated with this accepted application.'
-                ]
-            ];
-        }
+        $errors[$field] =
+            str_replace('_', ' ', $field)
+            . ' is not supported by the conversations API.';
     }
 
 
-    $conversation_data = [
-        'title' =>
-            $title,
+    /*
+     * application_id is required and must be a positive integer before any
+     * database access happens.
+     */
 
-        'created_by' =>
-            $user_id,
-
-        'user_id' =>
-            $user_id,
-
-        'application_id' =>
-            $application_id
-    ];
-
-
-    $conversation =
-        conversation_repository_create(
-            $conversation_data
+    $application_id =
+        filter_var(
+            $data['application_id']
+            ?? null,
+            FILTER_VALIDATE_INT
         );
 
 
-    if (!$conversation) {
-        return false;
+    if (
+        $application_id === false ||
+        (int) $application_id <= 0
+    ) {
+
+        $errors['application_id'] =
+            'A valid application ID is required.';
     }
 
 
-    $conversation_id =
-        isset(
-            $conversation['id']
-        )
-        ? (int)
-            $conversation['id']
-        : 0;
+    if (!empty($errors)) {
+
+        return [
+            'ok'      => false,
+            'status'  => 422,
+            'message' => 'Validation failed.',
+            'errors'  => $errors,
+        ];
+    }
+
+
+    $application_id =
+        (int) $application_id;
+
+
+    $application =
+        application_repository_find_by_id(
+            $application_id
+        );
+
+
+    if (!$application) {
+
+        return [
+            'ok'      => false,
+            'status'  => 404,
+            'message' => 'Training application not found.',
+            'errors'  => [
+                'application_id' =>
+                    'Training application not found.',
+            ],
+        ];
+    }
 
 
     /*
-     * Add participants after the
-     * conversation has been created.
+     * Preserve the existing rule: a conversation may only be created for an
+     * accepted application.
      */
 
     if (
-        $conversation_id > 0
-        &&
-        !empty($participant_ids)
+        !conversation_service_application_is_accepted(
+            $application
+        )
     ) {
 
-        foreach (
-            $participant_ids
-            as $participant_id
-        ) {
-
-            conversation_repository_add_participant(
-                $conversation_id,
-                $participant_id,
-                $user_id
-            );
-        }
+        return [
+            'ok'      => false,
+            'status'  => 422,
+            'message' => 'Chat is not available for this application status.',
+            'errors'  => [
+                'application_id' =>
+                    'Chat is only available for accepted training applications.',
+            ],
+        ];
     }
 
 
     /*
-     * Return the complete conversation.
+     * The authenticated user must be the student or the company on the
+     * application. The student and company are always derived from the
+     * application, never accepted from the client.
      */
 
-    if ($conversation_id > 0) {
+    if (
+        !conversation_service_application_participant(
+            $application_id,
+            $user_id
+        )
+    ) {
 
-        $complete =
-            conversation_repository_find_for_user(
-                $conversation_id,
-                $user_id
+        return [
+            'ok'      => false,
+            'status'  => 403,
+            'message' => 'You are not authorized to create a chat for this application.',
+            'errors'  => [
+                'application_id' =>
+                    'You must be the student or company associated with this accepted application.',
+            ],
+        ];
+    }
+
+
+    /*
+     * Idempotent duplicate handling. The unique index on application_id is the
+     * final guard against the concurrent path inside the repository.
+     */
+
+    $existing =
+        conversation_repository_find_by_application(
+            $application_id,
+            $user_id
+        );
+
+
+    if ($existing) {
+
+        $conversation =
+            conversation_repository_find(
+                (int) $existing['id']
             );
 
-        if ($complete) {
-            return $complete;
+
+        if ($conversation) {
+
+            return [
+                'ok'           => true,
+                'conversation' => $conversation,
+                'created'      => false,
+            ];
         }
     }
 
 
-    return $conversation;
+    try {
+
+        $created =
+            conversation_repository_create(
+                [
+                    'application_id' =>
+                        $application_id,
+                ]
+            );
+
+    } catch (Throwable $exception) {
+
+        if (function_exists('logger_exception')) {
+            logger_exception($exception);
+        }
+
+        return [
+            'ok'      => false,
+            'status'  => 500,
+            'message' => 'Unable to create conversation.',
+            'errors'  => [],
+        ];
+    }
+
+
+    if (!$created) {
+
+        return [
+            'ok'      => false,
+            'status'  => 500,
+            'message' => 'Unable to create conversation.',
+            'errors'  => [],
+        ];
+    }
+
+
+    return [
+        'ok'           => true,
+        'conversation' => $created['conversation'],
+        'created'      => (bool) $created['created'],
+    ];
 }
 
 

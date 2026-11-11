@@ -46,6 +46,45 @@ The Students API manages the authenticated student's profile, academic informati
 
 `GET/PUT /api/v1/students/me/contact` — phone, website, external_profile, address, email.
 
+`GET` returns exactly `{ email, phone, website, external_profile, address }`;
+unset optional fields are `null`.
+
+`PUT` is a partial update: only the fields present in the request are
+validated and written, and every omitted field keeps its stored value. The five
+fields are independent — `email`, `phone`, `website`, `external_profile` and
+`address` can each be updated on its own.
+
+```http
+PUT /api/v1/students/me/contact
+{"phone": "+201112223333"}
+```
+
+```http
+PUT /api/v1/students/me/contact
+{"website": "https://new-example.com"}
+```
+
+Optional fields (`phone`, `website`, `external_profile`, `address`) can be
+cleared with `null`, an empty string or a whitespace-only string. `website` and
+`external_profile` must be valid URLs of at most 255 characters; `address` is
+limited to 500 characters; `phone` allows digits, spaces and `+ ( ) - .` with at
+least one digit, up to 50 characters.
+
+The email (`users.email`) is validated only when it is supplied:
+
+- Omitted — no email validation runs and the stored email is untouched.
+- Identical to the account's current email — accepted as a no-op, so
+  resubmitting the whole contact form while changing another field succeeds.
+  `users.email_verified_at` is preserved because the address did not change.
+- A new, unused address — written, and `users.email_verified_at` is cleared
+  because the new address has not been proven.
+- An address owned by a different account — rejected as `422` with an `email`
+  validation error. The uniqueness check always excludes the authenticated
+  user's own id.
+
+No password is required for an email change; password changes remain the
+separate `POST /api/v1/auth/change-password` flow.
+
 ## 12. Get / Update Academic Status
 
 ```http

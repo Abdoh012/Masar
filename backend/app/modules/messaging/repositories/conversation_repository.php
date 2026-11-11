@@ -37,6 +37,8 @@ if (
         __DIR__ . '/../../../core/database/connection.php';
 }
 
+require_once __DIR__ . '/../../../core/logging/logger.php';
+
 
 /*
 |--------------------------------------------------------------------------
@@ -703,9 +705,22 @@ function conversation_repository_create(
 
     if ($existing) {
 
-        return conversation_repository_find(
-            (int) $existing['id']
-        );
+        $conversation =
+            conversation_repository_find(
+                (int) $existing['id']
+            );
+
+
+        if ($conversation) {
+
+            return [
+                'conversation' =>
+                    $conversation,
+
+                'created' =>
+                    false,
+            ];
+        }
     }
 
 
@@ -737,34 +752,93 @@ function conversation_repository_create(
             );
 
 
-        $success =
-            $stmt->execute(
-                [
-                    ':student_id' =>
-                        $student_id,
+        $stmt->execute(
+            [
+                ':student_id' =>
+                    $student_id,
 
-                    ':company_id' =>
-                        $company_id,
+                ':company_id' =>
+                    $company_id,
 
-                    ':application_id' =>
-                        $application_id
-                ]
+                ':application_id' =>
+                    $application_id
+            ]
+        );
+
+    } catch (PDOException $exception) {
+
+        /*
+         * A concurrent request may have inserted the same application
+         * between the check above and this insert. The unique
+         * application_id key turns that race into a duplicate-key error,
+         * which is resolved by returning the winning conversation.
+         */
+
+        $driver_code =
+            (int) (
+                $exception->errorInfo[1]
+                ?? 0
             );
 
-    } catch (Throwable $e) {
 
-        return false;
-    }
+        if ($driver_code === 1062) {
+
+            $existing =
+                conversation_repository_fetch_one(
+                    "
+                    SELECT
+                        id
+                    FROM conversations
+                    WHERE application_id = :application_id
+                    LIMIT 1
+                    ",
+                    [
+                        ':application_id' =>
+                            $application_id
+                    ]
+                );
 
 
-    if (!$success) {
-        return false;
+            if ($existing) {
+
+                $conversation =
+                    conversation_repository_find(
+                        (int) $existing['id']
+                    );
+
+
+                if ($conversation) {
+
+                    return [
+                        'conversation' =>
+                            $conversation,
+
+                        'created' =>
+                            false,
+                    ];
+                }
+            }
+        }
+
+
+        logger_database_error(
+            'Conversation creation failed.',
+            [
+                'application_id' =>
+                    $application_id,
+
+                'exception' =>
+                    $exception->getMessage(),
+            ]
+        );
+
+
+        throw $exception;
     }
 
 
     $id =
-        (int)
-            $db->lastInsertId();
+        (int) $db->lastInsertId();
 
 
     if ($id <= 0) {
@@ -772,9 +846,24 @@ function conversation_repository_create(
     }
 
 
-    return conversation_repository_find(
-        $id
-    );
+    $conversation =
+        conversation_repository_find(
+            $id
+        );
+
+
+    if (!$conversation) {
+        return false;
+    }
+
+
+    return [
+        'conversation' =>
+            $conversation,
+
+        'created' =>
+            true,
+    ];
 }
 
 

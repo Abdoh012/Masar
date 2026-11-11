@@ -21,6 +21,7 @@
 
 require_once __DIR__ . '/../repositories/message_repository.php';
 require_once __DIR__ . '/../repositories/conversation_repository.php';
+require_once __DIR__ . '/../validators/message_validator.php';
 require_once __DIR__ . '/../services/conversation_service.php';
 
 
@@ -34,79 +35,78 @@ function message_service_list(
     int $conversation_id,
     int $user_id,
     array $filters = []
-): array|false {
+): array {
 
     if (
-        $conversation_id <= 0
-        ||
+        $conversation_id <= 0 ||
         $user_id <= 0
     ) {
-        return false;
+
+        return [
+            'ok'      => false,
+            'status'  => 404,
+            'message' => 'Conversation not found.',
+            'errors'  => [],
+        ];
     }
 
 
     /*
-     * Verify user is a participant in the conversation.
+     * Existence + participation + application authorization.
+     * Reading remains available after withdrawal.
      */
 
-    $participant =
-        message_repository_is_participant(
+    $access =
+        conversation_service_access(
             $conversation_id,
             $user_id
         );
 
 
-    if (!$participant) {
-        return false;
+    if (empty($access['ok'])) {
+        return $access;
     }
 
 
-    /*
-     * If the conversation is linked to an application,
-     * verify the user is authorized for that application.
-     */
+    try {
 
-    $conversation =
-        conversation_repository_find_for_user(
-            $conversation_id,
-            $user_id
-        );
-
-
-    if (
-        $conversation
-        &&
-        isset($conversation['application_id'])
-        &&
-        (int) $conversation['application_id'] > 0
-    ) {
-
-        $application_id =
-            (int) $conversation['application_id'];
-
-
-        /*
-         * Check authorization based on user role.
-         */
-
-        $authorized =
-            conversation_service_application_participant(
-                $application_id,
-                $user_id
+        $messages =
+            message_repository_list(
+                $conversation_id,
+                $user_id,
+                $filters
             );
 
+    } catch (Throwable $exception) {
 
-        if (!$authorized) {
-            return false;
+        if (function_exists('logger_exception')) {
+            logger_exception($exception);
         }
+
+        return [
+            'ok'      => false,
+            'status'  => 500,
+            'message' => 'Unable to retrieve messages.',
+            'errors'  => [],
+        ];
     }
 
 
-    return message_repository_list(
-        $conversation_id,
-        $user_id,
-        $filters
-    );
+    if ($messages === false) {
+
+        return [
+            'ok'      => false,
+            'status'  => 500,
+            'message' => 'Unable to retrieve messages.',
+            'errors'  => [],
+        ];
+    }
+
+
+    return [
+        'ok'   => true,
+        'data' => $messages,
+    ];
 }
 
 
@@ -195,7 +195,7 @@ function message_service_find(
 
 function message_service_create(
     array $data
-) {
+): array|false {
 
     $sender_id =
         isset($data['sender_id'])
@@ -210,12 +210,10 @@ function message_service_create(
     if ($sender_id <= 0) {
 
         return [
-            'message' =>
-                'Invalid sender.',
-            'errors' => [
-                'sender_id' =>
-                    'A valid sender ID is required.'
-            ]
+            'ok'      => false,
+            'status'  => 401,
+            'message' => 'Authentication required.',
+            'errors'  => [],
         ];
     }
 
@@ -232,130 +230,87 @@ function message_service_create(
     if ($conversation_id <= 0) {
 
         return [
-            'message' =>
-                'Conversation is required.',
-            'errors' => [
+            'ok'      => false,
+            'status'  => 422,
+            'message' => 'Conversation is required.',
+            'errors'  => [
                 'conversation_id' =>
-                    'A valid conversation ID is required.'
-            ]
+                    'A valid conversation ID is required.',
+            ],
         ];
     }
 
 
     /*
-     * Verify that sender belongs
-     * to the conversation and check application authorization.
+     * Existence + participation + application authorization.
      */
+
+    $access =
+        conversation_service_access(
+            $conversation_id,
+            $sender_id
+        );
+
+
+    if (empty($access['ok'])) {
+        return $access;
+    }
+
 
     $conversation =
-        conversation_repository_find_for_user(
-            $conversation_id,
-            $sender_id
+        $access['conversation'];
+
+
+    /*
+     * Withdrawal policy: checked against the database on every send attempt,
+     * never against a cached status. Reading is unaffected - this branch only
+     * guards new messages.
+     */
+
+    $application_id =
+        (int) (
+            $conversation['application_id']
+            ?? 0
         );
 
 
-    if (!$conversation) {
+    $blocked_reason =
+        conversation_service_messaging_blocked_reason(
+            $application_id
+        );
+
+
+    if ($blocked_reason !== null) {
 
         return [
-            'message' =>
-                'Conversation not found or you are not a participant.',
-            'errors' => [
-                'conversation_id' =>
-                    'The conversation does not exist or you are not a participant.'
-            ]
+            'ok'      => false,
+            'status'  => 403,
+            'message' => $blocked_reason,
+            'errors'  => [
+                'application_id' =>
+                    $blocked_reason,
+            ],
         ];
     }
 
 
     /*
-     * If the conversation is linked to an application,
-     * verify the sender is authorized for that application.
+     * Body / unsupported field validation.
      */
 
-    if (
-        isset($conversation['application_id'])
-        &&
-        (int) $conversation['application_id'] > 0
-    ) {
-
-        $application_id =
-            (int) $conversation['application_id'];
-
-
-        /*
-         * Check authorization based on sender role.
-         */
-
-        $authorized =
-            conversation_service_application_participant(
-                $application_id,
-                $sender_id
-            );
-
-
-        if (!$authorized) {
-
-            return [
-                'message' =>
-                    'You are not authorized to send messages to this conversation.',
-                'errors' => [
-                    'conversation_id' =>
-                        'You must be the student or company associated with this accepted application.'
-                ]
-            ];
-        }
-    }
-
-
-    /*
-     * Message body.
-     */
-
-    $body =
-        trim(
-            (string) (
-                $data['body']
-                ?? $data['message']
-                ?? $data['content']
-                ?? ''
-            )
+    $payload =
+        message_validator_create_payload(
+            $data
         );
 
 
-    if ($body === '') {
+    if (!$payload['valid']) {
 
         return [
-            'message' =>
-                'Message content is required.',
-            'errors' => [
-                'body' =>
-                    'Message content cannot be empty.'
-            ]
-        ];
-    }
-
-
-    /*
-     * Verify that sender belongs
-     * to the conversation.
-     */
-
-    $participant =
-        message_repository_is_participant(
-            $conversation_id,
-            $sender_id
-        );
-
-
-    if (!$participant) {
-
-        return [
-            'message' =>
-                'User is not a participant in this conversation.',
-            'errors' => [
-                'conversation_id' =>
-                    'The authenticated user cannot send messages to this conversation.'
-            ]
+            'ok'      => false,
+            'status'  => 422,
+            'message' => 'Validation failed.',
+            'errors'  => $payload['errors'],
         ];
     }
 
@@ -368,144 +323,45 @@ function message_service_create(
             $sender_id,
 
         'body' =>
-            $body
+            $payload['value']['body'],
     ];
 
 
-    /*
-     * Optional reply reference.
-     */
+    try {
 
-    if (
-        isset(
-            $data['reply_to_id']
-        )
-        &&
-        (int)
-            $data['reply_to_id'] > 0
-    ) {
-
-        $reply_to_id =
-            (int)
-                $data['reply_to_id'];
-
-
-        $reply_message =
-            message_repository_find_for_user(
-                $reply_to_id,
-                $sender_id
+        $message =
+            message_repository_create(
+                $message_data
             );
 
+    } catch (Throwable $exception) {
 
-        if (
-            !$reply_message
-            ||
-            (
-                isset(
-                    $reply_message['conversation_id']
-                )
-                &&
-                (int)
-                    $reply_message['conversation_id']
-                    !==
-                    $conversation_id
-            )
-        ) {
+        /*
+         * The repository already logged the database diagnostics and rolled
+         * the transaction back. Only the safe response is produced here.
+         */
 
-            return [
-                'message' =>
-                    'Invalid reply message.',
-                'errors' => [
-                    'reply_to_id' =>
-                        'The reply message does not belong to this conversation.'
-                ]
-            ];
+        if (function_exists('logger_exception')) {
+            logger_exception($exception);
         }
 
-
-        $message_data['reply_to_id'] =
-            $reply_to_id;
+        return [
+            'ok'      => false,
+            'status'  => 500,
+            'message' => 'Unable to send message.',
+            'errors'  => [],
+        ];
     }
-
-
-    /*
-     * Optional message type.
-     */
-
-    if (
-        isset(
-            $data['message_type']
-        )
-    ) {
-
-        $message_data['message_type'] =
-            trim(
-                (string)
-                    $data['message_type']
-            );
-    }
-
-
-    /*
-     * Create message.
-     */
-
-    $message =
-        message_repository_create(
-            $message_data
-        );
 
 
     if (!$message) {
-        return false;
-    }
 
-
-    /*
-     * Attachments, if supported
-     * by the repository layer.
-     */
-
-    if (
-        isset(
-            $data['attachment_ids']
-        )
-        &&
-        is_array(
-            $data['attachment_ids']
-        )
-    ) {
-
-        foreach (
-            $data['attachment_ids']
-            as $attachment_id
-        ) {
-
-            $attachment_id =
-                (int)
-                    $attachment_id;
-
-
-            if (
-                $attachment_id <= 0
-            ) {
-                continue;
-            }
-
-
-            if (
-                function_exists(
-                    'message_repository_attach_file'
-                )
-            ) {
-
-                message_repository_attach_file(
-                    (int) $message['id'],
-                    $attachment_id,
-                    $sender_id
-                );
-            }
-        }
+        return [
+            'ok'      => false,
+            'status'  => 500,
+            'message' => 'Unable to send message.',
+            'errors'  => [],
+        ];
     }
 
 
