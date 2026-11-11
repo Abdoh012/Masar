@@ -216,31 +216,24 @@ export async function updateContactInfo(
   formData: FormData,
 ): Promise<ActionState<ContactInfo>> {
   const email = String(formData.get("email") ?? "");
-  const originalEmail = String(formData.get("original_email") ?? "");
   const phone = String(formData.get("phone") ?? "");
   const website = String(formData.get("website") ?? "");
   const profileLink = String(formData.get("profile_link") ?? "");
   const address = String(formData.get("address") ?? "");
-
-  const emailChanged =
-    email !== "" && email.toLowerCase() !== originalEmail.toLowerCase();
 
   const body: {
     phone: string | null;
     website: string | null;
     external_profile: string | null;
     address: string | null;
-    email?: string;
+    email: string;
   } = {
     phone: phone === "" ? null : phone,
     website: website === "" ? null : website,
     external_profile: profileLink === "" ? null : profileLink,
     address: address === "" ? null : address,
+    email: email,
   };
-
-  if (emailChanged) {
-    body.email = email;
-  }
 
   const result = await serverFetch({
     url: "students/me/contact",
@@ -355,8 +348,6 @@ function readEducationBody(formData: FormData): Record<string, unknown> {
   if (facultyId !== undefined) body.faculty_id = facultyId;
   const fieldId = num("field_id");
   if (fieldId !== undefined) body.field_id = fieldId;
-  const fieldStudy = String(formData.get("field_study") ?? "");
-  if (fieldStudy !== "") body.field_study = fieldStudy;
   const specializationId = num("specialization_id");
   if (specializationId !== undefined) body.specialization_id = specializationId;
   const studyMode = String(formData.get("study_mode") ?? "");

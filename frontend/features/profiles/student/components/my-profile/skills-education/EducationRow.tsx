@@ -6,15 +6,19 @@ import { Trash2, Edit } from "lucide-react";
 
 import { Button } from "@/shared/components/ui/button";
 
-import type { EducationDegreeOption } from "../../../types";
-import type { EducationEntry } from "../../../types";
+import type {
+  EducationDegreeOption,
+  EducationEntry,
+  StudyFieldOption,
+} from "../../../types";
 import { EDUCATION_LABELS } from "./constants";
 import { EducationForm } from "./EducationForm";
 import { EducationRemoveForm } from "./EducationRemoveForm";
 
-export function EducationRow({ entry, degreeOptions }: {
+export function EducationRow({ entry, degreeOptions, studyFieldOptions }: {
   entry: EducationEntry;
   degreeOptions: EducationDegreeOption[];
+  studyFieldOptions: StudyFieldOption[];
 }) {
   const [editing, setEditing] = useState(false);
 
@@ -96,6 +100,7 @@ export function EducationRow({ entry, degreeOptions }: {
           mode="edit"
           entry={entry}
           degreeOptions={degreeOptions}
+          studyFieldOptions={studyFieldOptions}
           onSaved={() => setEditing(false)}
         />
       ) : null}

@@ -35,10 +35,6 @@ export function ContactInfoForm({ contact, onSaved }: ContactInfoFormProps) {
 
   return (
     <form action={formAction} className="space-y-4">
-      {/* Partial update: the backend refuses an email equal to the stored one,
-          so the action needs the original address to omit an unchanged email. */}
-      <input type="hidden" name="original_email" value={contact.email ?? ""} />
-
       <div className="grid gap-4 sm:grid-cols-2">
         {CONTACT_FIELDS.map((field) => (
           <ProfileFieldInput

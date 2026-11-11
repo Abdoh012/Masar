@@ -1,21 +1,17 @@
 ﻿"use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/shared/components/ui/button";
-import { Label } from "@/shared/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
 import { useFormFeedBack } from "@/shared/hooks/useFormFeedback";
 
 import { addEducation, updateEducation } from "../../../actions";
-import type { EducationDegreeOption } from "../../../types";
-import type { EducationEntry } from "../../../types";
+import type {
+  EducationDegreeOption,
+  EducationEntry,
+  StudyFieldOption,
+} from "../../../types";
+import { EducationLookupSelect } from "./EducationLookupSelect";
 import { LabeledInput } from "./LabeledInput";
 import { EDUCATION_LABELS } from "./constants";
 
@@ -39,6 +35,7 @@ interface EducationFormProps {
   mode: Mode;
   entry?: EducationEntry;
   degreeOptions: EducationDegreeOption[];
+  studyFieldOptions: StudyFieldOption[];
   onSaved?: () => void;
 }
 
@@ -46,19 +43,39 @@ export function EducationForm({
   mode,
   entry,
   degreeOptions,
+  studyFieldOptions,
   onSaved,
 }: EducationFormProps) {
   const action = mode === "edit" ? updateEducation : addEducation;
-  const { formAction, isPending } = useFormFeedBack(action, null);
+  const { formAction, state, isPending } = useFormFeedBack(action, null);
   const [formError, setFormError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
+  // Close the form once the action reports success (create or update); the
+  // revalidated list already shows the saved record.
+  useEffect(() => {
+    if (state?.success) onSaved?.();
+  }, [state?.success, onSaved]);
+
   const maxYear = new Date().getFullYear() + 10;
-  
 
   const defaultDegreeId = entry?.degreeId ?? null;
+
+  // The presented record carries only the field's name (no id), so the select's
+  // default is derived by trimmed/case-insensitive name match against the same
+  // lookup; no match -> "". Caveat: study_fields.name is not unique in the
+  // schema, so if two active fields share a name, the first match wins.
+  const fieldOfStudy = entry?.fieldOfStudy ?? "";
+  const defaultFieldId =
+    fieldOfStudy !== ""
+      ? (studyFieldOptions.find(
+          (option) =>
+            option.name.trim().toLowerCase() ===
+            fieldOfStudy.trim().toLowerCase(),
+        )?.id ?? null)
+      : null;
+
   const defaultUniversity = entry?.university ?? "";
-  const defaultFieldOfStudy = entry?.fieldOfStudy ?? "";
   const defaultGrade = entry?.grade ?? "";
   const defaultStartYear =
     entry?.startYear != null ? String(entry.startYear) : "";
@@ -81,8 +98,9 @@ export function EducationForm({
   };
 
   // Repeated label + input fields rendered from config instead of duplicated
-  // markup. Degree (Select) stays outside.
-  const fields: EducationField[] = [
+  // markup. The two lookup selects sit in their original grid slots, so the
+  // text fields split around the field-of-study one.
+  const fieldsBeforeSelect: EducationField[] = [
     {
       label: EDUCATION_LABELS.fields.institution,
       htmlFor: "education-university",
@@ -92,16 +110,9 @@ export function EducationForm({
       placeholder: EDUCATION_LABELS.placeholders.institution,
       disabled: isPending,
     },
-    {
-      label: EDUCATION_LABELS.fields.fieldOfStudy,
-      htmlFor: "education-field-of-study",
-      name: "field_study",
-      type: "text",
-      defaultValue: defaultFieldOfStudy,
-      placeholder: EDUCATION_LABELS.placeholders.fieldOfStudy,
-      disabled: isPending,
-      colSpan: "sm:col-span-2",
-    },
+  ];
+
+  const fieldsAfterSelect: EducationField[] = [
     {
       label: EDUCATION_LABELS.fields.grade,
       htmlFor: "education-grade",
@@ -137,6 +148,12 @@ export function EducationForm({
     },
   ];
 
+  const renderField = (field: EducationField) => (
+    <div key={field.name} className={field.colSpan ?? "space-y-1.5"}>
+      <LabeledInput {...field} />
+    </div>
+  );
+
   return (
     <form ref={formRef} action={formAction} className="space-y-3">
       {mode === "edit" && entry != null && (
@@ -144,36 +161,33 @@ export function EducationForm({
       )}
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="education-degree">
-            {EDUCATION_LABELS.fields.degree}
-          </Label>
-          <Select
-            name="degree_name"
-            defaultValue={
-              defaultDegreeId != null ? String(defaultDegreeId) : ""
-            }
+        <EducationLookupSelect
+          id="education-degree"
+          name="degree_name"
+          label={EDUCATION_LABELS.fields.degree}
+          placeholder={EDUCATION_LABELS.placeholders.degree}
+          emptyLabel={EDUCATION_LABELS.fields.degree}
+          defaultValue={defaultDegreeId != null ? String(defaultDegreeId) : ""}
+          options={degreeOptions}
+          disabled={isPending}
+        />
+
+        {fieldsBeforeSelect.map(renderField)}
+
+        <div className="sm:col-span-2">
+          <EducationLookupSelect
+            id="education-field-of-study"
+            name="field_id"
+            label={EDUCATION_LABELS.fields.fieldOfStudy}
+            placeholder={EDUCATION_LABELS.placeholders.fieldOfStudy}
+            emptyLabel={EDUCATION_LABELS.fields.fieldOfStudy}
+            defaultValue={defaultFieldId != null ? String(defaultFieldId) : ""}
+            options={studyFieldOptions}
             disabled={isPending}
-          >
-            <SelectTrigger className="h-10 hover:cursor-pointer">
-              <SelectValue placeholder={EDUCATION_LABELS.placeholders.degree} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">{EDUCATION_LABELS.fields.degree}</SelectItem>
-              {degreeOptions.map((option) => (
-                <SelectItem key={option.id} value={String(option.id)}>
-                  {option.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          />
         </div>
 
-        {fields.map((field) => (
-          <div key={field.name} className={field.colSpan ?? "space-y-1.5"}>
-            <LabeledInput {...field} />
-          </div>
-        ))}
+        {fieldsAfterSelect.map(renderField)}
       </div>
 
       {formError ? <p className="text-sm text-error-fg">{formError}</p> : null}

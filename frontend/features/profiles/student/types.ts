@@ -91,6 +91,15 @@ export interface EducationDegreeOption {
   name: string;
 }
 
+// One option from the public study-fields taxonomy
+// (GET /api/v1/lookups/study-fields). The education form submits the chosen id
+// as field_id — the backend resolves a field by id (its update path ignores a
+// free-text field name), and the presented record reports only the field name.
+export interface StudyFieldOption {
+  id: number;
+  name: string;
+}
+
 export type AcademicLevel = "student" | "graduate";
 
 // The graduation certificate reported by GET /students/me/academic-status:

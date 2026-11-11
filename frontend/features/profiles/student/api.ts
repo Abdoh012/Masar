@@ -36,6 +36,10 @@ export async function fetchEducationDegrees(): Promise<TryCatchResponse> {
   return serverFetch({ url: "lookups/education-degrees", cache: "no-store" });
 }
 
+export async function fetchStudyFields(): Promise<TryCatchResponse> {
+  return serverFetch({ url: "lookups/study-fields", cache: "no-store" });
+}
+
 export async function fetchSkillOptions(): Promise<TryCatchResponse> {
   return serverFetch({ url: "lookups/skills", cache: "no-store" });
 }

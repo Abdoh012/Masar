@@ -1,25 +1,31 @@
-import { notFound } from "next/navigation";
+import { GraduationCap } from "lucide-react";
 
-import { GraduationCap, Plus } from "lucide-react";
-
-import { Button } from "@/shared/components/ui/button";
-
-import { fetchEducation, fetchEducationDegrees } from "../../../api";
+import {
+  fetchEducation,
+  fetchEducationDegrees,
+  fetchStudyFields,
+} from "../../../api";
 import {
   normalizeEducation,
   normalizeEducationDegrees,
+  normalizeStudyFields,
 } from "../../../lib/normalize";
 import { ProfileSubPanel } from "../ProfileSubPanel";
 import { EducationRow } from "./EducationRow";
-import { EducationForm } from "./EducationForm";
+import { AddEducationForm } from "./AddEducationForm";
 import { EDUCATION_LABELS } from "./constants";
-import type { EducationDegreeOption } from "../../../types";
+import type {
+  EducationDegreeOption,
+  StudyFieldOption,
+} from "../../../types";
 
 export default async function EducationList() {
-  const [educationResult, degreesResult] = await Promise.all([
-    fetchEducation(),
-    fetchEducationDegrees(),
-  ]);
+  const [educationResult, degreesResult, studyFieldsResult] =
+    await Promise.all([
+      fetchEducation(),
+      fetchEducationDegrees(),
+      fetchStudyFields(),
+    ]);
 
   if (!educationResult.success) {
     throw new Error(educationResult.error ?? "Unable to load your education.");
@@ -29,9 +35,18 @@ export default async function EducationList() {
     throw new Error(degreesResult.error ?? "Unable to load the degree list.");
   }
 
+  if (!studyFieldsResult.success) {
+    throw new Error(
+      studyFieldsResult.error ?? "Unable to load the study fields.",
+    );
+  }
+
   const education = normalizeEducation(educationResult);
   const degreeOptions: EducationDegreeOption[] = normalizeEducationDegrees(
     degreesResult.data,
+  );
+  const studyFieldOptions: StudyFieldOption[] = normalizeStudyFields(
+    studyFieldsResult.data,
   );
 
   return (
@@ -51,13 +66,17 @@ export default async function EducationList() {
               key={entry.id}
               entry={entry}
               degreeOptions={degreeOptions}
+              studyFieldOptions={studyFieldOptions}
             />
           ))}
         </ul>
       )}
 
       <div className="mt-4">
-        <EducationForm mode="add" degreeOptions={degreeOptions} />
+        <AddEducationForm
+          degreeOptions={degreeOptions}
+          studyFieldOptions={studyFieldOptions}
+        />
       </div>
     </ProfileSubPanel>
   );

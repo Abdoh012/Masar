@@ -13,6 +13,7 @@ import type {
   ProfileImagePayload,
   ProfileViewsData,
   Skill,
+  StudyFieldOption,
 } from "../types";
 
 // GET /students/me returns exactly data.header (thirteen fields); the hero uses
@@ -272,6 +273,28 @@ export function normalizeEducationDegrees(
 ): EducationDegreeOption[] {
   const raw =
     (data as { education_degrees?: unknown } | undefined)?.education_degrees;
+
+  if (!Array.isArray(raw)) return [];
+
+  return raw.map((entry) => {
+    const option = entry as { id?: unknown; name?: unknown };
+
+    return {
+      id:
+        typeof option.id === "number" && Number.isFinite(option.id)
+          ? option.id
+          : 0,
+      name: toText(option.name) ?? "",
+    };
+  });
+}
+
+// GET /lookups/study-fields returns { data: { study_fields: [...] } }. Coerce
+// each id to a number so the form can send it back as field_id (the backend
+// resolves the field by id, not by free-text name); default to [] when the key
+// is absent or not an array.
+export function normalizeStudyFields(data: unknown): StudyFieldOption[] {
+  const raw = (data as { study_fields?: unknown } | undefined)?.study_fields;
 
   if (!Array.isArray(raw)) return [];
 
