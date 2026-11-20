@@ -14,23 +14,35 @@
 */
 
 if (!defined('DATE_FORMAT_DEFAULT')) {
+    $fallback_date_format = 'Y-m-d';
+    if (defined('DATE_FORMAT')) {
+        $fallback_date_format = DATE_FORMAT;
+    }
     define(
         'DATE_FORMAT_DEFAULT',
-        'Y-m-d'
+        $fallback_date_format
     );
 }
 
 if (!defined('DATETIME_FORMAT_DEFAULT')) {
+    $fallback_datetime_format = 'Y-m-d H:i:s';
+    if (defined('DATETIME_FORMAT')) {
+        $fallback_datetime_format = DATETIME_FORMAT;
+    }
     define(
         'DATETIME_FORMAT_DEFAULT',
-        'Y-m-d H:i:s'
+        $fallback_datetime_format
     );
 }
 
 if (!defined('TIME_FORMAT_DEFAULT')) {
+    $fallback_time_format = 'H:i:s';
+    if (defined('TIME_FORMAT')) {
+        $fallback_time_format = TIME_FORMAT;
+    }
     define(
         'TIME_FORMAT_DEFAULT',
-        'H:i:s'
+        $fallback_time_format
     );
 }
 

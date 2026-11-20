@@ -58,6 +58,12 @@ in [`docs/SETUP_LARAGON.md`](docs/SETUP_LARAGON.md). Production notes are in
 - Auth: `Authorization: Bearer <access token>` + HttpOnly refresh cookie
 - Machine-readable contract: [`openapi.yaml`](openapi.yaml)
 - Per-domain reference: [`docs/api/`](docs/api/)
+- Real-time messaging: run `php websocket/server.php` and see
+  [`docs/WEBSOCKET.md`](docs/WEBSOCKET.md)
+
+Message lists are cursor-paginated: the default page is the latest 12 messages,
+`limit` accepts 1-20, `before_id`/`after_id` move between pages, and `pagination`
+metadata accompanies the flat `data` array.
 
 ## Project layout
 

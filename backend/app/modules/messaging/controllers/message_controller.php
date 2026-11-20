@@ -301,7 +301,12 @@ function message_controller_index(
 
     response_success(
         $result['data'],
-        'Messages retrieved successfully.'
+        'Messages retrieved successfully.',
+        200,
+        [
+            'conversation' => $result['conversation'] ?? null,
+            'pagination'   => $result['pagination'] ?? null,
+        ]
     );
 }
 
@@ -407,6 +412,36 @@ function message_controller_create(
             ],
             'Conversation ID is required.'
         );
+    }
+
+
+    /*
+     * Rate limiting reuses the project's shared security helper. It is a
+     * no-op locally when RATE_LIMIT_ENABLED=false.
+     */
+
+    if (function_exists('security_check_rate_limit_tier')) {
+
+        $rate_limit =
+            security_check_rate_limit_tier(
+                'user',
+                'message_send',
+                (string) $user_id,
+                60,
+                60
+            );
+
+
+        if (empty($rate_limit['allowed'])) {
+
+            response_error(
+                (string) (
+                    $rate_limit['message']
+                    ?? 'Too many requests.'
+                ),
+                429
+            );
+        }
     }
 
 
@@ -538,6 +573,182 @@ function message_controller_create(
     response_created(
         $result,
         'Message sent successfully.'
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Shared result-error mapper for edit/delete endpoints
+|--------------------------------------------------------------------------
+*/
+
+function message_controller_map_error(
+    array $result,
+    string $default_message
+): void {
+
+    $status =
+        (int) ($result['status'] ?? 500);
+
+    $message =
+        (string) ($result['message'] ?? $default_message);
+
+    $errors =
+        is_array($result['errors'] ?? null)
+            ? $result['errors']
+            : [];
+
+
+    if ($status === 404) {
+        response_not_found($message);
+    }
+
+
+    if ($status === 403) {
+        response_forbidden($message);
+    }
+
+
+    if ($status === 422) {
+        response_validation_error($errors, $message);
+    }
+
+
+    if ($status === 401) {
+        response_unauthorized($message);
+    }
+
+
+    response_server_error($message);
+}
+
+
+function message_controller_edit(
+    int $conversation_id = 0,
+    int $message_id = 0
+): void {
+
+    $user_id =
+        message_controller_user_id();
+
+    if (!$user_id) {
+        response_unauthorized();
+    }
+
+
+    if (
+        $conversation_id <= 0
+        ||
+        $message_id <= 0
+    ) {
+
+        response_validation_error(
+            [
+                'conversation_id' =>
+                    'A valid conversation ID is required.',
+                'message_id'      =>
+                    'A valid message ID is required.',
+            ],
+            'Conversation ID and message ID are required.'
+        );
+    }
+
+
+    $data =
+        message_controller_request_data();
+
+
+    $result =
+        message_service_edit(
+            $conversation_id,
+            $user_id,
+            $message_id,
+            $data
+        );
+
+
+    if (
+        is_array($result)
+        &&
+        empty($result['ok'])
+    ) {
+
+        message_controller_map_error(
+            $result,
+            'Unable to edit message.'
+        );
+    }
+
+
+    response_success(
+        $result['message'] ?? $result,
+        'Message edited successfully.'
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Delete Message (hard delete)
+|--------------------------------------------------------------------------
+*/
+
+function message_controller_delete_message(
+    int $conversation_id = 0,
+    int $message_id = 0
+): void {
+
+    $user_id =
+        message_controller_user_id();
+
+    if (!$user_id) {
+        response_unauthorized();
+    }
+
+
+    if (
+        $conversation_id <= 0
+        ||
+        $message_id <= 0
+    ) {
+
+        response_validation_error(
+            [
+                'conversation_id' =>
+                    'A valid conversation ID is required.',
+                'message_id'      =>
+                    'A valid message ID is required.',
+            ],
+            'Conversation ID and message ID are required.'
+        );
+    }
+
+
+    $result =
+        message_service_delete_message(
+            $conversation_id,
+            $user_id,
+            $message_id
+        );
+
+
+    if (
+        is_array($result)
+        &&
+        empty($result['ok'])
+    ) {
+
+        message_controller_map_error(
+            $result,
+            'Unable to delete message.'
+        );
+    }
+
+
+    response_success(
+        null,
+        'Message deleted successfully.'
     );
 }
 

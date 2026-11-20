@@ -89,20 +89,46 @@ paths:
   /auth/refresh:
     post:
       tags: [Authentication]
-      summary: Issue a new access token from the refresh cookie
+      summary: Rotate the refresh token and issue a new access token
+      description: >-
+        Accepts the refresh token from the HttpOnly `refresh_token` cookie
+        (cookie-based flow) or from the JSON body `{ "refresh_token": "..." }`
+        (bearer/body flow). When the refresh token is supplied via cookie, the
+        CSRF double-submit check is required (`csrf_token` cookie must match the
+        `X-CSRF-Token` header). When supplied in the body, the CSRF check is not
+        required. On success the previous refresh token is revoked, a new
+        refresh token is issued (rotated) and set as the HttpOnly
+        `refresh_token` cookie, and a new access token is returned. Reused,
+        revoked, expired or invalid refresh tokens are rejected with 401.
       security:
+        - {}
         - refreshCookie: []
           csrfToken: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RefreshTokenRequest' }
       responses:
-        '200': { $ref: '#/components/responses/Success' }
+        '200': { $ref: '#/components/responses/AuthTokenRefreshSuccess' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
   /auth/logout:
     post:
       tags: [Authentication]
       summary: Invalidate the current session
+      description: >-
+        Revokes the authenticated user's session tokens and clears auth cookies.
+        Accepts a valid bearer access token, or (when the access token has
+        already expired) a valid refresh token supplied via the `refresh_token`
+        cookie or JSON body to identify the session to revoke.
+      security:
+        - {}
+        - bearerAuth: []
       responses:
         '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
 
   /auth/me:
     get:
@@ -533,14 +559,37 @@ paths:
       summary: Update the authenticated student's academic status
       description: >-
         Writes students.academic_status ('student' | 'graduate') and, when the
-        status is 'graduate', the graduation date (students.graduation_year /
-        students.graduation_month, derived from `graduation_date`) and the
-        graduation certificate file reference (students.academic_certificate_file_id,
-        uploaded through the existing academic-certificate flow).
+        status is 'graduate', the graduation date (students.graduation_date, and
+        students.graduation_year / students.graduation_month derived from it) and
+        the graduation certificate file reference
+        (students.academic_certificate_file_id, uploaded through the existing
+        academic-certificate flow).
 
-        A 'student' status requires no further fields and never touches the
-        certificate. A 'graduate' status requires `graduation_date`
-        (YYYY-MM-DD) and `graduation_certificate` (file).
+        `academic_status` accepts exactly `student` and `graduate`. The value is
+        trimmed and matched case-insensitively, so `Student` and ` STUDENT ` are
+        stored as `student`. Any other value is refused with 422 and an
+        `academic_status` field error.
+
+        A 'student' status requires no further fields, uploads nothing and never
+        touches the stored certificate. A 'graduate' status requires
+        `graduation_date` (YYYY-MM-DD) and `graduation_certificate` (pdf/png/jpg/
+        jpeg, up to 5 MB).
+
+        Request encoding:
+
+        - `application/json` is enough for a status-only update, such as
+          {"academic_status":"student"}. A JSON `graduate` request has no way to
+          carry the certificate and is refused.
+        - `multipart/form-data` is required when the certificate is sent. PHP
+          populates $_POST / $_FILES only for POST requests, so the endpoint
+          parses a PUT multipart body itself; clients must NOT switch the method
+          to POST.
+
+        A `student` response contains only `academic_status`. A `graduate`
+        response contains `academic_status`, `graduation_date` and
+        `graduation_certificate` ({id, file_name, file_url}). The legacy
+        `is_graduate`, `graduation_year`, `graduation_month` and
+        `graduation_month_name` fields are not returned.
 
         This column is NOT a training-eligibility input. Nothing in Applications,
         Trainings or Certificates reads it, so changing it cannot allow or
@@ -550,6 +599,19 @@ paths:
       requestBody:
         required: true
         content:
+          application/json:
+            schema:
+              type: object
+              required: [academic_status]
+              properties:
+                academic_status:
+                  type: string
+                  enum: [student, graduate]
+                  example: student
+            examples:
+              student:
+                summary: Status-only update
+                value: { academic_status: student }
           multipart/form-data:
             schema:
               type: object
@@ -558,16 +620,45 @@ paths:
                 academic_status:
                   type: string
                   enum: [student, graduate]
+                  example: graduate
                 graduation_date:
                   type: string
                   format: date
                   description: Required when academic_status is graduate (YYYY-MM-DD).
+                  example: '2026-06-15'
                 graduation_certificate:
                   type: string
                   format: binary
                   description: Required when academic_status is graduate (pdf/png/jpg/jpeg, up to 5 MB).
       responses:
-        '200': { $ref: '#/components/responses/Success' }
+        '200':
+          description: >-
+            The stored academic status. A student reply carries only
+            `academic_status`; a graduate reply also carries `graduation_date`
+            and `graduation_certificate`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessEnvelope' }
+              examples:
+                student:
+                  value:
+                    success: true
+                    message: Academic status updated successfully.
+                    data:
+                      academic_status: student
+                    errors: null
+                graduate:
+                  value:
+                    success: true
+                    message: Academic status updated successfully.
+                    data:
+                      academic_status: graduate
+                      graduation_date: '2026-06-15'
+                      graduation_certificate:
+                        id: 123
+                        file_name: certificate.pdf
+                        file_url: http://localhost/Masar/backend/api/v1/files/123?download=true
+                    errors: null
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '422': { $ref: '#/components/responses/ValidationError' }
@@ -1304,13 +1395,32 @@ paths:
       description: >-
         Requires a Bearer token. Returns the conversations the authenticated
         user participates in, on the student or company side of an application.
-        `data` is a flat array of conversation rows - there is no pagination
-        envelope.
+        `data` is `{ items, pagination }`: `items` is the page of conversation
+        rows and `pagination` is `{ total, limit, offset }`, where `total` is
+        the number of the user's conversations before paging, computed with
+        the same visibility and filters as the list.
 
-        Optional filters are `application_id`, `keyword`, `limit` (default 50,
-        clamped to 100) and `offset` (default 0). Filtering by an
-        `application_id` the user does not participate in returns an empty array
-        rather than an error.
+        Each conversation row additionally carries:
+
+        * `last_message`: the conversation's latest message (`id`, `body`,
+          `sender_user_id`, `created_at`), or `null` when the conversation has
+          no messages. The latest message is the newest by `created_at` then
+          `id`.
+        * `application_status`: the status of the linked training application,
+          read live from the database.
+        * `training`: `{ title, starts_at, ends_at }` of the linked training
+          listing, or `null` when no training listing is linked. Dates are
+          returned as stored and are `null` when the listing has none.
+
+        Query parameters are read from the query string only (never from a
+        body) and are validated: an out-of-range or non-numeric value is a 400
+        with the offending field in `errors`.
+
+        `limit` defaults to 20 and accepts 1-100; `offset` defaults to 0 and
+        must be >= 0. Optional filters are `application_id` (positive integer;
+        a filter for an application the user is not a participant of returns an
+        empty page) and `keyword` (LIKE over the student name, company name
+        and training title).
 
         Withdrawal does NOT hide a conversation or its history: both
         participants keep read access, only sending is refused (403).
@@ -1328,16 +1438,16 @@ paths:
         - name: limit
           in: query
           required: false
-          description: Maximum rows. Defaults to 50 and is clamped to 100.
-          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+          description: Page size. Must be between 1 and 100; defaults to 20.
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
         - name: offset
           in: query
           required: false
-          description: Rows to skip. Defaults to 0.
+          description: Rows to skip. Must be >= 0; defaults to 0.
           schema: { type: integer, minimum: 0, default: 0 }
       responses:
         '200':
-          description: The authenticated user's conversations.
+          description: The authenticated user's conversations with the latest message preview, application status, training info and pagination metadata.
           content:
             application/json:
               schema:
@@ -1345,9 +1455,8 @@ paths:
                   - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
-                      data:
-                        type: array
-                        items: { $ref: '#/components/schemas/MessagingConversation' }
+                      data: { $ref: '#/components/schemas/MessagingConversationListData' }
+        '400': { $ref: '#/components/responses/Error' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '500': { $ref: '#/components/responses/Error' }
     post:
@@ -1404,52 +1513,46 @@ paths:
         '422': { $ref: '#/components/responses/ValidationError' }
         '500': { $ref: '#/components/responses/Error' }
 
-  /conversations/{id}:
-    get:
-      tags: [Messaging]
-      summary: Get a conversation
-      description: >-
-        Requires a Bearer token. The conversation is returned only to its
-        student or company participant; anyone else receives 403 and a
-        nonexistent conversation is a 404. Reading is not blocked by a
-        withdrawn application.
-      parameters:
-        - $ref: '#/components/parameters/Id'
-      responses:
-        '200':
-          description: The conversation with its joined display fields.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data: { $ref: '#/components/schemas/MessagingConversation' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
-        '500': { $ref: '#/components/responses/Error' }
-
   /conversations/{id}/messages:
     get:
       tags: [Messaging]
-      summary: List messages in a conversation
+      summary: List messages in a conversation (cursor pagination)
       description: >-
-        Requires a Bearer token. `data` is a flat array ordered by
-        `created_at` then `id`, ascending by default; there is no pagination
-        envelope.
+        Requires a Bearer token. `data` stays a flat array ordered by the
+        auto-increment `id`, oldest to newest. Pagination metadata is returned
+        as a sibling of `data` in the standard envelope; only one bounded page
+        is ever read from MySQL. A `conversation` object is also returned at
+        the top level: `{ id, company: { id, name, image } }`, the
+        conversation's header for a WhatsApp-style display. `company.image` is
+        the company's relative storage path from `companies.company_logo`
+        (null when the company has no logo). It is fetched once per request
+        and never added to message objects.
 
-        Query parameters are read from the query string only (never from a
-        body) and are validated: an out-of-range or non-numeric value is a 400
-        with the offending field in `errors`.
+        The default request returns the latest 12 messages: the query scans
+        `ORDER BY id DESC LIMIT limit + 1` (served by the composite
+        `(conversation_id, id)` index) and the result is reversed to
+        chronological order. The extra row is used only to compute `has_more`
+        and is never returned. No total-count query is performed.
 
-        `limit` defaults to 50 and accepts 1-100; `offset` defaults to 0 and
-        must be >= 0. `order` accepts `asc` or `desc`. `before_id` / `after_id`
-        are exclusive id cursors, and `sender_id` filters on the sending user
-        id. `from_date` / `to_date` accept `Y-m-d` or `Y-m-d H:i:s`; a
-        date-only `to_date` covers the whole day (until 23:59:59). Any other
-        format is a 400.
+        `limit` defaults to 12 and accepts 1-20; 0, 21, negative and
+        non-numeric values are a 400. `before_id` returns messages with a lower
+        id (older page) and `after_id` returns messages with a greater id
+        (newer page), both exclusive of the cursor. Both modes are returned in
+        chronological order. The cursor message is never included. Supplying
+        both cursors is a 400 with `errors.before_id_after_id`. A non-numeric or
+        non-positive cursor is a 400; a positive cursor that does not exist is
+        safe and yields the nearest page.
+
+        `offset`, `order`, `sender_id`, `from_date` and `to_date` remain
+        accepted for backward compatibility. `order` is a display-only
+        override (the cursor mechanics are identical in every mode), and
+        `from_date` / `to_date` accept `Y-m-d` or `Y-m-d H:i:s`, with a
+        date-only `to_date` covering the whole day (until 23:59:59).
+
+        `pagination` contains `limit`, `has_more`, `next_before_id` (oldest id
+        in the page; use as `before_id` for older messages) and `next_after_id`
+        (newest id in the page; use as `after_id` for newer messages). Empty
+        conversations return `data: []` with `has_more: false`.
 
         A nonexistent conversation is a 404, a conversation the user does not
         participate in is a 403, and a missing/invalid token is a 401.
@@ -1460,28 +1563,36 @@ paths:
         - name: limit
           in: query
           required: false
-          description: Page size. Must be between 1 and 100; defaults to 50.
-          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
-        - name: offset
-          in: query
-          required: false
-          description: Rows to skip. Must be >= 0; defaults to 0.
-          schema: { type: integer, minimum: 0, default: 0 }
-        - name: order
-          in: query
-          required: false
-          description: Sort direction applied to created_at and id.
-          schema: { type: string, enum: [asc, desc], default: asc }
+          description: Page size. Must be between 1 and 20; defaults to 12.
+          schema: { type: integer, minimum: 1, maximum: 20, default: 12 }
         - name: before_id
           in: query
           required: false
-          description: Only messages with an id lower than this value (exclusive).
+          description: >-
+            Exclusive cursor: only messages with an id lower than this value
+            (older page). Cannot be combined with after_id.
           schema: { type: integer, format: int64, minimum: 1 }
         - name: after_id
           in: query
           required: false
-          description: Only messages with an id greater than this value (exclusive).
+          description: >-
+            Exclusive cursor: only messages with an id greater than this value
+            (newer page). Cannot be combined with before_id.
           schema: { type: integer, format: int64, minimum: 1 }
+        - name: offset
+          in: query
+          required: false
+          deprecated: true
+          description: Legacy offset. Must be >= 0; defaults to 0.
+          schema: { type: integer, minimum: 0, default: 0 }
+        - name: order
+          in: query
+          required: false
+          deprecated: true
+          description: >-
+            Legacy display-only override. Pages are always cursor-based; the
+            default asc presents messages oldest to newest.
+          schema: { type: string, enum: [asc, desc], default: asc }
         - name: sender_id
           in: query
           required: false
@@ -1501,7 +1612,7 @@ paths:
           schema: { type: string, example: '2026-08-15' }
       responses:
         '200':
-          description: The conversation's messages, oldest first by default.
+          description: One page of messages in chronological order with pagination metadata and the conversation header.
           content:
             application/json:
               schema:
@@ -1512,6 +1623,8 @@ paths:
                       data:
                         type: array
                         items: { $ref: '#/components/schemas/MessagingMessage' }
+                      pagination: { $ref: '#/components/schemas/MessagingMessagePagination' }
+                      conversation: { $ref: '#/components/schemas/MessagingConversationHeader' }
         '400': { $ref: '#/components/responses/Error' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
@@ -1542,7 +1655,12 @@ paths:
 
         Sending is refused with 403 when the linked training application is
         `withdrawn` (status is re-read from the database on every send). Reading
-        the conversation and its history is unaffected.
+        the conversation and its history is unaffected. Sending is rate limited
+        per user (60 requests / minute when rate limiting is enabled).
+
+        The insert, the conversation `updated_at` update and the `message_events`
+        outbox row commit in one transaction. The WebSocket server broadcasts
+        the resulting `message.created` event only after that commit.
       parameters:
         - $ref: '#/components/parameters/Id'
       requestBody:
@@ -1565,6 +1683,106 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/Error' }
+
+  /conversations/{id}/messages/{message_id}:
+    patch:
+      tags: [Messaging]
+      summary: Edit your own message
+      description: >-
+        Requires a Bearer token. Editing is available on any message the
+        authenticated user owns, with no time limit. The message must belong to
+        the conversation in the URL path: it is retrieved using the message id
+        AND the conversation id, and the sender is re-read from the database.
+
+        `body` is the canonical field (5000 characters maximum, valid UTF-8,
+        trimmed, non-empty) — the same rules as message creation; `message` and
+        `content` remain accepted aliases. An empty or whitespace-only body is a
+        422.
+
+        Effects: the message body is updated, `is_edited` is set to 1, and
+        `updated_at` is set to the current timestamp. `id` and the original
+        `created_at` are never modified.
+
+        Authorization: the message is loaded with the message id and the URL
+        conversation id. Non-participants get a 403, messages from other
+        conversations 404, and messages owned by someone else 403 ("You can
+        only edit your own messages."). Withdrawn applications: reading remains
+        allowed, but editing is refused with 403, consistent with the send
+        restriction.
+
+        Returns the updated message via the standard success envelope. The
+        `message.updated` event is published after the transaction commits.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - name: message_id
+          in: path
+          required: true
+          schema: { type: integer, format: int64, minimum: 1 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MessagingMessageUpdateRequest' }
+      responses:
+        '200':
+          description: The updated message.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/MessagingMessage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/Error' }
+
+    delete:
+      tags: [Messaging]
+      summary: Delete your own message (Delete for Everyone)
+      description: >-
+        Requires a Bearer token. Deletes a message owned by the authenticated
+        user with a HARD DELETE: the row is physically removed from the
+        `messages` table. There is no soft delete, no placeholder body, no
+        `deleted_at`, and the conversation and all other messages are untouched.
+
+        Ownership and conversation membership are verified from the database
+        using the message id and URL conversation id; non-participants get a
+        403, messages from other conversations 404, messages owned by someone
+        else 403 ("You can only delete your own messages."), and already-deleted
+        or nonexistent messages 404. Withdrawn applications: deletion is
+        refused with 403, consistent with the send restriction; reading remains
+        allowed.
+
+        After deletion:
+        * the message no longer appears in message retrieval responses;
+        * it no longer contributes to `unread_count`;
+        * the conversation's latest message is recalculated from remaining
+          messages (`last_message: null` when none remain).
+
+        The `message.deleted` event (which carries only `message_id`,
+        `conversation_id` and `deleted_by` — never the body) is published after
+        the transaction commits.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - name: message_id
+          in: path
+          required: true
+          schema: { type: integer, format: int64, minimum: 1 }
+      responses:
+        '200':
+          description: The message was deleted.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessEnvelope' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
         '500': { $ref: '#/components/responses/Error' }
 
   /search:
@@ -1743,13 +1961,13 @@ components:
     refreshCookie:
       type: apiKey
       in: cookie
-      name: MASAR_REFRESH
+      name: refresh_token
       description: HttpOnly refresh-token cookie
     csrfToken:
       type: apiKey
       in: header
       name: X-CSRF-Token
-      description: Required for cookie-based state-changing requests
+      description: Required for cookie-based state-changing requests (e.g. refresh via cookie)
 
   parameters:
     Id:
@@ -1917,6 +2135,57 @@ components:
       properties:
         email: { type: string, format: email }
         password: { type: string, format: password }
+        remember: { type: boolean, description: When true, also sets the remember-me cookie. }
+    AuthTokenData:
+      type: object
+      description: Authentication payload returned by login and similar flows.
+      properties:
+        user: { $ref: '#/components/schemas/User' }
+        token:
+          type: string
+          description: JWT access token.
+        token_type:
+          type: string
+          example: bearer
+        expires_in:
+          type: integer
+          description: Access token lifetime in seconds (from JWT_ACCESS_TTL).
+          example: 3600
+        refresh_token:
+          type: string
+          description: Rotatable refresh token (also delivered as HttpOnly cookie).
+        refresh_expires_in:
+          type: integer
+          description: Refresh token lifetime in seconds (from JWT_REFRESH_TTL).
+          example: 2592000
+    AuthRefreshData:
+      type: object
+      description: Payload returned by POST /auth/refresh after successful rotation.
+      properties:
+        user: { $ref: '#/components/schemas/User' }
+        token:
+          type: string
+          description: New JWT access token.
+        token_type:
+          type: string
+          example: bearer
+        expires_in:
+          type: integer
+          description: Access token lifetime in seconds.
+          example: 3600
+        refresh_token:
+          type: string
+          description: New refresh token (rotated; previous token is revoked).
+        refresh_expires_in:
+          type: integer
+          description: Refresh token lifetime in seconds.
+          example: 2592000
+    RefreshTokenRequest:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+          description: Refresh token (used when not relying on the HttpOnly cookie).
     ChangePasswordRequest:
       type: object
       required: [current_password, new_password, new_password_confirmation]
@@ -1996,6 +2265,15 @@ components:
         updated_at: { type: string, example: '2026-08-13 10:00:00' }
         student_name: { type: string, nullable: true }
         company_name: { type: string, nullable: true }
+        company_image:
+          type: string
+          nullable: true
+          description: >-
+            The conversation's company's profile image as the relative storage
+            path stored in companies.company_logo (e.g.
+            companies/20260821_a1b2c3d4.png), or null when the company has no
+            logo. Only present on the conversations list endpoint.
+          example: companies/20260821_a1b2c3d4.png
         training_title: { type: string, nullable: true }
         unread_count:
           type: integer
@@ -2004,6 +2282,99 @@ components:
             Messages from the other participant that are not read yet. Only
             present on the list endpoint.
           example: 1
+        last_message:
+          allOf:
+            - $ref: '#/components/schemas/MessagingLastMessage'
+          nullable: true
+          description: >-
+            The conversation's latest message, or null when the conversation
+            has no messages. Only present on the list endpoint.
+        application_status:
+          type: string
+          nullable: true
+          description: >-
+            Status of the linked training application, read live from the
+            database (e.g. accepted, submitted, rejected, withdrawn). Only
+            present on the list endpoint.
+          example: accepted
+        training:
+          allOf:
+            - $ref: '#/components/schemas/MessagingTraining'
+          nullable: true
+          description: >-
+            The linked training listing (title, starts_at, ends_at), or null
+            when no training listing is linked. Dates are null when the
+            listing has none. Only present on the list endpoint.
+    MessagingLastMessage:
+      type: object
+      description: >-
+        A conversation's latest message preview. The latest message is the
+        newest by created_at then id; `body` is the full message body.
+      required: [id, body, sender_user_id, created_at]
+      properties:
+        id: { type: integer, format: int64, example: 1108 }
+        body: { type: string, maxLength: 5000, example: 'Just bring your laptop and any portfolio pieces you mentioned.' }
+        sender_user_id: { type: integer, format: int64, example: 100568 }
+        created_at: { type: string, example: '2026-08-17 11:00:00' }
+    MessagingTraining:
+      type: object
+      description: >-
+        A linked training listing, using the actual `training_listings`
+        columns. Dates are returned as stored and are null when the listing
+        has none.
+      required: [title]
+      properties:
+        title: { type: string, example: 'Junior PHP Developer Track' }
+        starts_at:
+          type: string
+          nullable: true
+          example: '2026-08-10 09:00:00'
+        ends_at:
+          type: string
+          nullable: true
+          example: '2026-08-27 17:00:00'
+    MessagingConversationListData:
+      type: object
+      description: >-
+        The page of conversation rows plus pagination metadata. `total` is
+        scoped to the authenticated user with the same visibility and filters
+        as the list query; it does not change with `limit` or `offset`.
+      required: [items, pagination]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/MessagingConversation' }
+        pagination:
+          type: object
+          required: [total, limit, offset]
+          properties:
+            total: { type: integer, minimum: 0, example: 3 }
+            limit: { type: integer, minimum: 1, maximum: 100, example: 20 }
+            offset: { type: integer, minimum: 0, example: 0 }
+    MessagingConversationHeader:
+      type: object
+      description: >-
+        The conversation's header, returned once at the top level of the
+        messages list (not inside message objects).
+      required: [id, company]
+      properties:
+        id: { type: integer, format: int64, example: 262 }
+        company:
+          type: object
+          nullable: true
+          required: [id, name, image]
+          properties:
+            id: { type: integer, format: int64, example: 100161 }
+            name: { type: string, example: 'TestHire Solutions' }
+            image:
+              type: string
+              nullable: true
+              description: >-
+                The company's profile image as the relative storage path
+                stored in companies.company_logo (e.g.
+                company-logo-test/data.png), or null when the company has no
+                logo. Only present on the messages list endpoint.
+              example: company-logo-test/data.png
     MessagingMessage:
       type: object
       description: A stored message. `sender_id` is an alias of `sender_user_id`.
@@ -2014,9 +2385,46 @@ components:
         sender_user_id: { type: integer, format: int64, example: 100568 }
         body: { type: string, maxLength: 5000 }
         is_read: { type: integer, enum: [0, 1], example: 1 }
+        is_edited:
+          type: integer
+          enum: [0, 1]
+          default: 0
+          description: >-
+            1 when the message was edited at least once. Set to 1 by the edit
+            endpoint; always 0 for messages that were never edited.
+          example: 0
         read_at: { type: string, nullable: true, example: '2026-08-14 12:00:00' }
         created_at: { type: string, example: '2026-08-13 11:00:00' }
+        updated_at:
+          type: string
+          nullable: true
+          description: >-
+            Timestamp of the most recent edit. Null when the message has never
+            been edited. `id` and `created_at` never change on edit.
+          example: '2026-11-20 21:00:00'
         sender_id: { type: integer, format: int64, example: 100568 }
+    MessagingMessagePagination:
+      type: object
+      description: >-
+        Cursor metadata returned beside the flat `data` array on the messages
+        list endpoint. `has_more` is computed with a limit + 1 read; the extra
+        row is never returned. Cursors are null for an empty page.
+      required: [limit, has_more, next_before_id, next_after_id]
+      properties:
+        limit: { type: integer, minimum: 1, maximum: 20, example: 12 }
+        has_more: { type: boolean, example: true }
+        next_before_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: Oldest id in the page; pass as before_id for older messages.
+          example: 1104
+        next_after_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: Newest id in the page; pass as after_id for newer messages.
+          example: 1108
     MessagingConversationCreateRequest:
       type: object
       required: [application_id]
@@ -2055,6 +2463,22 @@ components:
         the authenticated user and rejected with 422 when they differ.
         `message_type`, `reply_to_id`, `attachment_ids`, `attachments` and
         `file_id` are rejected with 422 because they are not persisted.
+    MessagingMessageUpdateRequest:
+      type: object
+      required: [body]
+      additionalProperties: true
+      properties:
+        body:
+          type: string
+          minLength: 1
+          maxLength: 5000
+          description: >-
+            Message text. Trimmed before validation; must be non-empty and
+            valid UTF-8. `message` and `content` are accepted aliases.
+      description: >-
+        Only the message `body` is updatable. Sender identity fields are never
+        accepted as authority: they are ignored when equal to the
+        authenticated user and rejected with 422 otherwise.
 
   responses:
     Success:
@@ -2109,10 +2533,32 @@ components:
                 properties:
                   data: { $ref: '#/components/schemas/CertificateStatistics' }
     AuthSuccess:
-      description: Authenticated successfully (access token returned; refresh cookie set)
+      description: >-
+        Authenticated successfully. Returns an access token and the authenticated
+        user; a refresh token and CSRF cookie are also set (HttpOnly refresh
+        cookie + readable CSRF cookie) and the refresh token/expiry are included
+        in the response body for clients that do not rely on cookies.
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/SuccessEnvelope' }
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/SuccessEnvelope'
+              - type: object
+                properties:
+                  data: { $ref: '#/components/schemas/AuthTokenData' }
+    AuthTokenRefreshSuccess:
+      description: >-
+        Refresh succeeded. The previous refresh token is revoked and rotated; a
+        new access token and a new refresh token are returned and the refresh
+        cookie is updated.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/SuccessEnvelope'
+              - type: object
+                properties:
+                  data: { $ref: '#/components/schemas/AuthRefreshData' }
     NoContent:
       description: No content
     ValidationError:
@@ -2145,3 +2591,76 @@ components:
       content:
         application/json:
           schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+x-websocket:
+  summary: Real-time messaging events (not an HTTP path)
+  description: >-
+    OpenAPI 3.0 has no native WebSocket path type. This extension documents the
+    separate, real RFC 6455 server. The HTTP API remains the source of truth for
+    message persistence; the socket only delivers events for messages that have
+    already been committed.
+  entryPoint: websocket/server.php
+  startup: php websocket/server.php
+  connectionUrl: 'ws://127.0.0.1:8081/?token=ACCESS_TOKEN'
+  transport: RFC 6455 over TCP, PHP core streams (no ext-sockets/pcntl required)
+  authentication:
+    description: >-
+      The existing JWT access token is required. It is accepted as an
+      `Authorization: Bearer ACCESS_TOKEN` handshake header or as the `token`
+      query parameter for browser clients. Signature, expiry, token type and
+      active user status are validated against the same configuration and
+      database as the HTTP API. Tokens are never logged.
+    handshakeErrors:
+      '400': Invalid or missing WebSocket upgrade headers
+      '401': Missing, invalid, expired token or inactive user
+      '429': Too many connection attempts from this IP
+      '503': Server connection limit reached
+  configuration:
+    - { name: WS_HOST, default: '127.0.0.1' }
+    - { name: WS_PORT, default: 8081 }
+    - { name: WS_MAX_CONNECTIONS, default: 100 }
+    - { name: WS_PING_INTERVAL, default: 30 }
+    - { name: WS_OUTBOX_INTERVAL_MS, default: 500 }
+    - { name: WS_OUTBOX_BATCH, default: 50 }
+  clientMessages:
+    - type: subscribe
+      payload: { type: subscribe, conversation_id: 225 }
+      ack: { type: subscribed, data: { conversation_id: 225, baseline_message_id: 1108 } }
+      errors: [validation_error, unauthorized, forbidden, not_found]
+      description: >-
+        Membership is re-checked against the database on every subscription.
+        A baseline message id is captured so history is never replayed.
+    - type: unsubscribe
+      payload: { type: unsubscribe, conversation_id: 225 }
+      ack: { type: unsubscribed, data: { conversation_id: 225 } }
+    - type: ping
+      payload: { type: ping }
+      ack: { type: pong, data: {} }
+  serverEvents:
+    - type: message.created
+      description: >-
+        Delivered only to authenticated subscribers of the conversation, for
+        messages created after their subscription baseline.
+      payload:
+        type: message.created
+        data:
+          event_id: 42
+          conversation_id: 225
+          message_id: 1234
+          sender_user_id: 100532
+          body: Hello!
+          created_at: '2026-11-20 10:15:00'
+  reliability:
+    - >-
+      A `message_events` outbox row is inserted in the same transaction as the
+      message, so events are never broadcast before commit or for failed writes.
+    - >-
+      Pending events left during downtime are discarded at startup; clients use
+      `GET /conversations/{id}/messages?after_id=<last_seen_id>` to recover.
+    - Server ping/pong detects dead peers; missed pongs close the connection.
+  restrictions:
+    - >-
+      Chat messages cannot be sent over the socket. All business rules,
+      including the withdrawn-application send block, are enforced by the HTTP
+      API only.
+    - No email, token, password or internal database detail is present in events.

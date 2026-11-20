@@ -51,7 +51,7 @@ function auth_repository_delete_user( int $user_id ): bool {
 }
 
 function auth_repository_create_company_approval( int $user_id ): bool {
-    $sql = " INSERT INTO company_approvals ( user_id, status, created_at, updated_at ) VALUES ( ?, 'pending', NOW(), NOW() ) ";
+    $sql = " INSERT INTO company_approvals ( user_id, status, created_at, updated_at ) VALUES ( ?, " . COMPANY_STATUS_PENDING . ", NOW(), NOW() ) ";
     $statement = db_execute( $sql, [$user_id] );
     return db_row_count($statement) > 0;
 }

@@ -173,14 +173,20 @@ function auth_handle_login(): void
     }
 
     $access_token = $result['data']['token'] ?? null;
+    $refresh_token = $result['jwt']['refresh_token'] ?? null;
+
     if (is_string($access_token) && $access_token !== '') {
-        $refresh_token = $result['jwt']['refresh_token'] ?? null;
         if (is_string($refresh_token) && $refresh_token !== '') {
-            jwt_set_refresh_cookie($refresh_token, (int) (getenv('JWT_REFRESH_TTL') ?: 2592000));
+            jwt_set_refresh_cookie($refresh_token, jwt_refresh_ttl());
         }
 
         $csrf_token = csrf_generate_token();
         csrf_set_cookie($csrf_token);
+    }
+
+    $response_data = $result['data'] ?? $result;
+    if (is_array($response_data) && is_string($refresh_token) && $refresh_token !== '') {
+        $response_data['refresh_token'] = $refresh_token;
     }
 
     security_log_event('login_success', ['ip' => $identifier, 'user_id' => $result['data']['user']['id'] ?? null]);
@@ -188,7 +194,8 @@ function auth_handle_login(): void
     if (is_array($logged_user) && !empty($logged_user['id'])) {
         audit_log_user_action('login_success', 'user', $logged_user['id'], [], ['role' => $logged_user['role'] ?? null, 'ip' => $identifier], $logged_user);
     }
-    response_success($result['data'] ?? $result, 'Welcome back!');
+
+    response_success($response_data, 'Welcome back!');
 }
 
 /*
@@ -201,66 +208,92 @@ function auth_handle_login(): void
 */
 function auth_handle_refresh(): void
 {
-    $refresh_cookie = request_cookie('refresh_token');
-    $csrf_cookie = request_cookie(csrf_cookie_name());
-    $csrf_header = request_header(csrf_header_name());
+    global $app_config;
 
-    if (!is_string($refresh_cookie) || trim($refresh_cookie) === '') {
+    $body = request_input();
+    $body_token = is_array($body) ? trim((string) ($body['refresh_token'] ?? '')) : '';
+    $cookie_token = trim((string) (request_cookie('refresh_token') ?? ''));
+
+    if ($body_token !== '') {
+        $refresh_token = $body_token;
+        $token_source = 'body';
+    } elseif ($cookie_token !== '') {
+        $refresh_token = $cookie_token;
+        $token_source = 'cookie';
+    } else {
+        $refresh_token = '';
+        $token_source = 'none';
+    }
+
+    if ($refresh_token === '') {
         response_unauthorized('Refresh token is required.');
     }
 
-    if (!is_string($csrf_cookie) || trim($csrf_cookie) === '' || !is_string($csrf_header) || trim($csrf_header) === '' || !hash_equals($csrf_cookie, $csrf_header)) {
-        response_error('CSRF token validation failed.', 403, [
-            'csrf_token' => ['Invalid or missing CSRF token.'],
-        ]);
+    /*
+     * CSRF double-submit is required for the cookie-based refresh flow (the
+     * browser attaches the cookie automatically). When the refresh token is
+     * explicitly supplied in the request body it is not an ambient credential,
+     * so the CSRF check is not required.
+     */
+    if ($token_source === 'cookie') {
+        $csrf_cookie = request_cookie(csrf_cookie_name());
+        $csrf_header = request_header(csrf_header_name());
+
+        if (
+            !is_string($csrf_cookie) || trim($csrf_cookie) === '' ||
+            !is_string($csrf_header) || trim($csrf_header) === '' ||
+            !hash_equals($csrf_cookie, $csrf_header)
+        ) {
+            response_error('CSRF token validation failed.', 403, [
+                'csrf_token' => ['Invalid or missing CSRF token.'],
+            ]);
+        }
     }
 
-    $payload = jwt_validate_refresh_token($refresh_cookie);
-    if ($payload === false) {
-        jwt_mark_refresh_token_reused($refresh_cookie);
+    $result = jwt_rotate_refresh_token_atomic($refresh_token);
+
+    if (($result['ok'] ?? false) !== true) {
+        $reason = (string) ($result['reason'] ?? 'invalid');
+
+        if (in_array($reason, ['reused', 'revoked'], true)) {
+            response_unauthorized('Refresh token has already been used or revoked.');
+        }
+
+        if ($reason === 'user_ineligible') {
+            response_unauthorized('Account is not active.');
+        }
+
         response_unauthorized('Invalid or expired refresh token.');
     }
 
-    $user_id = (int) ($payload['sub'] ?? 0);
-    $user = auth_find_user_by_id($user_id);
-    if ($user === null) {
-        response_unauthorized('User not found.');
+    $user = $result['user'] ?? [];
+    $new_access_token = (string) ($result['access_token'] ?? '');
+    $new_refresh_token = (string) ($result['refresh_token'] ?? '');
+    $access_ttl = jwt_access_ttl();
+    $refresh_ttl = jwt_refresh_ttl();
+
+    if ($new_refresh_token !== '') {
+        jwt_set_refresh_cookie($new_refresh_token, $refresh_ttl);
     }
 
-    $old_hash = hash('sha256', $refresh_cookie);
-    $existing_record = db_fetch_one('SELECT id, revoked_at FROM refresh_tokens WHERE token_hash = :token_hash LIMIT 1', ['token_hash' => $old_hash]);
-    if (!is_array($existing_record) || !empty($existing_record['revoked_at'])) {
-        response_unauthorized('Refresh token has already been used or revoked.');
-    }
-
-    // A disabled/deleted/suspended user must never obtain a fresh access token or
-    // continue rotating a live refresh token. The presented refresh token is revoked
-    // before rejecting so the inactive session cannot keep refreshing at all.
-    if (!auth_user_is_active($user)) {
-        db_execute('UPDATE refresh_tokens SET revoked_at = NOW() WHERE token_hash = :token_hash AND revoked_at IS NULL', ['token_hash' => $old_hash]);
-        response_unauthorized('Account is not active.');
-    }
-
-    db_execute('UPDATE refresh_tokens SET revoked_at = NOW() WHERE token_hash = :token_hash AND revoked_at IS NULL', ['token_hash' => $old_hash]);
-
-    $new_access_token = jwt_issue_access_token($user);
-    $new_refresh_token = jwt_issue_refresh_token($user);
-    $refresh_ttl = (int) (getenv('JWT_REFRESH_TTL') ?: 2592000);
-
-    jwt_set_refresh_cookie($new_refresh_token, $refresh_ttl);
     $new_csrf = csrf_generate_token();
     csrf_set_cookie($new_csrf);
 
-    if (request_cookie(token_cookie_name()) !== null && !empty($new_access_token)) {
-        response_set_remember_cookie($new_access_token, time() + ($app_config['auth']['remember_expiration'] ?? 60 * 60 * 24 * 30));
+    if (request_cookie(token_cookie_name()) !== null && $new_access_token !== '') {
+        $remember_ttl = (int) ($app_config['auth']['remember_expiration'] ?? (60 * 60 * 24 * 30));
+        response_set_remember_cookie($new_access_token, time() + $remember_ttl);
     }
 
-    response_success([
-        'user' => auth_sanitize_user($user),
+    $response_data = [
+        'user' => auth_sanitize_user(is_array($user) ? $user : []),
         'token' => $new_access_token,
         'token_type' => 'bearer',
-        'expires_in' => (int) (getenv('JWT_ACCESS_TTL') ?: 3600),
-    ], 'Token refreshed successfully.');
+        'expires_in' => $access_ttl,
+        'refresh_token' => $new_refresh_token,
+        'refresh_expires_in' => $refresh_ttl,
+    ];
+
+    response_success($response_data, 'Token refreshed successfully.');
 }
 
 /*
@@ -273,18 +306,62 @@ function auth_handle_refresh(): void
 */
 function auth_handle_logout(): void
 {
-    global $app_config;
-
     $user = auth_user();
+    $access_token = jwt_current_bearer_token();
+    $refresh_token = '';
 
-    if (!$user) {
-        response_unauthorized( 'Authentication required.' );
+    $body = request_input();
+    $body_refresh = is_array($body) ? trim((string) ($body['refresh_token'] ?? '')) : '';
+    $cookie_refresh = trim((string) (request_cookie('refresh_token') ?? ''));
+    $refresh_token = $body_refresh !== '' ? $body_refresh : $cookie_refresh;
+
+    /*
+     * Logout should succeed even when the access token has already expired, so
+     * we accept either an authenticated access token (set by middleware or
+     * auto-auth) or a valid refresh token that identifies the session owner.
+     */
+    if ($user === null && is_string($access_token) && trim($access_token) !== '') {
+        $payload = jwt_validate_access_token($access_token);
+        if (is_array($payload)) {
+            $candidate = auth_find_user_by_id((int) ($payload['sub'] ?? 0));
+            if (is_array($candidate) && auth_user_is_active($candidate)) {
+                $user = $candidate;
+            }
+        }
+    }
+
+    $revoke_specific_refresh = false;
+    if ($user === null && $refresh_token !== '') {
+        $refresh_payload = jwt_validate_refresh_token($refresh_token);
+        if (is_array($refresh_payload)) {
+            $candidate = auth_find_user_by_id((int) ($refresh_payload['sub'] ?? 0));
+            if (is_array($candidate)) {
+                $user = $candidate;
+                $revoke_specific_refresh = true;
+            }
+        }
+    }
+
+    if ($user === null) {
+        // Best-effort cleanup for stale cookies even when we cannot resolve a user.
+        response_clear_remember_cookie();
+        jwt_clear_refresh_cookie();
+        csrf_set_cookie(csrf_generate_token());
+        response_success(['message' => 'Logged out successfully.'], 'Logged out successfully.');
         return;
     }
 
-    jwt_revoke_all_refresh_tokens_for_user( (int) $user['id'] );
+    /*
+     * Preserve existing behavior: logout revokes the user's refresh sessions.
+     * When authenticated via a presented refresh token we revoke that specific
+     * token; when authenticated via access token we revoke all for the user.
+     */
+    if ($revoke_specific_refresh) {
+        jwt_revoke_refresh_token_record($refresh_token);
+    } else {
+        jwt_revoke_all_refresh_tokens_for_user((int) $user['id']);
+    }
 
-    $access_token = jwt_current_bearer_token();
     if (is_string($access_token) && trim($access_token) !== '') {
         jwt_revoke_access_token($access_token);
     }
@@ -293,7 +370,10 @@ function auth_handle_logout(): void
     response_clear_remember_cookie();
     jwt_clear_refresh_cookie();
 
-    response_success( [ 'message' => 'Logged out successfully.' ] );
+    $new_csrf = csrf_generate_token();
+    csrf_set_cookie($new_csrf);
+
+    response_success(['message' => 'Logged out successfully.'], 'Logged out successfully.');
 }
 
 /*
@@ -627,17 +707,22 @@ function auth_handle_google_oauth_callback(): void
         }
 
         $access_token = $result['data']['token'] ?? null;
+        $refresh_token = $result['jwt']['refresh_token'] ?? null;
         if (is_string($access_token) && $access_token !== '') {
-            $refresh_token = $result['jwt']['refresh_token'] ?? null;
             if (is_string($refresh_token) && $refresh_token !== '') {
-                jwt_set_refresh_cookie($refresh_token, (int) (getenv('JWT_REFRESH_TTL') ?: 2592000));
+                jwt_set_refresh_cookie($refresh_token, jwt_refresh_ttl());
             }
 
             $csrf_token = csrf_generate_token();
             csrf_set_cookie($csrf_token);
         }
 
-        response_success($result['data'] ?? $result, 'Welcome back!');
+        $response_data = $result['data'] ?? $result;
+        if (is_array($response_data) && is_string($refresh_token) && $refresh_token !== '') {
+            $response_data['refresh_token'] = $refresh_token;
+        }
+
+        response_success($response_data, 'Welcome back!');
     }
 
     // Browser request: the Google authorization code is single-use, so it must

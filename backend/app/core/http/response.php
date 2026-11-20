@@ -15,9 +15,10 @@
 
 function response_json(
     mixed $data = null,
-    int $status_code = 200,
+    int $status_code = HTTP_OK,
     ?string $message = null,
-    array $errors = []
+    array $errors = [],
+    array $meta = []
 ): never {
 
     if (function_exists('security_apply_http_headers')) {
@@ -28,12 +29,26 @@ function response_json(
 
     header('Content-Type: application/json; charset=UTF-8');
 
+    global $app_config;
+
+    $response_config = $app_config['response'] ?? [];
+
     $response = [
-        'success' => $status_code >= 200 && $status_code < 300,
-        'message' => $message,
-        'data' => $data,
-        'errors' => empty($errors) ? null : $errors,
+        ($response_config['success_key'] ?? 'success') => ($status_code >= 200 && $status_code < 300),
+        ($response_config['message_key'] ?? 'message') => $message,
+        ($response_config['data_key'] ?? 'data') => $data,
+        ($response_config['errors_key'] ?? 'errors') => empty($errors) ? null : $errors,
     ];
+
+    /*
+     * Additive, opt-in top-level metadata (e.g. messaging pagination). Existing
+     * callers keep the exact same four-key envelope.
+     */
+    foreach ($meta as $key => $value) {
+        if (is_string($key) && !array_key_exists($key, $response)) {
+            $response[$key] = $value;
+        }
+    }
 
     echo json_encode(
         $response,
@@ -158,13 +173,16 @@ function response_clear_remember_cookie(): void
 function response_success(
     mixed $data = null,
     ?string $message = null,
-    int $status_code = 200
+    int $status_code = HTTP_OK,
+    array $meta = []
 ): never {
 
     response_json(
         $data,
         $status_code,
-        $message
+        $message,
+        [],
+        $meta
     );
 }
 
@@ -182,7 +200,7 @@ function response_created(
 
     response_json(
         $data,
-        201,
+        HTTP_CREATED,
         $message
     );
 }
@@ -196,7 +214,7 @@ function response_created(
 
 function response_no_content(): never
 {
-    http_response_code(204);
+    http_response_code(HTTP_NO_CONTENT);
 
     exit;
 }
@@ -210,7 +228,7 @@ function response_no_content(): never
 
 function response_error(
     string $message,
-    int $status_code = 400,
+    int $status_code = HTTP_BAD_REQUEST,
     array $errors = [],
     mixed $data = null
 ): never {
@@ -237,7 +255,7 @@ function response_validation_error(
 
     response_error(
         $message,
-        422,
+        HTTP_UNPROCESSABLE_ENTITY,
         $errors
     );
 }
@@ -255,7 +273,7 @@ function response_unauthorized(
 
     response_error(
         $message,
-        401
+        HTTP_UNAUTHORIZED
     );
 }
 
@@ -272,7 +290,7 @@ function response_forbidden(
 
     response_error(
         $message,
-        403
+        HTTP_FORBIDDEN
     );
 }
 
@@ -289,7 +307,7 @@ function response_not_found(
 
     response_error(
         $message,
-        404
+        HTTP_NOT_FOUND
     );
 }
 
@@ -306,7 +324,7 @@ function response_method_not_allowed(
 
     response_error(
         $message,
-        405
+        HTTP_METHOD_NOT_ALLOWED
     );
 }
 
@@ -323,7 +341,7 @@ function response_too_many_requests(
 
     response_error(
         $message,
-        429
+        HTTP_TOO_MANY_REQUESTS
     );
 }
 
@@ -340,6 +358,6 @@ function response_server_error(
 
     response_error(
         $message,
-        500
+        HTTP_INTERNAL_SERVER_ERROR
     );
 }

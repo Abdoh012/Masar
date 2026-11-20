@@ -37,6 +37,7 @@ if (str_ends_with($reqPath, '/auth/google/callback')) {
 @file_put_contents($reqLog, $logLine . "\n", FILE_APPEND);
 
 $app_config = require_once __DIR__ . '/../app/config/app.php';
+date_default_timezone_set( (string) ( $app_config['timezone'] ?? 'UTC' ) );
 require_once __DIR__ . '/../app/config/constants.php';
 require_once __DIR__ . '/../app/core/http/request.php';
 require_once __DIR__ . '/../app/core/http/response.php';

@@ -558,14 +558,16 @@ return [
 
     $access_token = jwt_issue_access_token($user);
     $refresh_token = jwt_issue_refresh_token($user);
+    $access_ttl = function_exists('jwt_access_ttl') ? jwt_access_ttl() : (int) (getenv('JWT_ACCESS_TTL') ?: 3600);
+    $refresh_ttl = function_exists('jwt_refresh_ttl') ? jwt_refresh_ttl() : (int) (getenv('JWT_REFRESH_TTL') ?: 2592000);
 
     return [
         'data' => [
             'user' => auth_sanitize_user($user),
             'token' => $access_token,
             'token_type' => 'bearer',
-            'expires_in' => (int) (getenv('JWT_ACCESS_TTL') ?: 3600),
-            'refresh_expires_in' => (int) (getenv('JWT_REFRESH_TTL') ?: 2592000),
+            'expires_in' => $access_ttl,
+            'refresh_expires_in' => $refresh_ttl,
         ],
         'jwt' => [
             'access_token' => $access_token,

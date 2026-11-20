@@ -21,6 +21,10 @@
 
 require_once __DIR__ . '/../repositories/conversation_repository.php';
 
+if (!defined('CONVERSATION_PAGE_DEFAULT_LIMIT')) {
+    define('CONVERSATION_PAGE_DEFAULT_LIMIT', 20);
+}
+
 require_once __DIR__ . '/../../training/repositories/application_repository.php';
 require_once __DIR__ . '/../../training/repositories/training_repository.php';
 require_once __DIR__ . '/../../students/repositories/student_repository.php';
@@ -291,13 +295,33 @@ function conversation_service_list(
     array $filters = []
 ): array {
 
+    $limit =
+        (int) (
+            $filters['limit']
+            ?? CONVERSATION_PAGE_DEFAULT_LIMIT
+        );
+
+
+    $offset =
+        (int) (
+            $filters['offset']
+            ?? 0
+        );
+
+
+    $empty = [
+        'items'      => [],
+        'pagination' => [
+            'total'  => 0,
+            'limit'  => $limit,
+            'offset' => $offset,
+        ],
+    ];
+
+
     if ($user_id <= 0) {
-        return [];
+        return $empty;
     }
-
-
-    $role =
-        auth_role();
 
 
     /*
@@ -327,66 +351,53 @@ function conversation_service_list(
 
         if (!$authorized) {
 
-            return [];
+            return $empty;
         }
     }
 
 
-    return conversation_repository_list(
-        $user_id,
-        $filters
-    );
-}
-
-
-/*
- |--------------------------------------------------------------------------
- | Find Conversation
- |--------------------------------------------------------------------------
- */
-
-function conversation_service_find(
-    int $conversation_id,
-    int $user_id
-): array {
-
-    $access =
-        conversation_service_access(
-            $conversation_id,
-            $user_id
+    $items =
+        conversation_repository_list(
+            $user_id,
+            $filters
         );
-
-
-    if (empty($access['ok'])) {
-        return $access;
-    }
 
 
     /*
-     * Re-read with the joined display fields used by the API response.
+     * `company_image` is the conversation's own company's relative storage
+     * path (null when the company has no logo). Empty values are normalized
+     * to null; no other fields are touched.
      */
 
-    $conversation =
-        conversation_repository_find_for_user(
-            $conversation_id,
-            $user_id
-        );
+    foreach ($items as &$item) {
 
+        if (!isset($item['company_image'])) {
+            continue;
+        }
 
-    if (!$conversation) {
+        $image =
+            trim(
+                (string) $item['company_image']
+            );
 
-        return [
-            'ok'      => false,
-            'status'  => 404,
-            'message' => 'Conversation not found.',
-            'errors'  => [],
-        ];
+        $item['company_image'] =
+            $image === ''
+                ? null
+                : $image;
     }
+    unset($item);
 
 
     return [
-        'ok'           => true,
-        'conversation' => $conversation,
+        'items'      => $items,
+        'pagination' => [
+            'total'  => (int) conversation_repository_count_for_user(
+                $user_id,
+                $filters
+            ),
+            'limit'  => $limit,
+            'offset' => $offset,
+        ],
     ];
 }
 

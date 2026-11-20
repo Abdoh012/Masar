@@ -20,13 +20,15 @@ function csrf_generate_token(): string
 
 function csrf_set_cookie(string $token): void
 {
+    global $app_config;
+
     response_set_cookie(
         csrf_cookie_name(),
         $token,
         time() + 60 * 60 * 12,
         '/',
         '',
-        (bool) filter_var(getenv('SECURE_COOKIES'), FILTER_VALIDATE_BOOLEAN),
+        (bool) ($app_config['auth']['cookie_secure'] ?? filter_var(getenv('SECURE_COOKIES') ?: false, FILTER_VALIDATE_BOOLEAN)),
         false,
         'Lax'
     );

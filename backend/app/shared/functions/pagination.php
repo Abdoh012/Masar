@@ -34,6 +34,35 @@ if (!defined('PAGINATION_MAX_PER_PAGE')) {
     );
 }
 
+
+/*
+|--------------------------------------------------------------------------
+| Central Pagination Configuration
+|--------------------------------------------------------------------------
+|
+| The authoritative source for pagination defaults and maximums is the
+| central application configuration (`app.php` -> `pagination`). The constants
+| above remain only as backward-compatible fallbacks when the config array is
+| not available in the current runtime.
+
+*/
+
+function pagination_config(): array
+{
+    global $app_config;
+
+    $config = $app_config['pagination'] ?? [];
+    $default_page = (int) ($config['default_page'] ?? PAGINATION_DEFAULT_PAGE);
+    $default_per_page = (int) ($config['default_per_page'] ?? PAGINATION_DEFAULT_PER_PAGE);
+    $max_per_page = (int) ($config['max_per_page'] ?? PAGINATION_MAX_PER_PAGE);
+
+    return [
+        'default_page' => $default_page,
+        'default_per_page' => $default_per_page,
+        'max_per_page' => $max_per_page,
+    ];
+}
+
 /*
 |--------------------------------------------------------------------------
 | Page Normalization
@@ -43,15 +72,17 @@ if (!defined('PAGINATION_MAX_PER_PAGE')) {
 function normalize_page(
     mixed $page
 ): int {
+    $config = pagination_config();
+
     if (
         is_string($page) &&
         trim($page) === ''
     ) {
-        return PAGINATION_DEFAULT_PAGE;
+        return $config['default_page'];
     }
 
     if (!is_numeric($page)) {
-        return PAGINATION_DEFAULT_PAGE;
+        return $config['default_page'];
     }
 
     $page = (int) $page;
@@ -71,26 +102,30 @@ function normalize_page(
 function normalize_per_page(
     mixed $perPage
 ): int {
+    $config = pagination_config();
+    $default_per_page = (int) $config['default_per_page'];
+    $max_per_page = (int) $config['max_per_page'];
+
     if (
         $perPage === null ||
         $perPage === ''
     ) {
-        return PAGINATION_DEFAULT_PER_PAGE;
+        return $default_per_page;
     }
 
     if (!is_numeric($perPage)) {
-        return PAGINATION_DEFAULT_PER_PAGE;
+        return $default_per_page;
     }
 
     $perPage = (int) $perPage;
 
     if ($perPage < 1) {
-        return PAGINATION_DEFAULT_PER_PAGE;
+        return $default_per_page;
     }
 
     return min(
         $perPage,
-        PAGINATION_MAX_PER_PAGE
+        $max_per_page
     );
 }
 
@@ -147,7 +182,7 @@ function pagination_total_pages(
 
 function pagination_first_page(): int
 {
-    return PAGINATION_DEFAULT_PAGE;
+    return (int) pagination_config()['default_page'];
 }
 
 function pagination_last_page(
@@ -571,11 +606,11 @@ function pagination_from_input(
 
     $page =
         $input['page']
-        ?? PAGINATION_DEFAULT_PAGE;
+        ?? (int) pagination_config()['default_page'];
 
     $perPage =
         $input['per_page']
-        ?? PAGINATION_DEFAULT_PER_PAGE;
+        ?? (int) pagination_config()['default_per_page'];
 
     return [
         'page' =>

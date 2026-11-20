@@ -1621,8 +1621,23 @@ CREATE TABLE `messages` (
   `sender_user_id` bigint UNSIGNED NOT NULL,
   `body` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `is_read` tinyint(1) NOT NULL DEFAULT '0',
+  `is_edited` tinyint(1) NOT NULL DEFAULT '0',
   `read_at` datetime DEFAULT NULL,
-  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Table structure for table `message_events`
+--
+CREATE TABLE `message_events` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `message_id` bigint UNSIGNED NOT NULL,
+  `conversation_id` bigint UNSIGNED NOT NULL,
+  `sender_user_id` bigint UNSIGNED NOT NULL,
+  `body` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_at` datetime NOT NULL,
+  `dispatched_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
@@ -4461,7 +4476,17 @@ ALTER TABLE `files`
 ALTER TABLE `messages`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_messages_conversation_created` (`conversation_id`,`created_at`),
+  ADD KEY `idx_messages_conversation_id` (`conversation_id`,`id`),
+  ADD KEY `idx_messages_unread` (`conversation_id`,`read_at`,`sender_user_id`),
   ADD KEY `idx_messages_sender` (`sender_user_id`);
+
+--
+-- Indexes for table `message_events`
+--
+ALTER TABLE `message_events`
+  ADD PRIMARY KEY (`id`),
+  ADD COLUMN `event_type` VARCHAR(32) NOT NULL DEFAULT 'message.created',
+  ADD KEY `idx_message_events_pending` (`dispatched_at`,`id`);
 
 --
 -- Indexes for table `notifications`
@@ -4765,6 +4790,12 @@ ALTER TABLE `files`
 --
 ALTER TABLE `messages`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2879;
+
+--
+-- AUTO_INCREMENT for table `message_events`
+--
+ALTER TABLE `message_events`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `notifications`

@@ -70,7 +70,7 @@ function message_service_list(
 
     try {
 
-        $messages =
+        $page =
             message_repository_list(
                 $conversation_id,
                 $user_id,
@@ -92,7 +92,7 @@ function message_service_list(
     }
 
 
-    if ($messages === false) {
+    if ($page === false) {
 
         return [
             'ok'      => false,
@@ -103,9 +103,29 @@ function message_service_list(
     }
 
 
+    /*
+     * `data` stays the flat message array for backward compatibility; the
+     * page metadata travels as a sibling of the response envelope's data.
+     */
+
+    /*
+     * WhatsApp-style header: the conversation's company is returned once at
+     * the top level so the UI can render name + image above the message
+     * list instead of repeating them per message. The metadata is fetched
+     * with a single scoped query and is never added to message objects.
+     */
+
+    $conversation =
+        conversation_repository_company_meta(
+            $conversation_id
+        );
+
+
     return [
-        'ok'   => true,
-        'data' => $messages,
+        'ok'           => true,
+        'data'         => $page['messages'],
+        'conversation' => $conversation,
+        'pagination'   => $page['pagination'],
     ];
 }
 
@@ -394,6 +414,318 @@ function message_service_create(
 
 
     return $message;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Edit Message (own message, any time, on an open conversation)
+|--------------------------------------------------------------------------
+*/
+
+function message_service_edit(
+    int $conversation_id,
+    int $user_id,
+    int $message_id,
+    array $data
+): array {
+
+    if (
+        $conversation_id <= 0
+        ||
+        $message_id <= 0
+        ||
+        $user_id <= 0
+    ) {
+
+        return [
+            'ok'      => false,
+            'status'  => 422,
+            'message' => 'Conversation ID, message ID and user ID are required.',
+            'errors'  => [
+                'conversation_id' => 'A valid conversation ID is required.',
+                'message_id'      => 'A valid message ID is required.',
+            ],
+        ];
+    }
+
+
+    $access =
+        conversation_service_access(
+            $conversation_id,
+            $user_id
+        );
+
+
+    if (empty($access['ok'])) {
+        return $access;
+    }
+
+
+    $blocked_reason =
+        conversation_service_messaging_blocked_reason(
+            (int) ($access['conversation']['application_id'] ?? 0)
+        );
+
+
+    if ($blocked_reason !== null) {
+
+        return [
+            'ok'      => false,
+            'status'  => 403,
+            'message' => $blocked_reason,
+            'errors'  => [
+                'application_id' => $blocked_reason,
+            ],
+        ];
+    }
+
+
+    $message =
+        message_repository_find_for_user(
+            $message_id,
+            $user_id
+        );
+
+
+    if (
+        $message === null
+        ||
+        (int) ($message['conversation_id'] ?? 0) !== $conversation_id
+    ) {
+
+        return [
+            'ok'      => false,
+            'status'  => 404,
+            'message' => 'Message not found.',
+            'errors'  => [],
+        ];
+    }
+
+
+    /*
+     * Ownership: the authenticated user is re-checked from the message row.
+     * Never trust a client-provided sender id.
+     */
+
+    $sender_id =
+        (int) ($message['sender_id'] ?? 0);
+
+
+    if ($sender_id !== $user_id) {
+
+        return [
+            'ok'      => false,
+            'status'  => 403,
+            'message' => 'You can only edit your own messages.',
+            'errors'  => [
+                'message_id' => 'Only the message sender can edit it.',
+            ],
+        ];
+    }
+
+
+    $body =
+        message_validator_body_value(
+            $data['body'] ?? null
+        );
+
+
+    if (!$body['valid']) {
+
+        return [
+            'ok'      => false,
+            'status'  => 422,
+            'message' => 'Validation failed.',
+            'errors'  => $body['errors'],
+        ];
+    }
+
+
+    try {
+
+        $updated =
+            message_repository_edit(
+                $conversation_id,
+                $message_id,
+                $sender_id,
+                $body['value']
+            );
+
+    } catch (Throwable $exception) {
+
+        if (function_exists('logger_exception')) {
+            logger_exception($exception);
+        }
+
+        return [
+            'ok'      => false,
+            'status'  => 500,
+            'message' => 'Unable to edit message.',
+            'errors'  => [],
+        ];
+    }
+
+
+    if ($updated === false) {
+
+        return [
+            'ok'      => false,
+            'status'  => 500,
+            'message' => 'Unable to edit message.',
+            'errors'  => [],
+        ];
+    }
+
+
+    return [
+        'ok'      => true,
+        'message' => $updated,
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Delete Message (hard delete for everyone)
+|--------------------------------------------------------------------------
+*/
+
+function message_service_delete_message(
+    int $conversation_id,
+    int $user_id,
+    int $message_id
+): array {
+
+    if (
+        $conversation_id <= 0
+        ||
+        $message_id <= 0
+        ||
+        $user_id <= 0
+    ) {
+
+        return [
+            'ok'      => false,
+            'status'  => 422,
+            'message' => 'Conversation ID, message ID and user ID are required.',
+            'errors'  => [
+                'conversation_id' => 'A valid conversation ID is required.',
+                'message_id'      => 'A valid message ID is required.',
+            ],
+        ];
+    }
+
+
+    $access =
+        conversation_service_access(
+            $conversation_id,
+            $user_id
+        );
+
+
+    if (empty($access['ok'])) {
+        return $access;
+    }
+
+
+    $blocked_reason =
+        conversation_service_messaging_blocked_reason(
+            (int) ($access['conversation']['application_id'] ?? 0)
+        );
+
+
+    if ($blocked_reason !== null) {
+
+        return [
+            'ok'      => false,
+            'status'  => 403,
+            'message' => $blocked_reason,
+            'errors'  => [
+                'application_id' => $blocked_reason,
+            ],
+        ];
+    }
+
+
+    $message =
+        message_repository_find_for_user(
+            $message_id,
+            $user_id
+        );
+
+
+    if (
+        $message === null
+        ||
+        (int) ($message['conversation_id'] ?? 0) !== $conversation_id
+    ) {
+
+        return [
+            'ok'      => false,
+            'status'  => 404,
+            'message' => 'Message not found.',
+            'errors'  => [],
+        ];
+    }
+
+
+    $sender_id =
+        (int) ($message['sender_id'] ?? 0);
+
+
+    if ($sender_id !== $user_id) {
+
+        return [
+            'ok'      => false,
+            'status'  => 403,
+            'message' => 'You can only delete your own messages.',
+            'errors'  => [
+                'message_id' => 'Only the message sender can delete it.',
+            ],
+        ];
+    }
+
+
+    try {
+
+        $deleted =
+            message_repository_delete_for_conversation(
+                $conversation_id,
+                $message_id,
+                $sender_id
+            );
+
+    } catch (Throwable $exception) {
+
+        if (function_exists('logger_exception')) {
+            logger_exception($exception);
+        }
+
+        return [
+            'ok'      => false,
+            'status'  => 500,
+            'message' => 'Unable to delete message.',
+            'errors'  => [],
+        ];
+    }
+
+
+    if (!$deleted) {
+
+        return [
+            'ok'      => false,
+            'status'  => 404,
+            'message' => 'Message not found.',
+            'errors'  => [],
+        ];
+    }
+
+
+    return [
+        'ok'      => true,
+        'message' => 'Message deleted successfully.',
+    ];
 }
 
 

@@ -39,6 +39,7 @@ if (
 
 require_once __DIR__ . '/../../../core/database/query.php';
 require_once __DIR__ . '/../../../core/logging/logger.php';
+require_once __DIR__ . '/message_event_repository.php';
 
 
 /*
@@ -217,10 +218,25 @@ function message_repository_list(
     }
 
 
+    /*
+     * Cursor pagination is keyed on the auto-increment id, which is the
+     * deterministic chronological ordering for this table. The composite
+     * (conversation_id, id) index serves every branch of the query. Only the
+     * requested page (+1 look-ahead row) is ever read into PHP memory.
+     */
+
     $sql = "
         SELECT
-            m.*,
-            m.sender_user_id AS sender_id
+            m.id,
+            m.conversation_id,
+            m.sender_user_id,
+            m.sender_user_id AS sender_id,
+            m.body,
+            m.is_read,
+            m.is_edited,
+            m.read_at,
+            m.created_at,
+            m.updated_at
         FROM messages m
         WHERE m.conversation_id = :conversation_id
     ";
@@ -231,14 +247,20 @@ function message_repository_list(
     ];
 
 
+    $has_before =
+        isset($filters['before_id']) &&
+        (int) $filters['before_id'] > 0;
+
+    $has_after =
+        isset($filters['after_id']) &&
+        (int) $filters['after_id'] > 0;
+
+
     /*
-     * Before message ID.
+     * Before message ID (exclusive).
      */
 
-    if (
-        isset($filters['before_id']) &&
-        (int) $filters['before_id'] > 0
-    ) {
+    if ($has_before) {
 
         $sql .= "
             AND m.id < :before_id
@@ -250,13 +272,10 @@ function message_repository_list(
 
 
     /*
-     * After message ID.
+     * After message ID (exclusive).
      */
 
-    if (
-        isset($filters['after_id']) &&
-        (int) $filters['after_id'] > 0
-    ) {
+    if ($has_after) {
 
         $sql .= "
             AND m.id > :after_id
@@ -268,7 +287,7 @@ function message_repository_list(
 
 
     /*
-     * Sender filter.
+     * Legacy filters remain supported for existing clients.
      */
 
     if (
@@ -284,10 +303,6 @@ function message_repository_list(
             (int) $filters['sender_id'];
     }
 
-
-    /*
-     * Date filters.
-     */
 
     if (
         isset($filters['from_date']) &&
@@ -321,38 +336,10 @@ function message_repository_list(
     }
 
 
-    /*
-     * Default order.
-     */
-
-    $order =
-        strtolower(
-            (string) (
-                $filters['order']
-                ?? 'asc'
-            )
-        );
-
-
-    $order =
-        $order === 'desc'
-            ? 'DESC'
-            : 'ASC';
-
-
-    $sql .= "
-        ORDER BY m.created_at {$order}, m.id {$order}
-    ";
-
-
-    /*
-     * Pagination.
-     */
-
     $limit =
         isset($filters['limit'])
             ? (int) $filters['limit']
-            : 50;
+            : MESSAGE_PAGE_DEFAULT_LIMIT;
 
 
     $limit =
@@ -360,7 +347,7 @@ function message_repository_list(
             1,
             min(
                 $limit,
-                100
+                MESSAGE_PAGE_MAX_LIMIT
             )
         );
 
@@ -378,16 +365,126 @@ function message_repository_list(
         );
 
 
-    $sql .= "
-        LIMIT {$limit}
-        OFFSET {$offset}
-    ";
+    /*
+     * Newest page and older pages scan DESC (no filesort); newer pages scan
+     * ASC. One extra row is fetched only to determine whether another page
+     * exists and is never returned.
+     */
+
+    $descending =
+        !$has_after;
 
 
-    return message_repository_fetch_all(
-        $sql,
-        $params
-    );
+    $sql .=
+        ' ORDER BY m.id '
+        . ($descending ? 'DESC' : 'ASC')
+        . ' LIMIT ' . ($limit + 1);
+
+
+    if ($offset > 0) {
+        $sql .= ' OFFSET ' . $offset;
+    }
+
+
+    $rows =
+        message_repository_fetch_all(
+            $sql,
+            $params
+        );
+
+
+    $has_more =
+        count($rows) > $limit;
+
+
+    if ($has_more) {
+        array_pop($rows);
+    }
+
+
+    if ($descending) {
+        $rows =
+            array_reverse($rows);
+    }
+
+
+    $ids =
+        array_map(
+            static function (array $row): int {
+                return (int) $row['id'];
+            },
+            $rows
+        );
+
+
+    $next_before_id =
+        $ids[0] ?? (
+            $has_before
+                ? (int) $filters['before_id']
+                : null
+        );
+
+    $next_after_id =
+        $ids !== []
+            ? (int) end($ids)
+            : (
+                $has_after
+                    ? (int) $filters['after_id']
+                    : null
+            );
+
+
+    /*
+     * `order=desc` is retained as a display-only legacy option. The underlying
+     * cursor/page mechanics are identical in every mode; only presentation is
+     * reversed. The default is chronological (oldest to newest).
+     */
+
+    if (
+        strtolower(
+            (string) ($filters['order'] ?? 'asc')
+        ) === 'desc'
+    ) {
+
+        $rows =
+            array_reverse($rows);
+    }
+
+
+    $messages =
+        array_map(
+            static function (array $row): array {
+
+                $row['id'] =
+                    (int) $row['id'];
+
+                $row['conversation_id'] =
+                    (int) $row['conversation_id'];
+
+                $row['sender_user_id'] =
+                    (int) $row['sender_user_id'];
+
+                $row['sender_id'] =
+                    (int) $row['sender_id'];
+
+                $row['is_read'] =
+                    (int) $row['is_read'];
+
+                return $row;
+            },
+            $rows
+        );
+
+
+    return [
+        'messages'   => $messages,
+        'pagination' => [
+            'limit'          => $limit,
+            'has_more'       => $has_more,
+            'next_before_id' => $next_before_id,
+            'next_after_id'  => $next_after_id,
+        ],
+    ];
 }
 
 
@@ -604,9 +701,34 @@ function message_repository_create(
                 );
 
 
-                return message_repository_find(
-                    $id
-                ) ?? [
+                $created =
+                    message_repository_find($id)
+                    ?? [
+                        'id'            => $id,
+                        'body'          => $body,
+                        'sender_user_id'=> $sender_id,
+                        'created_at'    => date('Y-m-d H:i:s'),
+                    ];
+
+
+                /*
+                 * The outbox row is written in this same transaction. A failed
+                 * event insert rolls the message back; a WebSocket outage can
+                 * never lose a persisted message.
+                 */
+
+                message_event_repository_create(
+                    [
+                        'message_id'      => $id,
+                        'conversation_id' => $conversation_id,
+                        'sender_user_id'  => $sender_id,
+                        'body'            => $created['body'] ?? $body,
+                        'created_at'      => $created['created_at'] ?? date('Y-m-d H:i:s'),
+                    ]
+                );
+
+
+                return $created ?? [
                     'id' =>
                         $id,
 
@@ -759,7 +881,225 @@ function message_repository_update(
 
 /*
 |--------------------------------------------------------------------------
-| Delete Message
+| Edit Message
+|--------------------------------------------------------------------------
+|
+| Updates the body of the caller's own message, marks it is_edited and
+| records updated_at. The id and created_at are never modified. The
+| message.updated outbox event is written inside the same transaction so the
+| WebSocket relay can never broadcast an edit before it is committed.
+|
+*/
+
+function message_repository_edit(
+    int $conversation_id,
+    int $message_id,
+    int $sender_id,
+    string $body
+): array|false {
+
+    if (
+        $conversation_id <= 0 ||
+        $message_id <= 0 ||
+        $sender_id <= 0 ||
+        trim($body) === ''
+    ) {
+        return false;
+    }
+
+
+    try {
+
+        return
+            db_transaction(
+                static function (PDO $db) use (
+                    $conversation_id,
+                    $message_id,
+                    $sender_id,
+                    $body
+                ): array {
+
+                    $stmt =
+                        $db->prepare(
+                            "
+                            UPDATE messages
+                            SET
+                                body = :body,
+                                is_edited = 1,
+                                updated_at = NOW()
+                            WHERE id = :message_id
+                              AND conversation_id = :conversation_id
+                              AND sender_user_id = :sender_id
+                            "
+                        );
+
+
+                    $stmt->execute(
+                        [
+                            ':body'           => $body,
+                            ':message_id'     => $message_id,
+                            ':conversation_id' => $conversation_id,
+                            ':sender_id'      => $sender_id,
+                        ]
+                    );
+
+
+                    if ($stmt->rowCount() !== 1) {
+                        throw new RuntimeException(
+                            'Message edit affected no rows.'
+                        );
+                    }
+
+
+                    $updated =
+                        message_repository_find($message_id);
+
+
+                    if (!$updated) {
+                        throw new RuntimeException(
+                            'Edited message not found.'
+                        );
+                    }
+
+
+                    message_event_repository_create(
+                        [
+                            'event_type'      => 'message.updated',
+                            'message_id'      => $message_id,
+                            'conversation_id' => $conversation_id,
+                            'sender_user_id'  => $sender_id,
+                            'body'            => (string) ($updated['body'] ?? $body),
+                            'created_at'      => (string) ($updated['created_at'] ?? date('Y-m-d H:i:s')),
+                        ]
+                    );
+
+
+                    return $updated;
+                }
+            );
+
+    } catch (Throwable $exception) {
+
+        logger_database_error(
+            'Message edit failed and was rolled back.',
+            [
+                'conversation_id' => $conversation_id,
+                'message_id'      => $message_id,
+                'sender_id'       => $sender_id,
+                'exception'       => $exception->getMessage(),
+            ]
+        );
+
+        throw $exception;
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Delete Message (hard delete, scoped to conversation)
+|--------------------------------------------------------------------------
+|
+| Physically deletes the message row. No soft delete, placeholder or archive.
+| The message.deleted outbox event is written in the same transaction so the
+| relay can only broadcast the deletion after commit.
+|
+*/
+
+function message_repository_delete_for_conversation(
+    int $conversation_id,
+    int $message_id,
+    int $sender_id
+): bool {
+
+    if (
+        $conversation_id <= 0 ||
+        $message_id <= 0 ||
+        $sender_id <= 0
+    ) {
+        return false;
+    }
+
+
+    try {
+
+        $deleted =
+            db_transaction(
+                static function (PDO $db) use (
+                    $conversation_id,
+                    $message_id,
+                    $sender_id
+                ): bool {
+
+                    $stmt =
+                        $db->prepare(
+                            "
+                            DELETE FROM messages
+                            WHERE id = :message_id
+                              AND conversation_id = :conversation_id
+                              AND sender_user_id = :sender_id
+                            "
+                        );
+
+
+                    $stmt->execute(
+                        [
+                            ':message_id'     => $message_id,
+                            ':conversation_id' => $conversation_id,
+                            ':sender_id'      => $sender_id,
+                        ]
+                    );
+
+
+                    if (!($stmt->rowCount() > 0)) {
+                        throw new RuntimeException(
+                            'Message delete affected no rows.'
+                        );
+                    }
+
+
+                    /*
+                     * Do not include the deleted body here: the event must
+                     * never leak the content that was deleted.
+                     */
+
+                    message_event_repository_create(
+                        [
+                            'event_type'      => 'message.deleted',
+                            'message_id'      => $message_id,
+                            'conversation_id' => $conversation_id,
+                            'sender_user_id'  => $sender_id,
+                            'body'            => '',
+                            'created_at'      => date('Y-m-d H:i:s'),
+                        ]
+                    );
+
+
+                    return true;
+                }
+            );
+
+        return (bool) $deleted;
+
+    } catch (Throwable $exception) {
+
+        logger_database_error(
+            'Message delete failed and was rolled back.',
+            [
+                'conversation_id' => $conversation_id,
+                'message_id'      => $message_id,
+                'exception'       => $exception->getMessage(),
+            ]
+        );
+
+        throw $exception;
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Delete Message (legacy sender-only delete, used by old update/delete flow)
 |--------------------------------------------------------------------------
 */
 

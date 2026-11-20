@@ -15,12 +15,35 @@ require_once __DIR__ . '/../core/database/query.php';
 
 function jwt_config(): array
 {
+    $access_ttl = (int) (getenv('JWT_ACCESS_TTL') ?: 3600);
+    $refresh_ttl = (int) (getenv('JWT_REFRESH_TTL') ?: 2592000);
+
     return [
         'secret' => getenv('JWT_SECRET') ?: 'change_this_to_a_long_random_secret',
         'algorithm' => strtoupper(trim(getenv('JWT_ALGORITHM') ?: 'HS256')),
-        'access_ttl' => (int) (getenv('JWT_ACCESS_TTL') ?: 3600),
-        'refresh_ttl' => (int) (getenv('JWT_REFRESH_TTL') ?: 2592000),
+        'access_ttl' => max(1, $access_ttl),
+        'refresh_ttl' => max(1, $refresh_ttl),
     ];
+}
+
+function jwt_access_ttl(): int
+{
+    return (int) jwt_config()['access_ttl'];
+}
+
+function jwt_refresh_ttl(): int
+{
+    return (int) jwt_config()['refresh_ttl'];
+}
+
+function jwt_now_datetime(): string
+{
+    return gmdate('Y-m-d H:i:s');
+}
+
+function jwt_hash_token(string $token): string
+{
+    return hash('sha256', $token);
 }
 
 function jwt_base64url_encode(string $data): string
@@ -119,8 +142,7 @@ function jwt_issue_token(array $user, int $ttl, string $token_type = 'access'): 
 
 function jwt_issue_access_token(array $user): string
 {
-    $config = jwt_config();
-    return jwt_issue_token($user, $config['access_ttl'], 'access');
+    return jwt_issue_token($user, jwt_access_ttl(), 'access');
 }
 
 function jwt_store_refresh_token(array $user, string $token, int $ttl_seconds): void
@@ -130,38 +152,80 @@ function jwt_store_refresh_token(array $user, string $token, int $ttl_seconds): 
         return;
     }
 
-    $hash = hash('sha256', $token);
-    $expires_at = date('Y-m-d H:i:s', time() + max(1, $ttl_seconds));
+    $hash = jwt_hash_token($token);
+    $expires_at = gmdate('Y-m-d H:i:s', time() + max(1, $ttl_seconds));
+    $now = jwt_now_datetime();
 
+    /*
+     * Preserve existing behavior: issuing a fresh refresh token (e.g. on login)
+     * invalidates the user's other active refresh sessions. We revoke (rather
+     * than delete) so records remain for audit/reuse detection, and we only
+     * touch sessions that are still active and not expired.
+     */
     db_execute(
-        'DELETE FROM refresh_tokens WHERE user_id = :user_id AND revoked_at IS NULL',
-        ['user_id' => $user_id]
+        'UPDATE refresh_tokens
+            SET revoked_at = :revoked_at
+          WHERE user_id = :user_id
+            AND revoked_at IS NULL
+            AND expires_at > :active_now',
+        [
+            'revoked_at' => $now,
+            'user_id' => $user_id,
+            'active_now' => $now,
+        ]
     );
 
     db_execute(
-        'INSERT INTO refresh_tokens (user_id, token_hash, expires_at, created_at) VALUES (:user_id, :token_hash, :expires_at, NOW())',
+        'INSERT INTO refresh_tokens (user_id, token_hash, expires_at, created_at)
+         VALUES (:user_id, :token_hash, :expires_at, :created_at)',
         [
             'user_id' => $user_id,
             'token_hash' => $hash,
             'expires_at' => $expires_at,
+            'created_at' => $now,
         ]
     );
 }
 
 function jwt_issue_refresh_token(array $user): string
 {
-    $config = jwt_config();
-    $token = jwt_issue_token($user, $config['refresh_ttl'], 'refresh');
-    jwt_store_refresh_token($user, $token, $config['refresh_ttl']);
+    $token = jwt_issue_token($user, jwt_refresh_ttl(), 'refresh');
+    jwt_store_refresh_token($user, $token, jwt_refresh_ttl());
 
     return $token;
+}
+
+function jwt_persist_refresh_token(array $user, string $token, int $ttl_seconds): void
+{
+    $user_id = (int) ($user['id'] ?? 0);
+    if ($user_id <= 0 || trim($token) === '') {
+        return;
+    }
+
+    $hash = jwt_hash_token($token);
+    $expires_at = gmdate('Y-m-d H:i:s', time() + max(1, $ttl_seconds));
+    $now = jwt_now_datetime();
+
+    db_execute(
+        'INSERT INTO refresh_tokens (user_id, token_hash, expires_at, created_at)
+         VALUES (:user_id, :token_hash, :expires_at, :created_at)',
+        [
+            'user_id' => $user_id,
+            'token_hash' => $hash,
+            'expires_at' => $expires_at,
+            'created_at' => $now,
+        ]
+    );
 }
 
 function jwt_revoke_all_refresh_tokens_for_user(int $user_id): int
 {
     $statement = db_execute(
-        'UPDATE refresh_tokens SET revoked_at = NOW() WHERE user_id = :user_id AND revoked_at IS NULL',
-        ['user_id' => $user_id]
+        'UPDATE refresh_tokens SET revoked_at = :revoked_at WHERE user_id = :user_id AND revoked_at IS NULL',
+        [
+            'revoked_at' => jwt_now_datetime(),
+            'user_id' => $user_id,
+        ]
     );
 
     return $statement->rowCount();
@@ -169,9 +233,7 @@ function jwt_revoke_all_refresh_tokens_for_user(int $user_id): int
 
 function jwt_rotate_refresh_token(array $user, string $old_token): string
 {
-    $config = jwt_config();
-
-    $old_hash = hash('sha256', $old_token);
+    $old_hash = jwt_hash_token($old_token);
     $existing = db_fetch_one(
         'SELECT id, user_id, revoked_at, expires_at FROM refresh_tokens WHERE token_hash = :token_hash LIMIT 1',
         ['token_hash' => $old_hash]
@@ -179,14 +241,167 @@ function jwt_rotate_refresh_token(array $user, string $old_token): string
 
     if (is_array($existing) && empty($existing['revoked_at'])) {
         db_execute(
-            'UPDATE refresh_tokens SET revoked_at = NOW() WHERE token_hash = :token_hash AND revoked_at IS NULL',
-            ['token_hash' => $old_hash]
+            'UPDATE refresh_tokens SET revoked_at = :revoked_at WHERE token_hash = :token_hash AND revoked_at IS NULL',
+            [
+                'revoked_at' => jwt_now_datetime(),
+                'token_hash' => $old_hash,
+            ]
         );
     }
 
     $new_token = jwt_issue_refresh_token($user);
 
     return $new_token;
+}
+
+/**
+ * Validate and atomically rotate a refresh token.
+ *
+ * The presented token is locked, verified against the stored hash record
+ * (existence, expiry, revocation, user binding and user eligibility), revoked,
+ * and replaced with a newly issued refresh token in a single transaction.
+ *
+ * Returns:
+ * - ['ok' => true,  'user' => array, 'access_token' => string, 'refresh_token' => string]
+ * - ['ok' => false, 'reason' => string] where reason is one of:
+ *     invalid|expired|revoked|reused|not_found|user_mismatch|user_ineligible
+ */
+function jwt_rotate_refresh_token_atomic(string $token): array
+{
+    $config = jwt_config();
+    $payload = jwt_verify($token, $config['secret'], $config['algorithm']);
+
+    if ($payload === false) {
+        return ['ok' => false, 'reason' => 'invalid'];
+    }
+
+    if (($payload['type'] ?? null) !== 'refresh') {
+        return ['ok' => false, 'reason' => 'invalid'];
+    }
+
+    $hash = jwt_hash_token($token);
+    $now_epoch = time();
+    $now_dt = gmdate('Y-m-d H:i:s', $now_epoch);
+
+    return db_transaction(static function (PDO $db) use ($hash, $payload, $now_epoch, $now_dt): array {
+        $statement = $db->prepare(
+            'SELECT id, user_id, token_hash, revoked_at, expires_at
+               FROM refresh_tokens
+              WHERE token_hash = :token_hash
+              LIMIT 1
+              FOR UPDATE'
+        );
+        $statement->execute(['token_hash' => $hash]);
+        $record = $statement->fetch();
+
+        if ($record === false) {
+            return ['ok' => false, 'reason' => 'not_found'];
+        }
+
+        $user_id = (int) ($record['user_id'] ?? 0);
+        $payload_user_id = (int) ($payload['sub'] ?? 0);
+
+        if ($user_id <= 0 || $payload_user_id <= 0 || $user_id !== $payload_user_id) {
+            return ['ok' => false, 'reason' => 'user_mismatch'];
+        }
+
+        if (!empty($record['revoked_at'])) {
+            /*
+             * Reuse detection: a previously rotated/revoked refresh token was
+             * presented again. Contain by revoking all active refresh sessions
+             * for this user, then reject.
+             */
+            $revoke_stmt = $db->prepare(
+                'UPDATE refresh_tokens
+                    SET revoked_at = :revoked_at
+                  WHERE user_id = :user_id
+                    AND revoked_at IS NULL'
+            );
+            $revoke_stmt->execute([
+                'revoked_at' => $now_dt,
+                'user_id' => $user_id,
+            ]);
+
+            return ['ok' => false, 'reason' => 'reused'];
+        }
+
+        $expires_at = (string) ($record['expires_at'] ?? '');
+        if ($expires_at !== '' && strtotime($expires_at . ' UTC') <= $now_epoch) {
+            return ['ok' => false, 'reason' => 'expired'];
+        }
+
+        if (($payload['exp'] ?? 0) < $now_epoch) {
+            return ['ok' => false, 'reason' => 'expired'];
+        }
+
+        $user_stmt = $db->prepare(
+            'SELECT id, email, role, status, email_verified_at, created_at, updated_at, last_login_at
+               FROM users
+              WHERE id = :id
+              LIMIT 1'
+        );
+        $user_stmt->execute(['id' => $user_id]);
+        $user = $user_stmt->fetch();
+
+        if ($user === false) {
+            return ['ok' => false, 'reason' => 'user_ineligible'];
+        }
+
+        $status = $user['status'] ?? null;
+        $active = function_exists('user_status_allows_login')
+            ? user_status_allows_login($status)
+            : ($status === 'active');
+
+        if (!$active) {
+            // Revoke the presented token so an inactive account cannot keep rotating.
+            $revoke_stmt = $db->prepare(
+                'UPDATE refresh_tokens
+                    SET revoked_at = :revoked_at
+                  WHERE id = :id
+                    AND revoked_at IS NULL'
+            );
+            $revoke_stmt->execute([
+                'revoked_at' => $now_dt,
+                'id' => (int) $record['id'],
+            ]);
+
+            return ['ok' => false, 'reason' => 'user_ineligible'];
+        }
+
+        $revoke_stmt = $db->prepare(
+            'UPDATE refresh_tokens
+                SET revoked_at = :revoked_at
+              WHERE id = :id
+                AND revoked_at IS NULL'
+        );
+        $revoke_stmt->execute([
+            'revoked_at' => $now_dt,
+            'id' => (int) $record['id'],
+        ]);
+
+        $access_token = jwt_issue_access_token($user);
+        $refresh_token = jwt_issue_token($user, jwt_refresh_ttl(), 'refresh');
+        $refresh_hash = jwt_hash_token($refresh_token);
+        $refresh_expires_at = gmdate('Y-m-d H:i:s', $now_epoch + jwt_refresh_ttl());
+
+        $insert_stmt = $db->prepare(
+            'INSERT INTO refresh_tokens (user_id, token_hash, expires_at, created_at)
+             VALUES (:user_id, :token_hash, :expires_at, :created_at)'
+        );
+        $insert_stmt->execute([
+            'user_id' => $user_id,
+            'token_hash' => $refresh_hash,
+            'expires_at' => $refresh_expires_at,
+            'created_at' => $now_dt,
+        ]);
+
+        return [
+            'ok' => true,
+            'user' => $user,
+            'access_token' => $access_token,
+            'refresh_token' => $refresh_token,
+        ];
+    });
 }
 
 function jwt_validate_access_token(string $token): array|false
@@ -202,7 +417,7 @@ function jwt_validate_access_token(string $token): array|false
         return false;
     }
 
-    $hash = hash('sha256', $token);
+    $hash = jwt_hash_token($token);
     $record = db_fetch_one(
         'SELECT revoked_at FROM refresh_tokens WHERE token_hash = :token_hash LIMIT 1',
         ['token_hash' => $hash]
@@ -228,17 +443,20 @@ function jwt_revoke_access_token(string $access_token): void
         return;
     }
 
-    $hash = hash('sha256', $access_token);
-    $expires_at = date('Y-m-d H:i:s', (int) ($payload['exp'] ?? (time() + 3600)));
+    $hash = jwt_hash_token($access_token);
+    $expires_at = gmdate('Y-m-d H:i:s', (int) ($payload['exp'] ?? (time() + 3600)));
+    $now = jwt_now_datetime();
 
     db_execute(
         'INSERT INTO refresh_tokens (user_id, token_hash, expires_at, created_at, revoked_at)
-         VALUES (:user_id, :token_hash, :expires_at, NOW(), NOW())
-         ON DUPLICATE KEY UPDATE revoked_at = COALESCE(revoked_at, NOW())',
+         VALUES (:user_id, :token_hash, :expires_at, :created_at, :revoked_at)
+         ON DUPLICATE KEY UPDATE revoked_at = COALESCE(revoked_at, VALUES(revoked_at))',
         [
             'user_id' => (int) ($payload['sub'] ?? 0),
             'token_hash' => $hash,
             'expires_at' => $expires_at,
+            'created_at' => $now,
+            'revoked_at' => $now,
         ]
     );
 }
@@ -256,9 +474,9 @@ function jwt_validate_refresh_token(string $token): array|false
         return false;
     }
 
-    $hash = hash('sha256', $token);
+    $hash = jwt_hash_token($token);
     $record = db_fetch_one(
-        'SELECT id, revoked_at, expires_at FROM refresh_tokens WHERE token_hash = :token_hash LIMIT 1',
+        'SELECT id, user_id, revoked_at, expires_at FROM refresh_tokens WHERE token_hash = :token_hash LIMIT 1',
         ['token_hash' => $hash]
     );
 
@@ -270,28 +488,44 @@ function jwt_validate_refresh_token(string $token): array|false
         return false;
     }
 
-    if (!empty($record['expires_at']) && strtotime((string) $record['expires_at']) <= time()) {
+    $expires_at = (string) ($record['expires_at'] ?? '');
+    if ($expires_at !== '' && strtotime($expires_at . ' UTC') <= time()) {
+        return false;
+    }
+
+    $payload_user_id = (int) ($payload['sub'] ?? 0);
+    $record_user_id = (int) ($record['user_id'] ?? 0);
+    if ($payload_user_id <= 0 || $record_user_id <= 0 || $payload_user_id !== $record_user_id) {
         return false;
     }
 
     return $payload;
 }
 
-function jwt_mark_refresh_token_reused(string $token): bool
+function jwt_revoke_refresh_token_record(string $token): bool
 {
-    $hash = hash('sha256', $token);
+    $hash = jwt_hash_token($token);
     $statement = db_execute(
-        'UPDATE refresh_tokens SET revoked_at = NOW() WHERE token_hash = :token_hash AND revoked_at IS NULL',
-        ['token_hash' => $hash]
+        'UPDATE refresh_tokens SET revoked_at = :revoked_at WHERE token_hash = :token_hash AND revoked_at IS NULL',
+        [
+            'revoked_at' => jwt_now_datetime(),
+            'token_hash' => $hash,
+        ]
     );
 
     return $statement->rowCount() > 0;
 }
 
+function jwt_mark_refresh_token_reused(string $token): bool
+{
+    return jwt_revoke_refresh_token_record($token);
+}
+
 function jwt_delete_expired_tokens(): int
 {
     $statement = db_execute(
-        'DELETE FROM refresh_tokens WHERE expires_at <= NOW()'
+        'DELETE FROM refresh_tokens WHERE expires_at <= :now',
+        ['now' => jwt_now_datetime()]
     );
 
     return $statement->rowCount();
@@ -337,7 +571,9 @@ function jwt_refresh_cookie_path(): string
 
 function jwt_refresh_cookie_secure(): bool
 {
-    return filter_var(getenv('SECURE_COOKIES'), FILTER_VALIDATE_BOOLEAN);
+    global $app_config;
+
+    return (bool) ($app_config['auth']['cookie_secure'] ?? filter_var(getenv('SECURE_COOKIES') ?: false, FILTER_VALIDATE_BOOLEAN));
 }
 
 function jwt_set_refresh_cookie(string $token, int $ttl_seconds = 2592000): void

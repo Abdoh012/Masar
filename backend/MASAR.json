@@ -18,7 +18,11 @@
       "",
       "Negative cases: requests that expect a 4xx error name the expected status, for example \"Accept Application - Already Accepted (expect 409)\", and their tests assert the exact error semantics.",
       "",
-      "Authentication: protected requests use the collection bearer token {{access_token}}. Public requests (Setup, Lookups, Registration, Login, password reset and Google OAuth) carry no Authorization header."
+      "Authentication: protected requests use the collection bearer token {{access_token}}. Public requests (Setup, Lookups, Registration, Login, password reset and Google OAuth) carry no Authorization header.",
+      "",
+      "Messaging pagination: GET /conversations/{id}/messages returns the latest 12 messages by default (limit 1-20), ordered chronologically by id. Use before_id for older pages and after_id for newer pages; the response includes a pagination object with limit, has_more, next_before_id and next_after_id. before_id and after_id cannot be combined.",
+      "",
+      "WebSocket (separate from these HTTP requests): start `php websocket/server.php` and connect to ws://127.0.0.1:8081/?token={{access_token}}. Send {type:'subscribe',conversation_id:...} after authenticating. The only server event is message.created: {event_id, conversation_id, message_id, sender_user_id, body, created_at}. Messages are persisted only by POST /conversations/{id}/messages; the socket never accepts chat messages and never broadcasts history. Missed messages are recovered with the after_id cursor. See backend/docs/WEBSOCKET.md."
     ]
   },
   "item": [
@@ -489,7 +493,7 @@
                     "login"
                   ]
                 },
-                "description": "Public. Authenticates a user. On 200 the response returns `data.token` (access token) and the server sets an HttpOnly `refresh_token` cookie plus a readable `csrf_token` cookie. The test stores all of these in collection variables. Set `{{student_email}}`/`{{student_password}}` to an account that exists in your environment."
+                "description": "Public. Authenticates a user. On 200 the response returns `data.token` (access token), `data.expires_in`, `data.refresh_token`, `data.refresh_expires_in`, and the server sets an HttpOnly `refresh_token` cookie plus a readable `csrf_token` cookie. The test stores these in collection variables. Set `{{student_email}}`/`{{student_password}}` to an account that exists in your environment."
               },
               "event": [
                 {
@@ -693,6 +697,21 @@
               "name": "Refresh Access Token",
               "request": {
                 "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"refresh_token\": \"{{refresh_token}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
                 "url": {
                   "raw": "{{base_url}}/api/v1/auth/refresh",
                   "host": [
@@ -705,7 +724,7 @@
                     "refresh"
                   ]
                 },
-                "description": "Requires the HttpOnly `refresh_token` cookie and a matching `X-CSRF-Token` header (attached automatically by the pre-request script). Run after Login. On 200 the server returns a new access token and rotates the refresh/CSRF cookies."
+                "description": "Rotates the refresh token and issues a new access token. Accepts the refresh token from the HttpOnly `refresh_token` cookie with a matching `X-CSRF-Token` header (cookie flow), or from the JSON body as `{\"refresh_token\":\"...\"}` (no CSRF required). On 200 the server returns a new access token and a new refresh token, and rotates the refresh/CSRF cookies. Reused, revoked, expired or invalid refresh tokens return 401."
               },
               "event": [
                 {
@@ -737,6 +756,9 @@
                       "if (pm.response.code === 200) {",
                       "    const json = pm.response.json();",
                       "    pm.collectionVariables.set('access_token', json.data.token);",
+                      "    if (json.data.refresh_token) {",
+                      "        pm.collectionVariables.set('refresh_token', json.data.refresh_token);",
+                      "    }",
                       "    const csrf = pm.cookies.get('csrf_token');",
                       "    if (csrf) {",
                       "        pm.collectionVariables.set('csrf_token', csrf);",
@@ -781,7 +803,7 @@
                     "logout"
                   ]
                 },
-                "description": "Requires Bearer token. Revokes the current session tokens and clears the refresh cookie. The test saves the used access token into `revoked_token` so the security tests can verify a revoked token is rejected."
+                "description": "Revokes session tokens and clears auth cookies. Accepts a valid bearer access token, or (if the access token has expired) a valid refresh token supplied via the `refresh_token` cookie or JSON body to identify the session to revoke. The test saves the used access token into `revoked_token` so the security tests can verify a revoked token is rejected."
               },
               "event": [
                 {
@@ -2917,8 +2939,15 @@
                       "    pm.expect(pm.response.code).to.eql(200);",
                       "    const json = pm.response.json();",
                       "    pm.expect(json.success).to.eql(true);",
-                      "    pm.expect(['student', 'graduate']).to.include(json.data.academic_status);",
-                      "    pm.expect(json.data.is_graduate).to.be.a('boolean');",
+                      "    pm.expect(json.data.academic_status).to.be.oneOf(['student', 'graduate']);",
+                      "    pm.expect(json.data).to.not.have.property('is_graduate');",
+                      "    pm.expect(json.data).to.not.have.property('graduation_year');",
+                      "    pm.expect(json.data).to.not.have.property('graduation_month');",
+                      "    if (json.data.academic_status === 'student') {",
+                      "        pm.expect(Object.keys(json.data)).to.eql(['academic_status']);",
+                      "    } else {",
+                      "        pm.expect(json.data).to.have.property('graduation_date');",
+                      "    }",
                       "});"
                     ]
                   }
@@ -2942,7 +2971,7 @@
                     "academic-status"
                   ]
                 },
-                "description": "Requires a student Bearer token. \\n\\n`academic_status` is `student` or `graduate`.\\n- For `student`: no further fields are required and no certificate is touched.\\n- For `graduate`: `graduation_date` (YYYY-MM-DD) and `graduation_certificate` (file: pdf/png/jpg/jpeg, up to 5 MB) are both required; the date is stored and the certificate is uploaded through the existing academic-certificate flow.\\n\\nResponses: 200 with the stored status, 422 for an unknown status, a missing/invalid date or certificate, an unsupported file type or an oversized file; 401, 403.",
+                "description": "Requires a student Bearer token. \\n\\n`academic_status` accepts exactly `student` or `graduate`. The value is trimmed and matched case-insensitively, so `Student` and ` STUDENT ` are stored as `student`; anything else is refused with 422 and a field error.\\n\\n- For `student`: no further fields are required; nothing is uploaded and the stored certificate is never touched.\\n- For `graduate`: `graduation_date` (YYYY-MM-DD) and `graduation_certificate` (file: pdf/png/jpg/jpeg, up to 5 MB) are both required; the certificate is validated and stored by the shared upload module in the academic certificate location.\\n\\nEncoding: send this request as `multipart/form-data` (the form below) when a certificate is involved. A status-only update may instead be sent as `application/json` with body `{\\\"academic_status\\\":\\\"student\\\"}`. The method stays PUT: PHP parses multipart bodies only for POST, so the backend parses the PUT multipart body itself - do not switch to POST.\\n\\nResponses: 200 with the stored status. A student reply contains only `academic_status`; a graduate reply contains `academic_status`, `graduation_date` and `graduation_certificate` ({ id, file_name, file_url }). 422 with `errors.{academic_status|graduation_date|graduation_certificate}` for an unknown status, a missing/invalid date or certificate, an unsupported file type or an oversized file; 401, 403.",
                 "body": {
                   "mode": "formdata",
                   "formdata": [
@@ -7784,7 +7813,7 @@
                 "conversations"
               ]
             },
-            "description": "Requires Bearer token. Lists the conversations the authenticated user participates in (student or company side of an application). data is a flat array of conversation rows with student_name, company_name, training_title and unread_count. Optional query filters: application_id, keyword, limit (default 50, clamped to 100) and offset (default 0). An application_id the user is not part of returns an empty array, not an error."
+            "description": "Requires Bearer token. Lists the conversations the authenticated user participates in (student or company side of an application). data is an object with items (conversation rows with student_name, company_name, company_image, training_title, unread_count, last_message, application_status and training) and pagination ({ total, limit, offset }); total is the number of the user's conversations before paging. company_image is the conversation's company's profile image as the relative storage path from companies.company_logo (e.g. companies/20260821_a1b2c3d4.png), or null when the company has no logo. Query filters: application_id, keyword, limit (default 20, must be 1-100) and offset (default 0, must be >= 0). Values are read from the query string and malformed values are rejected (400). An application_id the user is not part of returns an empty page, not an error."
           },
           "event": [
             {
@@ -7797,7 +7826,14 @@
                   "    const json = pm.response.json();",
                   "    pm.expect(json.success).to.eql(true);",
                   "    pm.expect(json).to.have.property('data');",
-                  "    pm.expect(Array.isArray(json.data)).to.eql(true);",
+                  "    pm.expect(Array.isArray(json.data.items)).to.eql(true);",
+                  "    pm.expect(json.data).to.have.property('pagination');",
+                  "    pm.expect(json.data.pagination).to.have.property('limit');",
+                  "});",
+                  "pm.test(\"Default limit is 20 when none is provided\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.data.pagination.limit).to.eql(20);",
+                  "    pm.expect(json.data.items.length).to.be.at.most(20);",
                   "});"
                 ]
               }
@@ -7867,58 +7903,6 @@
           ]
         },
         {
-          "name": "Get Conversation",
-          "request": {
-            "method": "GET",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{access_token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "url": {
-              "raw": "{{base_url}}/api/v1/conversations/{{conversation_id}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "conversations",
-                "{{conversation_id}}"
-              ]
-            },
-            "description": "Requires Bearer token. Returns a single conversation, by id, only to its student or company participant. Uses the conversation_id collection variable captured by Create Conversation. 200 = the conversation in data; 403 = the conversation exists but the authenticated user is not a participant; 404 = the conversation does not exist. Reading stays available after the training application is withdrawn."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Get conversation succeeds\", function () {",
-                  "    pm.expect(pm.response.code).to.eql(200);",
-                  "    const json = pm.response.json();",
-                  "    pm.expect(json.success).to.eql(true);",
-                  "    pm.expect(json).to.have.property('data');",
-                  "});",
-                  "const json = pm.response.json();",
-                  "const requested = pm.collectionVariables.get('conversation_id');",
-                  "if (requested && json.data && json.data.id !== undefined) {",
-                  "    pm.test(\"Returned conversation id matches the requested id\", function () {",
-                  "        pm.expect(String(json.data.id)).to.eql(requested);",
-                  "    });",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
           "name": "List Messages",
           "request": {
             "method": "GET",
@@ -7947,55 +7931,55 @@
               "query": [
                 {
                   "key": "limit",
-                  "value": "50",
-                  "description": "Page size 1-100. Default 50. Out of range or non-numeric is a 400.",
-                  "disabled": true
-                },
-                {
-                  "key": "offset",
-                  "value": "0",
-                  "description": "Rows to skip, >= 0. Default 0. Negative or non-numeric is a 400.",
-                  "disabled": true
-                },
-                {
-                  "key": "order",
-                  "value": "desc",
-                  "description": "asc (default) or desc, applied to created_at then id.",
+                  "value": "12",
+                  "description": "Page size 1-20. Default 12. 0, 21, negative or non-numeric is a 400.",
                   "disabled": true
                 },
                 {
                   "key": "before_id",
                   "value": "1108",
-                  "description": "Exclusive cursor: only messages with a lower id.",
+                  "description": "Exclusive cursor: only messages with a lower id (older page). Cannot be combined with after_id.",
                   "disabled": true
                 },
                 {
                   "key": "after_id",
                   "value": "1104",
-                  "description": "Exclusive cursor: only messages with a greater id.",
+                  "description": "Exclusive cursor: only messages with a greater id (newer page). Cannot be combined with before_id.",
+                  "disabled": true
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Legacy offset, >= 0. Default 0. Negative or non-numeric is a 400.",
+                  "disabled": true
+                },
+                {
+                  "key": "order",
+                  "value": "asc",
+                  "description": "Legacy display-only override: asc (default) or desc. Cursor mechanics are unchanged.",
                   "disabled": true
                 },
                 {
                   "key": "sender_id",
                   "value": "100568",
-                  "description": "Only messages sent by this user id.",
+                  "description": "Legacy filter: only messages sent by this user id.",
                   "disabled": true
                 },
                 {
                   "key": "from_date",
                   "value": "2026-08-14",
-                  "description": "Y-m-d or Y-m-d H:i:s lower bound on created_at.",
+                  "description": "Legacy filter: Y-m-d or Y-m-d H:i:s lower bound on created_at.",
                   "disabled": true
                 },
                 {
                   "key": "to_date",
                   "value": "2026-08-15",
-                  "description": "Y-m-d or Y-m-d H:i:s upper bound; a date-only value covers the whole day (23:59:59).",
+                  "description": "Legacy filter: Y-m-d or Y-m-d H:i:s upper bound; a date-only value covers the whole day (23:59:59).",
                   "disabled": true
                 }
               ]
             },
-            "description": "Requires Bearer token. Lists the messages of a conversation for the authenticated user (must be the student or company of the conversation). data is a flat array ordered by created_at then id, oldest first by default. Query parameters are read from the query string and validated: limit 1-100 (default 50), offset >= 0 (default 0), order asc|desc, before_id / after_id exclusive id cursors, sender_id, and from_date / to_date as Y-m-d or Y-m-d H:i:s (a date-only to_date covers the whole day). Any invalid value is a 400. 401 = unauthenticated; 403 = not a participant; 404 = conversation not found. Reading is unaffected by a withdrawn application. Uses the conversation_id collection variable."
+            "description": "Requires Bearer token. Lists messages of a conversation for the authenticated participant. data is a flat array ordered chronologically by id (oldest first); pagination metadata is returned beside it as { limit, has_more, next_before_id, next_after_id }; the top-level conversation object is { id, company: { id, name, image } } (the company profile shown once in the UI). Each message carries is_read, is_edited (1 when edited, 0 when never edited) and created_at/updated_at (updated_at is null unless the message was edited). Default limit is 12, maximum 20. before_id fetches older messages and after_id fetches newer messages, both exclusive of the cursor and both returned chronologically; combining them is a 400. The cursor itself is never included. has_more is computed with a limit+1 read and the extra row is never returned. Legacy offset, order, sender_id, from_date and to_date are still accepted. 401 = unauthenticated; 403 = not a participant; 404 = conversation not found. Reading is unaffected by a withdrawn application. Uses the conversation_id collection variable."
           },
           "event": [
             {
@@ -8009,6 +7993,15 @@
                   "    pm.expect(json.success).to.eql(true);",
                   "    pm.expect(json).to.have.property('data');",
                   "    pm.expect(Array.isArray(json.data)).to.eql(true);",
+                  "    pm.expect(json.data.length).to.be.at.most(12);",
+                  "    pm.expect(json).to.have.property('pagination');",
+                  "    pm.expect(json.pagination).to.have.property('limit');",
+                  "    pm.expect(json.pagination).to.have.property('has_more');",
+                  "    pm.expect(json.pagination).to.have.property('next_before_id');",
+                  "    pm.expect(json.pagination).to.have.property('next_after_id');",
+                  "    pm.expect(json).to.have.property('conversation');",
+                  "    pm.expect(json.conversation.company).to.have.property('name');",
+                  "    pm.expect(json.conversation.company).to.have.property('image');",
                   "});"
                 ]
               }
@@ -8079,7 +8072,126 @@
                   "            pm.expect(String(json.data.conversation_id)).to.eql(expectedConversation);",
                   "        }",
                   "    });",
+                  "    if (json.data.id !== undefined) {",
+                  "        pm.collectionVariables.set('message_id', String(json.data.id));",
+                  "    }",
                   "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Edit Message",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"body\": \"Updated: thanks!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{conversation_id}}/messages/{{message_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "conversations",
+                "{{conversation_id}}",
+                "messages",
+                "{{message_id}}"
+              ]
+            },
+            "description": "Requires Bearer token. PATCH /conversations/{conversation_id}/messages/{message_id} edits the body of your OWN message. body is the canonical field (trimmed, non-empty, max 5000 chars; message/content are aliases). The message id and conversation id are both taken from the URL; the sender is re-read from the database. The original id and created_at are preserved; is_edited becomes 1 and updated_at is set. 200 = updated message; 403 = not a participant, not the sender, or the application is withdrawn; 404 = message not found / from another conversation; 422 = validation failure. The message.updated WebSocket event is published after the transaction commits. Uses the conversation_id collection variable and a captured message_id."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test(\"Edit message returns the updated message\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(json.success).to.eql(true);",
+                  "    pm.expect(json.data).to.have.property('id');",
+                  "    pm.expect(json.data.is_edited).to.eql(1);",
+                  "    pm.expect(json.data).to.have.property('updated_at');",
+                  "});",
+                  "pm.test(\"Edit preserves the original id\", function () {",
+                  "    pm.expect(String(json.data.id)).to.eql(String(pm.collectionVariables.get('message_id')));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Message",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{conversation_id}}/messages/{{message_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "conversations",
+                "{{conversation_id}}",
+                "messages",
+                "{{message_id}}"
+              ]
+            },
+            "description": "Requires Bearer token. DELETE /conversations/{conversation_id}/messages/{message_id} performs a HARD DELETE of your OWN message: the row is physically removed from the messages table (Delete for Everyone). No soft delete, placeholder or archive. 200 = deleted; 401 = unauthenticated; 403 = not a participant, not the sender, or the application is withdrawn; 404 = message not found / from another conversation / already deleted. Uses the conversation_id collection variable and the message_id variable; for deletion tests set the message_id collection variable to the id captured from a prior send."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test(\"Delete message succeeds\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(json.success).to.eql(true);",
+                  "});",
+                  "pm.test(\"Deleted message carries a deletion message\", function () {",
+                  "    pm.expect(json.message).to.eql('Message deleted successfully.');",
+                  "});"
                 ]
               }
             }

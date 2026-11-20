@@ -276,10 +276,198 @@ function request_json(): array
 
 /*
 |--------------------------------------------------------------------------
+| Parse Multipart Body for Non-POST Methods
+|--------------------------------------------------------------------------
+|
+| PHP populates $_POST and $_FILES natively only for POST requests. A PUT
+| (or PATCH) request sent as multipart/form-data therefore reaches the
+| application with both superglobals empty even though the body carries the
+| form fields and the uploaded file - which is exactly how the academic
+| status endpoint is called with a graduation certificate.
+|
+| This mirrors the native layout once, so request_input() / request_file()
+| keep working unchanged for every method. It is a no-op for anything that
+| is not a live non-POST multipart request (JSON bodies, POST requests that
+| PHP already parsed, and calls without a multipart content type).
+|
+| $raw_body and $content_type exist so a regression suite can exercise the
+| parser without a web server; production callers omit both and the values
+| are read from the current request.
+|
+*/
+
+function request_parse_multipart_input(
+    ?string $raw_body = null,
+    ?string $content_type = null
+): bool {
+
+    static $parsed_live_request = false;
+
+    $is_live_request = ($raw_body === null);
+
+    if ($is_live_request && $parsed_live_request) {
+        return true;
+    }
+
+    $content_type = $content_type ?? (string) ($_SERVER['CONTENT_TYPE'] ?? '');
+
+    if (!is_string($content_type) || !str_contains(strtolower($content_type), 'multipart/form-data')) {
+        return false;
+    }
+
+    /*
+     | POST bodies are already parsed by PHP, and data a caller has provided
+     | itself must never be overwritten.
+     */
+    if ($is_live_request && request_method() !== 'POST' && (!empty($_POST) || !empty($_FILES))) {
+        $parsed_live_request = true;
+
+        return true;
+    }
+
+    if ($is_live_request && request_method() === 'POST') {
+        return false;
+    }
+
+    if (!preg_match('/boundary=(?:"([^"]+)"|([^;\s]+))/i', $content_type, $matches)) {
+        return false;
+    }
+
+    $boundary = trim((string) (($matches[1] ?? '') !== '' ? $matches[1] : ($matches[2] ?? '')));
+
+    if ($boundary === '') {
+        return false;
+    }
+
+    $body = $raw_body ?? request_raw_body();
+
+    if (!is_string($body) || $body === '') {
+        return false;
+    }
+
+    $segments = explode('--' . $boundary, $body);
+
+    // A preamble, at least one part and the closing delimiter.
+    if (count($segments) < 3) {
+        return false;
+    }
+
+    foreach ($segments as $segment) {
+        if ($segment === '' || str_starts_with($segment, '--')) {
+            continue;
+        }
+
+        $segment = ltrim($segment, "\r\n");
+
+        $header_end = strpos($segment, "\r\n\r\n");
+
+        if ($header_end === false) {
+            continue;
+        }
+
+        $header_block = substr($segment, 0, $header_end);
+        $value        = substr($segment, $header_end + 4);
+
+        // Drop the CRLF that precedes the next boundary.
+        if (str_ends_with($value, "\r\n")) {
+            $value = substr($value, 0, -2);
+        }
+
+        if (!preg_match('/content-disposition\s*:\s*form-data\b([^\r\n]*)/i', $header_block, $disposition)) {
+            continue;
+        }
+
+        $parameters = $disposition[1];
+
+        if (!preg_match('/\bname\s*=\s*"([^"]*)"/i', $parameters, $name_match)
+            && !preg_match("/\bname\s*=\s*'([^']*)'/i", $parameters, $name_match)
+            && !preg_match('/\bname\s*=\s*([^;\s]+)/i', $parameters, $name_match)
+        ) {
+            continue;
+        }
+
+        $field = $name_match[1];
+
+        // Only flat field names are needed here; array fields stay untouched.
+        if ($field === '' || str_contains($field, '[')) {
+            continue;
+        }
+
+        $filename = null;
+
+        if (preg_match('/\bfilename\s*=\s*"([^"]*)"/i', $parameters, $file_match)
+            || preg_match('/\bfilename\s*=\s*([^;\s]+)/i', $parameters, $file_match)
+        ) {
+            $filename = $file_match[1];
+        }
+
+        if ($filename === null) {
+            $_POST[$field] = $value;
+
+            continue;
+        }
+
+        $declared_type = 'application/octet-stream';
+
+        if (preg_match('/content-type\s*:\s*([^\r\n]+)/i', $header_block, $type_match)) {
+            $declared_type = trim($type_match[1]);
+        }
+
+        if ($filename === '') {
+            $_FILES[$field] = [
+                'name'     => '',
+                'type'     => '',
+                'tmp_name' => '',
+                'error'    => UPLOAD_ERR_NO_FILE,
+                'size'     => 0,
+            ];
+
+            continue;
+        }
+
+        $temporary = tempnam(sys_get_temp_dir(), 'masar_mp_');
+
+        if ($temporary === false) {
+            continue;
+        }
+
+        if (file_put_contents($temporary, $value) === false) {
+            @unlink($temporary);
+
+            continue;
+        }
+
+        register_shutdown_function(static function () use ($temporary): void {
+            if (is_file($temporary)) {
+                @unlink($temporary);
+            }
+        });
+
+        $_FILES[$field] = [
+            'name'     => $filename,
+            'type'     => $declared_type,
+            'tmp_name' => $temporary,
+            'error'    => UPLOAD_ERR_OK,
+            'size'     => strlen($value),
+        ];
+    }
+
+    if ($is_live_request) {
+        $parsed_live_request = true;
+    }
+
+    return true;
+}
+
+
+/*
+|--------------------------------------------------------------------------
 | Get Input Value
 |--------------------------------------------------------------------------
 |
-| Automatically checks JSON body first, then POST data.
+| Automatically checks JSON body first, then POST data. A non-POST multipart
+| body is parsed first (see request_parse_multipart_input()), so PUT requests
+| behave like the POST requests PHP parses natively.
 |
 */
 
@@ -288,23 +476,23 @@ function request_input(
     mixed $default = null
 ): mixed {
 
+    request_parse_multipart_input();
+
     $json = [];
 
-    $content_type = $_SERVER['CONTENT_TYPE'] ?? '';
-    $raw_input = file_get_contents('php://input');
+    $content_type = strtolower((string) ($_SERVER['CONTENT_TYPE'] ?? ''));
 
-    if (
-        $raw_input !== false &&
-        trim($raw_input) !== '' &&
-        (
-            str_contains(strtolower($content_type), 'application/json') ||
-            str_contains(strtolower($content_type), 'application/x-www-form-urlencoded') ||
-            str_contains(strtolower($content_type), 'multipart/form-data')
-        )
-    ) {
-        $json = request_json();
-    } elseif ($raw_input !== false && trim($raw_input) !== '') {
-        $json = request_json();
+    /*
+     | A multipart body is never JSON; request_parse_multipart_input() has
+     | already put its fields and file into $_POST / $_FILES, so decoding the
+     | raw body here would only read it a second time for nothing.
+     */
+    if (!str_contains($content_type, 'multipart/form-data')) {
+        $raw_input = file_get_contents('php://input');
+
+        if ($raw_input !== false && trim($raw_input) !== '') {
+            $json = request_json();
+        }
     }
 
     if ($key === null) {
@@ -455,6 +643,8 @@ function request_file(
     string $key
 ): ?array {
 
+    request_parse_multipart_input();
+
     if (!isset($_FILES[$key])) {
         return null;
     }
@@ -471,6 +661,8 @@ function request_file(
 
 function request_files(): array
 {
+    request_parse_multipart_input();
+
     return $_FILES;
 }
 
@@ -483,6 +675,8 @@ function request_files(): array
 
 function request_has_file(string $key): bool
 {
+    request_parse_multipart_input();
+
     return isset($_FILES[$key])
         && is_array($_FILES[$key])
         && (

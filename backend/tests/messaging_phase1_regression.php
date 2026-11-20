@@ -165,8 +165,9 @@ function messaging_finish(array $handle): array
         'stderr'  => $errors,
         'success' => is_array($payload) ? ($payload['success'] ?? null) : null,
         'message' => is_array($payload) ? ($payload['message'] ?? null) : null,
-        'errors'  => is_array($payload) ? ($payload['errors'] ?? null) : null,
-        'data'    => is_array($payload) ? ($payload['data'] ?? null) : null,
+        'errors'    => is_array($payload) ? ($payload['errors'] ?? null) : null,
+        'data'      => is_array($payload) ? ($payload['data'] ?? null) : null,
+        'pagination'=> is_array($payload) ? ($payload['pagination'] ?? null) : null,
     ];
 }
 
@@ -338,6 +339,11 @@ function messaging_cleanup(): void
     try {
         db_execute(
             'DELETE FROM messages WHERE body LIKE ?',
+            [$state['prefix'] . '%']
+        );
+
+        db_execute(
+            'DELETE FROM message_events WHERE body LIKE ?',
             [$state['prefix'] . '%']
         );
     } catch (Throwable $exception) {
@@ -624,32 +630,33 @@ check('query setup: 120 fixture messages inserted', count($fixture_ids) === 120)
 
 $query_path = "/api/v1/conversations/{$fixture_conversation_id}/messages";
 
-/* 9. Default limit is 50. */
+/* 9. Default limit is 12. */
 $default_list = messaging_student_request($query_path, 'GET', $FIXTURE_STUDENT_USER_ID);
 
-check('9: default limit returns 50 messages', $default_list['status'] === 200 && is_array($default_list['data']) && count($default_list['data']) === 50);
+check('9: default limit returns 12 messages', $default_list['status'] === 200 && is_array($default_list['data']) && count($default_list['data']) === 12);
+check('9: pagination metadata is returned', is_array($default_list['pagination'] ?? null) && ($default_list['pagination']['limit'] ?? 0) === 12);
 
-/* 10. Maximum limit is 100. */
-$max_limit = messaging_student_request($query_path . '?limit=100', 'GET', $FIXTURE_STUDENT_USER_ID);
+/* 10. Maximum limit is 20. */
+$max_limit = messaging_student_request($query_path . '?limit=20', 'GET', $FIXTURE_STUDENT_USER_ID);
 
-check('10: limit=100 returns 100 messages', $max_limit['status'] === 200 && is_array($max_limit['data']) && count($max_limit['data']) === 100);
+check('10: limit=20 returns 20 messages', $max_limit['status'] === 200 && is_array($max_limit['data']) && count($max_limit['data']) === 20);
 
 /* 11. Invalid limit / offset are rejected with 400. */
 $invalid_limit_zero = messaging_student_request($query_path . '?limit=0', 'GET', $FIXTURE_STUDENT_USER_ID);
-$invalid_limit_high = messaging_student_request($query_path . '?limit=101', 'GET', $FIXTURE_STUDENT_USER_ID);
+$invalid_limit_high = messaging_student_request($query_path . '?limit=21', 'GET', $FIXTURE_STUDENT_USER_ID);
 $invalid_limit_text = messaging_student_request($query_path . '?limit=abc', 'GET', $FIXTURE_STUDENT_USER_ID);
 $invalid_offset     = messaging_student_request($query_path . '?offset=-1', 'GET', $FIXTURE_STUDENT_USER_ID);
 $invalid_offset_txt = messaging_student_request($query_path . '?offset=abc', 'GET', $FIXTURE_STUDENT_USER_ID);
 
 check('11: limit=0 is rejected (400)', $invalid_limit_zero['status'] === 400 && isset($invalid_limit_zero['errors']['limit']));
-check('11: limit=101 is rejected (400)', $invalid_limit_high['status'] === 400 && isset($invalid_limit_high['errors']['limit']));
+check('11: limit=21 is rejected (400)', $invalid_limit_high['status'] === 400 && isset($invalid_limit_high['errors']['limit']));
 check('11: limit=abc is rejected (400)', $invalid_limit_text['status'] === 400 && isset($invalid_limit_text['errors']['limit']));
 check('11: offset=-1 is rejected (400)', $invalid_offset['status'] === 400 && isset($invalid_offset['errors']['offset']));
 check('11: offset=abc is rejected (400)', $invalid_offset_txt['status'] === 400 && isset($invalid_offset_txt['errors']['offset']));
 
 /* 12. Supported filters. */
 $student_sender = messaging_student_request(
-    $query_path . '?limit=100&sender_id=' . $FIXTURE_STUDENT_USER_ID,
+    $query_path . '?limit=20&sender_id=' . $FIXTURE_STUDENT_USER_ID,
     'GET',
     $FIXTURE_STUDENT_USER_ID
 );
@@ -666,16 +673,16 @@ if ($all_student_sender) {
     }
 }
 
-check('12: sender_id filter returns only that sender', $all_student_sender && $sender_ok && count($student_sender['data']) === 60);
+check('12: sender_id filter returns only that sender', $all_student_sender && $sender_ok && count($student_sender['data']) === 20);
 
 $middle_index = 60;
 $middle_id    = $fixture_ids[$middle_index] ?? 0;
 
-$before = messaging_student_request($query_path . '?limit=100&before_id=' . $middle_id, 'GET', $FIXTURE_STUDENT_USER_ID);
-$after  = messaging_student_request($query_path . '?limit=100&after_id=' . $middle_id, 'GET', $FIXTURE_STUDENT_USER_ID);
+$before = messaging_student_request($query_path . '?limit=20&before_id=' . $middle_id, 'GET', $FIXTURE_STUDENT_USER_ID);
+$after  = messaging_student_request($query_path . '?limit=20&after_id=' . $middle_id, 'GET', $FIXTURE_STUDENT_USER_ID);
 
-$before_ok = $before['status'] === 200 && is_array($before['data']) && count($before['data']) === 60;
-$after_ok  = $after['status'] === 200 && is_array($after['data']) && count($after['data']) === 59;
+$before_ok = $before['status'] === 200 && is_array($before['data']) && count($before['data']) === 20;
+$after_ok  = $after['status'] === 200 && is_array($after['data']) && count($after['data']) === 20;
 
 if ($before_ok) {
     foreach ($before['data'] as $row) {
@@ -699,7 +706,7 @@ check('12: before_id returns the older messages only', $before_ok);
 check('12: after_id returns the newer messages only', $after_ok);
 
 $date_range = messaging_student_request(
-    $query_path . '?limit=100&from_date=2026-01-01%2010:10:00&to_date=2026-01-01%2010:19:59',
+    $query_path . '?limit=20&from_date=2026-01-01%2010:10:00&to_date=2026-01-01%2010:19:59',
     'GET',
     $FIXTURE_STUDENT_USER_ID
 );
@@ -707,14 +714,14 @@ $date_range = messaging_student_request(
 check('12: from_date/to_date return the requested range', $date_range['status'] === 200 && is_array($date_range['data']) && count($date_range['data']) === 10);
 
 $date_only = messaging_student_request(
-    $query_path . '?limit=100&from_date=2026-01-01%2011:50:00&to_date=2026-01-01',
+    $query_path . '?limit=20&from_date=2026-01-01%2011:50:00&to_date=2026-01-01',
     'GET',
     $FIXTURE_STUDENT_USER_ID
 );
 
 check('12: a date-only to_date includes the whole day', $date_only['status'] === 200 && is_array($date_only['data']) && count($date_only['data']) === 10);
 
-$descending = messaging_student_request($query_path . '?limit=100&order=desc', 'GET', $FIXTURE_STUDENT_USER_ID);
+$descending = messaging_student_request($query_path . '?limit=20&order=desc', 'GET', $FIXTURE_STUDENT_USER_ID);
 
 check(
     '12: order=desc returns newest first',
@@ -759,8 +766,8 @@ $other_student_messages = messaging_student_request(
     $OTHER_STUDENT_USER_ID
 );
 
-check('14: another student cannot read the conversation (403)', $other_student_read['status'] === 403);
 check('14: another student cannot read its messages (403)', $other_student_messages['status'] === 403);
+check('14: the conversation details endpoint is gone (404)', $other_student_read['status'] === 404);
 
 /* 15. Company cannot access another company's conversation. */
 $other_company_read = messaging_company_request(
@@ -775,7 +782,7 @@ $other_company_messages = messaging_company_request(
     $OTHER_COMPANY_USER_ID
 );
 
-check('15: another company cannot read the conversation (403)', $other_company_read['status'] === 403);
+check('15: the conversation details endpoint is gone (404)', $other_company_read['status'] === 404);
 check('15: another company cannot read its messages (403)', $other_company_messages['status'] === 403);
 
 /* 16. Non-participants cannot read or send. */
@@ -986,11 +993,11 @@ $company_read_conversation = messaging_company_request(
     $FIXTURE_COMPANY_USER_ID
 );
 
-check('17: the student can still read the conversation after withdrawal', $student_read_conversation['status'] === 200 && (int) ($student_read_conversation['data']['id'] ?? 0) === $fixture_conversation_id);
-check('18: the company can still read the conversation after withdrawal', $company_read_conversation['status'] === 200 && (int) ($company_read_conversation['data']['id'] ?? 0) === $fixture_conversation_id);
+check('17: the conversation details endpoint is gone (404) after withdrawal', $student_read_conversation['status'] === 404);
+check('18: the conversation details endpoint is gone (404) after withdrawal', $company_read_conversation['status'] === 404);
 
 $student_history = messaging_student_request(
-    $fixture_path . '?limit=100',
+    $fixture_path . '?limit=20',
     'GET',
     $FIXTURE_STUDENT_USER_ID
 );

@@ -20,6 +20,14 @@ if (!defined('MESSAGE_MAX_LENGTH')) {
     );
 }
 
+if (!defined('MESSAGE_PAGE_DEFAULT_LIMIT')) {
+    define('MESSAGE_PAGE_DEFAULT_LIMIT', 12);
+}
+
+if (!defined('MESSAGE_PAGE_MAX_LIMIT')) {
+    define('MESSAGE_PAGE_MAX_LIMIT', 20);
+}
+
 
 /*
 |--------------------------------------------------------------------------
@@ -1462,14 +1470,15 @@ function message_validator_list_filters(
     $errors = [];
 
     $clean = [
-        'limit'  => 50,
+        'limit'  => MESSAGE_PAGE_DEFAULT_LIMIT,
         'offset' => 0,
         'order'  => 'asc',
     ];
 
 
     /*
-     * limit: 1..100, default 50.
+     * limit: 1..20, default 12. The page is read with limit + 1 rows so the
+     * extra row can determine has_more without a total-count query.
      */
 
     if (
@@ -1487,11 +1496,13 @@ function message_validator_list_filters(
         if (
             $limit === false ||
             $limit < 1 ||
-            $limit > 100
+            $limit > MESSAGE_PAGE_MAX_LIMIT
         ) {
 
             $errors['limit'] =
-                'Limit must be an integer between 1 and 100.';
+                'Limit must be an integer between 1 and '
+                . MESSAGE_PAGE_MAX_LIMIT
+                . '.';
 
         } else {
 
@@ -1567,6 +1578,21 @@ function message_validator_list_filters(
             $clean[$field] =
                 (int) $id;
         }
+    }
+
+
+    /*
+     * Cursor directions are mutually exclusive. Mixing them has no defined
+     * page semantics, so the request is rejected instead of guessing.
+     */
+
+    if (
+        isset($clean['before_id']) &&
+        isset($clean['after_id'])
+    ) {
+
+        $errors['before_id_after_id'] =
+            'before_id and after_id cannot be used together.';
     }
 
 

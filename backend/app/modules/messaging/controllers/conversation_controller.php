@@ -24,6 +24,7 @@
 */
 
 require_once __DIR__ . '/../services/conversation_service.php';
+require_once __DIR__ . '/../validators/conversation_validator.php';
 
 
 /*
@@ -205,14 +206,32 @@ function conversation_controller_index(): void
         response_unauthorized();
     }
 
-    $data =
-        conversation_controller_request_data();
+    /*
+     * GET filters come from the query string, not the request body.
+     */
+
+    $filters =
+        conversation_validator_list_filters(
+            request_query()
+        );
+
+
+    if (!$filters['valid']) {
+
+        response_error(
+            'Invalid query parameters.',
+            400,
+            $filters['errors']
+        );
+    }
+
 
     $result =
         conversation_service_list(
             $user_id,
-            $data
+            $filters['value']
         );
+
 
     response_success(
         $result,
@@ -230,89 +249,6 @@ function conversation_controller_index(): void
 function conversation_controller_list(): void
 {
     conversation_controller_index();
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| Show Conversation
-|--------------------------------------------------------------------------
-*/
-
-function conversation_controller_show(
-    int $conversation_id = 0
-): void {
-
-    $user_id =
-        conversation_controller_user_id();
-
-    if (!$user_id) {
-        response_unauthorized();
-    }
-
-
-    if ($conversation_id <= 0) {
-
-        response_validation_error(
-            [
-                'conversation_id' =>
-                    'Conversation ID must be a positive integer.',
-            ],
-            'Conversation ID is required.'
-        );
-    }
-
-
-    $result =
-        conversation_service_find(
-            $conversation_id,
-            $user_id
-        );
-
-
-    if (empty($result['ok'])) {
-
-        $status =
-            (int) (
-                $result['status']
-                ?? 500
-            );
-
-        $message =
-            (string) (
-                $result['message']
-                ?? 'Unable to retrieve conversation.'
-            );
-
-        $errors =
-            is_array($result['errors'] ?? null)
-            ? $result['errors']
-            : [];
-
-        if ($status === 404) {
-            response_not_found($message);
-        }
-
-        if ($status === 403) {
-            response_forbidden($message);
-        }
-
-        if ($status === 401) {
-            response_unauthorized($message);
-        }
-
-        if ($status === 422) {
-            response_validation_error($errors, $message);
-        }
-
-        response_server_error($message);
-    }
-
-
-    response_success(
-        $result['conversation'],
-        'Conversation retrieved successfully.'
-    );
 }
 
 
@@ -1284,14 +1220,6 @@ function conversation_controller_dispatch(
         case 'index':
         case 'list':
             conversation_controller_list();
-            break;
-
-
-        case 'show':
-        case 'view':
-            conversation_controller_show(
-                $conversation_id
-            );
             break;
 
 

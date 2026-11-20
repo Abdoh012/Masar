@@ -3,8 +3,9 @@
 return [
     'name'              => 'MASAR',
     'environment'       => getenv('APP_ENV') ?: 'development',
-    'debug'             => filter_var(getenv('APP_DEBUG') ?: true, FILTER_VALIDATE_BOOLEAN),
+    'debug'             => filter_var(getenv('APP_DEBUG') ?: false, FILTER_VALIDATE_BOOLEAN),
     'url'               => getenv('APP_URL') ?: 'http://localhost',
+    'frontend_url'      => getenv('FRONTEND_URL') ?: 'http://localhost:3000',
     'api_version'       => 'v1',
     'api_prefix'        => '/api/v1',
     'timezone'          => getenv('APP_TIMEZONE') ?: 'Africa/Cairo',
@@ -20,17 +21,23 @@ return [
         'remember_expiration'=> 60 * 60 * 24 * 30,  // 30 days
         'cookie_name'        => 'MASAR_REMEMBER',
         'cookie_path'        => '/',
-        'cookie_secure'      => false,
+        'cookie_secure'      => filter_var(getenv('SECURE_COOKIES') ?: false, FILTER_VALIDATE_BOOLEAN),
         'cookie_httponly'    => true,
         'cookie_samesite'    => 'Lax',
     ],
     'response'          => ['success_key' => 'success','message_key' => 'message','data_key'    => 'data','errors_key'  => 'errors',],
     'cors' => [
         'allowed_origins' => array_filter(array_map('trim', preg_split('/\s*,\s*/', (string) (getenv('CORS_ALLOWED_ORIGINS') ?: 'http://localhost:3000,http://localhost:5173')))),
+
         'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         'allowed_headers' => ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-Requested-With'],
         'allow_credentials' => true,
         'max_age' => 86400,
-        'development' => filter_var(getenv('APP_ENV') ?: 'development', FILTER_VALIDATE_BOOLEAN) === false,
+        'development' => strtolower(trim((string) (getenv('APP_ENV') ?: 'development'))) === 'development',
+    ],
+    'logging' => [
+        'enabled' => filter_var(getenv('LOGGING_ENABLED') ?: true, FILTER_VALIDATE_BOOLEAN),
+        'path'    => getenv('LOG_DIR') ?: __DIR__ . '/../../storage/logs',
+        'file'    => getenv('LOG_FILE') ?: 'app.log',
     ],
 ];

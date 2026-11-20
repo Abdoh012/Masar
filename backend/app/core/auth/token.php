@@ -208,12 +208,13 @@ function token_revoke(
         '
             UPDATE auth_tokens
             SET
-                revoked_at = NOW()
+                revoked_at = :revoked_at
             WHERE token_hash = :token_hash
               AND revoked_at IS NULL
         ',
         [
-            'token_hash' => $token_hash
+            'token_hash' => $token_hash,
+            'revoked_at' => gmdate('Y-m-d H:i:s'),
         ]
     );
 
@@ -259,12 +260,13 @@ function token_revoke_all_for_user(
         '
             UPDATE auth_tokens
             SET
-                revoked_at = NOW()
+                revoked_at = :revoked_at
             WHERE user_id = :user_id
               AND revoked_at IS NULL
         ',
         [
-            'user_id' => $user_id
+            'user_id' => $user_id,
+            'revoked_at' => gmdate('Y-m-d H:i:s'),
         ]
     );
 
@@ -286,9 +288,12 @@ function token_delete_expired(): int
     $statement = db_execute(
         '
             DELETE FROM auth_tokens
-            WHERE expires_at <= NOW()
+            WHERE expires_at <= :now
                OR revoked_at IS NOT NULL
-        '
+        ',
+        [
+            'now' => gmdate('Y-m-d H:i:s'),
+        ]
     );
 
     return $statement->rowCount();

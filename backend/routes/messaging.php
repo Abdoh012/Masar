@@ -21,11 +21,6 @@ if ($path === '/api/v1/conversations' && $method === 'POST') {
     return;
 }
 
-if (preg_match('#^/api/v1/conversations/([0-9]+)$#', $path, $matches) && $method === 'GET') {
-    conversation_controller_show((int) $matches[1]);
-    return;
-}
-
 if (preg_match('#^/api/v1/conversations/([0-9]+)/messages$#', $path, $matches) && $method === 'GET') {
     message_controller_index((int) $matches[1]);
     return;
@@ -33,6 +28,16 @@ if (preg_match('#^/api/v1/conversations/([0-9]+)/messages$#', $path, $matches) &
 
 if (preg_match('#^/api/v1/conversations/([0-9]+)/messages$#', $path, $matches) && $method === 'POST') {
     message_controller_create((int) $matches[1]);
+    return;
+}
+
+if (preg_match('#^/api/v1/conversations/([0-9]+)/messages/([0-9]+)$#', $path, $matches) && $method === 'PATCH') {
+    message_controller_edit((int) $matches[1], (int) $matches[2]);
+    return;
+}
+
+if (preg_match('#^/api/v1/conversations/([0-9]+)/messages/([0-9]+)$#', $path, $matches) && $method === 'DELETE') {
+    message_controller_delete_message((int) $matches[1], (int) $matches[2]);
     return;
 }
 

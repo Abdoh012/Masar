@@ -16,11 +16,13 @@ Base URL:
 | ------ | ---- | ------- |
 | `GET`  | `/conversations` | List the authenticated user's conversations |
 | `POST` | `/conversations` | Start (or return) the conversation of an accepted application |
-| `GET`  | `/conversations/{id}` | Read one conversation |
 | `GET`  | `/conversations/{id}/messages` | Read a conversation's messages |
 | `POST` | `/conversations/{id}/messages` | Send a message |
 
-Every endpoint requires a valid access token.
+Every endpoint requires a valid access token. Real-time events are delivered
+over a separate WebSocket connection documented in
+[WEBSOCKET.md](../../WEBSOCKET.md); the HTTP API remains the source of truth for
+persistence.
 
 ---
 
@@ -79,7 +81,7 @@ field on validation failures; each value is a human-readable string.
 # 1. List My Conversations
 
 ```http
-GET /api/v1/conversations
+GET /api/v1/conversations?limit=20&offset=0
 ```
 
 Returns every conversation in which the authenticated user is the student or the
@@ -89,32 +91,76 @@ company.
 
 | Name | Type | Default | Description |
 | ---- | ---- | ------- | ----------- |
-| `application_id` | integer | – | Only the conversation of this application. An application the user is not part of yields an empty array, not an error. |
+| `limit` | integer | `20` | Page size. Must be an integer between 1 and 100. |
+| `offset` | integer | `0` | Rows to skip. Must be an integer >= 0. |
+| `application_id` | integer | – | Only the conversation of this application. An application the user is not part of yields an empty page, not an error. |
 | `keyword` | string | – | LIKE filter over the student name, company name and training title. |
-| `limit` | integer | `50` | Page size, clamped to `100`. |
-| `offset` | integer | `0` | Rows to skip. |
 
-These filters are optional. They are not validated the way the message filters
-are: out-of-range values are clamped rather than rejected.
+Values are read from the query string, never from a request body. Malformed or
+out-of-range values are rejected with `400` and the offending field in `errors`
+(`limit`: 1-100, `offset`: >= 0).
 
 ### Response
 
-`data` is a flat array (no pagination envelope). Each row is a conversation:
+`data` is an object with the page of rows and the pagination metadata:
 
 ```json
 {
-  "id": 225,
-  "student_id": 1458,
-  "company_id": 100144,
-  "application_id": 1671,
-  "created_at": "2026-08-01 11:30:00",
-  "updated_at": "2026-08-13 10:00:00",
-  "student_name": "…",
-  "company_name": "…",
-  "training_title": "…",
-  "unread_count": 1
+  "items": [
+    {
+      "id": 225,
+      "student_id": 1458,
+      "company_id": 100144,
+      "application_id": 1671,
+      "created_at": "2026-08-01 11:30:00",
+      "updated_at": "2026-08-13 10:00:00",
+      "student_name": "…",
+      "company_name": "…",
+      "company_image": "company-logo-test/data.png",
+      "training_title": "…",
+      "unread_count": 1,
+      "last_message": {
+        "id": 1108,
+        "body": "Just bring your laptop and any portfolio pieces you mentioned.",
+        "sender_user_id": 100568,
+        "created_at": "2026-08-17 11:00:00"
+      },
+      "application_status": "accepted",
+      "training": {
+        "title": "Junior PHP Developer Track",
+        "starts_at": "2026-08-10 09:00:00",
+        "ends_at": "2026-08-27 17:00:00"
+      }
+    }
+  ],
+  "pagination": {
+    "total": 3,
+    "limit": 20,
+    "offset": 0
+  }
 }
 ```
+
+Additional fields per row:
+
+* `company_image`: the conversation's company's profile image as the relative
+  storage path stored in `companies.company_logo` (e.g.
+  `company-logo-test/data.png`), or `null` when the company has no logo.
+  Present on every row.
+* `last_message`: the conversation's latest message — `id`, `body`,
+  `sender_user_id` and `created_at` — or `null` when the conversation has no
+  messages. The latest message is the newest by `created_at` then `id`.
+* `application_status`: the status of the linked training application, read
+  live from the database (e.g. `accepted`, `submitted`, `rejected`,
+  `withdrawn`).
+* `training`: the linked training listing as `title`, `starts_at` and
+  `ends_at` (actual `training_listings` columns). Dates are returned as
+  stored and are `null` when the listing has none; the whole object is `null`
+  when no training listing is linked.
+
+`pagination.total` is the number of the user's conversations before paging,
+using the same visibility and filters as the list. It is the same whether or
+not `limit`/`offset` are given, and empty pages still return it.
 
 `unread_count` counts messages sent by the **other** participant that have not
 been read yet, and appears only on this endpoint.
@@ -171,34 +217,16 @@ instead of failing.
 
 ---
 
-# 3. Get a Conversation
-
-```http
-GET /api/v1/conversations/{id}
-```
-
-| Condition | Status |
-| --------- | ------ |
-| Not authenticated | `401` |
-| Conversation does not exist | `404` |
-| Conversation exists, user is not a participant (or is no longer authorized for the application) | `403` |
-| Success | `200` |
-
-`data` is one conversation row with the joined `student_name`, `company_name`
-and `training_title` fields.
-
-Reading is not blocked by a withdrawn application.
-
----
-
-# 4. List Messages
+# 3. List Messages
 
 ```http
 GET /api/v1/conversations/{id}/messages
 ```
 
-`data` is a flat array (no pagination envelope), ordered by `created_at` and then
-`id`.
+`data` is a flat array ordered by the auto-increment `id`, oldest to newest.
+Cursor pagination is bounded: a request never reads the whole conversation into
+memory. Pagination metadata is returned as a sibling of `data` in the standard
+envelope (see below).
 
 ### Query parameters
 
@@ -208,14 +236,18 @@ in `errors`.
 
 | Name | Type | Default | Rules |
 | ---- | ---- | ------- | ----- |
-| `limit` | integer | `50` | `1`–`100`; `0`, `101` or non-numeric → `400` |
-| `offset` | integer | `0` | `>= 0`; negative or non-numeric → `400` |
-| `order` | string | `asc` | `asc` or `desc`; anything else → `400` |
+| `limit` | integer | `12` | `1`–`20`; `0`, `21`, negative or non-numeric → `400` |
 | `before_id` | integer | – | Exclusive: only messages with `id` lower than this value; must be a positive integer |
 | `after_id` | integer | – | Exclusive: only messages with `id` greater than this value; must be a positive integer |
-| `sender_id` | integer | – | Only messages sent by this user id |
-| `from_date` | string | – | `Y-m-d` or `Y-m-d H:i:s`; lower bound on `created_at` |
-| `to_date` | string | – | `Y-m-d` or `Y-m-d H:i:s`; upper bound on `created_at` |
+| `offset` | integer | `0` | Legacy parameter, `>= 0`; negative or non-numeric → `400` |
+| `order` | string | `asc` | Legacy display override, `asc` or `desc`; anything else → `400` |
+| `sender_id` | integer | – | Legacy filter: only messages sent by this user id |
+| `from_date` | string | – | Legacy filter: `Y-m-d` or `Y-m-d H:i:s`; lower bound on `created_at` |
+| `to_date` | string | – | Legacy filter: `Y-m-d` or `Y-m-d H:i:s`; upper bound on `created_at` |
+
+`before_id` and `after_id` are mutually exclusive. Supplying both returns `400`
+with `errors.before_id_after_id`. A non-numeric or non-positive cursor is a `400`;
+a positive cursor that does not exist is safe and simply yields the nearest page.
 
 A date-only `to_date` covers the whole day: it is expanded to `23:59:59` of that
 day. Date-only `from_date` starts at `00:00:00`. Any other date format is a `400`.
@@ -223,10 +255,10 @@ day. Date-only `from_date` starts at `00:00:00`. Any other date format is a `400
 Examples:
 
 ```http
-GET /api/v1/conversations/225/messages?limit=50&offset=0
-GET /api/v1/conversations/225/messages?order=desc&limit=20
-GET /api/v1/conversations/225/messages?before_id=1108
-GET /api/v1/conversations/225/messages?from_date=2026-08-14&to_date=2026-08-15
+GET /api/v1/conversations/225/messages                       # latest 12, chronological
+GET /api/v1/conversations/225/messages?limit=20              # up to 20
+GET /api/v1/conversations/225/messages?limit=12&before_id=950 # older messages
+GET /api/v1/conversations/225/messages?limit=12&after_id=950  # newer messages
 ```
 
 ### Response
@@ -242,17 +274,83 @@ GET /api/v1/conversations/225/messages?from_date=2026-08-14&to_date=2026-08-15
       "sender_user_id": 100568,
       "body": "Welcome aboard!",
       "is_read": 1,
+      "is_edited": 0,
       "read_at": "2026-08-14 12:00:00",
       "created_at": "2026-08-13 11:00:00",
+      "updated_at": null,
       "sender_id": 100568
     }
   ],
+  "conversation": {
+    "id": 225,
+    "company": {
+      "id": 100144,
+      "name": "NileTech Solutions",
+      "image": null
+    }
+  },
+  "pagination": {
+    "limit": 12,
+    "has_more": true,
+    "next_before_id": 1104,
+    "next_after_id": 1108
+  },
   "errors": null
 }
 ```
 
 `sender_id` is an alias of `sender_user_id`. Sender email addresses are not
 exposed.
+
+### Conversation header
+
+A top-level `conversation` object gives the UI a WhatsApp-style header
+(company name + image) to render once above the message list. It is separate
+from the `data` messages array and is never repeated inside message objects.
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| `conversation.id` | integer | The conversation id (same as the URL id). |
+| `conversation.company.id` | integer | The company linked to the conversation. |
+| `conversation.company.name` | string | The actual company name (`companies.legal_name`). |
+| `conversation.company.image` | string / null | The company's profile image path from `companies.company_logo`, or `null` when the company has no logo. |
+
+Facts:
+
+* Both `student_id` and `company_id` are required on the `conversations`
+  schema, so `company` is populated whenever the conversation exists; it is
+  `null` only if the linked company row cannot be resolved.
+* The metadata is fetched with **one** scoped query per request
+  (`LEFT JOIN companies ON companies.id = conversations.company_id`); there
+  is no N+1 and no extra company fields are read.
+* The image uses the same value source as other MASAR APIs
+  (`companies.company_logo`, the relative storage path produced by the file
+  upload service).
+* Company information for unauthorized conversations is never exposed:
+  access is checked with `conversation_service_access()` before the header is
+  built.
+
+`data` remains a flat array for backward compatibility. The `pagination` object
+sits beside it:
+
+| Field | Meaning |
+| ----- | ------- |
+| `limit` | Effective page size (1–20). |
+| `has_more` | Another page exists in the direction being traversed. Determined with a `limit + 1` read; the extra row is never returned. |
+| `next_before_id` | Oldest id in the page; pass as `before_id` to fetch older messages. |
+| `next_after_id` | Newest id in the page; pass as `after_id` to fetch newer messages. |
+
+Pagination modes:
+
+* **Default** — query `ORDER BY id DESC LIMIT limit + 1` (served by
+  `idx_messages_conversation_id`), reverse to chronological order. `has_more`
+  means older messages exist.
+* **`before_id`** — `id < cursor`, scanned newest-first, returned chronologically.
+* **`after_id`** — `id > cursor`, scanned oldest-first, returned chronologically;
+  this is the cursor a disconnected WebSocket client uses to catch up.
+
+The cursor row itself is always excluded, and `id` is the deterministic
+tie-breaker. Empty conversations return `data: []` with `has_more: false`.
 
 ### Status codes
 
@@ -264,9 +362,92 @@ exposed.
 | Conversation does not exist | `404` |
 | Success | `200` |
 
+Each message carries `is_edited` (`0`/`1`) and `updated_at` (`null` when never
+edited). `is_edited` becomes `1` when the message is edited; `updated_at` is
+set at that moment.
+
 ---
 
-# 5. Send a Message
+# 4a. Edit a Message
+
+```http
+PATCH /api/v1/conversations/{conversation_id}/messages/{message_id}
+Content-Type: application/json
+```
+
+### Request body
+
+```json
+{ "body": "Updated message content." }
+```
+
+| Field | Required | Description |
+| ----- | -------- | ----------- |
+| `body` | yes | New message text. `message` and `content` are accepted as aliases. |
+
+### Rules
+
+* Any message owner can edit, with **no time limit**.
+* The sender is re-read from the database using the message id **and** the URL
+  conversation id. Never trust a client-provided sender id.
+* Empty or whitespace-only content → `422` with `errors.body`. Same length and
+  UTF-8 rules as message creation (5000 characters max, trimmed).
+* Returns the updated message via the standard success envelope.
+* `id` and the original `created_at` are never modified; `is_edited` becomes
+  `1`; `updated_at` is set to the current timestamp.
+
+### Status codes
+
+| Condition | Status |
+| --------- | ------ |
+| Success | `200` |
+| Not authenticated | `401` |
+| Conversation exists but user is not a participant | `403` |
+| Message does not exist in this conversation | `404` |
+| Not the sender, or application is withdrawn | `403` |
+| Validation failed (empty body, etc.) | `422` |
+
+### Real-time
+
+After the transaction commits, the participant(s) receive
+[`message.updated`](../../docs/WEBSOCKET.md) via WebSocket.
+
+---
+
+# 4b. Delete a Message (Delete for Everyone)
+
+```http
+DELETE /api/v1/conversations/{conversation_id}/messages/{message_id}
+```
+
+### Rules
+
+* Hard delete: the row is physically removed from the `messages` table.
+* No soft delete, no placeholder, no `deleted_at`, no archive.
+* Only the original sender (re-read from the database, never trusted from the
+  client) can delete.
+* After deletion the message no longer appears in message retrieval, no longer
+  counts as unread, and no longer becomes the conversation's `last_message`.
+
+### Status codes
+
+| Condition | Status |
+| --------- | ------ |
+| Success | `200` |
+| Not authenticated | `401` |
+| Conversation exists but user is not a participant | `403` |
+| Message does not exist (or was already deleted) | `404` |
+| Not the sender, or application is withdrawn | `403` |
+
+### Real-time
+
+After the transaction commits, the participant(s) receive
+[`message.deleted`](../../docs/WEBSOCKET.md) — it contains only `message_id`,
+`conversation_id` and `deleted_by`, never the deleted body.
+
+---
+
+# 4. Send a Message
 
 ```http
 POST /api/v1/conversations/{id}/messages
@@ -327,7 +508,7 @@ message is `Message sent successfully.`
 When the training application linked to a conversation is `withdrawn`:
 
 * **Reading is always allowed** for both participants:
-  `GET /conversations/{id}` and `GET /conversations/{id}/messages` keep working.
+  `GET /conversations/{id}/messages` keep working.
 * The conversation and its entire message history are kept; nothing is deleted.
 * **Sending is blocked for both participants**, with `403` and:
 
@@ -356,12 +537,17 @@ database transaction:
 
 1. `INSERT INTO messages …`
 2. `UPDATE conversations SET updated_at = CURRENT_TIMESTAMP …`
+3. `INSERT INTO message_events …` (outbox row for the real-time `message.created` event)
 
-Both statements commit together. If either fails, the whole transaction is rolled
-back — a message is never stored without the conversation timestamp, and the
-timestamp is never advanced without a stored message. Diagnostics go to the
-database log; the client only ever receives the generic
+All three statements commit together. If any statement fails, the whole
+transaction is rolled back — a message is never stored without its event, and a
+real-time event is never broadcast for a message that failed to persist.
+Diagnostics go to the database log; the client only ever receives the generic
 `Unable to send message.` with `500`, never SQL or exception details.
+
+Message sending is rate limited per authenticated user through the shared
+security helper (60 requests / minute when rate limiting is enabled). WebSocket
+handshakes are rate limited per IP (30 / minute).
 
 ---
 
@@ -377,7 +563,10 @@ Not implemented yet — do not rely on, and do not document as working:
 * Marking messages read / unread endpoints.
 * Message or conversation search.
 * Group conversations or arbitrary participants.
-* Real-time delivery (WebSocket) and push notifications.
+* Push notifications outside the WebSocket connection.
+
+Real-time `message.created` delivery **is** implemented — see
+[WebSocket events](../../WEBSOCKET.md).
 
 Message rows carry `is_read` / `read_at` columns, but no endpoint in this phase
 writes them, and `unread_count` on the conversation list is the only read-state
@@ -394,4 +583,5 @@ surface.
 | `403` | Not a participant, unauthorized application, or withdrawn application on send |
 | `404` | Conversation or application not found |
 | `422` | Body validation failure, unsupported field, or non-accepted application |
+| `429` | Too many messages sent / too many connection attempts |
 | `500` | Unexpected server/database failure — safe generic message only |

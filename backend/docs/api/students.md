@@ -135,24 +135,71 @@ upload module).
 still resolves to a file the student owns. `is_graduate`, `graduation_year`,
 `graduation_month` and `graduation_month_name` are no longer returned.
 
-### Request (PUT, multipart/form-data)
+### Request (PUT)
 
-For `student`:
+`academic_status` accepts exactly `student` and `graduate`. The value is trimmed
+and matched case-insensitively, so `Student` and ` STUDENT ` are stored as
+`student`; any other value is refused with `422`.
 
+**Status-only update — `application/json`:**
+
+```json
+{
+    "academic_status": "student"
+}
 ```
-academic_status = student
-```
 
-For `graduate`:
+**Graduate update with certificate — `multipart/form-data`:**
 
 ```
 academic_status = graduate
-graduation_date = 2026-06-30
+graduation_date = 2026-06-15
 graduation_certificate = [Uploaded PDF or Image]
 ```
 
 `graduation_date` (YYYY-MM-DD) and `graduation_certificate` (pdf/png/jpg/jpeg,
 up to 5 MB) are both required when the status is `graduate`.
+
+The endpoint is a `PUT`. PHP parses `multipart/form-data` into `$_POST` /
+`$_FILES` only for `POST`, so the backend parses the `PUT` multipart body itself.
+Do **not** switch the request to `POST`; send the certificate as a multipart
+`PUT`, or send JSON when no certificate is involved.
+
+A `student` request never uploads, replaces or deletes a certificate. A
+`graduate` certificate is validated by the shared file upload module (extension,
+sniffed MIME, magic bytes and size), given a random stored name and written to
+the academic certificate upload location (`storage/uploads/certificates`).
+
+### Update response
+
+```json
+{
+    "success": true,
+    "message": "Academic status updated successfully.",
+    "data": {
+        "academic_status": "student"
+    },
+    "errors": null
+}
+```
+
+A `graduate` update returns the same shape as the graduate GET above.
+
+### Validation error
+
+```json
+{
+    "success": false,
+    "message": "Academic status is not valid.",
+    "data": null,
+    "errors": {
+        "academic_status": "Academic status must be one of: student, graduate."
+    }
+}
+```
+
+The `errors` object names the offending field: `academic_status`,
+`graduation_date` or `graduation_certificate`.
 
 ### Delete certificate
 

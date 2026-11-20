@@ -9,11 +9,17 @@
 
 function password_hash_value(string $password): string
 {
-    return password_hash( $password, PASSWORD_DEFAULT );
+    global $app_config;
+
+    $algorithm = (string) ($app_config['password']['algorithm'] ?? PASSWORD_DEFAULT);
+
+    return password_hash( $password, $algorithm );
 }
 
 function password_verify_value( string $password, string $password_hash ): bool {
 
+    // password_verify() derives the hashing algorithm from the stored hash,
+    // so only newly generated hashes are affected by the configured algorithm.
     return password_verify( $password, $password_hash );
 }
 

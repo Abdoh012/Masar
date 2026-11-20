@@ -711,7 +711,7 @@ function student_account_upload_graduation_certificate( array $auth_user, array 
         ACADEMIC_CERTIFICATE_EXTENSIONS,
         ACADEMIC_CERTIFICATE_MIMES,
         ACADEMIC_CERTIFICATE_MAX_SIZE,
-        'certificate'
+        'graduation_certificate'
     );
 
     if ( !empty( $check['errors'] ) ) {
@@ -731,7 +731,7 @@ function student_account_upload_graduation_certificate( array $auth_user, array 
             'error'   => true,
             'status'  => 422,
             'message' => 'The academic certificate could not be stored.',
-            'errors'  => [ 'certificate' => 'The academic certificate could not be stored.' ],
+            'errors'  => [ 'graduation_certificate' => 'The academic certificate could not be stored.' ],
         ];
     }
 
@@ -744,7 +744,7 @@ function student_account_upload_graduation_certificate( array $auth_user, array 
             'error'   => true,
             'status'  => 422,
             'message' => 'The academic certificate could not be stored.',
-            'errors'  => [ 'certificate' => 'The academic certificate could not be stored.' ],
+            'errors'  => [ 'graduation_certificate' => 'The academic certificate could not be stored.' ],
         ];
     }
 

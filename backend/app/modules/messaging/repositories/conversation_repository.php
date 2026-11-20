@@ -233,6 +233,74 @@ function conversation_repository_is_participant(
 
 /*
 |--------------------------------------------------------------------------
+| Conversation Company Meta (messages list header)
+|--------------------------------------------------------------------------
+|
+| One scoped query: the conversation's company id, name and profile image
+| path (companies.company_logo). Used by the messages list endpoint so the
+| WhatsApp-style header can show the company once. No extra company fields
+| are read, and the query runs exactly once per request (no N+1).
+|
+*/
+
+function conversation_repository_company_meta(
+    int $conversation_id
+): ?array {
+
+    if ($conversation_id <= 0) {
+        return null;
+    }
+
+    $row =
+        conversation_repository_fetch_one(
+            "
+            SELECT
+                comp.id AS id,
+                comp.legal_name AS name,
+                comp.company_logo AS image
+            FROM conversations conv
+            LEFT JOIN companies comp
+                ON comp.id = conv.company_id
+            WHERE conv.id = :conversation_id
+            LIMIT 1
+            ",
+            [
+                ':conversation_id' =>
+                    $conversation_id
+            ]
+        );
+
+    if (
+        !$row
+        || !isset($row['id'])
+        || (int) $row['id'] <= 0
+    ) {
+        return [
+            'id'     => $conversation_id,
+            'company' => null,
+        ];
+    }
+
+    $image =
+        is_string($row['image'] ?? null)
+            ? trim($row['image'])
+            : '';
+
+    return [
+        'id'     => $conversation_id,
+        'company' => [
+            'id'    => (int) $row['id'],
+            'name'  => (string) ($row['name'] ?? ''),
+            'image' => $image === ''
+                ? null
+                : $image,
+        ],
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
 | List Conversations
 |--------------------------------------------------------------------------
 */
@@ -253,7 +321,19 @@ function conversation_repository_list(
 
             s.full_name AS student_name,
             co.legal_name AS company_name,
+            co.company_logo AS company_image,
             t.title AS training_title,
+            t.starts_at AS training_starts_at,
+            t.ends_at AS training_ends_at,
+            a.status AS application_status,
+
+            (
+                SELECT m.id
+                FROM messages m
+                WHERE m.conversation_id = c.id
+                ORDER BY m.created_at DESC, m.id DESC
+                LIMIT 1
+            ) AS last_message_id,
 
             (
                 SELECT COUNT(*)
@@ -382,7 +462,11 @@ function conversation_repository_list(
         )
         ? (int)
             $filters['limit']
-        : 50;
+        : (
+            defined('CONVERSATION_PAGE_DEFAULT_LIMIT')
+                ? (int) CONVERSATION_PAGE_DEFAULT_LIMIT
+                : 20
+        );
 
 
     $offset =
@@ -417,9 +501,276 @@ function conversation_repository_list(
     ";
 
 
-    return conversation_repository_fetch_all(
-        $sql,
-        $params
+    return conversation_repository_decorate_latest_messages(
+        conversation_repository_fetch_all(
+            $sql,
+            $params
+        )
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Latest Message Decoration
+|--------------------------------------------------------------------------
+|
+| The list query carries one correlated `last_message_id` per
+| conversation. This performs a single batched lookup for those ids, so
+| the list never loads the full message history and adds no per-row
+| queries.
+*/
+
+function conversation_repository_decorate_latest_messages(
+    array $rows
+): array {
+
+    $ids = [];
+
+
+    foreach ($rows as $row) {
+
+        $id =
+            isset($row['last_message_id'])
+                ? (int) $row['last_message_id']
+                : 0;
+
+
+        if ($id > 0) {
+            $ids[] = $id;
+        }
+    }
+
+
+    $by_conversation = [];
+
+
+    if ($ids !== []) {
+
+        $messages =
+            conversation_repository_fetch_all(
+                "
+                SELECT
+                    m.id,
+                    m.conversation_id,
+                    m.sender_user_id,
+                    m.created_at,
+                    m.body
+                FROM messages m
+                WHERE m.id IN ("
+                    .
+                    implode(
+                        ', ',
+                        array_fill(
+                            0,
+                            count($ids),
+                            '?'
+                        )
+                    )
+                    . ')
+                ',
+                array_map(
+                    'intval',
+                    array_values(
+                        array_unique($ids)
+                    )
+                )
+            );
+
+
+        foreach ($messages as $message) {
+            $by_conversation[(int) $message['conversation_id']] = $message;
+        }
+    }
+
+
+    $items = [];
+
+
+    foreach ($rows as $row) {
+
+        $conversation_id =
+            (int) (
+                $row['id']
+                ?? 0
+            );
+
+
+        $message =
+            $by_conversation[$conversation_id]
+            ?? null;
+
+
+        unset(
+            $row['last_message_id']
+        );
+
+
+        $row['last_message'] =
+            $message !== null
+                ? [
+                    'id'             => (int) $message['id'],
+                    'body'           => (string) $message['body'],
+                    'sender_user_id' => (int) $message['sender_user_id'],
+                    'created_at'     => $message['created_at'],
+                ]
+                : null;
+
+
+        /*
+         * `training` is null when the linked training listing is missing;
+         * otherwise the listing's dates are returned as stored, even when
+         * they are null.
+         */
+
+        $training =
+            $row['training_title'] !== null
+                ? [
+                    'title'    => $row['training_title'],
+                    'starts_at' => $row['training_starts_at'],
+                    'ends_at'   => $row['training_ends_at'],
+                ]
+                : null;
+
+        unset(
+            $row['training_starts_at'],
+            $row['training_ends_at']
+        );
+
+
+        $row['training'] =
+            $training;
+
+
+        $items[] = $row;
+    }
+
+
+    return $items;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Count Conversations
+|--------------------------------------------------------------------------
+|
+| Scoped to the authenticated user with the same visibility conditions as
+| the list query. The LEFT JOINs are one-to-one, and COUNT(DISTINCT
+| c.id) makes the count immune to any future join duplication.
+*/
+
+function conversation_repository_count_for_user(
+    int $user_id,
+    array $filters = []
+): int {
+
+    if ($user_id <= 0) {
+        return 0;
+    }
+
+
+    $sql = "
+        SELECT
+            COUNT(DISTINCT c.id) AS total
+
+        FROM conversations c
+
+        LEFT JOIN students s
+            ON s.id = c.student_id
+
+        LEFT JOIN companies co
+            ON co.id = c.company_id
+
+        LEFT JOIN training_applications a
+            ON a.id = c.application_id
+
+        LEFT JOIN training_listings t
+            ON t.id = a.training_id
+
+        WHERE (
+            c.student_id IN (
+                SELECT s2.id
+                FROM students s2
+                WHERE s2.user_id = :student_user_id
+            )
+            OR
+            c.company_id IN (
+                SELECT co2.id
+                FROM companies co2
+                WHERE co2.user_id = :company_user_id
+            )
+        )
+    ";
+
+
+    $params = [
+        ':student_user_id' =>
+            $user_id,
+
+        ':company_user_id' =>
+            $user_id
+    ];
+
+
+    if (
+        isset(
+            $filters['application_id']
+        )
+        &&
+        (int) $filters['application_id'] > 0
+    ) {
+
+        $sql .= "
+            AND c.application_id = :application_id
+        ";
+
+
+        $params[':application_id'] =
+            (int) $filters['application_id'];
+    }
+
+
+    if (
+        isset(
+            $filters['keyword']
+        )
+        &&
+        trim(
+            (string)
+                $filters['keyword']
+        ) !== ''
+    ) {
+
+        $sql .= "
+            AND (
+                s.full_name LIKE :list_keyword
+                OR co.legal_name LIKE :list_keyword
+                OR t.title LIKE :list_keyword
+            )
+        ";
+
+
+        $params[':list_keyword'] =
+            '%' .
+            trim(
+                (string)
+                    $filters['keyword']
+            ) .
+            '%';
+    }
+
+
+    $row =
+        conversation_repository_fetch_one(
+            $sql,
+            $params
+        );
+
+
+    return (int) (
+        $row['total']
+        ?? 0
     );
 }
 

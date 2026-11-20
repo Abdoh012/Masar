@@ -87,9 +87,17 @@ function student_controller_auth_student(): ?array
 function student_controller_respond(array $result, bool $created = false): void
 {
     if (isset($result['error']) && $result['error'] === true) {
+        /*
+         | Forward the field-level errors when the service reported them. They
+         | were previously dropped here, so a 422 reached the client with
+         | `errors: null` and no way to tell which field was wrong.
+         */
+        $errors = $result['errors'] ?? [];
+
         response_error(
             $result['message'] ?? 'Unable to process the request.',
-            $result['status'] ?? 400
+            $result['status'] ?? 400,
+            is_array($errors) ? $errors : []
         );
         return;
     }

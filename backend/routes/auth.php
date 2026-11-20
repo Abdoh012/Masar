@@ -34,7 +34,10 @@ if ($path === '/api/v1/auth/refresh' && $method === 'POST') {
 }
 
 if ($path === '/api/v1/auth/logout' && $method === 'POST') {
-    middleware_jwt_auth();
+    /*
+     * Logout must remain possible even when the access token has expired.
+     * The controller accepts a valid access token or a valid refresh token.
+     */
     auth_handle_logout();
     return;
 }
