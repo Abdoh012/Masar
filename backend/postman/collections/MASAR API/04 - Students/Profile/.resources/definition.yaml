@@ -1,3 +1,0 @@
-$kind: collection
-description: "Student profile lifecycle: read my profile, create it (name-based academic fields), update it, check completion status, mark it complete, and view a public profile by ID."
-order: 1000

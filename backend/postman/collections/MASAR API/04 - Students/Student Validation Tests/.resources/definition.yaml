@@ -1,3 +1,0 @@
-$kind: collection
-description: Negative and positive Student registration/profile validation tests. All registration calls are public; they verify the backend validation rules for the current `field`/`specialization` model (university not required).
-order: 2000

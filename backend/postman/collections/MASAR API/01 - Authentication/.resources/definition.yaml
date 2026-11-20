@@ -1,3 +1,0 @@
-$kind: collection
-description: "Every authentication endpoint implemented in `routes/auth.php`. Protected requests carry `Authorization: Bearer {{access_token}}`; the refresh flow uses the HttpOnly refresh cookie plus the CSRF header."
-order: 3000
