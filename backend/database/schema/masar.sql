@@ -1637,7 +1637,8 @@ CREATE TABLE `message_events` (
   `sender_user_id` bigint UNSIGNED NOT NULL,
   `body` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` datetime NOT NULL,
-  `dispatched_at` datetime DEFAULT NULL
+  `dispatched_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
@@ -4484,7 +4485,6 @@ ALTER TABLE `messages`
 -- Indexes for table `message_events`
 --
 ALTER TABLE `message_events`
-  ADD PRIMARY KEY (`id`),
   ADD COLUMN `event_type` VARCHAR(32) NOT NULL DEFAULT 'message.created',
   ADD KEY `idx_message_events_pending` (`dispatched_at`,`id`);
 
